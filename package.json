@@ -1,26 +1,31 @@
 {
-  "name": "opskil-temp",
+  "name": "opskil-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.4.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "start:worker": "npm --workspace=@opskil/worker run start",
+    "start:organizer": "npm --workspace=@opskil/organizer run start",
+    "android:worker": "npm --workspace=@opskil/worker run android",
+    "ios:worker": "npm --workspace=@opskil/worker run ios",
+    "android:organizer": "npm --workspace=@opskil/organizer run android",
+    "ios:organizer": "npm --workspace=@opskil/organizer run ios",
+    "dev:admin": "npm --workspace=@opskil/admin run dev",
+    "build:admin": "npm --workspace=@opskil/admin run build",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.1.1",
+    "@supabase/supabase-js": "^2.117.3",
+    "semver": "^7.8.5"
   }
 }

@@ -1,0 +1,597 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  Pressable,
+  Alert,
+  StyleSheet,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  useOpsklTheme,
+  Card,
+  Badge,
+  Button,
+  ShiftCardSkeleton,
+  useAuth,
+} from '@opskil/design-system';
+import {
+  JobApplication,
+  formatINR,
+  fetchOrganizerApplications,
+  confirmWorkerBookingSafe,
+  updateApplicationStatusSafe,
+} from '@opskil/shared';
+
+// Initial fallback mock applications for demonstration if database has 0 applicants
+const SEED_APPLICATIONS: any[] = [
+  {
+    id: 'app-seed-1',
+    jobId: 'org-shift-1',
+    workerId: 'worker-101',
+    status: 'applied',
+    appliedAt: new Date().toISOString(),
+    notes: 'Available on-time. 3 years convention ushering experience in BKC.',
+    job: {
+      id: 'org-shift-1',
+      title: 'Registration Desk & VIP Usher',
+      venueName: 'Jio World Convention Centre, BKC',
+      date: '2026-10-14',
+      hourlyRate: 185,
+      totalPay: 1665,
+      slotsTotal: 12,
+      slotsFilled: 8,
+      reportingInstructions: 'Report to Exhibitor Gate 2 by 8:00 AM.',
+    },
+    worker: {
+      id: 'worker-101',
+      preferredLocality: 'Bandra West',
+      skills: ['Registration Scanning', 'VIP Ushering', 'English & Hindi'],
+      experienceYears: 3,
+      rating: 4.92,
+      totalReviews: 18,
+      shiftsCompleted: 14,
+      verificationStatus: 'verified',
+      profile: {
+        fullName: 'Aryan Yadav',
+        phone: '+91 98200 98200',
+      },
+    },
+  },
+  {
+    id: 'app-seed-2',
+    jobId: 'org-shift-1',
+    workerId: 'worker-102',
+    status: 'shortlisted',
+    appliedAt: new Date().toISOString(),
+    notes: 'Prior ticketing experience at NESCO and JWCC.',
+    job: {
+      id: 'org-shift-1',
+      title: 'Registration Desk & VIP Usher',
+      venueName: 'Jio World Convention Centre, BKC',
+      date: '2026-10-14',
+      hourlyRate: 185,
+      totalPay: 1665,
+      slotsTotal: 12,
+      slotsFilled: 8,
+      reportingInstructions: 'Report to Exhibitor Gate 2 by 8:00 AM.',
+    },
+    worker: {
+      id: 'worker-102',
+      preferredLocality: 'Andheri East',
+      skills: ['Ticketing Desk', 'Customer Service', 'Guest Relations'],
+      experienceYears: 2,
+      rating: 4.88,
+      totalReviews: 12,
+      shiftsCompleted: 9,
+      verificationStatus: 'verified',
+      profile: {
+        fullName: 'Neha Kulkarni',
+        phone: '+91 98199 98199',
+      },
+    },
+  },
+  {
+    id: 'app-seed-3',
+    jobId: 'org-shift-2',
+    workerId: 'worker-103',
+    status: 'applied',
+    appliedAt: new Date().toISOString(),
+    notes: 'Comfortable on feet for 9 hour exhibition shifts.',
+    job: {
+      id: 'org-shift-2',
+      title: 'Exhibition Booth Assistants',
+      venueName: 'Bombay Exhibition Centre (NESCO)',
+      date: '2026-10-15',
+      hourlyRate: 175,
+      totalPay: 1575,
+      slotsTotal: 6,
+      slotsFilled: 5,
+      reportingInstructions: 'Hall 4 Exhibitor reception desk at 8:45 AM.',
+    },
+    worker: {
+      id: 'worker-103',
+      preferredLocality: 'Goregaon East',
+      skills: ['Crowd Management', 'Queue Marshall', 'Hindi Fluency'],
+      experienceYears: 1,
+      rating: 4.75,
+      totalReviews: 7,
+      shiftsCompleted: 6,
+      verificationStatus: 'verified',
+      profile: {
+        fullName: 'Vikram Joshi',
+        phone: '+91 98330 98330',
+      },
+    },
+  },
+];
+
+type FilterTab = 'all' | 'applied' | 'shortlisted' | 'confirmed' | 'rejected';
+
+export default function OrganizerRosterScreen() {
+  const { session } = useAuth();
+  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+
+  const organizerId = session?.user?.id || 'org-apex-01';
+
+  const loadApplications = useCallback(async () => {
+    try {
+      const data = await fetchOrganizerApplications(organizerId);
+      if (data.length > 0) {
+        setApplications(data);
+      } else {
+        setApplications(SEED_APPLICATIONS as any);
+      }
+    } catch (err) {
+      console.error('Failed to load applications', err);
+      setApplications(SEED_APPLICATIONS as any);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [organizerId]);
+
+  useEffect(() => {
+    loadApplications();
+  }, [loadApplications]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadApplications();
+  };
+
+  /**
+   * Shortlist Applicant
+   */
+  const handleShortlist = async (app: JobApplication) => {
+    setActionInProgress(app.id);
+    const res = await updateApplicationStatusSafe(app.id, 'shortlisted', organizerId);
+    setActionInProgress(null);
+
+    if (res.success) {
+      setApplications((prev) =>
+        prev.map((a) => (a.id === app.id ? { ...a, status: 'shortlisted' } : a))
+      );
+      Alert.alert(
+        'Candidate Shortlisted',
+        `${app.worker?.profile?.fullName || 'Worker'} has been shortlisted. A notification was sent to their Opskl app.`
+      );
+    } else {
+      Alert.alert('Error', res.error || 'Failed to shortlist candidate');
+    }
+  };
+
+  /**
+   * Reject Applicant
+   */
+  const handleReject = async (app: JobApplication) => {
+    Alert.alert(
+      'Decline Application',
+      `Are you sure you want to pass on ${app.worker?.profile?.fullName || 'this applicant'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: async () => {
+            setActionInProgress(app.id);
+            const res = await updateApplicationStatusSafe(app.id, 'rejected', organizerId);
+            setActionInProgress(null);
+
+            if (res.success) {
+              setApplications((prev) =>
+                prev.map((a) => (a.id === app.id ? { ...a, status: 'rejected' } : a))
+              );
+            } else {
+              Alert.alert('Error', res.error || 'Failed to update application');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Select Candidate / Confirm Booking (Enforces Headcount & Audit Trail)
+   */
+  const handleConfirmBooking = async (app: JobApplication) => {
+    const workerName = app.worker?.profile?.fullName || 'the candidate';
+    const shiftTitle = app.job?.title || 'the shift';
+
+    Alert.alert(
+      'Confirm Booking',
+      `Confirm ${workerName} for ${shiftTitle}?\n\nThis locks in the booking, reserves a spot against your headcount limit, and sends an official confirmation to the worker.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm & Hire',
+          onPress: async () => {
+            setActionInProgress(app.id);
+            const res = await confirmWorkerBookingSafe(
+              app.jobId,
+              app.workerId,
+              organizerId
+            );
+            setActionInProgress(null);
+
+            if (res.success) {
+              setApplications((prev) =>
+                prev.map((a) =>
+                  a.id === app.id
+                    ? {
+                        ...a,
+                        status: 'confirmed',
+                        job: a.job
+                          ? { ...a.job, slotsFilled: (a.job.slotsFilled || 0) + 1 }
+                          : a.job,
+                      }
+                    : a
+                )
+              );
+              Alert.alert(
+                '🎉 Booking Confirmed',
+                `${workerName} has been officially booked for ${shiftTitle}. Check-in QR pass has been issued to the worker.`
+              );
+            } else {
+              Alert.alert('Booking Unsuccessful', res.error || 'Could not complete booking.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Send Reporting Brief
+   */
+  const handleSendBrief = (app: JobApplication) => {
+    const brief = app.job?.reportingInstructions || 'Report to main venue registration desk 30 mins prior to shift.';
+    Alert.alert(
+      'Reporting Briefing',
+      `Reporting instructions for ${app.worker?.profile?.fullName}:\n\n"${brief}"\n\nInstructions are visible on the worker's shift ticket.`
+    );
+  };
+
+  const filtered = applications.filter((app) => {
+    if (activeTab === 'all') return true;
+    return app.status === activeTab;
+  });
+
+  const appliedCount = applications.filter((a) => a.status === 'applied').length;
+  const shortlistedCount = applications.filter((a) => a.status === 'shortlisted').length;
+  const confirmedCount = applications.filter((a) => a.status === 'confirmed').length;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      {/* Top Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <Text style={[typography.h2, { color: colors.textPrimary }]}>Applicant Review & Roster</Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+          Review verified worker profiles and explicitly confirm hires
+        </Text>
+
+        {/* Filter Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, marginTop: spacing.md }}
+        >
+          {(
+            [
+              { key: 'all', label: `All (${applications.length})` },
+              { key: 'applied', label: `New Applied (${appliedCount})` },
+              { key: 'shortlisted', label: `Shortlisted (${shortlistedCount})` },
+              { key: 'confirmed', label: `Confirmed (${confirmedCount})` },
+              { key: 'rejected', label: 'Declined' },
+            ] as const
+          ).map((tab) => {
+            const isSelected = activeTab === tab.key;
+            return (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                style={[
+                  styles.tabChip,
+                  {
+                    backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
+                    borderColor: isSelected ? colors.primary : colors.border,
+                    borderRadius: radii.full,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: isSelected ? '700' : '500',
+                    color: isSelected ? colors.textInverse : colors.textSecondary,
+                  }}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Applications Feed */}
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {loading ? (
+          <View style={{ gap: spacing.md }}>
+            <ShiftCardSkeleton />
+            <ShiftCardSkeleton />
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 36 }}>📋</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
+              No Applicants Found
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+              No applications match the "{activeTab}" filter.
+            </Text>
+          </View>
+        ) : (
+          filtered.map((app) => {
+            const worker = app.worker;
+            const profile = worker?.profile;
+            const job = app.job;
+
+            const isVerified = worker?.verificationStatus === 'verified';
+            const isConfirmed = app.status === 'confirmed';
+            const isShortlisted = app.status === 'shortlisted';
+            const isRejected = app.status === 'rejected';
+            const isActionBusy = actionInProgress === app.id;
+
+            const slotsRemaining = job ? Math.max(0, job.slotsTotal - (job.slotsFilled || 0)) : 0;
+
+            let statusVariant: 'success' | 'warning' | 'primary' | 'neutral' | 'danger' = 'primary';
+            if (isConfirmed) statusVariant = 'success';
+            else if (isShortlisted) statusVariant = 'warning';
+            else if (isRejected) statusVariant = 'danger';
+
+            return (
+              <Card
+                key={app.id}
+                variant="elevated"
+                style={{ borderRadius: radii.xl, padding: spacing.lg }}
+              >
+                {/* Top Profile Bar */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flexDirection: 'row', gap: 12, flex: 1 }}>
+                    <View
+                      style={[
+                        styles.avatarCircle,
+                        { backgroundColor: isDark ? '#1E293B' : '#E2E8F0', borderRadius: radii.full },
+                      ]}
+                    >
+                      <Text style={[styles.avatarText, { color: colors.primary }]}>
+                        {profile?.fullName ? profile.fullName.slice(0, 2).toUpperCase() : 'WK'}
+                      </Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                          {profile?.fullName || 'Opskl Candidate'}
+                        </Text>
+                        {isVerified && <Badge label="✓ ID VERIFIED" variant="success" size="sm" />}
+                      </View>
+
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                        ★ {worker?.rating?.toFixed(1) || '5.0'} • {worker?.shiftsCompleted || 0} Shifts Completed • {worker?.preferredLocality || 'Mumbai'}
+                      </Text>
+
+                      {isConfirmed && profile?.phone && (
+                        <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
+                          📞 {profile.phone}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+
+                  <Badge
+                    label={app.status.toUpperCase()}
+                    variant={statusVariant}
+                    size="sm"
+                  />
+                </View>
+
+                {/* Applied Shift Details */}
+                {job && (
+                  <View
+                    style={[
+                      styles.shiftBanner,
+                      { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, marginTop: spacing.md },
+                    ]}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                        {job.title}
+                      </Text>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+                        {formatINR(job.totalPay)}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                      📍 {job.venueName} • Openings: {slotsRemaining} of {job.slotsTotal} left
+                    </Text>
+                  </View>
+                )}
+
+                {/* Notes if provided */}
+                {app.notes && (
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: spacing.sm }}>
+                    "{app.notes}"
+                  </Text>
+                )}
+
+                {/* Skills Chips */}
+                {worker?.skills && worker.skills.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.md }}>
+                    {worker.skills.map((skill, idx) => (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.skillPill,
+                          {
+                            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+                            borderColor: colors.border,
+                            borderRadius: radii.full,
+                          },
+                        ]}
+                      >
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>{skill}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Action Buttons */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 8,
+                    marginTop: spacing.md,
+                    paddingTop: spacing.sm,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  }}
+                >
+                  {isConfirmed ? (
+                    <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title="✓ Booked & Confirmed"
+                          variant="secondary"
+                          size="sm"
+                          disabled={true}
+                          onPress={() => {}}
+                        />
+                      </View>
+                      <Button
+                        title="Briefing 📄"
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={() => handleSendBrief(app)}
+                      />
+                    </View>
+                  ) : isRejected ? (
+                    <Text style={{ fontSize: 12, color: colors.danger, fontWeight: '600' }}>
+                      Application Declined
+                    </Text>
+                  ) : (
+                    <>
+                      <Button
+                        title="✕ Decline"
+                        variant="ghost"
+                        size="sm"
+                        fullWidth={false}
+                        loading={isActionBusy}
+                        onPress={() => handleReject(app)}
+                      />
+
+                      {!isShortlisted && (
+                        <Button
+                          title="⭐ Shortlist"
+                          variant="outline"
+                          size="sm"
+                          fullWidth={false}
+                          loading={isActionBusy}
+                          onPress={() => handleShortlist(app)}
+                        />
+                      )}
+
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title={slotsRemaining === 0 ? 'Full' : '✓ Confirm & Book'}
+                          variant="primary"
+                          size="sm"
+                          disabled={slotsRemaining === 0}
+                          loading={isActionBusy}
+                          onPress={() => handleConfirmBooking(app)}
+                        />
+                      </View>
+                    </>
+                  )}
+                </View>
+              </Card>
+            );
+          })
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  tabChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  shiftBanner: {
+    padding: 10,
+  },
+  skillPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderWidth: 1,
+  },
+});

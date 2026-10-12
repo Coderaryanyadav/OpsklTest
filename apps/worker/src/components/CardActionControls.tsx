@@ -1,0 +1,167 @@
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useOpsklTheme } from '@opskil/design-system';
+
+export interface CardActionControlsProps {
+  canUndo: boolean;
+  disabled?: boolean;
+  onPass: () => void;
+  onApply: () => void;
+  onUndo: () => void;
+  onDetails: () => void;
+}
+
+export function CardActionControls({
+  canUndo,
+  disabled = false,
+  onPass,
+  onApply,
+  onUndo,
+  onDetails,
+}: CardActionControlsProps) {
+  const { colors, radii, isDark } = useOpsklTheme();
+
+  return (
+    <View style={styles.controlsContainer}>
+      {/* Undo Button */}
+      <Pressable
+        onPress={onUndo}
+        disabled={!canUndo || disabled}
+        style={({ pressed }) => [
+          styles.actionButton,
+          styles.smallButton,
+          {
+            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+            borderColor: colors.border,
+            opacity: !canUndo || disabled ? 0.35 : pressed ? 0.75 : 1,
+            borderRadius: radii.full,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Undo last skipped shift"
+        accessibilityState={{ disabled: !canUndo || disabled }}
+      >
+        <Text style={[styles.smallIconText, { color: colors.textSecondary }]}>↺</Text>
+      </Pressable>
+
+      {/* Pass Button (Swipe Left equivalent) */}
+      <Pressable
+        onPress={onPass}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.actionButton,
+          styles.mainButton,
+          styles.passButton,
+          {
+            backgroundColor: isDark ? '#2D1B1B' : '#FEF2F2',
+            borderColor: '#EF4444',
+            opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
+            borderRadius: radii.full,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Pass on this shift (Skip left)"
+      >
+        <Text style={styles.passIconText}>✕</Text>
+        <Text style={styles.passLabelText}>Pass</Text>
+      </Pressable>
+
+      {/* Details Button */}
+      <Pressable
+        onPress={onDetails}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.actionButton,
+          styles.smallButton,
+          {
+            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+            borderColor: colors.border,
+            opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
+            borderRadius: radii.full,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="View full shift details"
+      >
+        <Text style={[styles.smallIconText, { color: colors.textSecondary }]}>ℹ</Text>
+      </Pressable>
+
+      {/* Apply Button (Swipe Right equivalent) */}
+      <Pressable
+        onPress={onApply}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.actionButton,
+          styles.mainButton,
+          styles.applyButton,
+          {
+            backgroundColor: '#0F766E',
+            borderColor: '#14B8A6',
+            opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
+            borderRadius: radii.full,
+          },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Apply for this shift (Express interest)"
+      >
+        <Text style={styles.applyIconText}>✓</Text>
+        <Text style={styles.applyLabelText}>Apply</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  controlsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  actionButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  smallButton: {
+    width: 44,
+    height: 44,
+  },
+  smallIconText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  mainButton: {
+    height: 52,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  passButton: {},
+  passIconText: {
+    color: '#EF4444',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  passLabelText: {
+    color: '#EF4444',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  applyButton: {},
+  applyIconText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  applyLabelText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+});

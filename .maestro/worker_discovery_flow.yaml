@@ -1,0 +1,41 @@
+appId: com.opskil.worker
+name: Worker Shift Discovery and Application Flow
+---
+# 1. Launch Worker App
+- launchApp:
+    clearState: true
+
+# 2. Complete Profile Setup if Prompted
+- runFlow:
+    when:
+      visible: "Worker Profile Setup"
+    commands:
+      - tapOn: "Full Legal Name"
+      - inputText: "Aryan Yadav"
+      - tapOn: "Registration Desk & Scanning"
+      - tapOn: "Bandra Kurla Complex (BKC)"
+      - tapOn: "Complete Setup & View Shifts"
+
+# 3. Discovery Feed & Shift Card Scanning
+- assertVisible: "Shift Discovery"
+- assertVisible: "Guaranteed Daily Payout"
+
+# 4. Express Interest / Apply for Shift
+# Tap on explicit accessible Apply button (gesture parity)
+- tapOn: "Apply"
+- assertVisible:
+    text: "Submitting application"
+    optional: true
+
+# 5. Navigate to My Shifts
+- tapOn: "My Shifts"
+- assertVisible: "My Shifts & Attendance"
+
+# 6. Verify Active / Upcoming Shift Pass
+- tapOn: "Active / Today"
+- assertVisible: "OP-"
+
+# 7. Open Earnings Dashboard
+- tapOn: "Earnings"
+- assertVisible: "Earnings & Payouts"
+- assertVisible: "0% commission"

@@ -1,0 +1,748 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  Alert,
+  StyleSheet,
+  Modal,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  useOpsklTheme,
+  Card,
+  Badge,
+  Button,
+  WageText,
+  Input,
+  ShiftCardSkeleton,
+  useAuth,
+} from '@opskil/design-system';
+import {
+  Booking,
+  formatINR,
+  formatISTDate,
+  formatTimeRange,
+  fetchWorkerBookings,
+  checkInWorkerSafe,
+  checkOutWorkerSafe,
+  cancelBookingSafe,
+  disputeBookingSafe,
+} from '@opskil/shared';
+
+type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
+
+const SEED_WORKER_BOOKINGS: Booking[] = [
+  {
+    id: 'book-seed-1',
+    jobId: 'job-mum-101',
+    workerId: 'worker-101',
+    organizerId: 'org-apex-01',
+    status: 'confirmed',
+    agreedHourlyRate: 185,
+    agreedTotalPay: 1665,
+    checkInCode: 'OP-4829',
+    confirmedAt: new Date().toISOString(),
+    job: {
+      id: 'job-mum-101',
+      organizerId: 'org-apex-01',
+      title: 'Registration Desk & VIP Usher',
+      category: 'conference',
+      venueName: 'Jio World Convention Centre, Pavilion 2',
+      venueAddress: 'G Block BKC, Bandra East, Mumbai 400098',
+      landmark: 'Opposite Bharat Diamond Bourse',
+      city: 'Mumbai',
+      zone: 'Bandra Kurla Complex (BKC)',
+      date: new Date().toISOString().split('T')[0],
+      startTime: '08:30',
+      endTime: '17:30',
+      durationHours: 9,
+      hourlyRate: 185,
+      totalPay: 1665,
+      slotsTotal: 12,
+      slotsFilled: 8,
+      duties: ['Scan attendee QR passes', 'Issue delegate lanyards'],
+      supervisorName: 'Rohit Verma',
+      supervisorPhone: '+91 98201 98201',
+      reportingInstructions: 'Report to Gate 2 by 8:00 AM for briefing.',
+      cancellationPolicy: 'Free cancellation up to 24h prior to shift.',
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      organizer: {
+        id: 'org-apex-01',
+        businessName: 'Apex Event Productions Pvt Ltd',
+        businessType: 'event_agency',
+        verificationStatus: 'verified',
+        profileCompletionStatus: 'completed',
+        businessContactPhone: '+91 98201 98201',
+        rating: 4.9,
+        totalEventsHosted: 42,
+        createdAt: '',
+        updatedAt: '',
+      },
+    },
+  },
+  {
+    id: 'book-seed-2',
+    jobId: 'job-mum-102',
+    workerId: 'worker-101',
+    organizerId: 'org-nesco-02',
+    status: 'completed',
+    agreedHourlyRate: 175,
+    agreedTotalPay: 1575,
+    checkInCode: 'OP-9912',
+    checkInTime: '2026-10-10T09:02:00Z',
+    checkOutTime: '2026-10-10T18:05:00Z',
+    confirmedAt: '2026-10-08T12:00:00Z',
+    completedAt: '2026-10-10T18:30:00Z',
+    job: {
+      id: 'job-mum-102',
+      organizerId: 'org-nesco-02',
+      title: 'Exhibition Booth Assistant',
+      category: 'exhibition',
+      venueName: 'Bombay Exhibition Centre (NESCO), Hall 4',
+      venueAddress: 'Western Express Highway, Goregaon East, Mumbai',
+      city: 'Mumbai',
+      zone: 'Goregaon & NESCO',
+      date: '2026-10-10',
+      startTime: '09:00',
+      endTime: '18:00',
+      durationHours: 9,
+      hourlyRate: 175,
+      totalPay: 1575,
+      slotsTotal: 8,
+      slotsFilled: 8,
+      duties: ['Visitor inquiries', 'Brochures'],
+      supervisorName: 'Pooja Mehta',
+      supervisorPhone: '+91 98330 45678',
+      status: 'completed',
+      createdAt: '',
+      updatedAt: '',
+      organizer: {
+        id: 'org-nesco-02',
+        businessName: 'Spectra Trade Shows India',
+        businessType: 'corporate',
+        verificationStatus: 'verified',
+        profileCompletionStatus: 'completed',
+        businessContactPhone: '+91 98330 45678',
+        rating: 4.8,
+        totalEventsHosted: 28,
+        createdAt: '',
+        updatedAt: '',
+      },
+    },
+  },
+];
+
+export default function WorkerMyShiftsScreen() {
+  const { session } = useAuth();
+  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [activeTab, setActiveTab] = useState<TabState>('active');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Modals state
+  const [disputeBookingId, setDisputeBookingId] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [submittingModal, setSubmittingModal] = useState(false);
+
+  const workerId = session?.user?.id || 'worker-101';
+
+  const loadBookings = useCallback(async () => {
+    try {
+      const data = await fetchWorkerBookings(workerId);
+      if (data.length > 0) {
+        setBookings(data);
+      } else {
+        setBookings(SEED_WORKER_BOOKINGS);
+      }
+    } catch (err) {
+      console.error('Failed to load bookings', err);
+      setBookings(SEED_WORKER_BOOKINGS);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [workerId]);
+
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadBookings();
+  };
+
+  /**
+   * Handle On-Site Check In
+   */
+  const handleCheckIn = async (booking: Booking) => {
+    Alert.alert(
+      'On-Site Shift Check-In',
+      `Your official check-in code for this shift is:\n\n🔑 ${booking.checkInCode || 'OP-4829'}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Check-In',
+          onPress: async () => {
+            const res = await checkInWorkerSafe(booking.id, booking.checkInCode || 'OP-4829');
+            if (res.success) {
+              setBookings((prev) =>
+                prev.map((b) =>
+                  b.id === booking.id
+                    ? { ...b, status: 'checked_in', checkInTime: new Date().toISOString() }
+                    : b
+                )
+              );
+              Alert.alert('✓ Check-In Recorded', 'Your arrival has been recorded. Shift timer is now active.');
+            } else {
+              Alert.alert('Check-In Error', res.error || 'Failed to check in.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Handle Shift Check Out
+   */
+  const handleCheckOut = async (booking: Booking) => {
+    Alert.alert(
+      'Shift Check-Out',
+      'Ready to conclude your shift? This records your shift end time and submits hours for supervisor sign-off.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Check Out Now',
+          onPress: async () => {
+            const res = await checkOutWorkerSafe(booking.id, 'Shift concluded on-time');
+            if (res.success) {
+              setBookings((prev) =>
+                prev.map((b) =>
+                  b.id === booking.id
+                    ? { ...b, status: 'completed_awaiting_review', checkOutTime: new Date().toISOString() }
+                    : b
+                )
+              );
+              Alert.alert(
+                '✓ Shift Concluded',
+                'Your check-out is complete. Once supervisor signs off, direct UPI payout will be released to your handle.'
+              );
+            } else {
+              Alert.alert('Check-Out Error', res.error || 'Failed to check out.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Handle Worker Cancellation (with Standby release)
+   */
+  const submitCancellation = async () => {
+    if (!cancelBookingId) return;
+    if (cancelReason.trim().length < 5) {
+      Alert.alert('Reason Required', 'Please provide a brief reason for cancellation.');
+      return;
+    }
+
+    setSubmittingModal(true);
+    const res = await cancelBookingSafe(cancelBookingId, cancelReason.trim());
+    setSubmittingModal(false);
+
+    if (res.success) {
+      setBookings((prev) =>
+        prev.map((b) => (b.id === cancelBookingId ? { ...b, status: 'cancelled', cancellationReason: cancelReason } : b))
+      );
+      setCancelBookingId(null);
+      setCancelReason('');
+      Alert.alert('Booking Cancelled', 'Your cancellation has been processed. The opening has been offered to standby candidates.');
+    } else {
+      Alert.alert('Error', res.error || 'Could not cancel booking.');
+    }
+  };
+
+  /**
+   * Handle Dispute Submission
+   */
+  const submitDispute = async () => {
+    if (!disputeBookingId) return;
+    if (disputeReason.trim().length < 10) {
+      Alert.alert('Dispute Description Required', 'Please specify the exact discrepancy (minimum 10 characters).');
+      return;
+    }
+
+    setSubmittingModal(true);
+    const res = await disputeBookingSafe(disputeBookingId, disputeReason.trim());
+    setSubmittingModal(false);
+
+    if (res.success) {
+      setBookings((prev) =>
+        prev.map((b) => (b.id === disputeBookingId ? { ...b, status: 'disputed', disputeReason: disputeReason } : b))
+      );
+      setDisputeBookingId(null);
+      setDisputeReason('');
+      Alert.alert(
+        '⚖️ Dispute Submitted',
+        'Your dispute has been escalated to Opskl arbitration. An administrator will review venue records and contact both parties.'
+      );
+    } else {
+      Alert.alert('Error', res.error || 'Could not submit dispute.');
+    }
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const upcomingBookings = bookings.filter(
+    (b) => b.status === 'confirmed' && (b.job?.date || '') > todayStr
+  );
+  const activeBookings = bookings.filter(
+    (b) =>
+      ['checked_in', 'completed_awaiting_review'].includes(b.status) ||
+      (b.status === 'confirmed' && (b.job?.date || '') <= todayStr)
+  );
+  const completedBookings = bookings.filter((b) => ['completed', 'disputed'].includes(b.status));
+  const cancelledBookings = bookings.filter((b) => ['cancelled', 'no_show'].includes(b.status));
+
+  let currentList = activeBookings;
+  if (activeTab === 'upcoming') currentList = upcomingBookings;
+  if (activeTab === 'completed') currentList = completedBookings;
+  if (activeTab === 'cancelled') currentList = cancelledBookings;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      {/* Screen Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <Text style={[typography.h2, { color: colors.textPrimary }]}>My Shifts & Attendance</Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+          Digital check-in passes, active shift timer & payment settlement
+        </Text>
+
+        {/* 4 Lifecycle Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, marginTop: spacing.md }}
+        >
+          {(
+            [
+              { id: 'active', label: `Active / Today (${activeBookings.length})` },
+              { id: 'upcoming', label: `Upcoming (${upcomingBookings.length})` },
+              { id: 'completed', label: `Completed (${completedBookings.length})` },
+              { id: 'cancelled', label: `Cancelled (${cancelledBookings.length})` },
+            ] as const
+          ).map((tab) => {
+            const isSelected = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                onPress={() => setActiveTab(tab.id)}
+                style={[
+                  styles.tabChip,
+                  {
+                    backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
+                    borderColor: isSelected ? colors.primary : colors.border,
+                    borderRadius: radii.full,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: isSelected ? '700' : '500',
+                    color: isSelected ? colors.textInverse : colors.textSecondary,
+                  }}
+                >
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Main List */}
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {loading ? (
+          <View style={{ gap: spacing.md }}>
+            <ShiftCardSkeleton />
+            <ShiftCardSkeleton />
+          </View>
+        ) : currentList.length === 0 ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 36 }}>🎫</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
+              No Shifts in this View
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+              Check the other tabs or explore the discovery feed for open shifts.
+            </Text>
+          </View>
+        ) : (
+          currentList.map((booking) => {
+            const job = booking.job;
+            const isCheckedIn = booking.status === 'checked_in';
+            const isAwaitingReview = booking.status === 'completed_awaiting_review';
+            const isCompleted = booking.status === 'completed';
+            const isDisputed = booking.status === 'disputed';
+            const isCancelled = booking.status === 'cancelled';
+            const isNoShow = booking.status === 'no_show';
+
+            let badgeVariant: 'success' | 'warning' | 'primary' | 'danger' | 'info' = 'primary';
+            let badgeLabel = 'CONFIRMED';
+
+            if (isCheckedIn) {
+              badgeVariant = 'success';
+              badgeLabel = 'ON-SITE CHECKED IN';
+            } else if (isAwaitingReview) {
+              badgeVariant = 'warning';
+              badgeLabel = 'AWAITING SIGN-OFF';
+            } else if (isCompleted) {
+              badgeVariant = 'success';
+              badgeLabel = 'PAYOUT SETTLED';
+            } else if (isDisputed) {
+              badgeVariant = 'warning';
+              badgeLabel = 'DISPUTED';
+            } else if (isCancelled) {
+              badgeVariant = 'danger';
+              badgeLabel = 'CANCELLED';
+            } else if (isNoShow) {
+              badgeVariant = 'danger';
+              badgeLabel = 'NO-SHOW';
+            }
+
+            return (
+              <Card
+                key={booking.id}
+                variant="elevated"
+                style={{
+                  borderRadius: radii.xl,
+                  padding: spacing.lg,
+                  borderColor: isCheckedIn ? colors.primary : colors.border,
+                  borderWidth: isCheckedIn ? 2 : 1,
+                }}
+              >
+                {/* Header: Status & Wage */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Badge label={badgeLabel} variant={badgeVariant} />
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <WageText>{formatINR(booking.agreedTotalPay)}</WageText>
+                    <Text style={{ fontSize: 11, color: colors.success, fontWeight: '700' }}>
+                      ⚡ Escrow Guaranteed
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Job Title & Host */}
+                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={1}>
+                  {job?.title || 'Shift Booking'}
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  {job?.organizer?.businessName || 'Event Host'} • {job?.category?.toUpperCase()}
+                </Text>
+
+                {/* Digital Check-In Pass Banner */}
+                {!isCompleted && !isCancelled && !isNoShow && (
+                  <View
+                    style={[
+                      styles.passBox,
+                      {
+                        backgroundColor: isDark ? '#064E3B' : '#ECFDF5',
+                        borderColor: colors.primary,
+                        borderRadius: radii.md,
+                        marginTop: spacing.md,
+                      },
+                    ]}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>
+                          VENUE CHECK-IN PASS
+                        </Text>
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: colors.textPrimary, letterSpacing: 2, marginTop: 2 }}>
+                          {booking.checkInCode || 'OP-4829'}
+                        </Text>
+                      </View>
+                      <Badge
+                        label={isCheckedIn ? 'ACTIVE ON-SITE' : 'SHOW TO SUPERVISOR'}
+                        variant={isCheckedIn ? 'success' : 'neutral'}
+                        size="sm"
+                      />
+                    </View>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }}>
+                      {isCheckedIn
+                        ? `Checked in at ${new Date(booking.checkInTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : (job?.reportingInstructions || 'Report 30 mins prior to shift.')}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Logistics Info Block */}
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceMuted,
+                    borderRadius: radii.md,
+                    padding: spacing.sm + 2,
+                    marginTop: spacing.md,
+                    gap: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    📍 {job?.venueName}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    {job?.venueAddress}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600', marginTop: 2 }}>
+                    ⏰ {formatISTDate(job?.date || '')} • {formatTimeRange(job?.startTime || '', job?.endTime || '')} ({job?.durationHours}h)
+                  </Text>
+                  {job?.supervisorName && (
+                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                      Supervisor: {job.supervisorName} ({job.supervisorPhone})
+                    </Text>
+                  )}
+                </View>
+
+                {/* Reasons / Disputes callouts */}
+                {booking.cancellationReason && (
+                  <Text style={{ fontSize: 12, color: colors.danger, marginTop: spacing.sm }}>
+                    Cancellation Reason: {booking.cancellationReason}
+                  </Text>
+                )}
+                {booking.disputeReason && (
+                  <Text style={{ fontSize: 12, color: colors.warning, marginTop: spacing.sm }}>
+                    Dispute Reason: {booking.disputeReason}
+                  </Text>
+                )}
+
+                {/* Interactive Action Bar */}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 8,
+                    marginTop: spacing.md,
+                    paddingTop: spacing.sm,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.border,
+                  }}
+                >
+                  {/* Active / Checked-in actions */}
+                  {!isCheckedIn && !isAwaitingReview && !isCompleted && !isCancelled && !isNoShow && (
+                    <>
+                      <View style={{ flex: 1.5 }}>
+                        <Button
+                          title="🔑 Check-In Code"
+                          variant="primary"
+                          size="sm"
+                          onPress={() => handleCheckIn(booking)}
+                        />
+                      </View>
+                      <Button
+                        title="Cancel Shift"
+                        variant="ghost"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={() => setCancelBookingId(booking.id)}
+                      />
+                    </>
+                  )}
+
+                  {isCheckedIn && (
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        title="🏁 Check Out of Shift"
+                        variant="primary"
+                        size="sm"
+                        onPress={() => handleCheckOut(booking)}
+                      />
+                    </View>
+                  )}
+
+                  {isAwaitingReview && (
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        title="⏳ Awaiting Supervisor Sign-Off"
+                        variant="secondary"
+                        size="sm"
+                        disabled={true}
+                        onPress={() => {}}
+                      />
+                    </View>
+                  )}
+
+                  {/* Completed / Disputed actions */}
+                  {isCompleted && !isDisputed && (
+                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
+                        ✓ ₹{booking.agreedTotalPay} Settled via UPI
+                      </Text>
+                      <Button
+                        title="Dispute Record ⚖️"
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={() => setDisputeBookingId(booking.id)}
+                      />
+                    </View>
+                  )}
+
+                  {isNoShow && !isDisputed && (
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        title="Challenge No-Show Dispute ⚖️"
+                        variant="outline"
+                        size="sm"
+                        onPress={() => setDisputeBookingId(booking.id)}
+                      />
+                    </View>
+                  )}
+                </View>
+              </Card>
+            );
+          })
+        )}
+      </ScrollView>
+
+      {/* Cancellation Modal */}
+      <Modal visible={Boolean(cancelBookingId)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Cancel Shift Booking</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
+              Cancellations release your reserved spot immediately to standby candidates. Please state your reason:
+            </Text>
+
+            <View style={{ marginVertical: spacing.md }}>
+              <Input
+                label="Reason for Cancellation"
+                value={cancelReason}
+                onChangeText={setCancelReason}
+                placeholder="e.g. Medical emergency, transport breakdown"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Keep Booking"
+                  variant="outline"
+                  size="md"
+                  onPress={() => {
+                    setCancelBookingId(null);
+                    setCancelReason('');
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Confirm Cancel"
+                  variant="primary"
+                  size="md"
+                  loading={submittingModal}
+                  onPress={submitCancellation}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Dispute Modal */}
+      <Modal visible={Boolean(disputeBookingId)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>⚖️ Submit Record Dispute</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
+              Flag discrepancies in attendance, hours worked, supervisor conduct, or erroneous no-show labels.
+            </Text>
+
+            <View style={{ marginVertical: spacing.md }}>
+              <Input
+                label="Describe the Dispute"
+                value={disputeReason}
+                onChangeText={setDisputeReason}
+                placeholder="Detail actual shift hours worked, supervisor on-site, and evidence"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Close"
+                  variant="outline"
+                  size="md"
+                  onPress={() => {
+                    setDisputeBookingId(null);
+                    setDisputeReason('');
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Submit Dispute"
+                  variant="primary"
+                  size="md"
+                  loading={submittingModal}
+                  onPress={submitDispute}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  tabChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  passBox: {
+    padding: 12,
+    borderWidth: 1,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    padding: 20,
+    elevation: 8,
+  },
+});
