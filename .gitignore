@@ -31,6 +31,7 @@ build/
 .env.production
 .env.preview
 !.env.example
+!.env.production.template
 
 # OS / Editor
 .DS_Store
