@@ -13,6 +13,7 @@
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. CUSTOM ENUMS
 DO $$ BEGIN
@@ -115,7 +116,7 @@ CREATE TABLE IF NOT EXISTS worker_profiles (
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
   is_aadhaar_verified BOOLEAN NOT NULL DEFAULT false,
   is_pan_verified BOOLEAN NOT NULL DEFAULT false,
-  rating NUMERIC(3, 2) DEFAULT 5.00,
+  rating NUMERIC(3, 2) DEFAULT NULL,
   total_reviews INTEGER NOT NULL DEFAULT 0,
   shifts_completed INTEGER NOT NULL DEFAULT 0,
   upi_id TEXT,
@@ -136,7 +137,7 @@ CREATE TABLE IF NOT EXISTS organizer_profiles (
   billing_address TEXT,
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
   profile_completion_status TEXT NOT NULL DEFAULT 'incomplete' CHECK (profile_completion_status IN ('incomplete', 'completed')),
-  rating NUMERIC(3, 2) DEFAULT 5.00,
+  rating NUMERIC(3, 2) DEFAULT NULL,
   total_events_hosted INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -1245,8 +1246,8 @@ BEGIN
     VALUES (p_job_id, p_worker_id, 'confirmed', p_notes);
   END IF;
 
-  -- 6. Generate distinct, cryptographically random per-booking check-in credential
-  v_check_in_code := 'OP-' || upper(substr(md5(random()::text || clock_timestamp()::text || p_worker_id::text), 1, 6));
+  -- 6. Generate distinct, cryptographically secure per-booking check-in credential (CSPRNG via gen_random_bytes)
+  v_check_in_code := 'OP-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 6));
 
   -- Insert Booking Record with provisioned credential
   INSERT INTO bookings (
@@ -3571,20 +3572,20 @@ BEGIN
   -- 2. Check for active organizer shifts/jobs
   IF EXISTS (
     SELECT 1 FROM jobs 
-    WHERE organizer_id = v_user_id AND status IN ('published', 'in_progress')
+    WHERE organizer_id = v_user_id AND status IN ('open', 'filling', 'filled', 'in_progress')
   ) THEN
     RETURN jsonb_build_object(
       'success', false,
       'error_code', 'ACTIVE_JOBS_PENDING',
-      'message', 'Cannot request deletion with published or in-progress shifts. Please close or complete all active shifts first.'
+      'message', 'Cannot request deletion with open, active, or in-progress shifts. Please close or complete all active shifts first.'
     );
   END IF;
 
   -- 3. Check for unsettled payments / held escrow
   IF EXISTS (
     SELECT 1 FROM payment_records 
-    WHERE (recipient_id = v_user_id OR organizer_id = v_user_id) 
-      AND status IN ('escrow_held', 'initiated', 'pending')
+    WHERE (worker_id = v_user_id OR organizer_id = v_user_id) 
+      AND status IN ('pending', 'escrow_locked', 'processing')
   ) THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -3645,6 +3646,114 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) TO authenticated;
+
+-- 11. RPC: PURGE WORKER / SCHEDULER TO PROCESS DUE ACCOUNT DELETIONS
+CREATE OR REPLACE FUNCTION process_account_deletion_purge_safe(
+  p_batch_size INT DEFAULT 50
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rec RECORD;
+  v_purged_count INT := 0;
+  v_now TIMESTAMPTZ := now();
+BEGIN
+  -- Strict administrative or service role authorization
+  IF NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Administrative credentials required to run purge worker.');
+  END IF;
+
+  FOR v_rec IN 
+    SELECT r.id AS request_id, r.user_id, p.full_name, p.role
+    FROM account_deletion_requests r
+    JOIN profiles p ON p.id = r.user_id
+    WHERE r.status = 'queued' 
+      AND r.scheduled_purge_at <= v_now
+    ORDER BY r.scheduled_purge_at ASC
+    LIMIT p_batch_size
+    FOR UPDATE SKIP LOCKED
+  LOOP
+    -- Mark as processing
+    UPDATE account_deletion_requests 
+    SET status = 'processing', updated_at = v_now 
+    WHERE id = v_rec.request_id;
+
+    -- Redact PII in worker_profiles or organizer_profiles preserving financial record integrity
+    UPDATE worker_profiles
+    SET
+      bio = NULL,
+      upi_id = NULL,
+      skills = '{}',
+      service_areas = '{}',
+      preferred_locality = 'Deactivated Locality',
+      updated_at = v_now
+    WHERE id = v_rec.user_id;
+
+    UPDATE organizer_profiles
+    SET
+      business_name = 'Redacted Deactivated Organization',
+      business_contact_email = NULL,
+      business_contact_phone = '0000000000',
+      billing_address = NULL,
+      gstin = NULL,
+      updated_at = v_now
+    WHERE id = v_rec.user_id;
+
+    -- Redact base profile identity (GDPR / Indian DPDP Right to be Forgotten)
+    UPDATE profiles
+    SET
+      full_name = 'Deactivated User',
+      email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
+      phone = NULL,
+      avatar_url = NULL,
+      is_active = false,
+      updated_at = v_now
+    WHERE id = v_rec.user_id;
+
+    -- Mark request as completed
+    UPDATE account_deletion_requests 
+    SET status = 'completed', updated_at = v_now 
+    WHERE id = v_rec.request_id;
+
+    -- Log purge execution in immutable compliance audit trail
+    INSERT INTO audit_logs (
+      actor_id,
+      action,
+      entity_type,
+      entity_id,
+      changes,
+      created_at
+    ) VALUES (
+      COALESCE(auth.uid(), v_rec.user_id),
+      'account_purged',
+      'profile',
+      v_rec.user_id::text,
+      jsonb_build_object(
+        'request_id', v_rec.request_id,
+        'purged_at', v_now,
+        'status', 'completed',
+        'pii_redacted', true
+      ),
+      v_now
+    );
+
+    v_purged_count := v_purged_count + 1;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'purged_count', v_purged_count,
+    'executed_at', v_now
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO authenticated;
+
 
 
 

@@ -447,36 +447,33 @@ export async function processPaymentWebhookSafe(
       p_payload: payload,
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('Payment webhook RPC failure — failing closed', rpcError, {
+        provider,
+        eventId,
+        eventType,
+      });
       return {
-        success: rpcData.success,
-        duplicate: rpcData.duplicate,
+        success: false,
+        error: rpcError.message || 'Webhook processing failed in database RPC',
       };
     }
 
-    // Fallback: check if event exists
-    const { data: existing } = await supabase
-      .from('payment_webhook_events')
-      .select('id')
-      .eq('event_id', eventId)
-      .single();
-
-    if (existing) {
-      return { success: true, duplicate: true };
+    if (rpcData) {
+      return {
+        success: Boolean(rpcData.success),
+        duplicate: Boolean(rpcData.duplicate),
+        error: rpcData.error,
+      };
     }
 
-    await supabase.from('payment_webhook_events').insert({
-      provider,
-      event_id: eventId,
-      event_type: eventType,
-      payload,
-      status: 'processed',
-      processed_at: new Date().toISOString(),
-    });
-
-    return { success: true, duplicate: false };
+    return {
+      success: false,
+      error: 'Empty response returned from payment webhook processor',
+    };
   } catch (err: any) {
-    return { success: false, error: err.message };
+    logger.error('Payment webhook processing exception', err, { provider, eventId });
+    return { success: false, error: err.message || 'Unexpected webhook error' };
   }
 }
 

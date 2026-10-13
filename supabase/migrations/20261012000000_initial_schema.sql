@@ -6,6 +6,7 @@
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. CUSTOM ENUMS
 DO $$ BEGIN
@@ -108,7 +109,7 @@ CREATE TABLE IF NOT EXISTS worker_profiles (
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
   is_aadhaar_verified BOOLEAN NOT NULL DEFAULT false,
   is_pan_verified BOOLEAN NOT NULL DEFAULT false,
-  rating NUMERIC(3, 2) DEFAULT 5.00,
+  rating NUMERIC(3, 2) DEFAULT NULL,
   total_reviews INTEGER NOT NULL DEFAULT 0,
   shifts_completed INTEGER NOT NULL DEFAULT 0,
   upi_id TEXT,
@@ -129,7 +130,7 @@ CREATE TABLE IF NOT EXISTS organizer_profiles (
   billing_address TEXT,
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
   profile_completion_status TEXT NOT NULL DEFAULT 'incomplete' CHECK (profile_completion_status IN ('incomplete', 'completed')),
-  rating NUMERIC(3, 2) DEFAULT 5.00,
+  rating NUMERIC(3, 2) DEFAULT NULL,
   total_events_hosted INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
