@@ -12,6 +12,7 @@ import {
   Badge,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
+import { fetchUserProfile, supabase } from '@opskil/shared';
 
 export default function WorkerLoginScreen() {
   const router = useRouter();
@@ -58,6 +59,20 @@ export default function WorkerLoginScreen() {
     try {
       const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'worker');
       if (res?.session) {
+        // Authoritative role check: verify worker account is active
+        const profile = await fetchUserProfile(res.session.user.id);
+        if (!profile || profile.isActive === false || (profile.role !== 'worker' && profile.role !== 'admin')) {
+          await supabase.auth.signOut().catch(() => {});
+          Alert.alert(
+            'Unauthorized Account',
+            profile && profile.role === 'organizer'
+              ? 'This email is registered with an Organizer account. Please use the Opskl Organizer app.'
+              : 'Unable to verify an active Worker account for this email.'
+          );
+          setLoading(false);
+          return;
+        }
+
         Alert.alert('Verified', 'Session authenticated successfully.', [
           { text: 'Continue', onPress: () => router.replace('/(tabs)' as any) },
         ]);

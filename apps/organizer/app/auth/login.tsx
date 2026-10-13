@@ -12,7 +12,7 @@ import {
   Badge,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
-import { fetchUserProfile } from '@opskil/shared';
+import { fetchUserProfile, supabase } from '@opskil/shared';
 
 export default function OrganizerLoginScreen() {
   const router = useRouter();
@@ -59,12 +59,15 @@ export default function OrganizerLoginScreen() {
     try {
       const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'organizer');
       if (res?.session) {
-        // Authoritative role check: verify user profile has organizer or admin role
+        // Authoritative role check: verify user profile exists, is active, and possesses organizer or admin role
         const profile = await fetchUserProfile(res.session.user.id);
-        if (profile && profile.role !== 'organizer' && profile.role !== 'admin') {
+        if (!profile || profile.isActive === false || (profile.role !== 'organizer' && profile.role !== 'admin')) {
+          await supabase.auth.signOut().catch(() => {});
           Alert.alert(
-            'Worker Account Detected',
-            'This email is registered with a Worker profile. Please sign in via the Opskl Worker app or contact support to request an organizer account transition.'
+            'Unauthorized Account',
+            profile && profile.role === 'worker'
+              ? 'This email is registered with a Worker profile. Please sign in via the Opskl Worker app.'
+              : 'Unable to verify an active Organizer account for this email. Please check your credentials or register.'
           );
           setLoading(false);
           return;

@@ -67,15 +67,23 @@ async function run() {
 
       if (appliedMap.has(file)) {
         const storedChecksum = appliedMap.get(file);
-        if (storedChecksum && storedChecksum !== currentChecksum && !storedChecksum.includes('=')) {
-          console.error(`\x1b[31m  ✗ CHECKSUM MISMATCH on ${file}!\x1b[0m`);
-          console.error(`    Applied checksum: ${storedChecksum}`);
-          console.error(`    Current  checksum: ${currentChecksum}`);
-          console.error(`    A previously applied migration file has been altered. Create a new sequential migration instead.`);
-          process.exit(1);
+        // Strict SHA-256 validation: if stored checksum is legacy Base64 or mismatched, reconcile or fail closed
+        if (storedChecksum) {
+          if (storedChecksum === currentChecksum) {
+            console.log(`[${i + 1}/${migrationFiles.length}] Skipping ${file} (verified SHA-256: ${currentChecksum.slice(0, 10)}...)`);
+            continue;
+          }
+
+          // If legacy Base64 format was previously recorded, upgrade it to current verified SHA-256
+          const isLegacyBase64 = storedChecksum === Buffer.from(file).toString('base64');
+          if (isLegacyBase64) {
+            console.log(`[${i + 1}/${migrationFiles.length}] Upgrading legacy Base64 checksum for ${file} to SHA-256...`);
+            await client.query('UPDATE _opskil_migrations SET checksum = $1 WHERE filename = $2', [currentChecksum, file]);
+            continue;
+          }
+
+          throw new Error(`CHECKSUM MISMATCH on ${file}! Applied checksum (${storedChecksum}) does not match current file digest (${currentChecksum}). Create a new sequential migration instead of modifying applied files.`);
         }
-        console.log(`[${i + 1}/${migrationFiles.length}] Skipping ${file} (already applied and verified)`);
-        continue;
       }
 
       console.log(`[${i + 1}/${migrationFiles.length}] Executing ${file}...`);
@@ -90,11 +98,10 @@ async function run() {
         console.log(`\x1b[32m  ✓ Completed and committed ${file} [SHA-256: ${currentChecksum.slice(0, 10)}...]\x1b[0m`);
       } catch (err) {
         await client.query('ROLLBACK');
-        console.error(`\x1b[31m  ✗ FAILED on ${file}:\x1b[0m`, err.message);
         if (err.position) {
           console.error(`    At character position: ${err.position}`);
         }
-        process.exit(1);
+        throw new Error(`Failed to apply migration ${file}: ${err.message}`);
       }
     }
 
@@ -109,14 +116,17 @@ async function run() {
       { name: 'Payment Records & Escrow', sql: "SELECT id, worker_id, organizer_id, status FROM payment_records LIMIT 1;" },
       { name: 'Organizer Invoices Table', sql: "SELECT id, total_payable, status FROM organizer_invoices LIMIT 1;" },
       { name: 'Account Deletion Queue', sql: "SELECT id, user_id, status, scheduled_purge_at FROM account_deletion_requests LIMIT 1;" },
-      { name: 'Purge Worker Function', sql: "SELECT proname FROM pg_proc WHERE proname = 'process_account_deletion_purge_safe';" },
-      { name: 'Provisioning RPC Function', sql: "SELECT proname FROM pg_proc WHERE proname = 'ensure_user_profile_provisioned_safe';" },
+      { name: 'Purge Worker Function Presence & Definer', sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'process_account_deletion_purge_safe';", assertRows: true },
+      { name: 'Provisioning RPC Function Presence & Definer', sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'ensure_user_profile_provisioned_safe';", assertRows: true },
     ];
 
     let verificationFailed = false;
     for (const q of verificationQueries) {
       try {
-        await client.query(q.sql);
+        const res = await client.query(q.sql);
+        if (q.assertRows && (!res.rows || res.rows.length === 0)) {
+          throw new Error(`Expected at least 1 record for ${q.name}, but 0 rows returned.`);
+        }
         console.log(`\x1b[32m  ✓ Verified: ${q.name}\x1b[0m`);
       } catch (err) {
         console.error(`\x1b[31m  ✗ Verification failed: ${q.name}\x1b[0m (${err.message})`);
@@ -125,8 +135,7 @@ async function run() {
     }
 
     if (verificationFailed) {
-      console.error('\n\x1b[31m[FAILED] Schema health integrity checks failed.\x1b[0m\n');
-      process.exit(1);
+      throw new Error('One or more schema health verification checks failed.');
     }
 
     console.log('\n\x1b[32m🎉 ALL MIGRATIONS DEPLOYED AND INTEGRITY CHECKS PASSED!\x1b[0m\n');
@@ -138,6 +147,6 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error('\x1b[31m[FATAL ERROR]\x1b[0m', err);
+  console.error('\x1b[31m[FATAL ERROR]\x1b[0m', err.message || err);
   process.exit(1);
 });

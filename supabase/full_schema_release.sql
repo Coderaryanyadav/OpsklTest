@@ -1527,9 +1527,9 @@ BEGIN
     END IF;
   END IF;
 
-  -- 5. Calculate GPS distance and enforce geofence boundary
+  -- 5. Calculate GPS distance and enforce venue geofence boundary
   IF NOT v_is_supervisor THEN
-    -- For worker self-check-in, GPS coordinates are mandatory to enforce the venue geofence
+    -- For worker self-check-in, GPS coordinates from the device are mandatory
     IF p_lat IS NULL OR p_lng IS NULL THEN
       RETURN jsonb_build_object(
         'success', false,
@@ -1538,38 +1538,56 @@ BEGIN
       );
     END IF;
 
-    IF v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
-      v_distance := round(
-        (6371 * acos(
-          least(1.0, greatest(-1.0,
-            cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
-            cos(radians(v_job.longitude) - radians(p_lng)) +
-            sin(radians(p_lat)) * sin(radians(v_job.latitude))
-          ))
-        ))::numeric, 2
+    -- Coordinate range validation (Latitude [-90, 90], Longitude [-180, 180])
+    IF p_lat < -90.0 OR p_lat > 90.0 OR p_lng < -180.0 OR p_lng > 180.0 THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'INVALID_COORDINATES',
+        'message', 'Submitted GPS coordinates are out of valid geographic range.'
       );
+    END IF;
 
-      -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
-      IF v_distance > 5.0 THEN
-        RETURN jsonb_build_object(
-          'success', false,
-          'error_code', 'OUT_OF_GEOFENCE_RANGE',
-          'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
-        );
-      END IF;
+    -- Strict venue coordinate requirement: if venue location is unconfigured, self-check-in must be rejected
+    IF v_job.latitude IS NULL OR v_job.longitude IS NULL THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'VENUE_COORDINATES_MISSING',
+        'message', 'Shift venue location coordinates are not configured. On-site supervisor verification required for check-in.'
+      );
+    END IF;
+
+    v_distance := round(
+      (6371 * acos(
+        least(1.0, greatest(-1.0,
+          cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+          cos(radians(v_job.longitude) - radians(p_lng)) +
+          sin(radians(p_lat)) * sin(radians(v_job.latitude))
+        ))
+      ))::numeric, 2
+    );
+
+    -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
+    IF v_distance > 5.0 THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'OUT_OF_GEOFENCE_RANGE',
+        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+      );
     END IF;
   ELSE
-    -- For supervisor check-in, compute distance optionally if coordinates provided
+    -- For supervisor check-in, compute distance if both coordinates are present and valid
     IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
-      v_distance := round(
-        (6371 * acos(
-          least(1.0, greatest(-1.0,
-            cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
-            cos(radians(v_job.longitude) - radians(p_lng)) +
-            sin(radians(p_lat)) * sin(radians(v_job.latitude))
-          ))
-        ))::numeric, 2
-      );
+      IF p_lat >= -90.0 AND p_lat <= 90.0 AND p_lng >= -180.0 AND p_lng <= 180.0 THEN
+        v_distance := round(
+          (6371 * acos(
+            least(1.0, greatest(-1.0,
+              cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+              cos(radians(v_job.longitude) - radians(p_lng)) +
+              sin(radians(p_lat)) * sin(radians(v_job.latitude))
+            ))
+          ))::numeric, 2
+        );
+      END IF;
     END IF;
   END IF;
 

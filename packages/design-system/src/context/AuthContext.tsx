@@ -46,9 +46,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const loadingLockRef = React.useRef(false);
+  const requestIdRef = React.useRef(0);
+  const pendingRequestRef = React.useRef<{ session: Session | null; expectedRole?: UserRole } | null>(null);
 
   const loadUserData = async (currentSession: Session | null, expectedRole?: UserRole) => {
     if (!currentSession?.user) {
+      requestIdRef.current += 1;
       setUser(null);
       setProfile(null);
       setWorkerProfile(null);
@@ -58,13 +61,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     if (loadingLockRef.current) {
+      // Queue the newest request so session transitions arriving during an active load are never dropped
+      pendingRequestRef.current = { session: currentSession, expectedRole };
       return;
     }
+
     loadingLockRef.current = true;
+    const thisRequestId = ++requestIdRef.current;
 
     try {
       const u = currentSession.user;
-      setUser(u);
 
       let p = await fetchUserProfile(u.id);
       if (!p && u.id) {
@@ -85,25 +91,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (rpcErr || (rpcRes && rpcRes.success === false)) {
             logger.error('Authoritative profile provisioning RPC rejected — failing closed', rpcErr || rpcRes, { userId: u.id });
             await supabase.auth.signOut();
-            setUser(null);
-            setProfile(null);
-            setWorkerProfile(null);
-            setOrganizerProfile(null);
-            setLoading(false);
+            if (thisRequestId === requestIdRef.current) {
+              setUser(null);
+              setProfile(null);
+              setWorkerProfile(null);
+              setOrganizerProfile(null);
+            }
             return;
           }
         } catch (rpcErr) {
           logger.error('Authoritative profile provisioning RPC network/database exception — failing closed', rpcErr, { userId: u.id });
           await supabase.auth.signOut();
-          setUser(null);
-          setProfile(null);
-          setWorkerProfile(null);
-          setOrganizerProfile(null);
-          setLoading(false);
+          if (thisRequestId === requestIdRef.current) {
+            setUser(null);
+            setProfile(null);
+            setWorkerProfile(null);
+            setOrganizerProfile(null);
+          }
           return;
         }
 
         p = await fetchUserProfile(u.id);
+      }
+
+      // If a newer session request was initiated while fetching, drop this stale completion
+      if (thisRequestId !== requestIdRef.current) {
+        return;
       }
 
       // Fail-closed security rule:
@@ -115,7 +128,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProfile(null);
         setWorkerProfile(null);
         setOrganizerProfile(null);
-        setLoading(false);
         return;
       }
 
@@ -128,29 +140,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProfile(null);
         setWorkerProfile(null);
         setOrganizerProfile(null);
-        setLoading(false);
         return;
       }
 
+      // Atomically publish validated session and role profiles
+      setUser(u);
       setProfile(p);
 
       if (p.role === 'worker') {
         const wp = await fetchWorkerProfile(u.id);
-        setWorkerProfile(wp);
+        if (thisRequestId === requestIdRef.current) {
+          setWorkerProfile(wp);
+          setOrganizerProfile(null);
+        }
       } else if (p.role === 'organizer') {
         const op = await fetchOrganizerProfile(u.id);
-        setOrganizerProfile(op);
+        if (thisRequestId === requestIdRef.current) {
+          setOrganizerProfile(op);
+          setWorkerProfile(null);
+        }
       }
     } catch (err) {
       logger.error('Error loading user profile data in AuthProvider — failing closed', err);
       await supabase.auth.signOut().catch(() => {});
-      setUser(null);
-      setProfile(null);
-      setWorkerProfile(null);
-      setOrganizerProfile(null);
+      if (thisRequestId === requestIdRef.current) {
+        setUser(null);
+        setProfile(null);
+        setWorkerProfile(null);
+        setOrganizerProfile(null);
+      }
     } finally {
       loadingLockRef.current = false;
       setLoading(false);
+
+      // If a subsequent session was queued while this load was executing, process it immediately
+      if (pendingRequestRef.current) {
+        const next = pendingRequestRef.current;
+        pendingRequestRef.current = null;
+        loadUserData(next.session, next.expectedRole);
+      }
     }
   };
 
