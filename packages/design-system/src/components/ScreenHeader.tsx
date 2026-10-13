@@ -1,4 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
 export interface ScreenHeaderProps {
@@ -46,17 +47,7 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
             accessibilityLabel="Go back"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderLeftWidth: 2.2,
-                borderBottomWidth: 2.2,
-                borderColor: colors.textPrimary,
-                transform: [{ rotate: '45deg' }],
-                marginLeft: 3,
-              }}
-            />
+            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         ) : null}
 

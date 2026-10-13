@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@opskil/shared": "*"
+    "@opskil/shared": "*",
+    "lucide-react-native": "^1.56.0",
+    "react-native-svg": "^15.15.5"
   },
   "peerDependencies": {
     "react": "*",

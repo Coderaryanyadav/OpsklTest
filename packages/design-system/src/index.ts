@@ -14,4 +14,5 @@ export * from './components/BottomSheet';
 export * from './components/Dialog';
 export * from './components/KeyboardAwareContainer';
 export * from './components/Skeleton';
+export * from './components/Icon';
 export * from './hooks/usePushNotifications';

@@ -1,19 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
-import { useOpsklTheme } from '@opskil/design-system';
-
-interface TabIconProps {
-  iconSymbol: string;
-  color: any;
-}
-
-const TabIcon: React.FC<TabIconProps> = ({ iconSymbol, color }) => {
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 20, color }}>{iconSymbol}</Text>
-    </View>
-  );
-};
+import { useOpsklTheme, Compass, ClipboardList, IndianRupee, User } from '@opskil/design-system';
 
 export default function TabsLayout() {
   const { colors } = useOpsklTheme();
@@ -28,9 +14,9 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 60,
+          height: 62,
           paddingBottom: 8,
-          paddingTop: 6,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -43,7 +29,7 @@ export default function TabsLayout() {
         options={{
           title: 'Discover',
           tabBarIcon: ({ color }) => (
-            <TabIcon iconSymbol="⚡" color={color} />
+            <Compass size={22} color={color} strokeWidth={2} />
           ),
         }}
       />
@@ -52,7 +38,7 @@ export default function TabsLayout() {
         options={{
           title: 'My Shifts',
           tabBarIcon: ({ color }) => (
-            <TabIcon iconSymbol="📋" color={color} />
+            <ClipboardList size={22} color={color} strokeWidth={2} />
           ),
         }}
       />
@@ -61,7 +47,7 @@ export default function TabsLayout() {
         options={{
           title: 'Earnings',
           tabBarIcon: ({ color }) => (
-            <TabIcon iconSymbol="₹" color={color} />
+            <IndianRupee size={22} color={color} strokeWidth={2} />
           ),
         }}
       />
@@ -70,7 +56,7 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => (
-            <TabIcon iconSymbol="👤" color={color} />
+            <User size={22} color={color} strokeWidth={2} />
           ),
         }}
       />
