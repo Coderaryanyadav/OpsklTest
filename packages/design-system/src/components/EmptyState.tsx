@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Search } from 'lucide-react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 import { Button } from './Button';
 
 export interface EmptyStateProps {
-  icon?: React.ReactNode | string;
+  icon?: React.ReactNode;
   title: string;
   description: string;
   actionTitle?: string;
@@ -25,15 +26,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View style={styles.container}>
-      {icon ? (
-        <View style={[styles.iconContainer, { backgroundColor: colors.surfaceMuted }]}>
-          {typeof icon === 'string' ? (
-            <Text style={styles.icon}>{icon}</Text>
-          ) : (
-            icon
-          )}
-        </View>
-      ) : null}
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceMuted }]}>
+        {icon ? (
+          icon
+        ) : (
+          <Search size={32} color={colors.textMuted} strokeWidth={2} />
+        )}
+      </View>
       <Text style={[typography.h2, { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.xs }]}>
         {title}
       </Text>

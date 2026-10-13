@@ -21,6 +21,7 @@ import {
   formatDistance,
   formatDeadline,
 } from '@opskil/shared';
+import { Calendar, MapPin, Utensils, Car, Coffee, Zap, X } from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
 export interface JobDetailSheetProps {
@@ -62,9 +63,9 @@ export function JobDetailSheet({
         <View style={[styles.headerBar, { borderBottomColor: colors.border }]}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Badge label={job.category.toUpperCase()} variant="primary" size="sm" />
+              <Badge label={job.category.charAt(0).toUpperCase() + job.category.slice(1)} variant="primary" size="sm" />
               {job.organizer?.verificationStatus === 'verified' && (
-                <Badge label="✓ VERIFIED HOST" variant="success" size="sm" />
+                <Badge label="Verified Host" variant="success" size="sm" />
               )}
             </View>
             <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 4 }]} numberOfLines={1}>
@@ -88,7 +89,7 @@ export function JobDetailSheet({
             accessibilityRole="button"
             accessibilityLabel="Close sheet"
           >
-            <Text style={[styles.closeIcon, { color: colors.textPrimary }]}>✕</Text>
+            <X size={18} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         </View>
 
@@ -115,12 +116,13 @@ export function JobDetailSheet({
                   {formatINR(job.hourlyRate)}/hr × {job.durationHours} hours
                 </Text>
               </View>
-              <Badge label="ESCROW PROTECTED" variant="success" />
+              <Badge label="Direct UPI on Sign-off" variant="success" />
             </View>
 
-            <View style={[styles.escrowNotice, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-                🛡️ Organizers lock shift payments into Opskl escrow before booking. Your earnings are released directly to your verified UPI handle within hours of supervisor sign-off.
+            <View style={[styles.escrowNotice, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 }]}>
+              <Zap size={15} color={colors.primary} strokeWidth={2.2} />
+              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, flex: 1 }}>
+                Organizers approve direct UPI payout upon supervisor shift sign-off. Payouts transfer directly to your registered UPI handle.
               </Text>
             </View>
           </View>
@@ -132,7 +134,7 @@ export function JobDetailSheet({
             </Text>
 
             <View style={styles.detailRow}>
-              <Text style={styles.rowIcon}>📅</Text>
+              <Calendar size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>
                   {formatISTDate(job.date)}
@@ -147,7 +149,7 @@ export function JobDetailSheet({
             </View>
 
             <View style={[styles.detailRow, { marginTop: spacing.sm }]}>
-              <Text style={styles.rowIcon}>📍</Text>
+              <MapPin size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>
                   {job.venueName}
@@ -189,19 +191,19 @@ export function JobDetailSheet({
             </Text>
             <View style={{ gap: 8 }}>
               <View style={styles.conditionRow}>
-                <Text style={styles.conditionIcon}>🍽️</Text>
+                <Utensils size={15} color={colors.primary} strokeWidth={2} style={{ marginRight: 8 }} />
                 <Text style={[styles.conditionText, { color: colors.textPrimary }]}>
                   Meals: {job.mealProvided ? 'Provided on-site by organizer' : 'Not provided'}
                 </Text>
               </View>
               <View style={styles.conditionRow}>
-                <Text style={styles.conditionIcon}>🚕</Text>
+                <Car size={15} color={colors.primary} strokeWidth={2} style={{ marginRight: 8 }} />
                 <Text style={[styles.conditionText, { color: colors.textPrimary }]}>
                   Transport: {job.transportProvided ? 'Travel allowance / transport provided' : 'Self-arranged transport'}
                 </Text>
               </View>
               <View style={styles.conditionRow}>
-                <Text style={styles.conditionIcon}>☕</Text>
+                <Coffee size={15} color={colors.primary} strokeWidth={2} style={{ marginRight: 8 }} />
                 <Text style={[styles.conditionText, { color: colors.textPrimary }]}>
                   Breaks: {job.breaksMinutes || 30} minutes total shift break
                 </Text>

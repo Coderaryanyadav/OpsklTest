@@ -300,7 +300,7 @@ export default function OrganizerShiftDetailScreen() {
                   c.id === booking.id ? { ...c, status: 'completed', completedAt: new Date().toISOString() } : c
                 )
               );
-              Alert.alert('🎉 Payout Initiated', `Attendance confirmed. ${formatINR(booking.agreedTotalPay)} initiated to ${workerName}.`);
+              Alert.alert('Payout Initiated', `Attendance confirmed. ${formatINR(booking.agreedTotalPay)} initiated to ${workerName}.`);
             } else {
               Alert.alert('Error', res.error || 'Failed to approve attendance.');
             }
@@ -464,11 +464,11 @@ export default function OrganizerShiftDetailScreen() {
                         {profile?.fullName || 'Worker'}
                       </Text>
                       {worker?.verificationStatus === 'verified' && (
-                        <Badge label="✓ ID" variant="success" size="sm" />
+                        <Badge label="VERIFIED" variant="success" size="sm" />
                       )}
                     </View>
                     <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                      📞 {profile?.phone || '+91 98200 98200'} • ★ {worker?.rating?.toFixed(1) || '5.0'}
+                      {profile?.phone || '+91 98200 98200'} • ★ {worker?.rating?.toFixed(1) || '5.0'}
                     </Text>
                     <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
                       Token: {member.checkInCode || 'OP-4829'}
@@ -493,14 +493,14 @@ export default function OrganizerShiftDetailScreen() {
                     <>
                       <View style={{ flex: 1.5 }}>
                         <Button
-                          title="✓ Confirm Check-In"
+                          title="Confirm Check-In"
                           variant="primary"
                           size="sm"
                           onPress={() => handleVerifyCheckIn(member)}
                         />
                       </View>
                       <Button
-                        title="⚠️ No-Show"
+                        title="Mark No-Show"
                         variant="ghost"
                         size="sm"
                         fullWidth={false}
@@ -519,7 +519,7 @@ export default function OrganizerShiftDetailScreen() {
                   {isCheckedIn && (
                     <View style={{ flex: 1 }}>
                       <Button
-                        title="🏁 Record Check-Out"
+                        title="Record Check-Out"
                         variant="primary"
                         size="sm"
                         onPress={() => handleRecordCheckOut(member)}
@@ -530,7 +530,7 @@ export default function OrganizerShiftDetailScreen() {
                   {isAwaitingReview && (
                     <View style={{ flex: 1 }}>
                       <Button
-                        title="✓ Approve Attendance & Payout"
+                        title="Approve Attendance & Payout"
                         variant="primary"
                         size="sm"
                         onPress={() => handleApproveAttendance(member)}

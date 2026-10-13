@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, Activ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Card, Badge, Button, useAuth } from '@opskil/design-system';
-import { fetchOrganizerProfile, OrganizerProfile } from '@opskil/shared';
+import { fetchOrganizerProfile, OrganizerProfile, requestAccountDeletionSafe } from '@opskil/shared';
 
 export default function OrganizerProfileScreen() {
   const router = useRouter();
@@ -70,6 +70,9 @@ export default function OrganizerProfileScreen() {
           text: 'Request Deletion',
           style: 'destructive',
           onPress: async () => {
+            if (userId) {
+              await requestAccountDeletionSafe(userId, 'Organizer requested in-app account deletion');
+            }
             await signOut();
             Alert.alert(
               'Request Registered',

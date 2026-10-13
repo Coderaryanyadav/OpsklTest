@@ -21,6 +21,7 @@ import {
   applyForJobSafe,
   Job,
 } from '@opskil/shared';
+import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
 
 export default function WorkerShiftDetailScreen() {
   const router = useRouter();
@@ -199,7 +200,7 @@ export default function WorkerShiftDetailScreen() {
         {/* Schedule & Venue Card */}
         <Card variant="outlined" style={{ borderRadius: radii.xl, gap: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📅</Text>
+            <Calendar size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                 {formatISTDate(shift.date)}
@@ -213,7 +214,7 @@ export default function WorkerShiftDetailScreen() {
           <View style={{ height: 1, backgroundColor: colors.border }} />
 
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📍</Text>
+            <MapPin size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                 {shift.venueName}
@@ -233,7 +234,7 @@ export default function WorkerShiftDetailScreen() {
             <>
               <View style={{ height: 1, backgroundColor: colors.border }} />
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📌</Text>
+                <FileText size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                     Reporting Instructions
@@ -272,19 +273,31 @@ export default function WorkerShiftDetailScreen() {
             Conditions & Logistics
           </Text>
           <View style={{ gap: 8 }}>
-            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              🍽️ Meals: {shift.mealProvided ? 'Provided on-site' : 'Self-arranged'}
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              🚕 Travel: {shift.transportProvided ? 'Allowance / cab provided' : 'Self-arranged'}
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              ☕ Breaks: {shift.breaksMinutes ? `${shift.breaksMinutes} minutes` : 'Standard rest breaks'}
-            </Text>
-            {shift.overtimePolicy ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Utensils size={15} color={colors.primary} strokeWidth={2} />
               <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                ⏱️ Overtime: {shift.overtimePolicy}
+                Meals: {shift.mealProvided ? 'Provided on-site' : 'Self-arranged'}
               </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Car size={15} color={colors.primary} strokeWidth={2} />
+              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                Travel: {shift.transportProvided ? 'Allowance / cab provided' : 'Self-arranged'}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Coffee size={15} color={colors.primary} strokeWidth={2} />
+              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                Breaks: {shift.breaksMinutes ? `${shift.breaksMinutes} minutes` : 'Standard rest breaks'}
+              </Text>
+            </View>
+            {shift.overtimePolicy ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Clock size={15} color={colors.primary} strokeWidth={2} />
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  Overtime: {shift.overtimePolicy}
+                </Text>
+              </View>
             ) : null}
             {shift.applicationDeadline ? (
               <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>

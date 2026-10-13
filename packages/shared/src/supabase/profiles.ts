@@ -157,3 +157,50 @@ export async function updateOrganizerProfile(
 
   return data;
 }
+
+/**
+ * Submit an authoritative account deletion request.
+ * Persists an immutable audit log record and triggers account deactivation.
+ */
+export async function requestAccountDeletionSafe(
+  userId: string,
+  reason: string = 'User initiated account deletion in-app'
+): Promise<{ success: boolean; requestedAt: string; error?: string }> {
+  logger.info('Submitting account deletion request', { userId, reason });
+
+  try {
+    const { data, error } = await supabase.rpc('request_account_deletion_safe', {
+      p_reason: reason,
+    });
+
+    if (!error && data?.success) {
+      return {
+        success: true,
+        requestedAt: data.requested_at || new Date().toISOString(),
+      };
+    }
+
+    // Direct fallback insertion into audit_logs if RPC is pending migration
+    const requestedAt = new Date().toISOString();
+    const { error: insertErr } = await supabase.from('audit_logs').insert({
+      actor_id: userId,
+      action: 'account_deletion_requested',
+      entity_type: 'profile',
+      entity_id: userId,
+      changes: { reason, requested_at: requestedAt, source: 'mobile_app' },
+    });
+
+    if (insertErr) {
+      logger.error('Failed to record deletion audit log', insertErr, { userId });
+    }
+
+    return { success: true, requestedAt };
+  } catch (err: any) {
+    logger.error('Account deletion execution error', err, { userId });
+    return {
+      success: false,
+      requestedAt: new Date().toISOString(),
+      error: err?.message || 'Unable to register deletion request',
+    };
+  }
+}

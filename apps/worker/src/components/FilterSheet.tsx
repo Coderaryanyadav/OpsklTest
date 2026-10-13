@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOpsklTheme, Button } from '@opskil/design-system';
 import { DiscoveryFeedFilters, ShiftCategory } from '@opskil/shared';
+import { X, MapPin, Tag, IndianRupee, Award } from 'lucide-react-native';
 import { MUMBAI_ZONES, LocalityZone } from '../utils/location';
 
 export interface FilterSheetProps {
@@ -112,16 +113,19 @@ export function FilterSheet({
               { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', borderRadius: radii.full, opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <Text style={[styles.closeIcon, { color: colors.textPrimary }]}>✕</Text>
+            <X size={18} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
           {/* Locality & Mumbai Zone Selection (Fallback) */}
           <View>
-            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: 4 }]}>
-              📍 Locality & Event Hub
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <MapPin size={16} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                Locality & Event Hub
+              </Text>
+            </View>
             <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 8 }}>
               Select your preferred Mumbai area to order shifts by proximity
             </Text>
@@ -161,9 +165,12 @@ export function FilterSheet({
 
           {/* Shift Category */}
           <View>
-            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-              🏷️ Shift Category
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Tag size={16} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                Shift Category
+              </Text>
+            </View>
             <View style={styles.chipsContainer}>
               {CATEGORIES.map((cat) => {
                 const isSelected = category === cat.value;
@@ -199,9 +206,12 @@ export function FilterSheet({
 
           {/* Minimum Daily Pay */}
           <View>
-            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-              💰 Minimum Daily Payout
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <IndianRupee size={16} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                Minimum Daily Payout
+              </Text>
+            </View>
             <View style={styles.chipsContainer}>
               {WAGE_TIERS.map((tier) => {
                 const isSelected = minWage === tier.value;
@@ -237,9 +247,12 @@ export function FilterSheet({
 
           {/* Relevant Skill */}
           <View>
-            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-              🎯 Required Skill Focus
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Award size={16} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                Required Skill Focus
+              </Text>
+            </View>
             <View style={styles.chipsContainer}>
               {SKILL_OPTIONS.map((skill) => {
                 const isSelected = requiredSkill === skill;

@@ -27,6 +27,7 @@ import {
   fetchOrganizerMetrics,
   updateJobStatus,
 } from '@opskil/shared';
+import { Bell, MapPin } from 'lucide-react-native';
 
 // Initial fallback shifts for Mumbai event productions demo
 const SEED_ORGANIZER_SHIFTS: Job[] = [
@@ -242,7 +243,7 @@ export default function OrganizerDashboardScreen() {
               }}
               accessibilityLabel="Open crew alerts"
             >
-              <Text style={{ fontSize: 16 }}>🔔</Text>
+              <Bell size={18} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
 
             <Button
@@ -353,9 +354,12 @@ export default function OrganizerDashboardScreen() {
                     <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
                       {shift.category.toUpperCase()} • {formatINR(shift.hourlyRate)}/hr ({shift.durationHours}h)
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                      📍 {shift.venueName} • {formatISTDate(shift.date)}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                      <MapPin size={12} color={colors.primary} strokeWidth={2} />
+                      <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                        {shift.venueName} • {formatISTDate(shift.date)}
+                      </Text>
+                    </View>
                   </View>
 
                   <Badge

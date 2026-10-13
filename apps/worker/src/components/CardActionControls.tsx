@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { RotateCcw, X, Info, Check } from 'lucide-react-native';
 import { useOpsklTheme } from '@opskil/design-system';
 
 export interface CardActionControlsProps {
@@ -40,7 +41,7 @@ export function CardActionControls({
         accessibilityLabel="Undo last skipped shift"
         accessibilityState={{ disabled: !canUndo || disabled }}
       >
-        <Text style={[styles.smallIconText, { color: colors.textSecondary }]}>↺</Text>
+        <RotateCcw size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Pass Button (Swipe Left equivalent) */}
@@ -61,7 +62,7 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="Pass on this shift (Skip left)"
       >
-        <Text style={styles.passIconText}>✕</Text>
+        <X size={18} color="#EF4444" strokeWidth={2.6} />
         <Text style={styles.passLabelText}>Pass</Text>
       </Pressable>
 
@@ -82,7 +83,7 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="View full shift details"
       >
-        <Text style={[styles.smallIconText, { color: colors.textSecondary }]}>ℹ</Text>
+        <Info size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Apply Button (Swipe Right equivalent) */}
@@ -94,8 +95,8 @@ export function CardActionControls({
           styles.mainButton,
           styles.applyButton,
           {
-            backgroundColor: '#0F766E',
-            borderColor: '#14B8A6',
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
           },
@@ -103,7 +104,7 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="Apply for this shift (Express interest)"
       >
-        <Text style={styles.applyIconText}>✓</Text>
+        <Check size={18} color="#FFFFFF" strokeWidth={2.6} />
         <Text style={styles.applyLabelText}>Apply</Text>
       </Pressable>
     </View>

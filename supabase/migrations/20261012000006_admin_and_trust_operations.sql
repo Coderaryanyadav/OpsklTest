@@ -384,3 +384,45 @@ REVOKE EXECUTE ON FUNCTION admin_verify_case_safe(UUID, TEXT, TEXT, UUID) FROM P
 REVOKE EXECUTE ON FUNCTION admin_moderate_job_safe(UUID, shift_status, TEXT, UUID) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) FROM PUBLIC, anon;
 
+-- 10. RPC: USER REQUEST ACCOUNT DELETION SAFE (WITH COMPLIANCE AUDIT)
+CREATE OR REPLACE FUNCTION request_account_deletion_safe(
+  p_reason TEXT DEFAULT 'User requested account deletion in-app'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_now TIMESTAMPTZ := now();
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  -- Record authoritative audit record for compliance and archival
+  INSERT INTO audit_logs (
+    actor_id,
+    action,
+    entity_type,
+    entity_id,
+    changes,
+    created_at
+  ) VALUES (
+    v_user_id,
+    'account_deletion_requested',
+    'profile',
+    v_user_id::text,
+    jsonb_build_object(
+      'reason', p_reason,
+      'requested_at', v_now,
+      'source', 'mobile_app_in_app_action'
+    ),
+    v_now
+  );
+
+  RETURN jsonb_build_object('success', true, 'requested_at', v_now);
+END;
+$$;
+

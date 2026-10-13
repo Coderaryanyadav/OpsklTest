@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, Activ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Card, Badge, Button, useAuth } from '@opskil/design-system';
-import { fetchWorkerProfile, WorkerProfile } from '@opskil/shared';
+import { fetchWorkerProfile, WorkerProfile, requestAccountDeletionSafe } from '@opskil/shared';
 
 export default function WorkerProfileScreen() {
   const router = useRouter();
@@ -70,10 +70,13 @@ export default function WorkerProfileScreen() {
           text: 'Delete Permanently',
           style: 'destructive',
           onPress: async () => {
+            if (userId) {
+              await requestAccountDeletionSafe(userId, 'Worker requested in-app account deletion');
+            }
             await signOut();
             Alert.alert(
               'Request Confirmed',
-              'Your account deletion request has been submitted. Any pending settlements will be cleared, and all associated personal data will be purged within 30 days.'
+              'Your account deletion request has been registered. Any pending settlements will be cleared, and all associated personal data will be purged within 30 days.'
             );
             router.replace('/auth/login');
           },

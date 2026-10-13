@@ -1,6 +1,16 @@
 'use client';
 
 import React from 'react';
+import {
+  BarChart3,
+  MapPin,
+  ShieldCheck,
+  Scale,
+  AlertTriangle,
+  Briefcase,
+  FileText,
+  Settings,
+} from 'lucide-react';
 import { SystemOperationalStatus } from '@opskil/shared';
 
 export type AdminModule =
@@ -39,26 +49,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       group: 'OPERATIONS',
       items: [
-        { id: 'overview' as AdminModule, label: 'Platform Overview', icon: '📊' },
-        { id: 'pilot' as AdminModule, label: 'Mumbai Live Pilot', icon: '📍' },
+        { id: 'overview' as AdminModule, label: 'Platform Overview', icon: <BarChart3 size={16} /> },
+        { id: 'pilot' as AdminModule, label: 'Mumbai Live Pilot', icon: <MapPin size={16} /> },
         {
           id: 'verifications' as AdminModule,
           label: 'Verification Queue',
-          icon: '🛡️',
+          icon: <ShieldCheck size={16} />,
           badge: pendingVerificationsCount > 0 ? pendingVerificationsCount : undefined,
           badgeColor: '#2563EB',
         },
         {
           id: 'disputes' as AdminModule,
           label: 'Attendance Disputes',
-          icon: '⚖️',
+          icon: <Scale size={16} />,
           badge: activeDisputesCount > 0 ? activeDisputesCount : undefined,
           badgeColor: '#D97706',
         },
         {
           id: 'safety' as AdminModule,
           label: 'Safety Reports',
-          icon: '🚨',
+          icon: <AlertTriangle size={16} />,
           badge: urgentSafetyCount > 0 ? urgentSafetyCount : undefined,
           badgeColor: '#DC2626',
         },
@@ -67,9 +77,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       group: 'MARKETPLACE MODERATION',
       items: [
-        { id: 'jobs' as AdminModule, label: 'Shift Moderation', icon: '💼' },
-        { id: 'audit' as AdminModule, label: 'Audit Logs', icon: '📜' },
-        { id: 'settings' as AdminModule, label: 'System Configuration', icon: '⚙️' },
+        { id: 'jobs' as AdminModule, label: 'Shift Moderation', icon: <Briefcase size={16} /> },
+        { id: 'audit' as AdminModule, label: 'Audit Logs', icon: <FileText size={16} /> },
+        { id: 'settings' as AdminModule, label: 'System Configuration', icon: <Settings size={16} /> },
       ],
     },
   ];
@@ -198,7 +208,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 14 }}>{item.icon}</span>
+                        <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (

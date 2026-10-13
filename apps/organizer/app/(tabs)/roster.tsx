@@ -24,6 +24,7 @@ import {
   confirmWorkerBookingSafe,
   updateApplicationStatusSafe,
 } from '@opskil/shared';
+import { ClipboardList, Phone, MapPin } from 'lucide-react-native';
 
 // Initial fallback mock applications for demonstration if database has 0 applicants
 const SEED_APPLICATIONS: any[] = [
@@ -276,7 +277,7 @@ export default function OrganizerRosterScreen() {
                 )
               );
               Alert.alert(
-                '🎉 Booking Confirmed',
+                'Booking Confirmed',
                 `${workerName} has been officially booked for ${shiftTitle}. Check-in QR pass has been issued to the worker.`
               );
             } else {
@@ -381,8 +382,8 @@ export default function OrganizerRosterScreen() {
           </View>
         ) : filtered.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ fontSize: 36 }}>📋</Text>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
+            <ClipboardList size={38} color={colors.textMuted} strokeWidth={1.8} />
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 12 }]}>
               No Applicants Found
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
@@ -433,7 +434,7 @@ export default function OrganizerRosterScreen() {
                         <Text style={[typography.h3, { color: colors.textPrimary }]}>
                           {profile?.fullName || 'Opskl Candidate'}
                         </Text>
-                        {isVerified && <Badge label="✓ ID VERIFIED" variant="success" size="sm" />}
+                        {isVerified && <Badge label="ID VERIFIED" variant="success" size="sm" />}
                       </View>
 
                       <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
@@ -441,9 +442,12 @@ export default function OrganizerRosterScreen() {
                       </Text>
 
                       {isConfirmed && profile?.phone && (
-                        <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                          📞 {profile.phone}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                          <Phone size={12} color={colors.primary} strokeWidth={2} />
+                          <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>
+                            {profile.phone}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   </View>
@@ -471,9 +475,12 @@ export default function OrganizerRosterScreen() {
                         {formatINR(job.totalPay)}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
-                      📍 {job.venueName} • Openings: {slotsRemaining} of {job.slotsTotal} left
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                      <MapPin size={11} color={colors.textMuted} strokeWidth={2} />
+                      <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                        {job.venueName} • Openings: {slotsRemaining} of {job.slotsTotal} left
+                      </Text>
+                    </View>
                   </View>
                 )}
 
@@ -520,7 +527,7 @@ export default function OrganizerRosterScreen() {
                     <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
                       <View style={{ flex: 1 }}>
                         <Button
-                          title="✓ Booked & Confirmed"
+                          title="Booked & Confirmed"
                           variant="secondary"
                           size="sm"
                           disabled={true}
@@ -528,7 +535,7 @@ export default function OrganizerRosterScreen() {
                         />
                       </View>
                       <Button
-                        title="Briefing 📄"
+                        title="Send Briefing"
                         variant="outline"
                         size="sm"
                         fullWidth={false}

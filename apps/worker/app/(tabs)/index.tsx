@@ -25,6 +25,7 @@ import { SwipeCard } from '../../src/components/SwipeCard';
 import { CardActionControls } from '../../src/components/CardActionControls';
 import { JobDetailSheet } from '../../src/components/JobDetailSheet';
 import { FilterSheet } from '../../src/components/FilterSheet';
+import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle } from 'lucide-react-native';
 import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/location';
 
 export default function WorkerDiscoverScreen() {
@@ -105,7 +106,7 @@ export default function WorkerDiscoverScreen() {
             accessibilityRole="button"
             accessibilityLabel="Open notifications"
           >
-            <Text style={{ fontSize: 16 }}>🔔</Text>
+            <Bell size={18} color={colors.textPrimary} strokeWidth={2} />
           </Pressable>
 
           {/* View Mode Toggle (Swipe vs List for Accessibility) */}
@@ -118,7 +119,11 @@ export default function WorkerDiscoverScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Switch to ${viewMode === 'swipe' ? 'List' : 'Swipe'} view`}
           >
-            <Text style={{ fontSize: 15 }}>{viewMode === 'swipe' ? '📑' : '🃏'}</Text>
+            {viewMode === 'swipe' ? (
+              <List size={18} color={colors.textPrimary} strokeWidth={2} />
+            ) : (
+              <Layers size={18} color={colors.textPrimary} strokeWidth={2} />
+            )}
           </Pressable>
 
           {/* Filter Trigger Button */}
@@ -130,14 +135,20 @@ export default function WorkerDiscoverScreen() {
                 backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.full,
                 borderColor: colors.border,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingHorizontal: 12,
               },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Open filters"
           >
+            <MapPin size={13} color={colors.primary} strokeWidth={2.2} />
             <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '600' }}>
-              📍 {activeZone.coords.name || 'BKC'} ⚙️
+              {activeZone.coords.name || 'BKC'}
             </Text>
+            <SlidersHorizontal size={13} color={colors.textSecondary} strokeWidth={2} />
           </Pressable>
         </View>
       </View>
@@ -145,11 +156,14 @@ export default function WorkerDiscoverScreen() {
       {/* Failure Recovery Alert Banner (Protects against false-positive swipe success) */}
       {failedApplication && (
         <View style={[styles.failedBanner, { backgroundColor: isDark ? '#451A1A' : '#FEF2F2' }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.failedBannerTitle}>⚠️ Application Incomplete</Text>
-            <Text style={styles.failedBannerText}>
-              {failedApplication.errorMessage}
-            </Text>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+            <AlertTriangle size={18} color="#DC2626" strokeWidth={2.2} style={{ marginTop: 2 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.failedBannerTitle}>Application Incomplete</Text>
+              <Text style={styles.failedBannerText}>
+                {failedApplication.errorMessage}
+              </Text>
+            </View>
           </View>
           <View style={styles.failedBannerActions}>
             <Pressable

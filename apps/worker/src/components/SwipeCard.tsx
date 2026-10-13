@@ -30,6 +30,7 @@ import {
   formatDistance,
   formatDeadline,
 } from '@opskil/shared';
+import { MapPin, Calendar, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -219,10 +220,10 @@ export function SwipeCard({
 
             <View style={styles.topRightBadges}>
               {isOrganizerVerified && (
-                <Badge label="✓ VERIFIED HOST" variant="success" size="sm" />
+                <Badge label="Verified Host" variant="success" size="sm" />
               )}
               <Badge
-                label={slotsRemaining <= 3 ? `${slotsRemaining} SLOTS LEFT` : `${slotsRemaining} OPENINGS`}
+                label={slotsRemaining <= 3 ? `${slotsRemaining} slots left` : `${slotsRemaining} openings`}
                 variant={slotsRemaining <= 3 ? 'warning' : 'neutral'}
                 size="sm"
               />
@@ -269,7 +270,7 @@ export function SwipeCard({
           {/* Location & Time Block */}
           <View style={[styles.metaBlock, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
             <View style={styles.metaRow}>
-              <Text style={styles.metaIcon}>📍</Text>
+              <MapPin size={15} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.venueTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                   {job.venueName}
@@ -286,8 +287,8 @@ export function SwipeCard({
               </View>
             </View>
 
-            <View style={[styles.metaRow, { marginTop: 6 }]}>
-              <Text style={styles.metaIcon}>📅</Text>
+            <View style={[styles.metaRow, { marginTop: 8 }]}>
+              <Calendar size={15} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.timeText, { color: colors.textPrimary }]}>
                   {formatISTDate(job.date)} • {formatTimeRange(job.startTime, job.endTime)}
@@ -314,24 +315,28 @@ export function SwipeCard({
           {/* Amenities & Conditions Pills */}
           <View style={styles.amenitiesRow}>
             {job.mealProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>🍽️ Meals</Text>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Utensils size={12} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Meals</Text>
               </View>
             )}
             {job.transportProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>🚕 Travel Allowance</Text>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Car size={12} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Travel Allowance</Text>
               </View>
             )}
             {job.breaksMinutes ? (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>
-                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>☕ {job.breaksMinutes}m Break</Text>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Coffee size={12} color={colors.textSecondary} strokeWidth={2} />
+                <Text style={[styles.amenityText, { color: colors.textSecondary }]}>{job.breaksMinutes}m Break</Text>
               </View>
             ) : null}
             {job.applicationDeadline && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#312E81' : '#EEF2FF' }]}>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#312E81' : '#EEF2FF', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Clock size={12} color={colors.primary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.primary }]}>
-                  ⏳ {formatDeadline(job.applicationDeadline)}
+                  {formatDeadline(job.applicationDeadline)}
                 </Text>
               </View>
             )}
