@@ -20,6 +20,8 @@
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
     "prettier": "^3.5.0",
     "typescript": "^5.8.0"
   },
