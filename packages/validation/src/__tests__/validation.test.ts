@@ -1,12 +1,25 @@
 import {
   PhoneLoginSchema,
   OtpVerifySchema,
+  EmailLoginSchema,
+  EmailOtpVerifySchema,
   AdminLoginSchema,
   ShiftCreateSchema,
   GstinSchema,
 } from '../index';
 
 describe('Opskl Validation Schemas', () => {
+  test('validates email login input', () => {
+    expect(EmailLoginSchema.safeParse({ email: 'worker@gmail.com' }).success).toBe(true);
+    expect(EmailLoginSchema.safeParse({ email: 'organizer.event@opskil.com' }).success).toBe(true);
+    expect(EmailLoginSchema.safeParse({ email: 'invalid-email' }).success).toBe(false);
+  });
+
+  test('validates 6-digit email OTP verification', () => {
+    expect(EmailOtpVerifySchema.safeParse({ email: 'worker@gmail.com', otp: '123456' }).success).toBe(true);
+    expect(EmailOtpVerifySchema.safeParse({ email: 'worker@gmail.com', otp: '123' }).success).toBe(false);
+  });
+
   test('validates phone login input', () => {
     expect(PhoneLoginSchema.safeParse({ phone: '9820098200' }).success).toBe(true);
     expect(PhoneLoginSchema.safeParse({ phone: '123' }).success).toBe(false);

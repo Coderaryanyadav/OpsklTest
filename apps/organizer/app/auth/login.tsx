@@ -16,32 +16,33 @@ import {
 export default function OrganizerLoginScreen() {
   const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
-  const { sendPhoneOtp, verifyOtp } = useAuth();
+  const { sendEmailOtp, verifyEmailOtp } = useAuth();
 
-  const [phone, setPhone] = useState(
-    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? '9819998199' : ''
+  const [email, setEmail] = useState(
+    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? 'organizer.demo@opskil.com' : ''
   );
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSendOtp = async () => {
-    if (phone.length < 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
+      Alert.alert('Invalid Email', 'Please enter a valid business email address (e.g. host@gmail.com).');
       return;
     }
     setLoading(true);
     try {
-      await sendPhoneOtp(phone);
+      await sendEmailOtp(trimmed);
       setOtpSent(true);
       Alert.alert(
-        'OTP Sent',
-        'Enter the 6-digit one-time password to access your organizer workspace.'
+        'OTP Sent to Email',
+        `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox to access your workspace.`
       );
     } catch (err: any) {
       Alert.alert(
         'Authentication Status',
-        err?.message || 'Unable to dispatch SMS OTP. Verify SMS provider status in Supabase.'
+        err?.message || 'Unable to dispatch Email OTP. Please check your network connection.'
       );
     } finally {
       setLoading(false);
@@ -50,14 +51,14 @@ export default function OrganizerLoginScreen() {
 
   const handleVerify = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter the complete 6-digit OTP code.');
+      Alert.alert('Invalid Code', 'Please enter the complete 6-digit verification code.');
       return;
     }
     setLoading(true);
     try {
-      const res = await verifyOtp(phone, otp);
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp);
       if (res?.session) {
-        Alert.alert('Verified', 'Organizer session authenticated.', [
+        Alert.alert('Verified', 'Organizer session authenticated successfully.', [
           { text: 'Open Dashboard', onPress: () => router.replace('/(tabs)' as any) },
         ]);
       } else {
@@ -85,9 +86,9 @@ export default function OrganizerLoginScreen() {
             marginBottom: spacing.xl,
           }}
         >
-          <Badge label="ORGANIZER AUTHENTICATION" variant="primary" size="sm" style={{ marginBottom: 4 }} />
+          <Badge label="GMAIL / EMAIL OTP AUTHENTICATION" variant="primary" size="sm" style={{ marginBottom: 4 }} />
           <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            Authenticate organizer profile via verified mobile OTP. Ensures event roster modifications and escrow deposits are securely authorized.
+            Authenticate organizer workspace via Gmail / Email OTP. Ensures event listings, shift rosters, and escrow deposits are securely managed.
           </Text>
         </View>
 
@@ -96,17 +97,16 @@ export default function OrganizerLoginScreen() {
             Organizer Access
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: spacing.lg }}>
-            Enter your authorized business phone number
+            Enter your authorized business email address
           </Text>
 
           <Input
-            label="Authorized Mobile Number"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="98765 43210"
-            prefix="+91"
-            keyboardType="phone-pad"
-            maxLength={10}
+            label="Gmail / Business Email Address"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="host@gmail.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
             editable={!otpSent}
           />
 
@@ -122,7 +122,7 @@ export default function OrganizerLoginScreen() {
           ) : (
             <>
               <Input
-                label="Enter 6-Digit OTP"
+                label="Enter 6-Digit Email OTP"
                 value={otp}
                 onChangeText={setOtp}
                 placeholder="123456"
@@ -138,7 +138,7 @@ export default function OrganizerLoginScreen() {
                 style={{ marginTop: spacing.sm }}
               />
               <Button
-                title="Edit Phone Number"
+                title="Edit Email Address"
                 variant="ghost"
                 size="sm"
                 onPress={() => {

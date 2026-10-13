@@ -28,6 +28,58 @@ function normalizeIndianPhone(phone: string): string {
   return `+91${last10}`;
 }
 
+export interface EmailOtpSignInParams {
+  email: string;
+}
+
+export interface VerifyEmailOtpParams {
+  email: string;
+  token: string;
+}
+
+/**
+ * Sign in / send 6-digit OTP to Email (Gmail) address.
+ */
+export async function signInWithEmailOtp({ email }: EmailOtpSignInParams) {
+  const normalizedEmail = email.trim().toLowerCase();
+  logger.info('Initiating Email/Gmail OTP sign-in', { email: normalizedEmail });
+
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email: normalizedEmail,
+    options: {
+      shouldCreateUser: true,
+    },
+  });
+
+  if (error) {
+    logger.error('Failed to send email OTP', error, { email: normalizedEmail });
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Verify 6-digit OTP token for Email (Gmail) address.
+ */
+export async function verifyEmailOtp({ email, token }: VerifyEmailOtpParams) {
+  const normalizedEmail = email.trim().toLowerCase();
+  logger.info('Verifying Email/Gmail OTP token', { email: normalizedEmail });
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: normalizedEmail,
+    token: token.trim(),
+    type: 'email',
+  });
+
+  if (error) {
+    logger.error('Email OTP verification failed', error, { email: normalizedEmail });
+    throw error;
+  }
+
+  return data;
+}
+
 /**
  * Sign in / send 6-digit OTP to Indian mobile number.
  */

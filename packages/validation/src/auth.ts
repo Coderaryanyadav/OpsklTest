@@ -16,6 +16,18 @@ export const OtpVerifySchema = z.object({
     .regex(/^\d{6}$/, 'OTP must contain numbers only'),
 });
 
+export const EmailLoginSchema = z.object({
+  email: z.string().email('Please enter a valid Gmail / email address'),
+});
+
+export const EmailOtpVerifySchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  otp: z
+    .string()
+    .length(6, 'Verification code must be exactly 6 digits')
+    .regex(/^\d{6}$/, 'OTP must contain numbers only'),
+});
+
 export const AdminLoginSchema = z.object({
   email: z.string().email('Please enter a valid administrative email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -23,4 +35,6 @@ export const AdminLoginSchema = z.object({
 
 export type PhoneLoginInput = z.infer<typeof PhoneLoginSchema>;
 export type OtpVerifyInput = z.infer<typeof OtpVerifySchema>;
+export type EmailLoginInput = z.infer<typeof EmailLoginSchema>;
+export type EmailOtpVerifyInput = z.infer<typeof EmailOtpVerifySchema>;
 export type AdminLoginInput = z.infer<typeof AdminLoginSchema>;

@@ -3,6 +3,8 @@ import {
   supabase,
   getCurrentSession,
   signOut as authSignOut,
+  signInWithEmailOtp,
+  verifyEmailOtp,
   signInWithPhoneOtp,
   verifyPhoneOtp,
   fetchUserProfile,
@@ -24,8 +26,10 @@ export interface AuthContextValue {
   organizerProfile: OrganizerProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
+  sendEmailOtp: (email: string) => Promise<any>;
+  verifyEmailOtp: (email: string, token: string) => Promise<any>;
   sendPhoneOtp: (phone: string) => Promise<any>;
-  verifyOtp: (phone: string, token: string) => Promise<any>;
+  verifyOtp: (identifier: string, token: string) => Promise<any>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -57,8 +61,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       let p = await fetchUserProfile(u.id);
       if (!p && u.id) {
+        const email = u.email || '';
         const defaultRole = (u.user_metadata?.role as any) || 'worker';
-        const defaultName = u.user_metadata?.full_name || 'Member';
+        const defaultName = u.user_metadata?.full_name || (email ? email.split('@')[0] : 'Member');
         const phone = u.phone || u.user_metadata?.phone || '';
 
         // Authoritative server-side profile provisioning
@@ -67,6 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             p_role: defaultRole,
             p_full_name: defaultName,
             p_phone: phone,
+            p_email: email,
           });
         } catch (rpcErr) {
           logger.error('Authoritative profile provisioning RPC failed', rpcErr, { userId: u.id });
@@ -110,12 +116,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  const sendEmailOtp = async (email: string) => {
+    return signInWithEmailOtp({ email });
+  };
+
+  const verifyEmailOtpMethod = async (email: string, token: string) => {
+    const res = await verifyEmailOtp({ email, token });
+    if (res.session) {
+      setSession(res.session);
+      await loadUserData(res.session);
+    }
+    return res;
+  };
+
   const sendPhoneOtp = async (phone: string) => {
     return signInWithPhoneOtp({ phone });
   };
 
-  const verifyOtp = async (phone: string, token: string) => {
-    const res = await verifyPhoneOtp({ phone, token });
+  const verifyOtp = async (identifier: string, token: string) => {
+    let res;
+    if (identifier.includes('@')) {
+      res = await verifyEmailOtp({ email: identifier, token });
+    } else {
+      res = await verifyPhoneOtp({ phone: identifier, token });
+    }
     if (res.session) {
       setSession(res.session);
       await loadUserData(res.session);
@@ -148,6 +172,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       organizerProfile,
       loading,
       isAuthenticated: !!user,
+      sendEmailOtp,
+      verifyEmailOtp: verifyEmailOtpMethod,
       sendPhoneOtp,
       verifyOtp,
       logout,

@@ -84,9 +84,9 @@ END $$;
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   role user_role NOT NULL DEFAULT 'worker',
-  phone TEXT NOT NULL UNIQUE,
+  phone TEXT,
   full_name TEXT NOT NULL,
-  email TEXT,
+  email TEXT UNIQUE,
   avatar_url TEXT,
   city TEXT NOT NULL DEFAULT 'Mumbai',
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -404,9 +404,13 @@ BEGIN
     ELSE 'worker'::user_role
   END;
 
-  v_phone := COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone', '91' || substr(replace(NEW.id::text, '-', ''), 1, 10));
-  v_name := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'User ' || substr(NEW.id::text, 1, 6));
   v_email := NEW.email;
+  v_phone := COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone');
+  v_name := COALESCE(
+    NEW.raw_user_meta_data->>'full_name', 
+    NEW.raw_user_meta_data->>'name', 
+    CASE WHEN v_email IS NOT NULL THEN split_part(v_email, '@', 1) ELSE 'User ' || substr(NEW.id::text, 1, 6) END
+  );
 
   -- Insert core profile
   INSERT INTO public.profiles (
@@ -452,7 +456,8 @@ END $$;
 CREATE OR REPLACE FUNCTION ensure_user_profile_provisioned_safe(
   p_role user_role DEFAULT 'worker',
   p_full_name TEXT DEFAULT NULL,
-  p_phone TEXT DEFAULT NULL
+  p_phone TEXT DEFAULT NULL,
+  p_email TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -465,6 +470,7 @@ DECLARE
   v_role user_role := COALESCE(p_role, 'worker');
   v_name TEXT;
   v_phone TEXT;
+  v_email TEXT;
 BEGIN
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
@@ -475,17 +481,27 @@ BEGIN
     v_role := 'worker';
   END IF;
 
+  SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+  v_email := COALESCE(p_email, v_email);
+
   SELECT * INTO v_existing_profile FROM profiles WHERE id = v_user_id;
 
   IF FOUND THEN
     v_role := v_existing_profile.role;
+    IF v_existing_profile.email IS NULL AND v_email IS NOT NULL THEN
+      UPDATE profiles SET email = v_email WHERE id = v_user_id;
+    END IF;
   ELSE
-    v_name := COALESCE(p_full_name, 'User ' || substr(v_user_id::text, 1, 6));
-    v_phone := COALESCE(p_phone, '91' || substr(replace(v_user_id::text, '-', ''), 1, 10));
+    v_name := COALESCE(
+      p_full_name, 
+      CASE WHEN v_email IS NOT NULL THEN split_part(v_email, '@', 1) ELSE 'User ' || substr(v_user_id::text, 1, 6) END
+    );
+    v_phone := p_phone;
 
-    INSERT INTO profiles (id, role, phone, full_name, city, is_active)
-    VALUES (v_user_id, v_role, v_phone, v_name, 'Mumbai', true)
-    ON CONFLICT (id) DO NOTHING;
+    INSERT INTO profiles (id, role, phone, full_name, email, city, is_active)
+    VALUES (v_user_id, v_role, v_phone, v_name, v_email, 'Mumbai', true)
+    ON CONFLICT (id) DO UPDATE SET
+      email = COALESCE(EXCLUDED.email, profiles.email);
   END IF;
 
   IF v_role = 'worker' THEN
@@ -493,21 +509,22 @@ BEGIN
     VALUES (v_user_id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified')
     ON CONFLICT (id) DO NOTHING;
   ELSIF v_role = 'organizer' THEN
-    INSERT INTO organizer_profiles (id, business_name, business_contact_phone, business_type, profile_completion_status, verification_status)
-    VALUES (v_user_id, COALESCE(p_full_name, 'Independent Organizer'), COALESCE(p_phone, ''), 'independent', 'incomplete', 'unverified')
+    INSERT INTO organizer_profiles (id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status)
+    VALUES (v_user_id, COALESCE(p_full_name, 'Independent Organizer'), COALESCE(v_phone, ''), v_email, 'independent', 'incomplete', 'unverified')
     ON CONFLICT (id) DO NOTHING;
   END IF;
 
   RETURN jsonb_build_object(
     'success', true,
     'user_id', v_user_id,
-    'role', v_role
+    'role', v_role,
+    'email', v_email
   );
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT) TO authenticated;
+REVOKE EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT, TEXT) TO authenticated;
 
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES

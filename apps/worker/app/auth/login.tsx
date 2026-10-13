@@ -16,32 +16,33 @@ import {
 export default function WorkerLoginScreen() {
   const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
-  const { sendPhoneOtp, verifyOtp } = useAuth();
+  const { sendEmailOtp, verifyEmailOtp } = useAuth();
 
-  const [phone, setPhone] = useState(
-    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? '9820098200' : ''
+  const [email, setEmail] = useState(
+    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? 'worker.demo@opskil.com' : ''
   );
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSendOtp = async () => {
-    if (phone.length < 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit Indian mobile number.');
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. yourname@gmail.com).');
       return;
     }
     setLoading(true);
     try {
-      await sendPhoneOtp(phone);
+      await sendEmailOtp(trimmed);
       setOtpSent(true);
       Alert.alert(
-        'OTP Dispatched',
-        'If your SMS provider is connected in Supabase, enter the 6-digit OTP received on your mobile device.'
+        'OTP Sent to Email',
+        `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox or spam folder.`
       );
     } catch (err: any) {
       Alert.alert(
         'Authentication Status',
-        err?.message || 'Unable to dispatch SMS OTP. Please ensure Supabase Auth SMS provider is configured.'
+        err?.message || 'Unable to dispatch Email OTP. Please check your network connection.'
       );
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ export default function WorkerLoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await verifyOtp(phone, otp);
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp);
       if (res?.session) {
         Alert.alert('Verified', 'Session authenticated successfully.', [
           { text: 'Continue', onPress: () => router.replace('/(tabs)' as any) },
@@ -87,29 +88,28 @@ export default function WorkerLoginScreen() {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Badge label="SUPABASE AUTH ENABLED" variant="primary" size="sm" />
+            <Badge label="GMAIL / EMAIL OTP ENABLED" variant="primary" size="sm" />
           </View>
           <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            Real native phone OTP authentication via Supabase Auth. Enter your registered 10-digit mobile number to verify session.
+            Fast, carrier-independent authentication via Gmail / Email OTP. Enter your email to receive a 6-digit verification code.
           </Text>
         </View>
 
         <Card variant="outlined">
           <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: 4 }]}>
-            Enter Mobile Number
+            Enter Email Address
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: spacing.lg }}>
-            We'll send a 6-digit one-time password to verify your account
+            We'll send a 6-digit one-time password to your email inbox
           </Text>
 
           <Input
-            label="Mobile Number"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="98765 43210"
-            prefix="+91"
-            keyboardType="phone-pad"
-            maxLength={10}
+            label="Gmail / Email Address"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@gmail.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
             editable={!otpSent}
           />
 
@@ -125,7 +125,7 @@ export default function WorkerLoginScreen() {
           ) : (
             <>
               <Input
-                label="Enter 6-Digit OTP"
+                label="Enter 6-Digit Email OTP"
                 value={otp}
                 onChangeText={setOtp}
                 placeholder="123456"
@@ -141,7 +141,7 @@ export default function WorkerLoginScreen() {
                 style={{ marginTop: spacing.sm }}
               />
               <Button
-                title="Change Phone Number"
+                title="Change Email Address"
                 variant="ghost"
                 size="sm"
                 onPress={() => {
