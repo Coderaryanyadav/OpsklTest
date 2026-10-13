@@ -409,7 +409,7 @@ export default function OrganizerDashboardScreen() {
                   }}
                 >
                   <Button
-                    title={isPaused ? '▶ Resume' : '⏸ Pause'}
+                    title={isPaused ? 'Resume Shift' : 'Pause Shift'}
                     variant="ghost"
                     size="sm"
                     fullWidth={false}
@@ -417,7 +417,7 @@ export default function OrganizerDashboardScreen() {
                   />
 
                   <Button
-                    title="Review Applicants →"
+                    title="Review Applicants"
                     variant="outline"
                     size="sm"
                     fullWidth={false}

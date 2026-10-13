@@ -30,7 +30,19 @@ import {
   formatDistance,
   formatDeadline,
 } from '@opskil/shared';
-import { MapPin, Calendar, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
+import {
+  MapPin,
+  Calendar,
+  Utensils,
+  Car,
+  Coffee,
+  Clock,
+  Check,
+  X,
+  Zap,
+  Star,
+  ChevronRight,
+} from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -192,7 +204,8 @@ export function SwipeCard({
             ]}
           >
             <View style={styles.badgePillSuccess}>
-              <Text style={styles.badgePillTextSuccess}>✓ APPLY</Text>
+              <Check size={18} color="#FFFFFF" strokeWidth={3} />
+              <Text style={styles.badgePillTextSuccess}>APPLY</Text>
             </View>
           </Animated.View>
 
@@ -206,7 +219,8 @@ export function SwipeCard({
             ]}
           >
             <View style={styles.badgePillPass}>
-              <Text style={styles.badgePillTextPass}>✕ PASS</Text>
+              <X size={18} color="#FFFFFF" strokeWidth={3} />
+              <Text style={styles.badgePillTextPass}>PASS</Text>
             </View>
           </Animated.View>
 
@@ -244,8 +258,9 @@ export function SwipeCard({
               </View>
             </View>
             <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
+              <Zap size={12} color={colors.success} strokeWidth={2.5} style={{ marginRight: 4 }} />
               <Text style={[styles.upiGuaranteeText, { color: colors.success }]}>
-                ⚡ Direct UPI on Sign-off
+                Direct UPI on Sign-off
               </Text>
             </View>
           </View>
@@ -259,11 +274,14 @@ export function SwipeCard({
               <Text style={[styles.organizerName, { color: colors.textSecondary }]}>
                 {job.organizer?.businessName || 'Apex Event Productions'}
               </Text>
-              {job.organizer?.rating && (
-                <Text style={[styles.ratingText, { color: colors.warning }]}>
-                  ★ {job.organizer.rating.toFixed(1)}
-                </Text>
-              )}
+              {job.organizer?.rating ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <Star size={12} color={colors.warning} fill={colors.warning} />
+                  <Text style={[styles.ratingText, { color: colors.warning }]}>
+                    {job.organizer.rating.toFixed(1)}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -364,8 +382,9 @@ export function SwipeCard({
             accessibilityLabel="View full shift details and policies"
           >
             <Text style={[styles.detailLinkText, { color: colors.primary }]}>
-              View Full Shift Details & Policies →
+              View Full Shift Details & Policies
             </Text>
+            <ChevronRight size={14} color={colors.primary} strokeWidth={2.4} style={{ marginLeft: 4 }} />
           </Pressable>
         </Card>
       </Animated.View>
@@ -402,6 +421,9 @@ const styles = StyleSheet.create({
   },
   badgePillSuccess: {
     backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
@@ -416,11 +438,14 @@ const styles = StyleSheet.create({
   badgePillTextSuccess: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 1.5,
+    fontSize: 16,
+    letterSpacing: 1.2,
   },
   badgePillPass: {
     backgroundColor: '#EF4444',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
@@ -435,8 +460,8 @@ const styles = StyleSheet.create({
   badgePillTextPass: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 1.5,
+    fontSize: 16,
+    letterSpacing: 1.2,
   },
   topRow: {
     flexDirection: 'row',
@@ -483,6 +508,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   upiGuaranteePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -595,6 +622,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   detailLink: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 8,
     marginTop: 6,

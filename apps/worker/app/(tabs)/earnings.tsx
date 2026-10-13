@@ -26,6 +26,13 @@ import {
   updateWorkerProfile,
 } from '@opskil/shared';
 import { useAuth } from '@opskil/design-system';
+import {
+  ShieldCheck,
+  CreditCard,
+  ChevronRight,
+  X,
+  Receipt,
+} from 'lucide-react-native';
 
 type LedgerFilter = 'all' | 'settled' | 'pending' | 'failed' | 'disputed';
 
@@ -143,13 +150,20 @@ export default function WorkerEarningsScreen() {
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: radii.full,
-            paddingHorizontal: spacing.sm + 2,
-            paddingVertical: spacing.xs,
+            paddingHorizontal: spacing.sm + 4,
+            paddingVertical: spacing.xs + 2,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 4,
+            gap: 5,
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Manage default payout UPI handle"
         >
+          {summary?.defaultUpiId ? (
+            <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
+          ) : (
+            <CreditCard size={13} color={colors.primary} strokeWidth={2.2} />
+          )}
           <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
             {summary?.defaultUpiId ? 'UPI LINKED' : 'ADD UPI'}
           </Text>
@@ -166,18 +180,21 @@ export default function WorkerEarningsScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Main Balance Hero Card */}
+          {/* Main Balance Hero Card with Apple Card Aesthetic */}
           <Card
             variant="elevated"
             style={{
-              backgroundColor: colors.primary,
-              borderColor: colors.primaryHover,
+              backgroundColor: '#0F172A',
+              borderColor: 'rgba(255,255,255,0.12)',
+              borderWidth: 1,
+              borderRadius: radii.xl,
+              padding: spacing.lg,
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700', textTransform: 'uppercase' }}>
-                  Total Paid Earnings
+                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  Total Settled Wages
                 </Text>
                 <WageText style={{ color: '#FFFFFF', fontSize: 34, lineHeight: 40, marginTop: 4 }}>
                   {formatINR(summary?.paidEarnings || 0)}
@@ -186,32 +203,42 @@ export default function WorkerEarningsScreen() {
               <Badge label="100% WAGE GUARANTEE" variant="success" size="sm" />
             </View>
 
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)', marginTop: spacing.xs }}>
-              Transferred directly into your bank account via NPCI IMPS/UPI
+            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: spacing.xs }}>
+              Transferred directly into your bank account via NPCI IMPS/UPI • ₹0 platform fees
             </Text>
 
             {/* UPI Account strip */}
             <TouchableOpacity
               onPress={() => setShowUpiModal(true)}
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
                 borderRadius: radii.md,
-                padding: spacing.sm + 2,
+                padding: spacing.sm + 4,
                 marginTop: spacing.md,
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.12)',
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Change receiving bank UPI handle"
             >
               <View>
-                <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
+                <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   Receiving Bank UPI Handle
                 </Text>
-                <Text style={{ fontSize: 13, color: '#FFFFFF', fontWeight: '700', marginTop: 2 }}>
-                  {summary?.defaultUpiId}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                  <ShieldCheck size={14} color="#10B981" strokeWidth={2.4} />
+                  <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700', fontFamily: 'monospace' }}>
+                    {summary?.defaultUpiId || 'Not linked yet'}
+                  </Text>
+                </View>
               </View>
-              <Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: '600' }}>Change ›</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: '600' }}>Change</Text>
+                <ChevronRight size={14} color="#FFFFFF" strokeWidth={2.2} />
+              </View>
             </TouchableOpacity>
           </Card>
 
@@ -506,9 +533,17 @@ export default function WorkerEarningsScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>Transaction Receipt</Text>
-              <TouchableOpacity onPress={() => setSelectedRecord(null)}>
-                <Text style={{ fontSize: 20, color: colors.textMuted }}>✕</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Receipt size={20} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[typography.h3, { color: colors.textPrimary }]}>Transaction Receipt</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSelectedRecord(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close receipt modal"
+              >
+                <X size={20} color={colors.textMuted} strokeWidth={2.2} />
               </TouchableOpacity>
             </View>
 

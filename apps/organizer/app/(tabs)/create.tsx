@@ -27,6 +27,46 @@ import {
   calculateJobFinancials,
 } from '@opskil/shared';
 import { ShiftCreateSchema } from '@opskil/validation';
+import {
+  Calendar,
+  MapPin,
+  User,
+  ShieldCheck,
+  Building,
+} from 'lucide-react-native';
+
+const PRESET_MUMBAI_VENUES = [
+  {
+    name: 'Jio World Convention Centre, Pavilion 2',
+    address: 'G Block BKC, Bandra Kurla Complex, Bandra East, Mumbai 400098',
+    landmark: 'Opposite Bharat Diamond Bourse',
+    zone: 'Bandra Kurla Complex (BKC)',
+  },
+  {
+    name: 'Bombay Exhibition Centre (NESCO), Hall 4',
+    address: 'Western Express Highway, Goregaon East, Mumbai 400063',
+    landmark: 'Near Ram Mandir Railway Station',
+    zone: 'Goregaon & NESCO',
+  },
+  {
+    name: 'Taj Lands End, Grand Ballroom',
+    address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
+    landmark: 'Near Bandra Fort',
+    zone: 'Andheri & Western Suburbs',
+  },
+  {
+    name: 'CIDCO Exhibition Centre, Hall 1',
+    address: 'Sector 30A, Vashi, Navi Mumbai 400703',
+    landmark: 'Opposite Vashi Railway Station',
+    zone: 'Navi Mumbai (Vashi / CIDCO)',
+  },
+  {
+    name: 'Grand Hyatt Mumbai Hotel & Residences',
+    address: 'Off Western Express Highway, Santacruz East, Mumbai 400055',
+    landmark: 'Near Vakola Junction',
+    zone: 'Andheri & Western Suburbs',
+  },
+];
 
 const CATEGORIES: { label: string; value: ShiftCategory }[] = [
   { label: 'Conference', value: 'conference' },
@@ -382,6 +422,52 @@ export default function OrganizerCreateShiftScreen() {
               </View>
             </View>
 
+            {/* Quick Mumbai Venues Selector */}
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Building size={14} color={colors.primary} strokeWidth={2.2} />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Quick Mumbai Venues
+                </Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {PRESET_MUMBAI_VENUES.map((preset) => {
+                  const isMatch = venueName === preset.name;
+                  return (
+                    <Pressable
+                      key={preset.name}
+                      onPress={() => {
+                        setVenueName(preset.name);
+                        setVenueAddress(preset.address);
+                        setLandmark(preset.landmark);
+                        setZone(preset.zone);
+                      }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        borderRadius: 20,
+                        backgroundColor: isMatch ? colors.primary : colors.surfaceMuted,
+                        borderWidth: 1,
+                        borderColor: isMatch ? colors.primary : colors.border,
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select venue ${preset.name}`}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: isMatch ? '700' : '500',
+                          color: isMatch ? '#FFFFFF' : colors.textPrimary,
+                        }}
+                      >
+                        {preset.name.split(',')[0]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
             <Input
               label="Venue Name"
               value={venueName}
@@ -520,18 +606,63 @@ export default function OrganizerCreateShiftScreen() {
               helperText="Wages are deposited into direct settlement upon shift sign-off"
             />
 
-            {/* Quick Financial Preview */}
-            <Card variant="elevated" style={{ backgroundColor: colors.surfaceMuted, padding: spacing.md }}>
+            {/* Live Interactive Billing Inspector */}
+            <Card
+              variant="elevated"
+              style={{
+                backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
+                borderColor: colors.border,
+                borderWidth: 1,
+                padding: spacing.md,
+                gap: 8,
+              }}
+            >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Per Worker Pay:</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Live Billing Inspector
+                </Text>
+                <Badge label="100% WAGE SHIELD" variant="success" size="sm" />
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Wage per Worker:</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                   {formatINR(perWorkerPay)} ({parsedHours}h @ {formatINR(parsedRate)}/h)
                 </Text>
               </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>Total Crew Wages ({parsedSlots} workers):</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: colors.primary }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                   {formatINR(totalCrewBudget)}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Platform Facilitation Fee (10%):</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  {formatINR(platformFee)}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>GST on Facilitation Fee (18%):</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  {formatINR(gstFee)}
+                </Text>
+              </View>
+
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 2 }} />
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>Total Shift Escrow:</Text>
+                <WageText style={{ fontSize: 18 }}>{formatINR(totalDeposit)}</WageText>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <ShieldCheck size={13} color={colors.success} strokeWidth={2.4} />
+                <Text style={{ fontSize: 11, color: colors.success, fontWeight: '600', flex: 1 }}>
+                  100% of worker wages are protected in escrow and disbursed directly with ₹0 deductions.
                 </Text>
               </View>
             </Card>
@@ -616,16 +747,27 @@ export default function OrganizerCreateShiftScreen() {
             {/* Schedule & Venue Card */}
             <Card variant="outlined" style={{ gap: 8 }}>
               <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Event & Venue</Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                📅 {date} • {startTime} - {endTime} ({parsedHours} hours)
-              </Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                📍 {venueName}, {zone}
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.textMuted }}>{venueAddress}</Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                👤 Supervisor: {supervisorName} ({supervisorPhone})
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Calendar size={14} color={colors.primary} strokeWidth={2.2} />
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  {date} • {startTime} - {endTime} ({parsedHours} hours)
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                <MapPin size={14} color={colors.primary} strokeWidth={2.2} style={{ marginTop: 2 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPrimary }}>
+                    {venueName}, {zone}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 1 }}>{venueAddress}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <User size={14} color={colors.textSecondary} strokeWidth={2.2} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  Supervisor: {supervisorName} ({supervisorPhone})
+                </Text>
+              </View>
             </Card>
 
             {/* Comprehensive Financial Budget Card */}
@@ -638,9 +780,12 @@ export default function OrganizerCreateShiftScreen() {
                 gap: 8,
               }}
             >
-              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
-                Financial Summary & Budget
-              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                  Financial Summary & Budget
+                </Text>
+                <Badge label="VERIFIED RATES" variant="primary" size="sm" />
+              </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
@@ -652,14 +797,14 @@ export default function OrganizerCreateShiftScreen() {
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Platform Facilitation Fee (8%):</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Platform Facilitation Fee (10%):</Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                   {formatINR(platformFee)}
                 </Text>
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>GST on Fee (18%):</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>GST on Facilitation Fee (18%):</Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
                   {formatINR(gstFee)}
                 </Text>
@@ -672,6 +817,13 @@ export default function OrganizerCreateShiftScreen() {
                   Total Organizer Liability:
                 </Text>
                 <WageText style={{ fontSize: 20 }}>{formatINR(totalDeposit)}</WageText>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <ShieldCheck size={13} color={colors.success} strokeWidth={2.4} />
+                <Text style={{ fontSize: 11, color: colors.success, fontWeight: '600', flex: 1 }}>
+                  100% Wage Protection: Workers receive full agreed wages without deduction upon sign-off.
+                </Text>
               </View>
             </Card>
 

@@ -32,6 +32,17 @@ import {
   cancelBookingSafe,
   disputeBookingSafe,
 } from '@opskil/shared';
+import {
+  Ticket,
+  MapPin,
+  Calendar,
+  Clock,
+  User,
+  Copy,
+  Check,
+  ShieldCheck,
+  CheckCircle2,
+} from 'lucide-react-native';
 
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
@@ -153,6 +164,17 @@ export default function WorkerMyShiftsScreen() {
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [submittingModal, setSubmittingModal] = useState(false);
+  const [copiedBookingId, setCopiedBookingId] = useState<string | null>(null);
+
+  const handleCopyCode = (bookingId: string, code: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
+    setCopiedBookingId(bookingId);
+    setTimeout(() => {
+      setCopiedBookingId((prev) => (prev === bookingId ? null : prev));
+    }, 2000);
+  };
 
   const workerId = session?.user?.id;
 
@@ -408,8 +430,20 @@ export default function WorkerMyShiftsScreen() {
           </View>
         ) : currentList.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ fontSize: 36 }}>🎫</Text>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: colors.surfaceMuted,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <Ticket size={28} color={colors.textMuted} strokeWidth={1.8} />
+            </View>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 4 }]}>
               No Shifts in this View
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
@@ -425,6 +459,7 @@ export default function WorkerMyShiftsScreen() {
             const isDisputed = booking.status === 'disputed';
             const isCancelled = booking.status === 'cancelled';
             const isNoShow = booking.status === 'no_show';
+            const isCopied = copiedBookingId === booking.id;
 
             let badgeVariant: 'success' | 'warning' | 'primary' | 'danger' | 'info' = 'primary';
             let badgeLabel = 'CONFIRMED';
@@ -465,9 +500,12 @@ export default function WorkerMyShiftsScreen() {
                   <Badge label={badgeLabel} variant={badgeVariant} />
                   <View style={{ alignItems: 'flex-end' }}>
                     <WageText>{formatINR(booking.agreedTotalPay)}</WageText>
-                    <Text style={{ fontSize: 11, color: colors.success, fontWeight: '700' }}>
-                      ⚡ Escrow Guaranteed
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                      <ShieldCheck size={12} color={colors.success} strokeWidth={2.5} style={{ marginRight: 3 }} />
+                      <Text style={{ fontSize: 11, color: colors.success, fontWeight: '700' }}>
+                        Escrow Guaranteed
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -479,6 +517,9 @@ export default function WorkerMyShiftsScreen() {
                   {job?.organizer?.businessName || 'Event Host'} • {job?.category?.toUpperCase()}
                 </Text>
 
+                {/* Apple Wallet Style Perforated Divider */}
+                <View style={[styles.ticketDivider, { borderColor: colors.border }]} />
+
                 {/* Digital Check-In Pass Banner */}
                 {!isCompleted && !isCancelled && !isNoShow && (
                   <View
@@ -486,32 +527,68 @@ export default function WorkerMyShiftsScreen() {
                       styles.passBox,
                       {
                         backgroundColor: isDark ? '#064E3B' : '#ECFDF5',
-                        borderColor: colors.primary,
+                        borderColor: isDark ? '#047857' : '#A7F3D0',
                         borderRadius: radii.md,
-                        marginTop: spacing.md,
                       },
                     ]}
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <View>
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 1 }}>
                           VENUE CHECK-IN PASS
                         </Text>
-                        <Text style={{ fontSize: 20, fontWeight: '900', color: colors.textPrimary, letterSpacing: 2, marginTop: 2 }}>
+                        <Text style={{ fontSize: 22, fontWeight: '800', fontFamily: 'monospace', color: colors.textPrimary, letterSpacing: 2, marginTop: 2 }}>
                           {booking.checkInCode || 'OP-4829'}
                         </Text>
                       </View>
-                      <Badge
-                        label={isCheckedIn ? 'ACTIVE ON-SITE' : 'SHOW TO SUPERVISOR'}
-                        variant={isCheckedIn ? 'success' : 'neutral'}
-                        size="sm"
-                      />
+
+                      <Pressable
+                        onPress={() => handleCopyCode(booking.id, booking.checkInCode || 'OP-4829')}
+                        style={[
+                          styles.copyButton,
+                          {
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                            borderColor: isCopied ? colors.success : colors.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Copy check-in pass code"
+                      >
+                        {isCopied ? (
+                          <>
+                            <Check size={12} color={colors.success} strokeWidth={2.5} />
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: colors.success, marginLeft: 4 }}>
+                              COPIED
+                            </Text>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={12} color={colors.textSecondary} strokeWidth={2} />
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginLeft: 4 }}>
+                              COPY PASS
+                            </Text>
+                          </>
+                        )}
+                      </Pressable>
                     </View>
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }}>
-                      {isCheckedIn
-                        ? `Checked in at ${new Date(booking.checkInTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                        : (job?.reportingInstructions || 'Report 30 mins prior to shift.')}
-                    </Text>
+
+                    <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
+                      {isCheckedIn ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <CheckCircle2 size={12} color={colors.success} strokeWidth={2.2} style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 11, color: colors.success, fontWeight: '600' }}>
+                            Active on-site • Checked in at {new Date(booking.checkInTime || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Clock size={12} color={colors.textSecondary} strokeWidth={2} style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                            {job?.reportingInstructions || 'Report 30 mins prior to shift.'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 )}
 
@@ -521,23 +598,36 @@ export default function WorkerMyShiftsScreen() {
                     backgroundColor: colors.surfaceMuted,
                     borderRadius: radii.md,
                     padding: spacing.sm + 2,
-                    marginTop: spacing.md,
-                    gap: 4,
+                    marginTop: spacing.sm,
+                    gap: 6,
                   }}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                    📍 {job?.venueName}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {job?.venueAddress}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600', marginTop: 2 }}>
-                    ⏰ {formatISTDate(job?.date || '')} • {formatTimeRange(job?.startTime || '', job?.endTime || '')} ({job?.durationHours}h)
-                  </Text>
-                  {job?.supervisorName && (
-                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                      Supervisor: {job.supervisorName} ({job.supervisorPhone})
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <MapPin size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 6, marginTop: 1 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                        {job?.venueName}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                        {job?.venueAddress}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Calendar size={14} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 6 }} />
+                    <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600' }}>
+                      {formatISTDate(job?.date || '')} • {formatTimeRange(job?.startTime || '', job?.endTime || '')} ({job?.durationHours}h)
                     </Text>
+                  </View>
+
+                  {job?.supervisorName && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <User size={14} color={colors.textMuted} strokeWidth={2.2} style={{ marginRight: 6 }} />
+                      <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                        Supervisor: {job.supervisorName} ({job.supervisorPhone})
+                      </Text>
+                    </View>
                   )}
                 </View>
 
@@ -569,7 +659,7 @@ export default function WorkerMyShiftsScreen() {
                     <>
                       <View style={{ flex: 1.5 }}>
                         <Button
-                          title="🔑 Check-In Code"
+                          title="Enter Check-In Code"
                           variant="primary"
                           size="sm"
                           onPress={() => handleCheckIn(booking)}
@@ -588,7 +678,7 @@ export default function WorkerMyShiftsScreen() {
                   {isCheckedIn && (
                     <View style={{ flex: 1 }}>
                       <Button
-                        title="🏁 Check Out of Shift"
+                        title="Check Out of Shift"
                         variant="primary"
                         size="sm"
                         onPress={() => handleCheckOut(booking)}
@@ -599,7 +689,7 @@ export default function WorkerMyShiftsScreen() {
                   {isAwaitingReview && (
                     <View style={{ flex: 1 }}>
                       <Button
-                        title="⏳ Awaiting Supervisor Sign-Off"
+                        title="Awaiting Supervisor Sign-Off"
                         variant="secondary"
                         size="sm"
                         disabled={true}
@@ -612,10 +702,10 @@ export default function WorkerMyShiftsScreen() {
                   {isCompleted && !isDisputed && (
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
-                        ✓ ₹{booking.agreedTotalPay} Settled via UPI
+                        ✓ {formatINR(booking.agreedTotalPay)} Settled via UPI
                       </Text>
                       <Button
-                        title="Dispute Record ⚖️"
+                        title="Dispute Record"
                         variant="outline"
                         size="sm"
                         fullWidth={false}
@@ -627,7 +717,7 @@ export default function WorkerMyShiftsScreen() {
                   {isNoShow && !isDisputed && (
                     <View style={{ flex: 1 }}>
                       <Button
-                        title="Challenge No-Show Dispute ⚖️"
+                        title="Challenge No-Show Dispute"
                         variant="outline"
                         size="sm"
                         onPress={() => setDisputeBookingId(booking.id)}
@@ -691,7 +781,7 @@ export default function WorkerMyShiftsScreen() {
       <Modal visible={Boolean(disputeBookingId)} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
-            <Text style={[typography.h3, { color: colors.textPrimary }]}>⚖️ Submit Record Dispute</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Submit Record Dispute</Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
               Flag discrepancies in attendance, hours worked, supervisor conduct, or erroneous no-show labels.
             </Text>
@@ -748,8 +838,21 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
   },
+  ticketDivider: {
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
+    marginVertical: 12,
+  },
   passBox: {
     padding: 12,
+    borderWidth: 1,
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   modalBackdrop: {

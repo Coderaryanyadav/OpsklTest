@@ -33,6 +33,7 @@ import {
   recordNoShowSafe,
   cancelBookingSafe,
 } from '@opskil/shared';
+import { Star, CheckCircle2 } from 'lucide-react-native';
 
 const SEED_ROSTER: Booking[] = [
   {
@@ -467,9 +468,15 @@ export default function OrganizerShiftDetailScreen() {
                         <Badge label="VERIFIED" variant="success" size="sm" />
                       )}
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                      {profile?.phone || '+91 98200 98200'} • ★ {worker?.rating?.toFixed(1) || '5.0'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                        {profile?.phone || '+91 98200 98200'} •
+                      </Text>
+                      <Star size={11} color={colors.warning} fill={colors.warning} />
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
+                        {worker?.rating?.toFixed(1) || '5.0'}
+                      </Text>
+                    </View>
                     <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
                       Token: {member.checkInCode || 'OP-4829'}
                     </Text>
@@ -539,9 +546,12 @@ export default function OrganizerShiftDetailScreen() {
                   )}
 
                   {isCompleted && (
-                    <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
-                      ✓ Payout of ₹{member.agreedTotalPay} Released to Worker
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <CheckCircle2 size={13} color={colors.success} strokeWidth={2.4} />
+                      <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
+                        Payout of {formatINR(member.agreedTotalPay)} Released to Worker
+                      </Text>
+                    </View>
                   )}
 
                   {isNoShow && (
