@@ -10,6 +10,7 @@ import {
   moderateJobSafe,
   fetchAuditLogs,
   fetchPlatformSettings,
+  requestAccountDeletionSafe,
 } from '../index';
 
 // Mock Supabase client
@@ -277,6 +278,40 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
 
       expect(minWage?.value).toBe(100.0);
       expect(dltHeader?.value).toBe('OPSKIL');
+    });
+  });
+
+  describe('Durable Account Deletion Compliance & Obligation Guards', () => {
+    test('enforces fail-closed behavior when deletion RPC fails or is rejected', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error_code: 'ACTIVE_BOOKINGS_PENDING',
+          message: 'Cannot request deletion with active or pending shifts.',
+        },
+        error: null,
+      });
+
+      const res = await requestAccountDeletionSafe('worker-101', 'Worker requested deletion');
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Cannot request deletion with active or pending shifts');
+    });
+
+    test('returns queued purge status when deletion request passes all obligation checks', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: true,
+          status: 'queued',
+          requested_at: '2026-10-13T12:00:00Z',
+          scheduled_purge_at: '2026-11-12T12:00:00Z',
+        },
+        error: null,
+      });
+
+      const res = await requestAccountDeletionSafe('worker-101', 'Worker requested deletion');
+      expect(res.success).toBe(true);
+      expect(res.status).toBe('queued');
+      expect(res.scheduledPurgeAt).toBe('2026-11-12T12:00:00Z');
     });
   });
 });

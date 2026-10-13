@@ -135,13 +135,21 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid 4-6 digit shift check-in PIN or QR code is required.');
   END IF;
 
-  -- For worker self-check-in, verify code matches the booking's generated check-in code
-  IF NOT v_is_supervisor AND v_booking.check_in_code IS NOT NULL THEN
-    IF trim(p_code) != trim(v_booking.check_in_code) THEN
+  -- For worker self-check-in, require provisioned credential and exact match
+  IF NOT v_is_supervisor THEN
+    IF v_booking.check_in_code IS NULL THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'CHECK_IN_CREDENTIAL_NOT_PROVISIONED',
+        'message', 'Check-in credential has not been provisioned for this booking.'
+      );
+    END IF;
+
+    IF upper(trim(p_code)) != upper(trim(v_booking.check_in_code)) THEN
       RETURN jsonb_build_object(
         'success', false,
         'error_code', 'INVALID_CHECK_IN_CODE',
-        'message', 'Check-in code does not match the shift ticket code.'
+        'message', 'Check-in code does not match the shift ticket credential.'
       );
     END IF;
   END IF;
@@ -506,8 +514,12 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
   END IF;
 
-  IF v_booking.organizer_id != v_organizer_id THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
+  IF v_organizer_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
+  END IF;
+
+  IF v_booking.organizer_id != v_organizer_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to record no-show.');
   END IF;
 
   IF NOT validate_booking_transition(v_booking.status, 'no_show') THEN
@@ -642,8 +654,8 @@ GRANT EXECUTE ON FUNCTION complete_shift_and_approve_attendance(UUID, NUMERIC) T
 REVOKE EXECUTE ON FUNCTION cancel_booking_safe(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION cancel_booking_safe(UUID, TEXT) TO authenticated;
 
-REVOKE EXECUTE ON FUNCTION report_worker_no_show_safe(UUID, TEXT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION report_worker_no_show_safe(UUID, TEXT) TO authenticated;
+REVOKE EXECUTE ON FUNCTION record_no_show_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION record_no_show_safe(UUID, TEXT) TO authenticated;
 
 REVOKE EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) TO authenticated;

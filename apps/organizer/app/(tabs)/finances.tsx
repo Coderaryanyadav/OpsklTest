@@ -19,8 +19,10 @@ import {
 import {
   formatINR,
   fetchOrganizerFinancesSummary,
+  fetchOrganizerProfile,
   OrganizerFinancesSummary,
   OrganizerInvoice,
+  OrganizerProfile,
 } from '@opskil/shared';
 
 import { useAuth } from '@opskil/design-system';
@@ -32,6 +34,7 @@ export default function OrganizerFinancesScreen() {
   const { session } = useAuth();
 
   const [finances, setFinances] = useState<OrganizerFinancesSummary | null>(null);
+  const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>('invoices');
@@ -47,8 +50,12 @@ export default function OrganizerFinancesScreen() {
       return;
     }
     try {
-      const data = await fetchOrganizerFinancesSummary(organizerId);
+      const [data, profile] = await Promise.all([
+        fetchOrganizerFinancesSummary(organizerId),
+        fetchOrganizerProfile(organizerId),
+      ]);
       setFinances(data);
+      setOrganizerProfile(profile);
     } catch {
       // Fallback in service
     } finally {
@@ -98,8 +105,8 @@ export default function OrganizerFinancesScreen() {
             paddingVertical: spacing.xs,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-            GST REGISTERED
+          <Text style={{ fontSize: 11, fontWeight: '700', color: organizerProfile?.gstin ? colors.primary : colors.textMuted }}>
+            {organizerProfile?.gstin ? `GST: ${organizerProfile.gstin}` : 'GST UNREGISTERED'}
           </Text>
         </View>
       </View>
@@ -133,7 +140,22 @@ export default function OrganizerFinancesScreen() {
                   {formatINR(finances?.totalPayableAllTime || 0)}
                 </WageText>
               </View>
-              <Badge label="RECONCILED" variant="success" size="sm" />
+              {(() => {
+                const hasInvoices = (finances?.invoices || []).length > 0;
+                const hasDiscrepancy = finances?.reconciliationLogs?.some((l) => l.status === 'discrepancy');
+                const hasEscrowDue = (finances?.outstandingEscrowDue || 0) > 0;
+
+                if (!hasInvoices) {
+                  return <Badge label="NO INVOICES" variant="neutral" size="sm" />;
+                }
+                if (hasDiscrepancy) {
+                  return <Badge label="DISCREPANCY" variant="danger" size="sm" />;
+                }
+                if (hasEscrowDue) {
+                  return <Badge label="ESCROW PENDING" variant="warning" size="sm" />;
+                }
+                return <Badge label="RECONCILED" variant="success" size="sm" />;
+              })()}
             </View>
 
             <View
@@ -345,7 +367,9 @@ export default function OrganizerFinancesScreen() {
               {(finances?.reconciliationLogs || []).length === 0 ? (
                 <Card variant="outlined" style={{ padding: spacing.xl, alignItems: 'center' }}>
                   <Text style={[typography.body, { color: colors.textMuted }]}>
-                    All provider transactions matched. No discrepancies detected.
+                    {(finances?.invoices || []).length === 0
+                      ? 'No invoices or reconciliation logs recorded yet.'
+                      : 'All provider transactions matched. No discrepancies detected.'}
                   </Text>
                 </Card>
               ) : (

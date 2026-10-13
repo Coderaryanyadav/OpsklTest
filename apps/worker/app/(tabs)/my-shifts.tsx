@@ -10,6 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import {
   useOpsklTheme,
   Card,
@@ -166,9 +167,14 @@ export default function WorkerMyShiftsScreen() {
   const [submittingModal, setSubmittingModal] = useState(false);
   const [copiedBookingId, setCopiedBookingId] = useState<string | null>(null);
 
-  const handleCopyCode = (bookingId: string, code: string) => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(code).catch(() => {});
+  const handleCopyCode = async (bookingId: string, code?: string) => {
+    if (!code) return;
+    try {
+      await Clipboard.setStringAsync(code);
+    } catch {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code).catch(() => {});
+      }
     }
     setCopiedBookingId(bookingId);
     setTimeout(() => {
@@ -220,19 +226,24 @@ export default function WorkerMyShiftsScreen() {
     loadBookings();
   };
 
-  /**
-   * Handle On-Site Check In
-   */
   const handleCheckIn = async (booking: Booking) => {
+    if (!booking.checkInCode) {
+      Alert.alert(
+        'Check-In Credential Required',
+        'No check-in credential has been provisioned for this booking. Please contact your organizer or support to issue a credential.'
+      );
+      return;
+    }
+
     Alert.alert(
       'On-Site Shift Check-In',
-      `Your official check-in code for this shift is:\n\n🔑 ${booking.checkInCode || 'OP-4829'}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
+      `Your official check-in code for this shift is:\n\n🔑 ${booking.checkInCode}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm Check-In',
           onPress: async () => {
-            const res = await checkInWorkerSafe(booking.id, booking.checkInCode || 'OP-4829');
+            const res = await checkInWorkerSafe(booking.id, booking.checkInCode!);
             if (res.success) {
               setBookings((prev) =>
                 prev.map((b) =>
@@ -243,7 +254,7 @@ export default function WorkerMyShiftsScreen() {
               );
               Alert.alert('✓ Check-In Recorded', 'Your arrival has been recorded. Shift timer is now active.');
             } else {
-              Alert.alert('Check-In Error', res.error || 'Failed to check in.');
+              Alert.alert('Check-In Failed', res.error || 'Failed to record check-in.');
             }
           },
         },
@@ -537,39 +548,41 @@ export default function WorkerMyShiftsScreen() {
                         <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 1 }}>
                           VENUE CHECK-IN PASS
                         </Text>
-                        <Text style={{ fontSize: 22, fontWeight: '800', fontFamily: 'monospace', color: colors.textPrimary, letterSpacing: 2, marginTop: 2 }}>
-                          {booking.checkInCode || 'OP-4829'}
+                        <Text style={{ fontSize: booking.checkInCode ? 22 : 14, fontWeight: '800', fontFamily: booking.checkInCode ? 'monospace' : undefined, color: booking.checkInCode ? colors.textPrimary : colors.textMuted, letterSpacing: booking.checkInCode ? 2 : 0, marginTop: 2 }}>
+                          {booking.checkInCode || 'Pending Credential'}
                         </Text>
                       </View>
 
-                      <Pressable
-                        onPress={() => handleCopyCode(booking.id, booking.checkInCode || 'OP-4829')}
-                        style={[
-                          styles.copyButton,
-                          {
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                            borderColor: isCopied ? colors.success : colors.border,
-                          },
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel="Copy check-in pass code"
-                      >
-                        {isCopied ? (
-                          <>
-                            <Check size={12} color={colors.success} strokeWidth={2.5} />
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: colors.success, marginLeft: 4 }}>
-                              COPIED
-                            </Text>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={12} color={colors.textSecondary} strokeWidth={2} />
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginLeft: 4 }}>
-                              COPY PASS
-                            </Text>
-                          </>
-                        )}
-                      </Pressable>
+                      {booking.checkInCode ? (
+                        <Pressable
+                          onPress={() => handleCopyCode(booking.id, booking.checkInCode)}
+                          style={[
+                            styles.copyButton,
+                            {
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                              borderColor: isCopied ? colors.success : colors.border,
+                            },
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Copy check-in pass code"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check size={12} color={colors.success} strokeWidth={2.5} />
+                              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.success, marginLeft: 4 }}>
+                                COPIED
+                              </Text>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={12} color={colors.textSecondary} strokeWidth={2} />
+                              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginLeft: 4 }}>
+                                COPY PASS
+                              </Text>
+                            </>
+                          )}
+                        </Pressable>
+                      ) : null}
                     </View>
 
                     <View style={{ marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>

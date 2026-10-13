@@ -69,67 +69,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             p_phone: phone,
           });
         } catch (rpcErr) {
-          logger.warn('Profile provisioning RPC failed, attempting direct insert fallback', { rpcErr });
+          logger.error('Authoritative profile provisioning RPC failed', rpcErr, { userId: u.id });
         }
 
         p = await fetchUserProfile(u.id);
-
-        if (!p) {
-          const { data: createdProfile } = await supabase
-            .from('profiles')
-            .insert({
-              id: u.id,
-              phone: phone,
-              full_name: defaultName,
-              role: defaultRole,
-              city: 'Mumbai',
-              is_active: true,
-            })
-            .select()
-            .maybeSingle();
-
-          if (createdProfile) {
-            p = createdProfile as Profile;
-          }
-        }
       }
       setProfile(p);
 
       if (p?.role === 'worker') {
-        let wp = await fetchWorkerProfile(u.id);
-        if (!wp && u.id) {
-          const { data: createdWp } = await supabase
-            .from('worker_profiles')
-            .insert({
-              id: u.id,
-              preferred_locality: 'Mumbai',
-              availability_status: 'available',
-              profile_completion_status: 'incomplete',
-            })
-            .select()
-            .maybeSingle();
-          if (createdWp) {
-            wp = createdWp as WorkerProfile;
-          }
-        }
+        const wp = await fetchWorkerProfile(u.id);
         setWorkerProfile(wp);
       } else if (p?.role === 'organizer') {
-        let op = await fetchOrganizerProfile(u.id);
-        if (!op && u.id) {
-          const { data: createdOp } = await supabase
-            .from('organizer_profiles')
-            .insert({
-              id: u.id,
-              business_name: 'Independent Events',
-              business_contact_phone: u.phone || '',
-              business_type: 'independent',
-            })
-            .select()
-            .maybeSingle();
-          if (createdOp) {
-            op = createdOp as OrganizerProfile;
-          }
-        }
+        const op = await fetchOrganizerProfile(u.id);
         setOrganizerProfile(op);
       }
     } catch (err) {

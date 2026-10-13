@@ -18,7 +18,9 @@ export default function WorkerLoginScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { sendPhoneOtp, verifyOtp } = useAuth();
 
-  const [phone, setPhone] = useState('9820098200');
+  const [phone, setPhone] = useState(
+    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? '9820098200' : ''
+  );
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);

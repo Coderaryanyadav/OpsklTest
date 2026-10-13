@@ -217,6 +217,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'checked_in', 'completed', 'cancelled', 'no_show')),
   agreed_hourly_rate NUMERIC(8, 2) NOT NULL,
   agreed_total_pay NUMERIC(8, 2) NOT NULL,
+  check_in_code TEXT,
   confirmed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at TIMESTAMPTZ,
   UNIQUE(job_id, worker_id)
@@ -252,7 +253,8 @@ CREATE TABLE IF NOT EXISTS payment_records (
   utr_reference TEXT,
   escrow_locked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   settled_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(booking_id)
 );
 
 -- 14. REVIEWS
@@ -561,7 +563,11 @@ CREATE POLICY "Workers can view own worker profile"
   ON worker_profiles FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Workers can insert own worker profile"
-  ON worker_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+  ON worker_profiles FOR INSERT WITH CHECK (
+    auth.uid() = id AND EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('worker', 'admin')
+    )
+  );
 
 CREATE POLICY "Workers can update own worker profile"
   ON worker_profiles FOR UPDATE USING (auth.uid() = id);
@@ -571,7 +577,11 @@ CREATE POLICY "Organizers view their own profile"
   ON organizer_profiles FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Organizers insert their own profile"
-  ON organizer_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+  ON organizer_profiles FOR INSERT WITH CHECK (
+    auth.uid() = id AND EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('organizer', 'admin')
+    )
+  );
 
 CREATE POLICY "Organizers update their own profile"
   ON organizer_profiles FOR UPDATE USING (auth.uid() = id);

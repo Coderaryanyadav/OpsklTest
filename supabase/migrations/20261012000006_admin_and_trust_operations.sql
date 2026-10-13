@@ -408,7 +408,32 @@ GRANT EXECUTE ON FUNCTION admin_moderate_job_safe(UUID, shift_status, TEXT, UUID
 REVOKE EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) TO authenticated;
 
--- 10. RPC: USER REQUEST ACCOUNT DELETION SAFE (WITH COMPLIANCE AUDIT)
+-- 10. ACCOUNT DELETION REQUESTS TABLE & WORKFLOW
+CREATE TABLE IF NOT EXISTS account_deletion_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'cancelled')),
+  reason TEXT,
+  scheduled_purge_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT account_deletion_requests_user_id_unique UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_status ON account_deletion_requests(status);
+CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_purge_at ON account_deletion_requests(scheduled_purge_at);
+
+ALTER TABLE account_deletion_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own deletion request"
+  ON account_deletion_requests FOR SELECT
+  USING (auth.uid() = user_id OR is_current_admin());
+
+CREATE POLICY "Admins can manage deletion requests"
+  ON account_deletion_requests FOR ALL
+  USING (is_current_admin());
+
+-- RPC: USER REQUEST ACCOUNT DELETION SAFE (WITH COMPLIANCE AUDIT & OBLIGATION CHECKS)
 CREATE OR REPLACE FUNCTION request_account_deletion_safe(
   p_reason TEXT DEFAULT 'User requested account deletion in-app'
 )
@@ -420,12 +445,67 @@ AS $$
 DECLARE
   v_user_id UUID := auth.uid();
   v_now TIMESTAMPTZ := now();
+  v_purge_at TIMESTAMPTZ := v_now + INTERVAL '30 days';
 BEGIN
   IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
   END IF;
 
-  -- Record authoritative audit record for compliance and archival
+  -- 1. Check for active worker shift commitments
+  IF EXISTS (
+    SELECT 1 FROM bookings 
+    WHERE worker_id = v_user_id AND status IN ('confirmed', 'checked_in', 'completed_awaiting_review')
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'ACTIVE_BOOKINGS_PENDING',
+      'message', 'Cannot request deletion with active or pending shifts. Please complete or cancel upcoming shifts first.'
+    );
+  END IF;
+
+  -- 2. Check for active organizer shifts/jobs
+  IF EXISTS (
+    SELECT 1 FROM jobs 
+    WHERE organizer_id = v_user_id AND status IN ('published', 'in_progress')
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'ACTIVE_JOBS_PENDING',
+      'message', 'Cannot request deletion with published or in-progress shifts. Please close or complete all active shifts first.'
+    );
+  END IF;
+
+  -- 3. Check for unsettled payments / held escrow
+  IF EXISTS (
+    SELECT 1 FROM payment_records 
+    WHERE (recipient_id = v_user_id OR organizer_id = v_user_id) 
+      AND status IN ('escrow_held', 'initiated', 'pending')
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'PENDING_SETTLEMENT',
+      'message', 'Cannot delete account while payments or escrow settlements are pending.'
+    );
+  END IF;
+
+  -- 4. Deactivate the profile
+  UPDATE profiles 
+  SET is_active = false, updated_at = v_now 
+  WHERE id = v_user_id;
+
+  -- 5. Insert or update the durable deletion queue record
+  INSERT INTO account_deletion_requests (
+    user_id, status, reason, scheduled_purge_at, created_at, updated_at
+  ) VALUES (
+    v_user_id, 'queued', p_reason, v_purge_at, v_now, v_now
+  )
+  ON CONFLICT (user_id) DO UPDATE SET
+    status = 'queued',
+    reason = EXCLUDED.reason,
+    scheduled_purge_at = EXCLUDED.scheduled_purge_at,
+    updated_at = v_now;
+
+  -- 6. Record authoritative audit record for compliance and archival
   INSERT INTO audit_logs (
     actor_id,
     action,
@@ -441,12 +521,20 @@ BEGIN
     jsonb_build_object(
       'reason', p_reason,
       'requested_at', v_now,
+      'scheduled_purge_at', v_purge_at,
+      'status', 'queued',
       'source', 'mobile_app_in_app_action'
     ),
     v_now
   );
 
-  RETURN jsonb_build_object('success', true, 'requested_at', v_now);
+  RETURN jsonb_build_object(
+    'success', true, 
+    'status', 'queued',
+    'requested_at', v_now,
+    'scheduled_purge_at', v_purge_at,
+    'message', 'Account has been deactivated and scheduled for permanent data purge in 30 days.'
+  );
 END;
 $$;
 

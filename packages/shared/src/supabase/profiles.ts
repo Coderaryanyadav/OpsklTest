@@ -50,7 +50,7 @@ export async function fetchWorkerProfile(userId: string): Promise<WorkerProfile 
     availabilityStatus: data.availability_status,
     profileCompletionStatus: data.profile_completion_status,
     verificationStatus: data.verification_status,
-    rating: Number(data.rating) || 5.0,
+    rating: data.rating !== null && data.rating !== undefined ? Number(data.rating) : 0,
     totalReviews: data.total_reviews || 0,
     shiftsCompleted: data.shifts_completed || 0,
     upiId: data.upi_id,
@@ -81,7 +81,7 @@ export async function fetchOrganizerProfile(userId: string): Promise<OrganizerPr
     billingAddress: data.billing_address,
     verificationStatus: data.verification_status,
     profileCompletionStatus: data.profile_completion_status,
-    rating: Number(data.rating) || 5.0,
+    rating: data.rating !== null && data.rating !== undefined ? Number(data.rating) : 0,
     totalEventsHosted: data.total_events_hosted || 0,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
@@ -165,7 +165,7 @@ export async function updateOrganizerProfile(
 export async function requestAccountDeletionSafe(
   userId: string,
   reason: string = 'User initiated account deletion in-app'
-): Promise<{ success: boolean; requestedAt: string; error?: string }> {
+): Promise<{ success: boolean; requestedAt: string; status?: string; scheduledPurgeAt?: string; error?: string }> {
   logger.info('Submitting account deletion request', { userId, reason });
 
   try {
@@ -173,28 +173,30 @@ export async function requestAccountDeletionSafe(
       p_reason: reason,
     });
 
-    if (!error && data?.success) {
+    if (error) {
+      logger.error('RPC request_account_deletion_safe failed', error, { userId });
       return {
-        success: true,
-        requestedAt: data.requested_at || new Date().toISOString(),
+        success: false,
+        requestedAt: new Date().toISOString(),
+        error: error.message || 'Unable to register deletion request',
       };
     }
 
-    // Direct fallback insertion into audit_logs if RPC is pending migration
-    const requestedAt = new Date().toISOString();
-    const { error: insertErr } = await supabase.from('audit_logs').insert({
-      actor_id: userId,
-      action: 'account_deletion_requested',
-      entity_type: 'profile',
-      entity_id: userId,
-      changes: { reason, requested_at: requestedAt, source: 'mobile_app' },
-    });
-
-    if (insertErr) {
-      logger.error('Failed to record deletion audit log', insertErr, { userId });
+    if (!data?.success) {
+      logger.warn('Account deletion request rejected by policy', { userId, data });
+      return {
+        success: false,
+        requestedAt: new Date().toISOString(),
+        error: data?.message || data?.error || 'Account deletion request rejected',
+      };
     }
 
-    return { success: true, requestedAt };
+    return {
+      success: true,
+      requestedAt: data.requested_at || new Date().toISOString(),
+      status: data.status || 'queued',
+      scheduledPurgeAt: data.scheduled_purge_at,
+    };
   } catch (err: any) {
     logger.error('Account deletion execution error', err, { userId });
     return {

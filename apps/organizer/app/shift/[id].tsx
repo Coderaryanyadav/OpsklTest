@@ -222,15 +222,23 @@ export default function OrganizerShiftDetailScreen() {
    */
   const handleVerifyCheckIn = async (booking: Booking) => {
     const workerName = booking.worker?.profile?.fullName || 'Worker';
+    if (!booking.checkInCode) {
+      Alert.alert(
+        'Check-In Credential Required',
+        `No check-in credential has been provisioned for ${workerName}. Arrival cannot be verified without a provisioned token.`
+      );
+      return;
+    }
+
     Alert.alert(
       'Confirm Check-In',
-      `Confirm on-site arrival of ${workerName}?\nVerification Token: ${booking.checkInCode || 'OP-4829'}`,
+      `Confirm on-site arrival of ${workerName}?\nVerification Token: ${booking.checkInCode}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm Arrival',
           onPress: async () => {
-            const res = await checkInWorkerSafe(booking.id, booking.checkInCode || 'OP-4829');
+            const res = await checkInWorkerSafe(booking.id, booking.checkInCode!);
             if (res.success) {
               setCrew((prev) =>
                 prev.map((c) =>
@@ -470,15 +478,15 @@ export default function OrganizerShiftDetailScreen() {
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
                       <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                        {profile?.phone || '+91 98200 98200'} •
+                        {profile?.phone || 'Contact verified'} •
                       </Text>
                       <Star size={11} color={colors.warning} fill={colors.warning} />
                       <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
-                        {worker?.rating?.toFixed(1) || '5.0'}
+                        {worker?.rating && worker.rating > 0 ? worker.rating.toFixed(1) : 'New'}
                       </Text>
                     </View>
                     <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                      Token: {member.checkInCode || 'OP-4829'}
+                      Token: {member.checkInCode || 'Not Provisioned'}
                     </Text>
                   </View>
 

@@ -70,13 +70,19 @@ export default function WorkerProfileScreen() {
           text: 'Delete Permanently',
           style: 'destructive',
           onPress: async () => {
-            if (userId) {
-              await requestAccountDeletionSafe(userId, 'Worker requested in-app account deletion');
+            if (!userId) return;
+            const res = await requestAccountDeletionSafe(userId, 'Worker requested in-app account deletion');
+            if (!res.success) {
+              Alert.alert(
+                'Deletion Request Denied',
+                res.error || 'Your account deletion request could not be processed due to active commitments or pending settlements.'
+              );
+              return;
             }
             await signOut();
             Alert.alert(
-              'Request Confirmed',
-              'Your account deletion request has been registered. Any pending settlements will be cleared, and all associated personal data will be purged within 30 days.'
+              'Account Deactivated',
+              'Your account has been deactivated and queued for permanent data purge in 30 days.'
             );
             router.replace('/auth/login');
           },
@@ -161,7 +167,7 @@ export default function WorkerProfileScreen() {
                     {displayPhone} {userProfile?.city ? `• ${userProfile.city}` : '• Mumbai'}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                    ★ {(workerData?.rating ?? 5.0).toFixed(1)} Rating • {workerData?.shiftsCompleted ?? 0} Shifts Completed
+                    ★ {workerData?.rating && workerData.rating > 0 ? `${workerData.rating.toFixed(1)} Rating` : 'New (Unrated)'} • {workerData?.shiftsCompleted ?? 0} Shifts Completed
                   </Text>
                 </View>
               </View>

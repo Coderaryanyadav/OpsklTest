@@ -106,6 +106,16 @@ CREATE POLICY "Admins can view and manage reconciliation logs"
     is_current_admin()
   );
 
+CREATE POLICY "Organizers can view own invoice reconciliation logs"
+  ON payment_reconciliation_logs FOR SELECT
+  USING (
+    is_current_admin() OR EXISTS (
+      SELECT 1 FROM organizer_invoices
+      WHERE organizer_invoices.invoice_number = payment_reconciliation_logs.reference_id
+        AND organizer_invoices.organizer_id = auth.uid()
+    )
+  );
+
 -- 9. RPC: SERVER-SIDE AUTHORITATIVE FINANCIAL CALCULATOR
 CREATE OR REPLACE FUNCTION calculate_shift_financials_safe(
   p_job_id UUID
@@ -563,12 +573,13 @@ DECLARE
   v_payment_id UUID;
   v_key TEXT;
 BEGIN
-  -- 1. Validate booking existence & completion
+  -- 1. Validate booking existence, lock row for concurrency protection & enforce completion
   SELECT b.*, j.organizer_id AS job_organizer_id
   INTO v_booking
   FROM bookings b
   JOIN jobs j ON j.id = b.job_id
-  WHERE b.id = p_booking_id;
+  WHERE b.id = p_booking_id
+  FOR UPDATE OF b;
 
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'Booking not found');
@@ -583,10 +594,10 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Only the shift organizer or administrator can initiate payout.');
   END IF;
 
-  IF v_booking.status NOT IN ('completed', 'completed_awaiting_review') THEN
+  IF v_booking.status != 'completed' THEN
     RETURN jsonb_build_object(
       'success', false,
-      'error', 'Shift is not completed yet (current status: ' || v_booking.status || ')'
+      'error', 'Shift attendance must be approved and completed prior to payout initiation (current status: ' || v_booking.status || ')'
     );
   END IF;
 

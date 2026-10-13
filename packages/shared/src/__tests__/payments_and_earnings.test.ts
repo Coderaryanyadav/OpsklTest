@@ -9,6 +9,7 @@ import {
   processPaymentWebhookSafe,
   fetchWorkerEarningsSummary,
   fetchOrganizerFinancesSummary,
+  generateJobInvoiceSafe,
 } from '../index';
 
 // Mock Supabase client
@@ -264,6 +265,38 @@ describe('Phase 6 — Opskl Payments, Earnings & Financial Engine', () => {
         finances.workerWageTotals + finances.opskilServiceFees + finances.applicableTaxes
       );
       expect(finances.invoices.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Authoritative Job Invoice Generation', () => {
+    test('returns generated invoice details when RPC succeeds', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: true,
+          invoice_id: 'inv-uuid-1',
+          invoice_number: 'INV-202610-12345',
+          total_payable: 16770,
+        },
+        error: null,
+      });
+
+      const res = await generateJobInvoiceSafe('job-1', 'org-1');
+      expect(res.success).toBe(true);
+      expect(res.invoiceNumber).toBe('INV-202610-12345');
+      expect(res.totalPayable).toBe(16770);
+    });
+
+    test('fails closed on RPC error and does not produce hardcoded fallback invoices', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Database constraint violation or unauthorized caller' },
+      });
+
+      const res = await generateJobInvoiceSafe('job-1', 'org-1');
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Database constraint violation');
+      expect(res.invoiceId).toBeUndefined();
+      expect(res.invoiceNumber).toBeUndefined();
     });
   });
 });

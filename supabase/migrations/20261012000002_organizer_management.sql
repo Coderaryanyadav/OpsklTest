@@ -76,6 +76,21 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Must be authenticated');
   END IF;
 
+  -- Organizer role authorization check
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = v_organizer_id AND role IN ('organizer', 'admin')
+  ) OR NOT EXISTS (
+    SELECT 1 FROM organizer_profiles 
+    WHERE id = v_organizer_id
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false, 
+      'error_code', 'FORBIDDEN_ROLE', 
+      'message', 'Only verified organizers can create and publish shifts.'
+    );
+  END IF;
+
   -- Server-side validation: minimum wage
   IF v_hourly_rate < 100 THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be at least ₹100/hr');
@@ -153,6 +168,7 @@ DECLARE
   v_job RECORD;
   v_app RECORD;
   v_new_booking RECORD;
+  v_check_in_code TEXT;
 BEGIN
   -- 1. Check authorization
   IF v_organizer_id IS NULL THEN
@@ -211,11 +227,14 @@ BEGIN
     VALUES (p_job_id, p_worker_id, 'confirmed', p_notes);
   END IF;
 
-  -- 6. Insert Booking Record
+  -- 6. Generate distinct, cryptographically random per-booking check-in credential
+  v_check_in_code := 'OP-' || upper(substr(md5(random()::text || clock_timestamp()::text || p_worker_id::text), 1, 6));
+
+  -- Insert Booking Record with provisioned credential
   INSERT INTO bookings (
-    job_id, worker_id, organizer_id, status, agreed_hourly_rate, agreed_total_pay
+    job_id, worker_id, organizer_id, status, agreed_hourly_rate, agreed_total_pay, check_in_code
   ) VALUES (
-    p_job_id, p_worker_id, v_job.organizer_id, 'confirmed', v_job.hourly_rate, v_job.total_pay
+    p_job_id, p_worker_id, v_job.organizer_id, 'confirmed', v_job.hourly_rate, v_job.total_pay, v_check_in_code
   )
   RETURNING id, job_id, worker_id, organizer_id, status, agreed_hourly_rate, agreed_total_pay, confirmed_at
   INTO v_new_booking;

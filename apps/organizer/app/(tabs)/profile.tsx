@@ -70,13 +70,19 @@ export default function OrganizerProfileScreen() {
           text: 'Request Deletion',
           style: 'destructive',
           onPress: async () => {
-            if (userId) {
-              await requestAccountDeletionSafe(userId, 'Organizer requested in-app account deletion');
+            if (!userId) return;
+            const res = await requestAccountDeletionSafe(userId, 'Organizer requested in-app account deletion');
+            if (!res.success) {
+              Alert.alert(
+                'Deletion Request Denied',
+                res.error || 'Your organization deletion request could not be processed due to active listings or pending settlements.'
+              );
+              return;
             }
             await signOut();
             Alert.alert(
-              'Request Registered',
-              'Your organization account deletion ticket has been registered. Our accounts desk will reconcile outstanding payments within 30 days.'
+              'Account Deactivated',
+              'Your organization account has been deactivated and queued for permanent data purge in 30 days.'
             );
             router.replace('/auth/login');
           },
@@ -147,7 +153,7 @@ export default function OrganizerProfileScreen() {
                     {organizerData?.gstin ? `GSTIN: ${organizerData.gstin}` : 'GST registration pending'} • Mumbai
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                    ★ {(organizerData?.rating ?? 5.0).toFixed(1)} Host Rating • {organizerData?.totalEventsHosted ?? 0} Shifts Hosted
+                    ★ {organizerData?.rating && organizerData.rating > 0 ? `${organizerData.rating.toFixed(1)} Host Rating` : 'New Host (Unrated)'} • {organizerData?.totalEventsHosted ?? 0} Shifts Hosted
                   </Text>
                 </View>
               </View>

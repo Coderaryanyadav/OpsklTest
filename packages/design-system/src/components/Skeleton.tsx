@@ -32,14 +32,16 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+    let activeAnimation: Animated.CompositeAnimation | null = null;
 
     AccessibilityInfo.isReduceMotionEnabled().then((isReduced) => {
-      if (isReduced || !isMounted) {
+      if (!isMounted) return;
+      if (isReduced) {
         opacityAnim.setValue(0.5);
         return;
       }
 
-      const animation = Animated.loop(
+      activeAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(opacityAnim, {
             toValue: 0.85,
@@ -54,15 +56,14 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         ])
       );
 
-      animation.start();
-
-      return () => {
-        animation.stop();
-      };
+      activeAnimation.start();
     });
 
     return () => {
       isMounted = false;
+      if (activeAnimation) {
+        activeAnimation.stop();
+      }
     };
   }, [opacityAnim]);
 

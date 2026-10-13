@@ -34,7 +34,7 @@ export async function fetchWorkerEarningsSummary(
   const defaultUpiId = profile?.upi_id || '';
 
   // 2. Fetch all bookings for worker to categorize lifecycle stages
-  const { data: bookings } = await supabase
+  const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
     .select(`
       id,
@@ -46,19 +46,27 @@ export async function fetchWorkerEarningsSummary(
       jobs (
         id,
         title,
-        event_date,
-        shift_start_time,
-        shift_end_time
+        date,
+        start_time,
+        end_time
       )
     `)
     .eq('worker_id', workerId);
 
+  if (bookingsError) {
+    logger.error('Failed to fetch worker bookings for earnings', bookingsError, { workerId });
+  }
+
   // 3. Fetch all payment records for worker
-  const { data: paymentRecords } = await supabase
+  const { data: paymentRecords, error: paymentsError } = await supabase
     .from('payment_records')
     .select('*')
     .eq('worker_id', workerId)
     .order('created_at', { ascending: false });
+
+  if (paymentsError) {
+    logger.error('Failed to fetch payment records for worker', paymentsError, { workerId });
+  }
 
   let confirmedUpcomingWages = 0;
   let completedAwaitingApproval = 0;
@@ -214,7 +222,7 @@ export async function fetchOrganizerFinancesSummary(
   logger.info('Fetching finances summary for organizer', { organizerId });
 
   // 1. Fetch invoices
-  const { data: invoiceRows } = await supabase
+  const { data: invoiceRows, error: invoiceError } = await supabase
     .from('organizer_invoices')
     .select(`
       *,
@@ -228,12 +236,28 @@ export async function fetchOrganizerFinancesSummary(
     .eq('organizer_id', organizerId)
     .order('created_at', { ascending: false });
 
-  // 2. Fetch reconciliation logs
-  const { data: logs } = await supabase
-    .from('payment_reconciliation_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(20);
+  if (invoiceError) {
+    logger.error('Failed to fetch organizer invoices', invoiceError, { organizerId });
+  }
+
+  // 2. Fetch reconciliation logs scoped to organizer's invoices
+  const invoiceNumbers = (invoiceRows || []).map((inv: any) => inv.invoice_number).filter(Boolean);
+
+  let logs: any[] = [];
+  if (invoiceNumbers.length > 0) {
+    const { data: logData, error: logsError } = await supabase
+      .from('payment_reconciliation_logs')
+      .select('*')
+      .in('reference_id', invoiceNumbers)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (logsError) {
+      logger.error('Failed to fetch reconciliation logs for organizer invoices', logsError, { organizerId });
+    } else {
+      logs = logData || [];
+    }
+  }
 
   let workerWageTotals = 0;
   let opskilServiceFees = 0;
@@ -384,49 +408,24 @@ export async function generateJobInvoiceSafe(
       p_organizer_id: organizerId,
     });
 
-    if (!rpcError && rpcData) {
-      return {
-        success: rpcData.success,
-        invoiceId: rpcData.invoice_id,
-        invoiceNumber: rpcData.invoice_number,
-        totalPayable: rpcData.total_payable,
-        error: rpcData.error,
-      };
+    if (rpcError) {
+      logger.error('RPC generate_job_invoice_safe failed', rpcError, { jobId, organizerId });
+      return { success: false, error: rpcError.message };
     }
 
-    // Direct client fallback
-    const financials = calculateJobFinancials(5, 1500);
-    const invoiceNumber = `INV-202610-${Math.floor(10000 + Math.random() * 90000)}`;
-
-    const { data, error } = await supabase
-      .from('organizer_invoices')
-      .insert({
-        invoice_number: invoiceNumber,
-        job_id: jobId,
-        organizer_id: organizerId,
-        wage_total: financials.totalWorkerWages,
-        platform_fee: financials.platformFeeAmount,
-        gst_rate: 18.0,
-        gst_amount: financials.gstAmount,
-        total_payable: financials.totalPayableByOrganizer,
-        status: 'pending',
-        due_date: new Date(Date.now() + 3 * 86400000).toISOString(),
-        is_sandbox: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
+    if (!rpcData) {
+      return { success: false, error: 'Empty response returned from invoice generator' };
     }
 
     return {
-      success: true,
-      invoiceId: data.id,
-      invoiceNumber: data.invoice_number,
-      totalPayable: Number(data.total_payable),
+      success: rpcData.success,
+      invoiceId: rpcData.invoice_id,
+      invoiceNumber: rpcData.invoice_number,
+      totalPayable: rpcData.total_payable,
+      error: rpcData.error,
     };
   } catch (err: any) {
+    logger.error('Failed to generate job invoice', err, { jobId, organizerId });
     return { success: false, error: err.message };
   }
 }

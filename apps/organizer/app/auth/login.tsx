@@ -18,7 +18,9 @@ export default function OrganizerLoginScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { sendPhoneOtp, verifyOtp } = useAuth();
 
-  const [phone, setPhone] = useState('9819998199');
+  const [phone, setPhone] = useState(
+    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? '9819998199' : ''
+  );
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
