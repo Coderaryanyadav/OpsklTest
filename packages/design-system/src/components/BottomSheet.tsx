@@ -8,6 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
+import { X } from 'lucide-react-native';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -84,10 +85,21 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   <Pressable
                     onPress={onClose}
                     hitSlop={12}
+                    style={({ pressed }) => [
+                      {
+                        width: 32,
+                        height: 32,
+                        borderRadius: radii.full,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
+                        transform: [{ scale: pressed ? 0.94 : 1.0 }],
+                      },
+                    ]}
                     accessibilityRole="button"
-                    accessibilityLabel="Close"
+                    accessibilityLabel="Close bottom sheet"
                   >
-                    <Text style={{ fontSize: 18, color: colors.textMuted }}>✕</Text>
+                    <X size={18} color={colors.textSecondary} strokeWidth={2.2} />
                   </Pressable>
                 </View>
               ) : null}

@@ -21,7 +21,7 @@ import {
   formatDistance,
   formatDeadline,
 } from '@opskil/shared';
-import { Calendar, MapPin, Utensils, Car, Coffee, Zap, X } from 'lucide-react-native';
+import { Calendar, MapPin, Utensils, Car, Coffee, Zap, X, Check, Info } from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
 export interface JobDetailSheetProps {
@@ -274,11 +274,15 @@ export function JobDetailSheet({
                 backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.md,
                 borderLeftColor: colors.primary,
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: 8,
               },
             ]}
           >
-            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              ℹ️ <Text style={{ fontWeight: '700' }}>Marketplace Notice:</Text> Swiping right or pressing Apply expresses your availability to the organizer. You are officially booked once the organizer confirms your profile.
+            <Info size={16} color={colors.primary} style={{ marginTop: 2 }} />
+            <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
+              <Text style={{ fontWeight: '700' }}>Marketplace Notice:</Text> Expressing interest informs the organizer of your availability. You are officially confirmed once the organizer selects your profile.
             </Text>
           </View>
         </ScrollView>
@@ -287,7 +291,8 @@ export function JobDetailSheet({
         <View style={[styles.bottomActionBar, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
           <View style={{ flex: 1 }}>
             <Button
-              title="✕ Pass"
+              title="Pass"
+              icon={<X size={16} color={colors.textSecondary} strokeWidth={2.2} />}
               variant="secondary"
               size="lg"
               onPress={() => {
@@ -298,7 +303,8 @@ export function JobDetailSheet({
           </View>
           <View style={{ flex: 2 }}>
             <Button
-              title="✓ Express Interest / Apply"
+              title="Apply for Shift"
+              icon={<Check size={18} color={colors.textInverse} strokeWidth={2.4} />}
               variant="primary"
               size="lg"
               onPress={() => {
