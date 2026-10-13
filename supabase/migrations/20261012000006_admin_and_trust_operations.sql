@@ -555,9 +555,9 @@ DECLARE
   v_purged_count INT := 0;
   v_now TIMESTAMPTZ := now();
 BEGIN
-  -- Strict administrative or service role authorization
-  IF NOT is_current_admin() THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Administrative credentials required to run purge worker.');
+  -- Strict administrative or trusted service-role authorization
+  IF NOT (is_current_admin() OR auth.role() = 'service_role' OR current_user = 'postgres') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Administrative credentials or service role required to run purge worker.');
   END IF;
 
   FOR v_rec IN 
@@ -595,6 +595,18 @@ BEGIN
       gstin = NULL,
       updated_at = v_now
     WHERE id = v_rec.user_id;
+
+    -- Redact KYC document references
+    UPDATE verification_cases
+    SET
+      document_storage_path = 'purged',
+      document_masked_id = 'PURGED',
+      rejection_reason = 'Account purged upon user deletion request'
+    WHERE profile_id = v_rec.user_id;
+
+    -- Remove personal notifications
+    DELETE FROM notifications
+    WHERE user_id = v_rec.user_id;
 
     -- Redact base profile identity (GDPR / Indian DPDP Right to be Forgotten)
     UPDATE profiles
@@ -646,6 +658,6 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO service_role, authenticated;
 
 

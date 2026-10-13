@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailPassword, logger } from '@opskil/shared';
+import { signInWithEmailPassword, supabase, logger } from '@opskil/shared';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -26,6 +26,19 @@ export default function AdminLoginPage() {
       logger.info('Admin login attempt', { email });
       const res = await signInWithEmailPassword({ email, password });
       if (res?.session) {
+        // Enforce administrator role and active status
+        const { data: profile, error: profError } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', res.session.user.id)
+          .maybeSingle();
+
+        if (profError || !profile || profile.role !== 'admin' || !profile.is_active) {
+          await supabase.auth.signOut();
+          setErrorMsg('Access denied: Active administrator credentials required for this portal.');
+          return;
+        }
+
         router.push('/');
       } else {
         setErrorMsg('Authentication succeeded but no active session was returned.');

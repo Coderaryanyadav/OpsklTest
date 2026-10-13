@@ -376,36 +376,20 @@ export async function confirmWorkerBooking(
   hourlyRate: number,
   totalPay: number
 ): Promise<Booking> {
-  logger.info('Organizer confirming worker booking', { jobId, workerId, organizerId });
+  logger.info('Organizer confirming worker booking via secure transaction', {
+    jobId,
+    workerId,
+    organizerId,
+    hourlyRate,
+    totalPay,
+  });
 
-  const { error: appError } = await supabase
-    .from('job_applications')
-    .update({ status: 'confirmed' })
-    .match({ job_id: jobId, worker_id: workerId });
-
-  if (appError) {
-    logger.error('Failed to update application status to confirmed', appError);
+  const result = await confirmWorkerBookingSafe(jobId, workerId, organizerId);
+  if (!result.success || !result.booking) {
+    throw new Error(result.error || 'Failed to confirm worker booking via authoritative transaction');
   }
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert({
-      job_id: jobId,
-      worker_id: workerId,
-      organizer_id: organizerId,
-      status: 'confirmed',
-      agreed_hourly_rate: hourlyRate,
-      agreed_total_pay: totalPay,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    logger.error('Booking insertion failed', error, { jobId, workerId });
-    throw error;
-  }
-
-  return data;
+  return result.booking;
 }
 
 /**
@@ -487,6 +471,25 @@ export async function updateJobStatus(
   newStatus: ShiftStatus
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const rpcRes = await supabase.rpc('update_job_status_safe', {
+      p_job_id: jobId,
+      p_new_status: newStatus,
+    });
+
+    if (rpcRes) {
+      const { data: rpcData, error: rpcError } = rpcRes;
+      if (rpcError) {
+        logger.error('RPC error in update_job_status_safe', rpcError);
+        return { success: false, error: rpcError.message };
+      }
+      if (rpcData) {
+        if (rpcData.success) {
+          return { success: true };
+        }
+        return { success: false, error: rpcData.message || rpcData.error_code };
+      }
+    }
+
     const { error } = await supabase
       .from('jobs')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
@@ -508,6 +511,7 @@ export async function updateJobStatus(
 
     return { success: true };
   } catch (err: any) {
+    logger.error('Unexpected error in updateJobStatus', err);
     return { success: false, error: err.message };
   }
 }
@@ -894,19 +898,13 @@ export async function checkInWorkerSafe(
       };
     }
 
-    // Direct fallback
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'checked_in', check_in_time: now })
-      .match({ id: bookingId, status: 'confirmed' });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, status: 'checked_in' };
+    logger.error('RPC error in check_in_worker_safe — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side attendance verification check failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception during check-in', err);
     return { success: false, error: err.message };
   }
 }
@@ -932,22 +930,16 @@ export async function checkOutWorkerSafe(
           hoursWorked: rpcData.hours_worked,
         };
       }
-      return { success: false, error: rpcData.message };
+      return { success: false, error: rpcData.message || rpcData.error_code };
     }
 
-    // Fallback
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'completed_awaiting_review', check_out_time: now })
-      .match({ id: bookingId, status: 'checked_in' });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, status: 'completed_awaiting_review' };
+    logger.error('RPC error in check_out_worker_safe — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side check-out transaction failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception during check-out', err);
     return { success: false, error: err.message };
   }
 }
@@ -969,22 +961,16 @@ export async function completeShiftAndApproveAttendance(
     );
 
     if (!rpcError && rpcData) {
-      return { success: rpcData.success, error: rpcData.message };
+      return { success: rpcData.success, error: rpcData.message || rpcData.error_code };
     }
 
-    // Fallback
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'completed', completed_at: now })
-      .eq('id', bookingId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
+    logger.error('RPC error in complete_shift_and_approve_attendance — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side attendance approval and shift completion failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception completing shift', err);
     return { success: false, error: err.message };
   }
 }
@@ -1003,22 +989,16 @@ export async function cancelBookingSafe(
     });
 
     if (!rpcError && rpcData) {
-      return { success: rpcData.success, error: rpcData.message };
+      return { success: rpcData.success, error: rpcData.message || rpcData.error_code };
     }
 
-    // Fallback
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled', cancellation_reason: reason })
-      .in('status', ['confirmed', 'selected_awaiting_confirmation'])
-      .eq('id', bookingId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
+    logger.error('RPC error in cancel_booking_safe — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side booking cancellation failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception cancelling booking', err);
     return { success: false, error: err.message };
   }
 }
@@ -1037,21 +1017,16 @@ export async function recordNoShowSafe(
     });
 
     if (!rpcError && rpcData) {
-      return { success: rpcData.success, error: rpcData.message };
+      return { success: rpcData.success, error: rpcData.message || rpcData.error_code };
     }
 
-    // Fallback
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'no_show', no_show_reason: reason })
-      .eq('id', bookingId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
+    logger.error('RPC error in record_no_show_safe — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side record no-show failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception recording no-show', err);
     return { success: false, error: err.message };
   }
 }
@@ -1072,21 +1047,20 @@ export async function disputeBookingSafe(
     });
 
     if (!rpcError && rpcData) {
-      return { success: rpcData.success, disputeId: rpcData.dispute_id, error: rpcData.message };
+      return {
+        success: rpcData.success,
+        disputeId: rpcData.dispute_id,
+        error: rpcData.message || rpcData.error_code,
+      };
     }
 
-    // Fallback
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'disputed', dispute_reason: reason })
-      .eq('id', bookingId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
+    logger.error('RPC error in dispute_booking_safe — failing closed', rpcError);
+    return {
+      success: false,
+      error: rpcError?.message || 'Server-side dispute registration failed.',
+    };
   } catch (err: any) {
+    logger.error('Unexpected exception creating dispute', err);
     return { success: false, error: err.message };
   }
 }

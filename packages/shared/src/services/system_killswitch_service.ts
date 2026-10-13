@@ -57,6 +57,68 @@ export function isBookingPaused(): boolean {
 }
 
 /**
+ * Authoritative, synchronous-await booking killswitch state updater.
+ * Strictly verifies database persistence before reporting success.
+ */
+export async function setBookingPauseStatusSafe(
+  paused: boolean,
+  reason?: string,
+  pausedBy: string = 'Ops Admin',
+  outageMessage?: string
+): Promise<{ success: boolean; status: SystemOperationalStatus; error?: string }> {
+  const nextPausedAt = paused ? new Date().toISOString() : undefined;
+  const nextOutageMessage = paused
+    ? outageMessage || 'New bookings are temporarily paused for routine maintenance or weather safety.'
+    : undefined;
+
+  try {
+    const { error } = await supabase
+      .from('platform_settings')
+      .upsert({
+        key: 'booking_killswitch',
+        value: {
+          is_paused: paused,
+          reason: reason ?? null,
+          paused_by: pausedBy,
+          paused_at: nextPausedAt,
+          outage_message: nextOutageMessage ?? null,
+        },
+        description: 'Platform-wide emergency booking pause killswitch',
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      logger.error('Failed to persist booking killswitch to platform_settings', error);
+      return { success: false, status: { ...currentOperationalStatus }, error: error.message };
+    }
+
+    currentOperationalStatus = {
+      ...currentOperationalStatus,
+      isBookingPaused: paused,
+      pauseReason: paused ? reason : undefined,
+      pausedBy: paused ? pausedBy : undefined,
+      pausedAt: nextPausedAt,
+      activeOutageMessage: nextOutageMessage,
+    };
+
+    logger.info(
+      paused ? '[OPSKL SAFETY] Bookings PAUSED' : '[OPSKL SAFETY] Bookings RESUMED',
+      {
+        paused,
+        reason,
+        pausedBy,
+        timestamp: currentOperationalStatus.pausedAt,
+      }
+    );
+
+    return { success: true, status: { ...currentOperationalStatus } };
+  } catch (err: any) {
+    logger.error('Error persisting booking killswitch', err);
+    return { success: false, status: { ...currentOperationalStatus }, error: err.message };
+  }
+}
+
+/**
  * Update system pause state (e.g. for severe weather, network disruption, or planned maintenance).
  * Persists to database platform_settings table as single authoritative source of truth.
  */

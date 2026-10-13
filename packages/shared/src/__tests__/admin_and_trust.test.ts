@@ -37,11 +37,19 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
 
   describe('Platform Overview Metrics', () => {
     test('fetches live platform metrics with baseline fallback', async () => {
+      const resolvedResult = {
+        count: 48,
+        data: [{ amount: 50000, platform_fee: 5000 }],
+        error: null,
+      };
+      const queryMock: any = {
+        in: jest.fn().mockImplementation(() => queryMock),
+        eq: jest.fn().mockImplementation(() => queryMock),
+        then: (resolve: any, reject: any) => Promise.resolve(resolvedResult).then(resolve, reject),
+      };
+
       __mockFrom.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          in: jest.fn().mockResolvedValue({ count: 48, error: null }),
-          eq: jest.fn().mockResolvedValue({ count: 1420, error: null }),
-        }),
+        select: jest.fn().mockReturnValue(queryMock),
       });
 
       const metrics = await fetchAdminDashboardMetrics();
@@ -220,7 +228,24 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
       __mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+            limit: jest.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 'job-mod-01',
+                  organizer_id: 'org-apex-01',
+                  title: 'VIP Lounge Usher — Jio World Centre',
+                  category: 'hospitality',
+                  venue_name: 'Jio World Convention Centre',
+                  hourly_rate: 200,
+                  total_pay: 1800,
+                  duration_hours: 9,
+                  slots_total: 10,
+                  slots_filled: 8,
+                  status: 'open',
+                },
+              ],
+              error: null,
+            }),
           }),
         }),
       });
@@ -257,7 +282,19 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
       __mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+            limit: jest.fn().mockResolvedValue({
+              data: [
+                {
+                  id: 'aud-01',
+                  action: 'admin_resolve_dispute',
+                  entity_type: 'disputes',
+                  entity_id: 'disp-01',
+                  changes: { status: 'resolved' },
+                  created_at: new Date().toISOString(),
+                },
+              ],
+              error: null,
+            }),
           }),
         }),
       });
@@ -269,7 +306,23 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
 
     test('fetches platform settings and verifies living wage floor and DLT headers', async () => {
       __mockFrom.mockReturnValue({
-        select: jest.fn().mockResolvedValue({ data: [], error: null }),
+        select: jest.fn().mockResolvedValue({
+          data: [
+            {
+              key: 'min_hourly_wage_inr',
+              value: 100.0,
+              description: 'Enforced minimum hourly wage floor in INR',
+              updated_at: new Date().toISOString(),
+            },
+            {
+              key: 'dlt_sms_header',
+              value: 'OPSKIL',
+              description: 'TRAI DLT-registered 6-character Alpha sender header',
+              updated_at: new Date().toISOString(),
+            },
+          ],
+          error: null,
+        }),
       });
 
       const settings = await fetchPlatformSettings();

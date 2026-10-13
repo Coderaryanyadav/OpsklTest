@@ -61,6 +61,19 @@ BEGIN
     );
   END IF;
 
+  -- 1b. Worker eligibility check: must have active profile with worker role
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles p
+    JOIN worker_profiles wp ON wp.id = p.id
+    WHERE p.id = v_worker_id AND p.role IN ('worker', 'admin') AND p.is_active = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'INELIGIBLE_WORKER',
+      'message', 'Only active workers with established profiles can apply for shifts.'
+    );
+  END IF;
+
   -- 2. Lock job row to prevent concurrent race conditions
   SELECT id, status, slots_total, slots_filled, application_deadline, date
   INTO v_job

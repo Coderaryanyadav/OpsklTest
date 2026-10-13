@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AdminOverviewMetrics,
   VerificationCase,
@@ -22,10 +23,11 @@ import {
   fetchPlatformSettings,
   calculatePilotMetricsSummary,
   PilotMetricsSummary,
-  setBookingPauseStatus,
+  setBookingPauseStatusSafe,
   getSystemOperationalStatus,
   syncKillswitchFromDatabase,
   SystemOperationalStatus,
+  supabase,
 } from '@opskil/shared';
 
 import { AdminSidebar, AdminModule } from '../components/AdminSidebar';
@@ -40,6 +42,7 @@ import { PlatformSettingsPanel } from '../components/PlatformSettingsPanel';
 import { MumbaiPilotDashboard } from '../components/MumbaiPilotDashboard';
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [activeModule, setActiveModule] = useState<AdminModule>('overview');
   const [metrics, setMetrics] = useState<AdminOverviewMetrics | null>(null);
   const [verifications, setVerifications] = useState<VerificationCase[]>([]);
@@ -85,22 +88,54 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    loadAdminData();
+    const checkAuthAndLoad = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, is_active')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (!profile || profile.role !== 'admin' || !profile.is_active) {
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+
+        await loadAdminData();
+      } catch (err) {
+        console.error('Failed to verify admin authorization', err);
+        router.push('/login');
+      }
+    };
+
+    checkAuthAndLoad();
   }, []);
 
-  const handleToggleBookingPause = (reason?: string) => {
+  const handleToggleBookingPause = async (reason?: string) => {
     const nextPaused = !systemStatus.isBookingPaused;
     const pauseReason = reason || 'Administrative precaution';
-    const updated = setBookingPauseStatus(
+    const res = await setBookingPauseStatusSafe(
       nextPaused,
       nextPaused ? pauseReason : undefined,
       'Ops Director (Aryan Yadav)',
       nextPaused ? `Notice: New shift bookings are temporarily paused due to: ${pauseReason}` : undefined
     );
-    setSystemStatus(updated);
-    setActionSuccessMessage(
-      nextPaused ? 'Shift bookings have been PAUSED platform-wide.' : 'Shift bookings have been RESUMED.'
-    );
+
+    if (res.success) {
+      setSystemStatus(res.status);
+      setActionSuccessMessage(
+        nextPaused ? 'Shift bookings have been PAUSED platform-wide and verified in database.' : 'Shift bookings have been RESUMED.'
+      );
+    } else {
+      alert(`Failed to persist booking killswitch: ${res.error}`);
+    }
   };
 
   const handleResolveCase = async (
@@ -112,7 +147,7 @@ export default function AdminDashboardPage() {
       caseId,
       status,
       reason,
-      'admin-super-id'
+      undefined
     );
     if (res.success) {
       setVerifications((prev) =>
@@ -135,7 +170,7 @@ export default function AdminDashboardPage() {
       status,
       notes,
       adjustedPayout,
-      'admin-super-id'
+      undefined
     );
     if (res.success) {
       setDisputes((prev) =>
@@ -153,7 +188,7 @@ export default function AdminDashboardPage() {
       'resolved',
       actionTaken,
       actionTaken,
-      'admin-super-id'
+      undefined
     );
     if (res.success) {
       setSafetyReports((prev) =>
@@ -174,7 +209,7 @@ export default function AdminDashboardPage() {
       jobId,
       status,
       reason,
-      'admin-super-id'
+      undefined
     );
     if (res.success) {
       setJobs((prev) =>

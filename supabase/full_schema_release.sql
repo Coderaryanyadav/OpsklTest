@@ -358,7 +358,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id, created_
 
 -- Prevent non-admin role escalation
 CREATE OR REPLACE FUNCTION prevent_role_escalation()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.role != OLD.role THEN
     IF NOT EXISTS (
@@ -370,7 +374,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS trg_prevent_role_escalation ON profiles;
 CREATE TRIGGER trg_prevent_role_escalation
@@ -399,7 +403,11 @@ CREATE TRIGGER trg_jobs_updated_at BEFORE UPDATE ON jobs FOR EACH ROW EXECUTE FU
 
 -- 1. Trigger function on auth.users to automatically provision profile records
 CREATE OR REPLACE FUNCTION public.handle_new_user_provisioning()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_role user_role;
   v_phone TEXT;
@@ -448,7 +456,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Attach trigger to auth.users if auth schema is present
 DO $$ BEGIN
@@ -614,6 +622,38 @@ CREATE POLICY "Organizers update their own profile"
 CREATE POLICY "Public verified organizer card view"
   ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
 
+-- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
+CREATE OR REPLACE VIEW public_organizer_cards AS
+  SELECT
+    id,
+    business_name,
+    business_type,
+    verification_status,
+    rating,
+    total_events_hosted,
+    created_at
+  FROM organizer_profiles
+  WHERE verification_status = 'verified';
+
+GRANT SELECT ON public_organizer_cards TO anon, authenticated;
+
+-- Restricted view for applicant worker profiles (protects sensitive worker upi_id)
+CREATE OR REPLACE VIEW worker_applicant_profiles AS
+  SELECT
+    wp.id,
+    wp.preferred_locality,
+    wp.skills,
+    wp.experience_years,
+    wp.rating,
+    wp.total_reviews,
+    wp.shifts_completed,
+    wp.verification_status,
+    wp.is_aadhaar_verified,
+    wp.is_pan_verified
+  FROM worker_profiles wp;
+
+GRANT SELECT ON worker_applicant_profiles TO authenticated;
+
 CREATE POLICY "Organizers can view applicant worker profiles"
   ON worker_profiles FOR SELECT USING (
     EXISTS (
@@ -639,8 +679,11 @@ CREATE POLICY "Anyone authenticated can view open jobs"
 CREATE POLICY "Organizers view all their own jobs"
   ON jobs FOR SELECT USING (organizer_id = auth.uid());
 
-CREATE POLICY "Organizers manage their own jobs"
-  ON jobs FOR ALL USING (organizer_id = auth.uid());
+CREATE POLICY "Organizers update their draft jobs"
+  ON jobs FOR UPDATE USING (organizer_id = auth.uid() AND status = 'draft');
+
+CREATE POLICY "Admins manage all jobs"
+  ON jobs FOR ALL USING (is_current_admin());
 
 -- 6. Job Applications
 CREATE POLICY "Workers view their own applications"
@@ -681,20 +724,23 @@ CREATE POLICY "Workers view their bookings"
 CREATE POLICY "Organizers view their bookings"
   ON bookings FOR SELECT USING (organizer_id = auth.uid());
 
-CREATE POLICY "Organizers create and update bookings"
-  ON bookings FOR ALL USING (organizer_id = auth.uid());
+CREATE POLICY "Admins view and manage all bookings"
+  ON bookings FOR ALL USING (is_current_admin());
 
 -- 9. Attendance Records
 CREATE POLICY "Workers view own attendance"
   ON attendance_records FOR SELECT USING (worker_id = auth.uid());
 
-CREATE POLICY "Organizers manage attendance for their jobs"
-  ON attendance_records FOR ALL USING (
+CREATE POLICY "Organizers view attendance for their jobs"
+  ON attendance_records FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM jobs j
       WHERE j.id = attendance_records.job_id AND j.organizer_id = auth.uid()
     )
   );
+
+CREATE POLICY "Admins manage attendance records"
+  ON attendance_records FOR ALL USING (is_current_admin());
 
 -- 10. Payment Records
 CREATE POLICY "Workers view own payments"
@@ -720,18 +766,32 @@ CREATE POLICY "Users update own notification read state"
 -- 13. Disputes
 CREATE POLICY "Users view disputes they are part of"
   ON disputes FOR SELECT USING (
-    raised_by = auth.uid() OR respondent_id = auth.uid()
+    raised_by = auth.uid() OR respondent_id = auth.uid() OR is_current_admin()
   );
 
-CREATE POLICY "Users create disputes"
-  ON disputes FOR INSERT WITH CHECK (raised_by = auth.uid());
+CREATE POLICY "Participants create disputes"
+  ON disputes FOR INSERT WITH CHECK (
+    raised_by = auth.uid()
+    AND status = 'open'
+    AND EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.id = disputes.booking_id
+        AND (b.worker_id = auth.uid() OR b.organizer_id = auth.uid())
+    )
+  );
 
--- 14. Verification Cases
+-- 14. Verification Cases (Forces initial status to pending and prevents user self-approval)
 CREATE POLICY "Users view own verification cases"
-  ON verification_cases FOR SELECT USING (profile_id = auth.uid());
+  ON verification_cases FOR SELECT USING (profile_id = auth.uid() OR is_current_admin());
 
 CREATE POLICY "Users create verification cases"
-  ON verification_cases FOR INSERT WITH CHECK (profile_id = auth.uid());
+  ON verification_cases FOR INSERT WITH CHECK (
+    profile_id = auth.uid()
+    AND status = 'pending'
+    AND reviewed_by IS NULL
+    AND reviewed_at IS NULL
+    AND rejection_reason IS NULL
+  );
 
 -- 15. Audit Logs
 CREATE POLICY "Admins view audit logs"
@@ -863,6 +923,19 @@ BEGIN
       'success', false,
       'error_code', 'UNAUTHENTICATED',
       'message', 'User must be authenticated to apply'
+    );
+  END IF;
+
+  -- 1b. Worker eligibility check: must have active profile with worker role
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles p
+    JOIN worker_profiles wp ON wp.id = p.id
+    WHERE p.id = v_worker_id AND p.role IN ('worker', 'admin') AND p.is_active = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'INELIGIBLE_WORKER',
+      'message', 'Only active workers with established profiles can apply for shifts.'
     );
   END IF;
 
@@ -1044,9 +1117,9 @@ CREATE POLICY "Users insert own notifications or admins"
   ON notifications FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL AND (user_id = auth.uid() OR is_current_admin()));
 
-CREATE POLICY "Authenticated actors insert own audit logs"
+CREATE POLICY "Admins insert audit logs"
   ON audit_logs FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND (actor_id = auth.uid() OR is_current_admin()));
+  WITH CHECK (is_current_admin() OR auth.role() = 'service_role');
 
 -- 5. Atomic RPC: Create Job with Server-Side Validations & Audit Log
 CREATE OR REPLACE FUNCTION create_job_safe(
@@ -1095,10 +1168,22 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Must be authenticated');
   END IF;
 
-  -- Organizer role authorization check
+  -- Platform Killswitch Check
+  IF EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'BOOKINGS_PAUSED',
+      'message', 'Shift creation and bookings are temporarily paused platform-wide.'
+    );
+  END IF;
+
+  -- Organizer role and active account authorization check
   IF NOT EXISTS (
     SELECT 1 FROM profiles 
-    WHERE id = v_organizer_id AND role IN ('organizer', 'admin')
+    WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
   ) OR NOT EXISTS (
     SELECT 1 FROM organizer_profiles 
     WHERE id = v_organizer_id
@@ -1106,7 +1191,7 @@ BEGIN
     RETURN jsonb_build_object(
       'success', false, 
       'error_code', 'FORBIDDEN_ROLE', 
-      'message', 'Only verified organizers can create and publish shifts.'
+      'message', 'Only active organizers with verified profiles can create and publish shifts.'
     );
   END IF;
 
@@ -1120,14 +1205,22 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be at least 1 worker');
   END IF;
 
+  -- Server-side validation: duration hours
+  IF v_duration_hours <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be greater than 0 hours');
+  END IF;
+
   -- Server-side validation: date not in the past
   IF v_date < CURRENT_DATE THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date cannot be in the past');
   END IF;
 
-  -- Calculate total pay
-  IF v_total_pay IS NULL OR v_total_pay <= 0 THEN
-    v_total_pay := v_hourly_rate * v_duration_hours;
+  -- Calculate total pay strictly server-side
+  v_total_pay := round(v_hourly_rate * v_duration_hours, 2);
+
+  -- Initial status sanitization
+  IF v_status NOT IN ('draft', 'open', 'filling') THEN
+    v_status := 'open';
   END IF;
 
   -- Insert Job
@@ -1210,6 +1303,35 @@ BEGIN
     SELECT 1 FROM organizer_memberships WHERE organizer_id = v_job.organizer_id AND user_id = v_organizer_id
   ) THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to hire for this shift');
+  END IF;
+
+  -- Platform Killswitch Check
+  IF EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'BOOKINGS_PAUSED',
+      'message', 'Shift bookings are temporarily paused platform-wide.'
+    );
+  END IF;
+
+  -- Enforce organizer active status
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INELIGIBLE_ORGANIZER', 'message', 'Organizer account is inactive or not eligible.');
+  END IF;
+
+  -- Enforce candidate worker active account and profile eligibility
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles p
+    JOIN worker_profiles wp ON wp.id = p.id
+    WHERE p.id = p_worker_id AND p.role IN ('worker', 'admin') AND p.is_active = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INELIGIBLE_WORKER', 'message', 'Selected candidate is not an active worker profile.');
   END IF;
 
   -- 3. Enforce Headcount Capacity
@@ -1365,6 +1487,60 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'status', p_new_status);
 END;
 $$;
+
+-- 8. Atomic RPC: Update Job Status with Audit Log
+CREATE OR REPLACE FUNCTION update_job_status_safe(
+  p_job_id UUID,
+  p_new_status shift_status,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_actor_id UUID := auth.uid();
+  v_job RECORD;
+BEGIN
+  IF v_actor_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  SELECT * INTO v_job FROM jobs WHERE id = p_job_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'JOB_NOT_FOUND', 'message', 'Shift listing not found');
+  END IF;
+
+  IF v_job.organizer_id != v_actor_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to update this shift');
+  END IF;
+
+  -- Enforce killswitch if attempting to open a shift while paused
+  IF p_new_status IN ('open', 'filling') AND EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKINGS_PAUSED', 'message', 'Cannot activate shifts while marketplace bookings are paused');
+  END IF;
+
+  UPDATE jobs
+  SET status = p_new_status, updated_at = now()
+  WHERE id = p_job_id;
+
+  INSERT INTO audit_logs (
+    actor_id, action, entity_type, entity_id, new_state
+  ) VALUES (
+    v_actor_id, 'UPDATE_JOB_STATUS', 'job', p_job_id::TEXT,
+    jsonb_build_object('old_status', v_job.status, 'new_status', p_new_status, 'reason', p_reason)
+  );
+
+  RETURN jsonb_build_object('success', true, 'status', p_new_status);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) TO authenticated;
 
 
 -- ============================================================================
@@ -1566,12 +1742,12 @@ BEGIN
       ))::numeric, 2
     );
 
-    -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
-    IF v_distance > 5.0 THEN
+    -- Enforce geofence boundary for worker self check-in (maximum 1.0 km radius)
+    IF v_distance > 1.0 THEN
       RETURN jsonb_build_object(
         'success', false,
         'error_code', 'OUT_OF_GEOFENCE_RANGE',
-        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 1.0 km allowed).'
       );
     END IF;
   ELSE
@@ -2655,6 +2831,8 @@ DECLARE
   v_existing_payment RECORD;
   v_payment_id UUID;
   v_key TEXT;
+  v_worker_upi TEXT;
+  v_target_upi TEXT;
 BEGIN
   -- 1. Validate booking existence, lock row for concurrency protection & enforce completion
   SELECT b.*, j.organizer_id AS job_organizer_id
@@ -2684,10 +2862,32 @@ BEGIN
     );
   END IF;
 
-  -- 2. Validate UPI ID format
-  IF p_upi_id !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Invalid Indian UPI ID handle format');
+  -- 2. Resolve payout destination from worker verified profile (prevents destination hijacking)
+  SELECT upi_id INTO v_worker_upi
+  FROM worker_profiles
+  WHERE id = v_booking.worker_id;
+
+  IF v_worker_upi IS NULL OR trim(v_worker_upi) = '' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Worker does not have a verified UPI payout destination configured in their profile.'
+    );
   END IF;
+
+  -- Validate format of worker's registered UPI ID
+  IF v_worker_upi !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Worker profile contains an invalid UPI ID format.');
+  END IF;
+
+  -- If caller supplied a UPI ID, it must match worker's verified profile UPI ID to prevent diversion
+  IF p_upi_id IS NOT NULL AND trim(p_upi_id) != '' AND lower(trim(p_upi_id)) != lower(trim(v_worker_upi)) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Supplied UPI destination does not match worker verified payout profile. Diversion prohibited.'
+    );
+  END IF;
+
+  v_target_upi := trim(v_worker_upi);
 
   -- 3. Idempotency Key
   v_key := COALESCE(p_idempotency_key, 'payout-' || p_booking_id::TEXT);
@@ -2708,10 +2908,10 @@ BEGIN
       );
     END IF;
 
-    -- Update pending or failed payout with new UPI ID
+    -- Update pending or failed payout with verified worker UPI ID
     UPDATE payment_records
     SET
-      upi_id = p_upi_id,
+      upi_id = v_target_upi,
       status = 'processing',
       failure_reason = null,
       idempotency_key = v_key
@@ -2751,7 +2951,7 @@ BEGIN
     0.00, -- 100% of agreed wage to worker
     v_booking.agreed_total_pay,
     'processing',
-    p_upi_id,
+    v_target_upi,
     now(),
     v_key,
     true
@@ -2767,7 +2967,7 @@ BEGIN
     jsonb_build_object(
       'booking_id', p_booking_id,
       'amount', v_booking.agreed_total_pay,
-      'upi_id', p_upi_id,
+      'upi_id', v_target_upi,
       'status', 'processing',
       'is_sandbox', true
     )
@@ -3703,9 +3903,9 @@ DECLARE
   v_purged_count INT := 0;
   v_now TIMESTAMPTZ := now();
 BEGIN
-  -- Strict administrative or service role authorization
-  IF NOT is_current_admin() THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Administrative credentials required to run purge worker.');
+  -- Strict administrative or trusted service-role authorization
+  IF NOT (is_current_admin() OR auth.role() = 'service_role' OR current_user = 'postgres') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Administrative credentials or service role required to run purge worker.');
   END IF;
 
   FOR v_rec IN 
@@ -3743,6 +3943,18 @@ BEGIN
       gstin = NULL,
       updated_at = v_now
     WHERE id = v_rec.user_id;
+
+    -- Redact KYC document references
+    UPDATE verification_cases
+    SET
+      document_storage_path = 'purged',
+      document_masked_id = 'PURGED',
+      rejection_reason = 'Account purged upon user deletion request'
+    WHERE profile_id = v_rec.user_id;
+
+    -- Remove personal notifications
+    DELETE FROM notifications
+    WHERE user_id = v_rec.user_id;
 
     -- Redact base profile identity (GDPR / Indian DPDP Right to be Forgotten)
     UPDATE profiles
@@ -3794,7 +4006,7 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO service_role, authenticated;
 
 
 

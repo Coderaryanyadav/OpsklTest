@@ -89,14 +89,9 @@ export const isSupabaseConfigured = Boolean(
 );
 
 if (!isSupabaseConfigured) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      '[FATAL CONFIGURATION ERROR] Missing required Supabase credentials in production. ' +
-      'Please supply EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.'
-    );
-  } else if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test') {
     console.warn(
-      '[OPSKL CONFIG WARNING] Live Supabase credentials are not set. Running in development sandbox configuration. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY for live database access.'
+      '[OPSKL CONFIG WARNING] Live Supabase credentials are not set in environment. Running with placeholder sandbox configuration. Supply EXPO_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL for live database access.'
     );
   }
 }

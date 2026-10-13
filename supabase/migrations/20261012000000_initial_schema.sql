@@ -351,7 +351,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id, created_
 
 -- Prevent non-admin role escalation
 CREATE OR REPLACE FUNCTION prevent_role_escalation()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.role != OLD.role THEN
     IF NOT EXISTS (
@@ -363,7 +367,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS trg_prevent_role_escalation ON profiles;
 CREATE TRIGGER trg_prevent_role_escalation
@@ -392,7 +396,11 @@ CREATE TRIGGER trg_jobs_updated_at BEFORE UPDATE ON jobs FOR EACH ROW EXECUTE FU
 
 -- 1. Trigger function on auth.users to automatically provision profile records
 CREATE OR REPLACE FUNCTION public.handle_new_user_provisioning()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_role user_role;
   v_phone TEXT;
@@ -441,7 +449,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Attach trigger to auth.users if auth schema is present
 DO $$ BEGIN
@@ -607,6 +615,38 @@ CREATE POLICY "Organizers update their own profile"
 CREATE POLICY "Public verified organizer card view"
   ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
 
+-- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
+CREATE OR REPLACE VIEW public_organizer_cards AS
+  SELECT
+    id,
+    business_name,
+    business_type,
+    verification_status,
+    rating,
+    total_events_hosted,
+    created_at
+  FROM organizer_profiles
+  WHERE verification_status = 'verified';
+
+GRANT SELECT ON public_organizer_cards TO anon, authenticated;
+
+-- Restricted view for applicant worker profiles (protects sensitive worker upi_id)
+CREATE OR REPLACE VIEW worker_applicant_profiles AS
+  SELECT
+    wp.id,
+    wp.preferred_locality,
+    wp.skills,
+    wp.experience_years,
+    wp.rating,
+    wp.total_reviews,
+    wp.shifts_completed,
+    wp.verification_status,
+    wp.is_aadhaar_verified,
+    wp.is_pan_verified
+  FROM worker_profiles wp;
+
+GRANT SELECT ON worker_applicant_profiles TO authenticated;
+
 CREATE POLICY "Organizers can view applicant worker profiles"
   ON worker_profiles FOR SELECT USING (
     EXISTS (
@@ -632,8 +672,11 @@ CREATE POLICY "Anyone authenticated can view open jobs"
 CREATE POLICY "Organizers view all their own jobs"
   ON jobs FOR SELECT USING (organizer_id = auth.uid());
 
-CREATE POLICY "Organizers manage their own jobs"
-  ON jobs FOR ALL USING (organizer_id = auth.uid());
+CREATE POLICY "Organizers update their draft jobs"
+  ON jobs FOR UPDATE USING (organizer_id = auth.uid() AND status = 'draft');
+
+CREATE POLICY "Admins manage all jobs"
+  ON jobs FOR ALL USING (is_current_admin());
 
 -- 6. Job Applications
 CREATE POLICY "Workers view their own applications"
@@ -674,20 +717,23 @@ CREATE POLICY "Workers view their bookings"
 CREATE POLICY "Organizers view their bookings"
   ON bookings FOR SELECT USING (organizer_id = auth.uid());
 
-CREATE POLICY "Organizers create and update bookings"
-  ON bookings FOR ALL USING (organizer_id = auth.uid());
+CREATE POLICY "Admins view and manage all bookings"
+  ON bookings FOR ALL USING (is_current_admin());
 
 -- 9. Attendance Records
 CREATE POLICY "Workers view own attendance"
   ON attendance_records FOR SELECT USING (worker_id = auth.uid());
 
-CREATE POLICY "Organizers manage attendance for their jobs"
-  ON attendance_records FOR ALL USING (
+CREATE POLICY "Organizers view attendance for their jobs"
+  ON attendance_records FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM jobs j
       WHERE j.id = attendance_records.job_id AND j.organizer_id = auth.uid()
     )
   );
+
+CREATE POLICY "Admins manage attendance records"
+  ON attendance_records FOR ALL USING (is_current_admin());
 
 -- 10. Payment Records
 CREATE POLICY "Workers view own payments"
@@ -713,18 +759,32 @@ CREATE POLICY "Users update own notification read state"
 -- 13. Disputes
 CREATE POLICY "Users view disputes they are part of"
   ON disputes FOR SELECT USING (
-    raised_by = auth.uid() OR respondent_id = auth.uid()
+    raised_by = auth.uid() OR respondent_id = auth.uid() OR is_current_admin()
   );
 
-CREATE POLICY "Users create disputes"
-  ON disputes FOR INSERT WITH CHECK (raised_by = auth.uid());
+CREATE POLICY "Participants create disputes"
+  ON disputes FOR INSERT WITH CHECK (
+    raised_by = auth.uid()
+    AND status = 'open'
+    AND EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.id = disputes.booking_id
+        AND (b.worker_id = auth.uid() OR b.organizer_id = auth.uid())
+    )
+  );
 
--- 14. Verification Cases
+-- 14. Verification Cases (Forces initial status to pending and prevents user self-approval)
 CREATE POLICY "Users view own verification cases"
-  ON verification_cases FOR SELECT USING (profile_id = auth.uid());
+  ON verification_cases FOR SELECT USING (profile_id = auth.uid() OR is_current_admin());
 
 CREATE POLICY "Users create verification cases"
-  ON verification_cases FOR INSERT WITH CHECK (profile_id = auth.uid());
+  ON verification_cases FOR INSERT WITH CHECK (
+    profile_id = auth.uid()
+    AND status = 'pending'
+    AND reviewed_by IS NULL
+    AND reviewed_at IS NULL
+    AND rejection_reason IS NULL
+  );
 
 -- 15. Audit Logs
 CREATE POLICY "Admins view audit logs"

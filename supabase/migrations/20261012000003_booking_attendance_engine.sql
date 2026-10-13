@@ -193,12 +193,12 @@ BEGIN
       ))::numeric, 2
     );
 
-    -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
-    IF v_distance > 5.0 THEN
+    -- Enforce geofence boundary for worker self check-in (maximum 1.0 km radius)
+    IF v_distance > 1.0 THEN
       RETURN jsonb_build_object(
         'success', false,
         'error_code', 'OUT_OF_GEOFENCE_RANGE',
-        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 1.0 km allowed).'
       );
     END IF;
   ELSE

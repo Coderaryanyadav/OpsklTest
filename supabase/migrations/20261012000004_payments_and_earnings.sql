@@ -572,6 +572,8 @@ DECLARE
   v_existing_payment RECORD;
   v_payment_id UUID;
   v_key TEXT;
+  v_worker_upi TEXT;
+  v_target_upi TEXT;
 BEGIN
   -- 1. Validate booking existence, lock row for concurrency protection & enforce completion
   SELECT b.*, j.organizer_id AS job_organizer_id
@@ -601,10 +603,32 @@ BEGIN
     );
   END IF;
 
-  -- 2. Validate UPI ID format
-  IF p_upi_id !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Invalid Indian UPI ID handle format');
+  -- 2. Resolve payout destination from worker verified profile (prevents destination hijacking)
+  SELECT upi_id INTO v_worker_upi
+  FROM worker_profiles
+  WHERE id = v_booking.worker_id;
+
+  IF v_worker_upi IS NULL OR trim(v_worker_upi) = '' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Worker does not have a verified UPI payout destination configured in their profile.'
+    );
   END IF;
+
+  -- Validate format of worker's registered UPI ID
+  IF v_worker_upi !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Worker profile contains an invalid UPI ID format.');
+  END IF;
+
+  -- If caller supplied a UPI ID, it must match worker's verified profile UPI ID to prevent diversion
+  IF p_upi_id IS NOT NULL AND trim(p_upi_id) != '' AND lower(trim(p_upi_id)) != lower(trim(v_worker_upi)) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Supplied UPI destination does not match worker verified payout profile. Diversion prohibited.'
+    );
+  END IF;
+
+  v_target_upi := trim(v_worker_upi);
 
   -- 3. Idempotency Key
   v_key := COALESCE(p_idempotency_key, 'payout-' || p_booking_id::TEXT);
@@ -625,10 +649,10 @@ BEGIN
       );
     END IF;
 
-    -- Update pending or failed payout with new UPI ID
+    -- Update pending or failed payout with verified worker UPI ID
     UPDATE payment_records
     SET
-      upi_id = p_upi_id,
+      upi_id = v_target_upi,
       status = 'processing',
       failure_reason = null,
       idempotency_key = v_key
@@ -668,7 +692,7 @@ BEGIN
     0.00, -- 100% of agreed wage to worker
     v_booking.agreed_total_pay,
     'processing',
-    p_upi_id,
+    v_target_upi,
     now(),
     v_key,
     true
@@ -684,7 +708,7 @@ BEGIN
     jsonb_build_object(
       'booking_id', p_booking_id,
       'amount', v_booking.agreed_total_pay,
-      'upi_id', p_upi_id,
+      'upi_id', v_target_upi,
       'status', 'processing',
       'is_sandbox', true
     )

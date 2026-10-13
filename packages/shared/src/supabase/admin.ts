@@ -18,12 +18,13 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
 
   try {
     const [
-      { count: activeShifts },
-      { count: verifiedWorkers },
-      { count: activeOrganizers },
-      { count: pendingVerifications },
-      { count: openDisputes },
-      { count: criticalSafetyReports },
+      shiftsRes,
+      workersRes,
+      organizersRes,
+      verificationsRes,
+      disputesRes,
+      safetyRes,
+      paymentsRes,
     ] = await Promise.all([
       supabase.from('jobs').select('*', { count: 'exact', head: true }).in('status', ['open', 'filling']),
       supabase.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('is_aadhaar_verified', true),
@@ -31,28 +32,46 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
       supabase.from('verification_cases').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('disputes').select('*', { count: 'exact', head: true }).in('status', ['open', 'under_review']),
       supabase.from('safety_reports').select('*', { count: 'exact', head: true }).in('severity', ['high', 'critical']).eq('status', 'open'),
+      supabase.from('payment_records').select('amount, platform_fee').in('status', ['processing', 'settled']),
     ]);
 
+    if (shiftsRes.error) logger.error('Failed to query active shifts count', shiftsRes.error);
+    if (workersRes.error) logger.error('Failed to query verified workers count', workersRes.error);
+    if (organizersRes.error) logger.error('Failed to query active organizers count', organizersRes.error);
+    if (verificationsRes.error) logger.error('Failed to query verification queue count', verificationsRes.error);
+    if (disputesRes.error) logger.error('Failed to query disputes count', disputesRes.error);
+    if (safetyRes.error) logger.error('Failed to query safety reports count', safetyRes.error);
+
+    let totalEscrow = 0;
+    let platformFees = 0;
+    if (paymentsRes && paymentsRes.data && Array.isArray(paymentsRes.data)) {
+      for (const p of paymentsRes.data) {
+        totalEscrow += Number(p.amount) || 0;
+        platformFees += Number(p.platform_fee) || 0;
+      }
+    }
+
     return {
-      activeShifts: activeShifts || 48,
-      totalEscrowHeld: 342500, // INR held in partner nodal bank account
-      verifiedWorkersCount: verifiedWorkers || 1420,
-      activeOrganizersCount: activeOrganizers || 64,
-      platformFeesCollected: 38400,
-      pendingVerificationsCount: pendingVerifications || 9,
-      openDisputesCount: openDisputes || 3,
-      criticalSafetyReportsCount: criticalSafetyReports || 1,
+      activeShifts: shiftsRes.count ?? 0,
+      totalEscrowHeld: Math.round(totalEscrow),
+      verifiedWorkersCount: workersRes.count ?? 0,
+      activeOrganizersCount: organizersRes.count ?? 0,
+      platformFeesCollected: Math.round(platformFees),
+      pendingVerificationsCount: verificationsRes.count ?? 0,
+      openDisputesCount: disputesRes.count ?? 0,
+      criticalSafetyReportsCount: safetyRes.count ?? 0,
     };
-  } catch {
+  } catch (err: any) {
+    logger.error('Failed to fetch admin overview metrics', err);
     return {
-      activeShifts: 48,
-      totalEscrowHeld: 342500,
-      verifiedWorkersCount: 1420,
-      activeOrganizersCount: 64,
-      platformFeesCollected: 38400,
-      pendingVerificationsCount: 9,
-      openDisputesCount: 3,
-      criticalSafetyReportsCount: 1,
+      activeShifts: 0,
+      totalEscrowHeld: 0,
+      verifiedWorkersCount: 0,
+      activeOrganizersCount: 0,
+      platformFeesCollected: 0,
+      pendingVerificationsCount: 0,
+      openDisputesCount: 0,
+      criticalSafetyReportsCount: 0,
     };
   }
 }
@@ -68,39 +87,12 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return [
-      {
-        id: 'case-01',
-        profileId: 'worker-prof-01',
-        documentType: 'aadhaar',
-        documentMaskedId: 'XXXX-XXXX-4910',
-        documentStoragePath: 'secure-vault/aadhaar/doc_4910.enc',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-      },
-      {
-        id: 'case-02',
-        profileId: 'worker-prof-02',
-        documentType: 'pan',
-        documentMaskedId: 'ABCDE****F',
-        documentStoragePath: 'secure-vault/pan/doc_pan_812.enc',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 14400000).toISOString(),
-      },
-      {
-        id: 'case-03',
-        profileId: 'org-prof-01',
-        documentType: 'gstin',
-        documentMaskedId: '27AABCO1234F1Z5',
-        documentStoragePath: 'secure-vault/gstin/cert_gstin_99.enc',
-        status: 'pending',
-        createdAt: new Date(Date.now() - 28800000).toISOString(),
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch verification queue', error);
+    return [];
   }
 
-  return data.map((d: any) => ({
+  return (data || []).map((d: any) => ({
     id: d.id,
     profileId: d.profile_id,
     documentType: d.document_type,
@@ -154,33 +146,12 @@ export async function fetchDisputesQueue(): Promise<Dispute[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return [
-      {
-        id: 'disp-01',
-        bookingId: 'book-098',
-        raisedBy: 'worker-101',
-        respondentId: 'org-apex-01',
-        reason: 'Unpaid Overtime',
-        details: 'Organizer requested 2 additional hours past 6 PM at registration desk. Overtime pay not added to sign-off.',
-        status: 'open',
-        createdAt: new Date(Date.now() - 36000000).toISOString(),
-      },
-      {
-        id: 'disp-02',
-        bookingId: 'book-099',
-        raisedBy: 'org-apex-01',
-        respondentId: 'worker-102',
-        reason: 'Reported Late Arrival',
-        details: 'Worker arrived at 10:15 AM for a 9:00 AM shift start. Requesting adjustment of 1.25 hours from daily wage.',
-        status: 'under_review',
-        resolutionNotes: 'Evidence checked: Venue check-in GPS timestamp logged at 10:14 AM.',
-        createdAt: new Date(Date.now() - 72000000).toISOString(),
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch disputes queue', error);
+    return [];
   }
 
-  return data.map((d: any) => ({
+  return (data || []).map((d: any) => ({
     id: d.id,
     bookingId: d.booking_id,
     raisedBy: d.raised_by,
@@ -237,36 +208,12 @@ export async function fetchSafetyReportsQueue(): Promise<SafetyReport[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    return [
-      {
-        id: 'safe-01',
-        reporterId: 'worker-201',
-        jobId: 'job-991',
-        category: 'unsafe_conditions',
-        severity: 'critical',
-        description: 'Exhibition hall scaffolding in Sector 3 unstable without safety harnesses provided as advertised.',
-        status: 'open',
-        createdAt: new Date(Date.now() - 18000000).toISOString(),
-        reporterName: 'Sunil Jadhav',
-        jobTitle: 'Stage Rigging Support — NESCO',
-      },
-      {
-        id: 'safe-02',
-        reporterId: 'worker-202',
-        category: 'harassment',
-        severity: 'high',
-        description: 'Verbal abuse from third-party booth vendor during morning briefing.',
-        status: 'investigating',
-        staffNotes: 'Contacted organizer lead Rohit Verma. Vendor supervisor summoned.',
-        createdAt: new Date(Date.now() - 54000000).toISOString(),
-        reporterName: 'Priya Mehra',
-        jobTitle: 'Registration Desk Hostess',
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch safety reports queue', error);
+    return [];
   }
 
-  return data.map((r: any) => ({
+  return (data || []).map((r: any) => ({
     id: r.id,
     reporterId: r.reporter_id,
     reportedId: r.reported_id,
@@ -317,67 +264,18 @@ export async function resolveSafetyReportSafe(
  * Fetch Jobs for Moderation
  */
 export async function fetchModerationJobs(): Promise<Job[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('jobs')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(20);
 
-  if (!data || data.length === 0) {
-    return [
-      {
-        id: 'job-mod-01',
-        organizerId: 'org-apex-01',
-        title: 'VIP Lounge Usher — Jio World Centre',
-        category: 'hospitality',
-        venueName: 'Jio World Convention Centre',
-        venueAddress: 'G Block BKC, Bandra Kurla Complex, Mumbai 400051',
-        city: 'Mumbai',
-        zone: 'Bandra Kurla Complex (BKC)',
-        date: '2026-10-18',
-        startTime: '09:00',
-        endTime: '18:00',
-        durationHours: 9,
-        hourlyRate: 200,
-        totalPay: 1800,
-        slotsTotal: 10,
-        slotsFilled: 8,
-        status: 'open',
-        duties: ['Welcome guests', 'Check VIP credentials'],
-        dressCode: 'Formal Black Suit / Blazer',
-        supervisorName: 'Rohit Verma',
-        supervisorPhone: '+91 98201 98201',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'job-mod-02',
-        organizerId: 'org-apex-02',
-        title: 'Product Demonstration Rep',
-        category: 'activation',
-        venueName: 'High Street Phoenix',
-        venueAddress: 'Senapati Bapat Marg, Lower Parel, Mumbai 400013',
-        city: 'Mumbai',
-        zone: 'Lower Parel',
-        date: '2026-10-20',
-        startTime: '10:00',
-        endTime: '19:00',
-        durationHours: 9,
-        hourlyRate: 166.6,
-        totalPay: 1500,
-        slotsTotal: 5,
-        slotsFilled: 2,
-        status: 'open',
-        duties: ['Live tech demos'],
-        supervisorName: 'Rohit Verma',
-        supervisorPhone: '+91 98201 98201',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch moderation jobs', error);
+    return [];
   }
 
-  return data.map((j: any) => ({
+  return (data || []).map((j: any) => ({
     id: j.id,
     organizerId: j.organizer_id,
     title: j.title,
@@ -440,39 +338,12 @@ export async function fetchAuditLogs(limit: number = 50): Promise<AuditLog[]> {
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  if (error || !data || data.length === 0) {
-    return [
-      {
-        id: 'aud-01',
-        action: 'admin_resolve_dispute',
-        entityType: 'disputes',
-        entityId: 'disp-01',
-        changes: { status: 'resolved', adjustedPayout: 2000, note: 'Approved 2 hours overtime' },
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        actorEmail: 'operations@opskil.com',
-      },
-      {
-        id: 'aud-02',
-        action: 'admin_verify_document',
-        entityType: 'verification_cases',
-        entityId: 'case-01',
-        changes: { status: 'approved', documentType: 'aadhaar' },
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        actorEmail: 'trust.lead@opskil.com',
-      },
-      {
-        id: 'aud-03',
-        action: 'admin_moderate_job',
-        entityType: 'jobs',
-        entityId: 'job-mod-01',
-        changes: { status: 'open', verifiedMinWage: true },
-        createdAt: new Date(Date.now() - 14400000).toISOString(),
-        actorEmail: 'operations@opskil.com',
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch audit logs', error);
+    return [];
   }
 
-  return data.map((a: any) => ({
+  return (data || []).map((a: any) => ({
     id: a.id,
     actorId: a.actor_id,
     action: a.action,
@@ -492,42 +363,12 @@ export async function fetchPlatformSettings(): Promise<PlatformSetting[]> {
     .from('platform_settings')
     .select('*');
 
-  if (error || !data || data.length === 0) {
-    return [
-      {
-        key: 'platform_fee_percent',
-        value: 10.0,
-        description: 'Standard Opskl marketplace service fee (charged to organizers)',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        key: 'gst_rate_percent',
-        value: 18.0,
-        description: 'Indian GST applied strictly to platform fee (SAC 998519)',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        key: 'min_hourly_wage_inr',
-        value: 100.0,
-        description: 'Enforced minimum hourly wage floor in INR',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        key: 'payment_gateway_mode',
-        value: 'sandbox',
-        description: 'Payment execution mode ("sandbox" or "live")',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        key: 'dlt_sms_header',
-        value: 'OPSKIL',
-        description: 'TRAI DLT-registered 6-character Alpha sender header',
-        updatedAt: new Date().toISOString(),
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch platform settings', error);
+    return [];
   }
 
-  return data.map((s: any) => ({
+  return (data || []).map((s: any) => ({
     key: s.key,
     value: s.value,
     description: s.description,

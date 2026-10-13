@@ -109,23 +109,48 @@ async function run() {
 
     const verificationQueries = [
       { name: 'Core Profiles & Columns', sql: "SELECT id, role, email, is_active FROM profiles LIMIT 1;" },
-      { name: 'Worker Profiles & RLS', sql: "SELECT id, skills, availability_status FROM worker_profiles LIMIT 1;" },
-      { name: 'Organizer Profiles & RLS', sql: "SELECT id, business_name FROM organizer_profiles LIMIT 1;" },
+      { name: 'Worker Profiles & Table Access', sql: "SELECT id, skills, availability_status FROM worker_profiles LIMIT 1;" },
+      { name: 'Organizer Profiles & Table Access', sql: "SELECT id, business_name FROM organizer_profiles LIMIT 1;" },
       { name: 'Jobs Schema & Lat/Lng', sql: "SELECT id, latitude, longitude, slots_total FROM jobs LIMIT 1;" },
       { name: 'Bookings & CSPRNG Token', sql: "SELECT id, check_in_code, status FROM bookings LIMIT 1;" },
       { name: 'Payment Records & Escrow', sql: "SELECT id, worker_id, organizer_id, status FROM payment_records LIMIT 1;" },
       { name: 'Organizer Invoices Table', sql: "SELECT id, total_payable, status FROM organizer_invoices LIMIT 1;" },
       { name: 'Account Deletion Queue', sql: "SELECT id, user_id, status, scheduled_purge_at FROM account_deletion_requests LIMIT 1;" },
-      { name: 'Purge Worker Function Presence & Definer', sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'process_account_deletion_purge_safe';", assertRows: true },
-      { name: 'Provisioning RPC Function Presence & Definer', sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'ensure_user_profile_provisioned_safe';", assertRows: true },
+      {
+        name: 'Purge Worker Function Presence & Definer',
+        sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'process_account_deletion_purge_safe';",
+        validate: (res) => {
+          if (!res.rows || res.rows.length === 0) throw new Error('Function not found in pg_proc');
+          if (res.rows[0].prosecdef !== true) throw new Error('Function must be SECURITY DEFINER (prosecdef=true)');
+        },
+      },
+      {
+        name: 'Provisioning RPC Function Presence & Definer',
+        sql: "SELECT proname, prosecdef FROM pg_proc WHERE proname = 'ensure_user_profile_provisioned_safe';",
+        validate: (res) => {
+          if (!res.rows || res.rows.length === 0) throw new Error('Function not found in pg_proc');
+          if (res.rows[0].prosecdef !== true) throw new Error('Function must be SECURITY DEFINER (prosecdef=true)');
+        },
+      },
+      {
+        name: 'Row-Level Security Enabled on Core Tables',
+        sql: "SELECT relname, relrowsecurity FROM pg_class WHERE relname IN ('profiles', 'worker_profiles', 'organizer_profiles', 'jobs', 'bookings', 'attendance_records', 'payment_records');",
+        validate: (res) => {
+          const expectedTables = ['profiles', 'worker_profiles', 'organizer_profiles', 'jobs', 'bookings', 'attendance_records', 'payment_records'];
+          const found = new Set(res.rows.filter((r) => r.relrowsecurity === true).map((r) => r.relname));
+          for (const tbl of expectedTables) {
+            if (!found.has(tbl)) throw new Error(`RLS is not enabled or table missing for ${tbl}`);
+          }
+        },
+      },
     ];
 
     let verificationFailed = false;
     for (const q of verificationQueries) {
       try {
         const res = await client.query(q.sql);
-        if (q.assertRows && (!res.rows || res.rows.length === 0)) {
-          throw new Error(`Expected at least 1 record for ${q.name}, but 0 rows returned.`);
+        if (q.validate) {
+          q.validate(res);
         }
         console.log(`\x1b[32m  ✓ Verified: ${q.name}\x1b[0m`);
       } catch (err) {

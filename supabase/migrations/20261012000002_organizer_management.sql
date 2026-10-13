@@ -25,9 +25,9 @@ CREATE POLICY "Users insert own notifications or admins"
   ON notifications FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL AND (user_id = auth.uid() OR is_current_admin()));
 
-CREATE POLICY "Authenticated actors insert own audit logs"
+CREATE POLICY "Admins insert audit logs"
   ON audit_logs FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL AND (actor_id = auth.uid() OR is_current_admin()));
+  WITH CHECK (is_current_admin() OR auth.role() = 'service_role');
 
 -- 5. Atomic RPC: Create Job with Server-Side Validations & Audit Log
 CREATE OR REPLACE FUNCTION create_job_safe(
@@ -76,10 +76,22 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Must be authenticated');
   END IF;
 
-  -- Organizer role authorization check
+  -- Platform Killswitch Check
+  IF EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'BOOKINGS_PAUSED',
+      'message', 'Shift creation and bookings are temporarily paused platform-wide.'
+    );
+  END IF;
+
+  -- Organizer role and active account authorization check
   IF NOT EXISTS (
     SELECT 1 FROM profiles 
-    WHERE id = v_organizer_id AND role IN ('organizer', 'admin')
+    WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
   ) OR NOT EXISTS (
     SELECT 1 FROM organizer_profiles 
     WHERE id = v_organizer_id
@@ -87,7 +99,7 @@ BEGIN
     RETURN jsonb_build_object(
       'success', false, 
       'error_code', 'FORBIDDEN_ROLE', 
-      'message', 'Only verified organizers can create and publish shifts.'
+      'message', 'Only active organizers with verified profiles can create and publish shifts.'
     );
   END IF;
 
@@ -101,14 +113,22 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be at least 1 worker');
   END IF;
 
+  -- Server-side validation: duration hours
+  IF v_duration_hours <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be greater than 0 hours');
+  END IF;
+
   -- Server-side validation: date not in the past
   IF v_date < CURRENT_DATE THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date cannot be in the past');
   END IF;
 
-  -- Calculate total pay
-  IF v_total_pay IS NULL OR v_total_pay <= 0 THEN
-    v_total_pay := v_hourly_rate * v_duration_hours;
+  -- Calculate total pay strictly server-side
+  v_total_pay := round(v_hourly_rate * v_duration_hours, 2);
+
+  -- Initial status sanitization
+  IF v_status NOT IN ('draft', 'open', 'filling') THEN
+    v_status := 'open';
   END IF;
 
   -- Insert Job
@@ -191,6 +211,35 @@ BEGIN
     SELECT 1 FROM organizer_memberships WHERE organizer_id = v_job.organizer_id AND user_id = v_organizer_id
   ) THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to hire for this shift');
+  END IF;
+
+  -- Platform Killswitch Check
+  IF EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'BOOKINGS_PAUSED',
+      'message', 'Shift bookings are temporarily paused platform-wide.'
+    );
+  END IF;
+
+  -- Enforce organizer active status
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INELIGIBLE_ORGANIZER', 'message', 'Organizer account is inactive or not eligible.');
+  END IF;
+
+  -- Enforce candidate worker active account and profile eligibility
+  IF NOT EXISTS (
+    SELECT 1 FROM profiles p
+    JOIN worker_profiles wp ON wp.id = p.id
+    WHERE p.id = p_worker_id AND p.role IN ('worker', 'admin') AND p.is_active = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INELIGIBLE_WORKER', 'message', 'Selected candidate is not an active worker profile.');
   END IF;
 
   -- 3. Enforce Headcount Capacity
@@ -346,3 +395,57 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'status', p_new_status);
 END;
 $$;
+
+-- 8. Atomic RPC: Update Job Status with Audit Log
+CREATE OR REPLACE FUNCTION update_job_status_safe(
+  p_job_id UUID,
+  p_new_status shift_status,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_actor_id UUID := auth.uid();
+  v_job RECORD;
+BEGIN
+  IF v_actor_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  SELECT * INTO v_job FROM jobs WHERE id = p_job_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'JOB_NOT_FOUND', 'message', 'Shift listing not found');
+  END IF;
+
+  IF v_job.organizer_id != v_actor_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to update this shift');
+  END IF;
+
+  -- Enforce killswitch if attempting to open a shift while paused
+  IF p_new_status IN ('open', 'filling') AND EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKINGS_PAUSED', 'message', 'Cannot activate shifts while marketplace bookings are paused');
+  END IF;
+
+  UPDATE jobs
+  SET status = p_new_status, updated_at = now()
+  WHERE id = p_job_id;
+
+  INSERT INTO audit_logs (
+    actor_id, action, entity_type, entity_id, new_state
+  ) VALUES (
+    v_actor_id, 'UPDATE_JOB_STATUS', 'job', p_job_id::TEXT,
+    jsonb_build_object('old_status', v_job.status, 'new_status', p_new_status, 'reason', p_reason)
+  );
+
+  RETURN jsonb_build_object('success', true, 'status', p_new_status);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) TO authenticated;
