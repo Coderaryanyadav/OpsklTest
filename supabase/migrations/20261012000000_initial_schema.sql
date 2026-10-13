@@ -603,6 +603,9 @@ CREATE POLICY "Organizers insert their own profile"
 CREATE POLICY "Organizers update their own profile"
   ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Public verified organizer card view"
+  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
+
 CREATE POLICY "Organizers can view applicant worker profiles"
   ON worker_profiles FOR SELECT USING (
     EXISTS (
@@ -611,16 +614,6 @@ CREATE POLICY "Organizers can view applicant worker profiles"
       WHERE ja.worker_id = worker_profiles.id AND j.organizer_id = auth.uid()
     )
   );
-
--- 3. Organizer Profiles
-CREATE POLICY "Organizers view their own profile"
-  ON organizer_profiles FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Organizers update their own profile"
-  ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Public verified organizer card view"
-  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
 
 -- 4. Organizer Memberships
 CREATE POLICY "Members view team memberships"

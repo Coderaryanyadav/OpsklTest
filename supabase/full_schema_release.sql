@@ -1,13 +1,9 @@
+-- Opskl Consolidated Full Schema Release
+-- Production Ready
+
 -- ============================================================================
--- OPSKL PRODUCTION RELEASE: CONSOLIDATED SCHEMA & RPCS
--- Target: Supabase Project lericvniqdbvacgegrbp
+-- Migration: 20261012000000_initial_schema.sql
 -- ============================================================================
-
-
-
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000000_initial_schema.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 -- ==============================================================================
 -- OPSKL MASTER DATABASE SCHEMA & MIGRATION
@@ -614,6 +610,9 @@ CREATE POLICY "Organizers insert their own profile"
 CREATE POLICY "Organizers update their own profile"
   ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Public verified organizer card view"
+  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
+
 CREATE POLICY "Organizers can view applicant worker profiles"
   ON worker_profiles FOR SELECT USING (
     EXISTS (
@@ -622,16 +621,6 @@ CREATE POLICY "Organizers can view applicant worker profiles"
       WHERE ja.worker_id = worker_profiles.id AND j.organizer_id = auth.uid()
     )
   );
-
--- 3. Organizer Profiles
-CREATE POLICY "Organizers view their own profile"
-  ON organizer_profiles FOR SELECT USING (auth.uid() = id);
-
-CREATE POLICY "Organizers update their own profile"
-  ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Public verified organizer card view"
-  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
 
 -- 4. Organizer Memberships
 CREATE POLICY "Members view team memberships"
@@ -809,9 +798,9 @@ CREATE TRIGGER trg_protect_organizer_profile
   EXECUTE FUNCTION check_organizer_profile_update();
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000001_marketplace_discovery.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000001_marketplace_discovery.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL MARKETPLACE DISCOVERY & SWIPE TRANSACTIONS (PHASE 3)
@@ -1023,9 +1012,9 @@ END;
 $$;
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000002_organizer_management.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000002_organizer_management.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL ORGANIZER JOB MANAGEMENT & HIRING ENGINE (PHASE 4)
@@ -1377,9 +1366,9 @@ END;
 $$;
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000003_booking_attendance_engine.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000003_booking_attendance_engine.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL BOOKING & ATTENDANCE ENGINE (PHASE 5)
@@ -2045,9 +2034,9 @@ GRANT EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) TO authenticate
 
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000004_payments_and_earnings.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000004_payments_and_earnings.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL PAYMENTS & EARNINGS ENGINE (PHASE 6)
@@ -2768,9 +2757,9 @@ GRANT EXECUTE ON FUNCTION initiate_worker_payout_safe(UUID, TEXT, TEXT) TO authe
 
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000005_notifications_and_realtime.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000005_notifications_and_realtime.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL NOTIFICATIONS & REAL-TIME ENGINE (PHASE 7)
@@ -3110,9 +3099,9 @@ REVOKE EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) TO authenticated;
 
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- START MIGRATION: 20261012000006_admin_and_trust_operations.sql
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- ============================================================================
+-- Migration: 20261012000006_admin_and_trust_operations.sql
+-- ============================================================================
 
 -- ============================================================================
 -- OPSKL ADMIN & TRUST OPERATIONS ENGINE (PHASE 8)
@@ -3656,4 +3645,6 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) TO authenticated;
+
+
 
