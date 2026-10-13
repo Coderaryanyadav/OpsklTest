@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const loadingLockRef = React.useRef(false);
 
   const loadUserData = async (currentSession: Session | null, expectedRole?: UserRole) => {
     if (!currentSession?.user) {
@@ -56,6 +57,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
+    if (loadingLockRef.current) {
+      return;
+    }
+    loadingLockRef.current = true;
+
     try {
       const u = currentSession.user;
       setUser(u);
@@ -63,28 +69,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let p = await fetchUserProfile(u.id);
       if (!p && u.id) {
         const email = u.email || '';
-        const defaultRole = (expectedRole || u.user_metadata?.role as any) || 'worker';
+        const defaultRole = (expectedRole || (u.user_metadata?.role as any)) || 'worker';
         const defaultName = u.user_metadata?.full_name || (email ? email.split('@')[0] : 'Member');
         const phone = u.phone || u.user_metadata?.phone || '';
 
         // Authoritative server-side profile provisioning
         try {
-          await supabase.rpc('ensure_user_profile_provisioned_safe', {
+          const { data: rpcRes, error: rpcErr } = await supabase.rpc('ensure_user_profile_provisioned_safe', {
             p_role: defaultRole,
             p_full_name: defaultName,
             p_phone: phone,
             p_email: email,
           });
+
+          if (rpcErr || (rpcRes && rpcRes.success === false)) {
+            logger.error('Authoritative profile provisioning RPC rejected — failing closed', rpcErr || rpcRes, { userId: u.id });
+            await supabase.auth.signOut();
+            setUser(null);
+            setProfile(null);
+            setWorkerProfile(null);
+            setOrganizerProfile(null);
+            setLoading(false);
+            return;
+          }
         } catch (rpcErr) {
-          logger.error('Authoritative profile provisioning RPC failed', rpcErr, { userId: u.id });
+          logger.error('Authoritative profile provisioning RPC network/database exception — failing closed', rpcErr, { userId: u.id });
+          await supabase.auth.signOut();
+          setUser(null);
+          setProfile(null);
+          setWorkerProfile(null);
+          setOrganizerProfile(null);
+          setLoading(false);
+          return;
         }
 
         p = await fetchUserProfile(u.id);
       }
 
+      // Fail-closed security rule:
+      // An authenticated session MUST have a verified, active database profile record.
+      if (!p) {
+        logger.error('Authenticated session lacks verified database profile — failing closed', { userId: u.id });
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setWorkerProfile(null);
+        setOrganizerProfile(null);
+        setLoading(false);
+        return;
+      }
+
       // Deactivated / Purged account enforcement:
       // If user profile is marked inactive (e.g. account deletion requested/completed), reject active session
-      if (p && p.isActive === false) {
+      if (p.isActive === false) {
         logger.warn('Deactivated account attempted session access — logging out', { userId: u.id });
         await supabase.auth.signOut();
         setUser(null);
@@ -97,16 +134,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setProfile(p);
 
-      if (p?.role === 'worker') {
+      if (p.role === 'worker') {
         const wp = await fetchWorkerProfile(u.id);
         setWorkerProfile(wp);
-      } else if (p?.role === 'organizer') {
+      } else if (p.role === 'organizer') {
         const op = await fetchOrganizerProfile(u.id);
         setOrganizerProfile(op);
       }
     } catch (err) {
-      logger.error('Error loading user profile data in AuthProvider', err);
+      logger.error('Error loading user profile data in AuthProvider — failing closed', err);
+      await supabase.auth.signOut().catch(() => {});
+      setUser(null);
+      setProfile(null);
+      setWorkerProfile(null);
+      setOrganizerProfile(null);
     } finally {
+      loadingLockRef.current = false;
       setLoading(false);
     }
   };

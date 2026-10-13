@@ -12,6 +12,7 @@ import {
   Badge,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
+import { fetchUserProfile } from '@opskil/shared';
 
 export default function OrganizerLoginScreen() {
   const router = useRouter();
@@ -58,6 +59,17 @@ export default function OrganizerLoginScreen() {
     try {
       const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'organizer');
       if (res?.session) {
+        // Authoritative role check: verify user profile has organizer or admin role
+        const profile = await fetchUserProfile(res.session.user.id);
+        if (profile && profile.role !== 'organizer' && profile.role !== 'admin') {
+          Alert.alert(
+            'Worker Account Detected',
+            'This email is registered with a Worker profile. Please sign in via the Opskl Worker app or contact support to request an organizer account transition.'
+          );
+          setLoading(false);
+          return;
+        }
+
         Alert.alert('Verified', 'Organizer session authenticated successfully.', [
           { text: 'Open Dashboard', onPress: () => router.replace('/(tabs)' as any) },
         ]);

@@ -154,24 +154,48 @@ BEGIN
     END IF;
   END IF;
 
-  -- 5. Calculate GPS distance if coordinates provided and enforce geofence boundary
-  IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
-    v_distance := round(
-      (6371 * acos(
-        least(1.0, greatest(-1.0,
-          cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
-          cos(radians(v_job.longitude) - radians(p_lng)) +
-          sin(radians(p_lat)) * sin(radians(v_job.latitude))
-        ))
-      ))::numeric, 2
-    );
-
-    -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
-    IF NOT v_is_supervisor AND v_distance > 5.0 THEN
+  -- 5. Calculate GPS distance and enforce geofence boundary
+  IF NOT v_is_supervisor THEN
+    -- For worker self-check-in, GPS coordinates are mandatory to enforce the venue geofence
+    IF p_lat IS NULL OR p_lng IS NULL THEN
       RETURN jsonb_build_object(
         'success', false,
-        'error_code', 'OUT_OF_GEOFENCE_RANGE',
-        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+        'error_code', 'LOCATION_REQUIRED',
+        'message', 'Device GPS coordinates are required for worker self-check-in to verify venue presence.'
+      );
+    END IF;
+
+    IF v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
+      v_distance := round(
+        (6371 * acos(
+          least(1.0, greatest(-1.0,
+            cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+            cos(radians(v_job.longitude) - radians(p_lng)) +
+            sin(radians(p_lat)) * sin(radians(v_job.latitude))
+          ))
+        ))::numeric, 2
+      );
+
+      -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
+      IF v_distance > 5.0 THEN
+        RETURN jsonb_build_object(
+          'success', false,
+          'error_code', 'OUT_OF_GEOFENCE_RANGE',
+          'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+        );
+      END IF;
+    END IF;
+  ELSE
+    -- For supervisor check-in, compute distance optionally if coordinates provided
+    IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
+      v_distance := round(
+        (6371 * acos(
+          least(1.0, greatest(-1.0,
+            cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+            cos(radians(v_job.longitude) - radians(p_lng)) +
+            sin(radians(p_lat)) * sin(radians(v_job.latitude))
+          ))
+        ))::numeric, 2
       );
     END IF;
   END IF;
