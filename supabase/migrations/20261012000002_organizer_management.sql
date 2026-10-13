@@ -227,8 +227,8 @@ BEGIN
     VALUES (p_job_id, p_worker_id, 'confirmed', p_notes);
   END IF;
 
-  -- 6. Generate distinct, cryptographically secure per-booking check-in credential (CSPRNG via gen_random_bytes)
-  v_check_in_code := 'OP-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 6));
+  -- 6. Generate distinct, cryptographically secure per-booking check-in credential (48-bit CSPRNG entropy via gen_random_bytes)
+  v_check_in_code := 'OP-' || upper(encode(gen_random_bytes(6), 'hex'));
 
   -- Insert Booking Record with provisioned credential
   INSERT INTO bookings (

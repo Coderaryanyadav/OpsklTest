@@ -13,6 +13,7 @@ import {
   Profile,
   WorkerProfile,
   OrganizerProfile,
+  UserRole,
   logger,
 } from '@opskil/shared';
 import type { User, Session } from '@supabase/supabase-js';
@@ -26,10 +27,10 @@ export interface AuthContextValue {
   organizerProfile: OrganizerProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
-  sendEmailOtp: (email: string) => Promise<any>;
-  verifyEmailOtp: (email: string, token: string) => Promise<any>;
+  sendEmailOtp: (email: string, role?: UserRole, fullName?: string) => Promise<any>;
+  verifyEmailOtp: (email: string, token: string, expectedRole?: UserRole) => Promise<any>;
   sendPhoneOtp: (phone: string) => Promise<any>;
-  verifyOtp: (identifier: string, token: string) => Promise<any>;
+  verifyOtp: (identifier: string, token: string, expectedRole?: UserRole) => Promise<any>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const loadUserData = async (currentSession: Session | null) => {
+  const loadUserData = async (currentSession: Session | null, expectedRole?: UserRole) => {
     if (!currentSession?.user) {
       setUser(null);
       setProfile(null);
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let p = await fetchUserProfile(u.id);
       if (!p && u.id) {
         const email = u.email || '';
-        const defaultRole = (u.user_metadata?.role as any) || 'worker';
+        const defaultRole = (expectedRole || u.user_metadata?.role as any) || 'worker';
         const defaultName = u.user_metadata?.full_name || (email ? email.split('@')[0] : 'Member');
         const phone = u.phone || u.user_metadata?.phone || '';
 
@@ -80,6 +81,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         p = await fetchUserProfile(u.id);
       }
+
+      // Deactivated / Purged account enforcement:
+      // If user profile is marked inactive (e.g. account deletion requested/completed), reject active session
+      if (p && p.isActive === false) {
+        logger.warn('Deactivated account attempted session access — logging out', { userId: u.id });
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setWorkerProfile(null);
+        setOrganizerProfile(null);
+        setLoading(false);
+        return;
+      }
+
       setProfile(p);
 
       if (p?.role === 'worker') {
@@ -116,15 +131,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const sendEmailOtp = async (email: string) => {
-    return signInWithEmailOtp({ email });
+  const sendEmailOtp = async (email: string, role?: UserRole, fullName?: string) => {
+    return signInWithEmailOtp({ email, role, fullName });
   };
 
-  const verifyEmailOtpMethod = async (email: string, token: string) => {
-    const res = await verifyEmailOtp({ email, token });
+  const verifyEmailOtpMethod = async (email: string, token: string, expectedRole?: UserRole) => {
+    const res = await verifyEmailOtp({ email, token, expectedRole });
     if (res.session) {
       setSession(res.session);
-      await loadUserData(res.session);
+      await loadUserData(res.session, expectedRole);
     }
     return res;
   };
@@ -133,16 +148,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return signInWithPhoneOtp({ phone });
   };
 
-  const verifyOtp = async (identifier: string, token: string) => {
+  const verifyOtp = async (identifier: string, token: string, expectedRole?: UserRole) => {
     let res;
     if (identifier.includes('@')) {
-      res = await verifyEmailOtp({ email: identifier, token });
+      res = await verifyEmailOtp({ email: identifier, token, expectedRole });
     } else {
       res = await verifyPhoneOtp({ phone: identifier, token });
     }
     if (res.session) {
       setSession(res.session);
-      await loadUserData(res.session);
+      await loadUserData(res.session, expectedRole);
     }
     return res;
   };

@@ -30,24 +30,36 @@ function normalizeIndianPhone(phone: string): string {
 
 export interface EmailOtpSignInParams {
   email: string;
+  role?: UserRole;
+  fullName?: string;
 }
 
 export interface VerifyEmailOtpParams {
   email: string;
   token: string;
+  expectedRole?: UserRole;
 }
 
 /**
- * Sign in / send 6-digit OTP to Email (Gmail) address.
+ * Sign in / send 6-digit OTP to Email (Gmail) address with role-aware onboarding metadata.
  */
-export async function signInWithEmailOtp({ email }: EmailOtpSignInParams) {
+export async function signInWithEmailOtp({ email, role, fullName }: EmailOtpSignInParams) {
   const normalizedEmail = email.trim().toLowerCase();
-  logger.info('Initiating Email/Gmail OTP sign-in', { email: normalizedEmail });
+  logger.info('Initiating Email/Gmail OTP sign-in', { email: normalizedEmail, role });
+
+  const metadata: Record<string, any> = {};
+  if (role) {
+    metadata.role = role;
+  }
+  if (fullName) {
+    metadata.full_name = fullName;
+  }
 
   const { data, error } = await supabase.auth.signInWithOtp({
     email: normalizedEmail,
     options: {
       shouldCreateUser: true,
+      data: metadata,
     },
   });
 

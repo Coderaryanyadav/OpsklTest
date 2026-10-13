@@ -131,8 +131,8 @@ BEGIN
   v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
 
   -- Require a valid check-in code
-  IF p_code IS NULL OR length(trim(p_code)) < 4 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid 4-6 digit shift check-in PIN or QR code is required.');
+  IF p_code IS NULL OR length(trim(p_code)) < 4 OR length(trim(p_code)) > 32 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid shift check-in code or pass credential is required.');
   END IF;
 
   -- For worker self-check-in, require provisioned credential and exact match

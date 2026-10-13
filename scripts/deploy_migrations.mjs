@@ -28,6 +28,19 @@ async function run() {
   await client.connect();
   console.log('\x1b[32m✓ Connected to PostgreSQL successfully.\x1b[0m\n');
 
+  // Initialize migration history table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS _opskil_migrations (
+      id SERIAL PRIMARY KEY,
+      filename TEXT UNIQUE NOT NULL,
+      checksum TEXT NOT NULL,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  const { rows: appliedRows } = await client.query('SELECT filename FROM _opskil_migrations;');
+  const appliedSet = new Set(appliedRows.map((r) => r.filename));
+
   const migrationFiles = fs
     .readdirSync(migrationsDir)
     .filter((f) => f.endsWith('.sql'))
@@ -37,14 +50,26 @@ async function run() {
 
   for (let i = 0; i < migrationFiles.length; i++) {
     const file = migrationFiles[i];
+    if (appliedSet.has(file)) {
+      console.log(`[${i + 1}/${migrationFiles.length}] Skipping ${file} (already applied)`);
+      continue;
+    }
+
     const filePath = path.join(migrationsDir, file);
     const sql = fs.readFileSync(filePath, 'utf8');
 
     console.log(`[${i + 1}/${migrationFiles.length}] Executing ${file}...`);
     try {
+      await client.query('BEGIN');
       await client.query(sql);
-      console.log(`\x1b[32m  ✓ Completed ${file}\x1b[0m`);
+      await client.query('INSERT INTO _opskil_migrations (filename, checksum) VALUES ($1, $2)', [
+        file,
+        Buffer.from(file).toString('base64'),
+      ]);
+      await client.query('COMMIT');
+      console.log(`\x1b[32m  ✓ Completed and committed ${file}\x1b[0m`);
     } catch (err) {
+      await client.query('ROLLBACK');
       console.error(`\x1b[31m  ✗ FAILED on ${file}:\x1b[0m`, err.message);
       if (err.position) {
         console.error(`    At character position: ${err.position}`);
@@ -66,16 +91,24 @@ async function run() {
     { name: 'Platform Settings Table', sql: 'SELECT count(*) FROM platform_settings;' },
   ];
 
+  let verificationFailed = false;
   for (const q of verificationQueries) {
     try {
       await client.query(q.sql);
       console.log(`\x1b[32m  ✓ Verified: ${q.name}\x1b[0m`);
     } catch (err) {
       console.error(`\x1b[31m  ✗ Verification failed: ${q.name}\x1b[0m (${err.message})`);
+      verificationFailed = true;
     }
   }
 
   await client.end();
+
+  if (verificationFailed) {
+    console.error('\n\x1b[31m[FAILED] One or more schema health verification checks failed.\x1b[0m\n');
+    process.exit(1);
+  }
+
   console.log('\n\x1b[32m🎉 ALL MIGRATIONS DEPLOYED AND VERIFIED SUCCESSFULLY AGAINST CLEAN DATABASE!\x1b[0m\n');
 }
 

@@ -1246,8 +1246,8 @@ BEGIN
     VALUES (p_job_id, p_worker_id, 'confirmed', p_notes);
   END IF;
 
-  -- 6. Generate distinct, cryptographically secure per-booking check-in credential (CSPRNG via gen_random_bytes)
-  v_check_in_code := 'OP-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 6));
+  -- 6. Generate distinct, cryptographically secure per-booking check-in credential (48-bit CSPRNG entropy via gen_random_bytes)
+  v_check_in_code := 'OP-' || upper(encode(gen_random_bytes(6), 'hex'));
 
   -- Insert Booking Record with provisioned credential
   INSERT INTO bookings (
@@ -1504,8 +1504,8 @@ BEGIN
   v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
 
   -- Require a valid check-in code
-  IF p_code IS NULL OR length(trim(p_code)) < 4 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid 4-6 digit shift check-in PIN or QR code is required.');
+  IF p_code IS NULL OR length(trim(p_code)) < 4 OR length(trim(p_code)) > 32 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid shift check-in code or pass credential is required.');
   END IF;
 
   -- For worker self-check-in, require provisioned credential and exact match

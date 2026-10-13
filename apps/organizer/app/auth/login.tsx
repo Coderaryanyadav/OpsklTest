@@ -33,7 +33,7 @@ export default function OrganizerLoginScreen() {
     }
     setLoading(true);
     try {
-      await sendEmailOtp(trimmed);
+      await sendEmailOtp(trimmed, 'organizer');
       setOtpSent(true);
       Alert.alert(
         'OTP Sent to Email',
@@ -56,7 +56,7 @@ export default function OrganizerLoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp);
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'organizer');
       if (res?.session) {
         Alert.alert('Verified', 'Organizer session authenticated successfully.', [
           { text: 'Open Dashboard', onPress: () => router.replace('/(tabs)' as any) },

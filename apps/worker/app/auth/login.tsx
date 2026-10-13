@@ -33,7 +33,7 @@ export default function WorkerLoginScreen() {
     }
     setLoading(true);
     try {
-      await sendEmailOtp(trimmed);
+      await sendEmailOtp(trimmed, 'worker');
       setOtpSent(true);
       Alert.alert(
         'OTP Sent to Email',
@@ -56,7 +56,7 @@ export default function WorkerLoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp);
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'worker');
       if (res?.session) {
         Alert.alert('Verified', 'Session authenticated successfully.', [
           { text: 'Continue', onPress: () => router.replace('/(tabs)' as any) },
