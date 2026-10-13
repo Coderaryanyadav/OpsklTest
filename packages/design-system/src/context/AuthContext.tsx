@@ -19,6 +19,7 @@ export interface AuthContextValue {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  userProfile: Profile | null;
   workerProfile: WorkerProfile | null;
   organizerProfile: OrganizerProfile | null;
   loading: boolean;
@@ -26,6 +27,7 @@ export interface AuthContextValue {
   sendPhoneOtp: (phone: string) => Promise<any>;
   verifyOtp: (phone: string, token: string) => Promise<any>;
   logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -53,14 +55,64 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const u = currentSession.user;
       setUser(u);
 
-      const p = await fetchUserProfile(u.id);
+      let p = await fetchUserProfile(u.id);
+      if (!p && u.id) {
+        const defaultRole = (u.user_metadata?.role as any) || 'worker';
+        const defaultName = u.user_metadata?.full_name || 'Member';
+        const { data: createdProfile } = await supabase
+          .from('profiles')
+          .insert({
+            id: u.id,
+            phone: u.phone || '',
+            full_name: defaultName,
+            role: defaultRole,
+            city: 'Mumbai',
+            is_active: true,
+          })
+          .select()
+          .maybeSingle();
+
+        if (createdProfile) {
+          p = createdProfile as Profile;
+        }
+      }
       setProfile(p);
 
       if (p?.role === 'worker') {
-        const wp = await fetchWorkerProfile(u.id);
+        let wp = await fetchWorkerProfile(u.id);
+        if (!wp && u.id) {
+          const { data: createdWp } = await supabase
+            .from('worker_profiles')
+            .insert({
+              id: u.id,
+              preferred_locality: 'Mumbai',
+              availability_status: 'available',
+              profile_completion_status: 'incomplete',
+            })
+            .select()
+            .maybeSingle();
+          if (createdWp) {
+            wp = createdWp as WorkerProfile;
+          }
+        }
         setWorkerProfile(wp);
       } else if (p?.role === 'organizer') {
-        const op = await fetchOrganizerProfile(u.id);
+        let op = await fetchOrganizerProfile(u.id);
+        if (!op && u.id) {
+          const { data: createdOp } = await supabase
+            .from('organizer_profiles')
+            .insert({
+              id: u.id,
+              business_name: 'Independent Events',
+              business_contact_phone: u.phone || '',
+              business_type: 'independent',
+            })
+            .select()
+            .maybeSingle();
+          if (createdOp) {
+            op = createdOp as OrganizerProfile;
+          }
+        }
         setOrganizerProfile(op);
       }
     } catch (err) {
@@ -123,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user,
       session,
       profile,
+      userProfile: profile,
       workerProfile,
       organizerProfile,
       loading,
@@ -130,6 +183,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       sendPhoneOtp,
       verifyOtp,
       logout,
+      signOut: logout,
       refreshProfile,
     }),
     [user, session, profile, workerProfile, organizerProfile, loading]

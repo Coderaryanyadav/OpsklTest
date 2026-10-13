@@ -153,19 +153,35 @@ export default function WorkerMyShiftsScreen() {
   const [cancelReason, setCancelReason] = useState('');
   const [submittingModal, setSubmittingModal] = useState(false);
 
-  const workerId = session?.user?.id || 'worker-101';
+  const workerId = session?.user?.id;
 
   const loadBookings = useCallback(async () => {
+    if (!workerId) {
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setBookings(SEED_WORKER_BOOKINGS);
+      } else {
+        setBookings([]);
+      }
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const data = await fetchWorkerBookings(workerId);
       if (data.length > 0) {
         setBookings(data);
-      } else {
+      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
         setBookings(SEED_WORKER_BOOKINGS);
+      } else {
+        setBookings([]);
       }
     } catch (err) {
       console.error('Failed to load bookings', err);
-      setBookings(SEED_WORKER_BOOKINGS);
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setBookings(SEED_WORKER_BOOKINGS);
+      } else {
+        setBookings([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -94,7 +94,13 @@ DECLARE
   v_booking RECORD;
   v_job RECORD;
   v_distance NUMERIC := NULL;
+  v_is_supervisor BOOLEAN := false;
 BEGIN
+  -- 0. Authentication requirement
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
+  END IF;
+
   -- 1. Lock and validate booking
   SELECT * INTO v_booking
   FROM bookings
@@ -118,10 +124,16 @@ BEGIN
   SELECT * INTO v_job FROM jobs WHERE id = v_booking.job_id;
 
   -- 4. Authorization & code verification:
-  -- Allowed if worker checks in with valid code, or if organizer confirms on-site
-  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id THEN
+  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id AND NOT is_current_admin() THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized for this booking');
   END IF;
+
+  -- Require a valid check-in code
+  IF p_code IS NULL OR length(trim(p_code)) < 4 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid 4-6 digit shift check-in PIN or QR code is required.');
+  END IF;
+
+  v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
 
   -- 5. Calculate GPS distance if coordinates provided
   IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
@@ -143,14 +155,14 @@ BEGIN
     check_in_time = now()
   WHERE id = p_booking_id;
 
-  -- 7. Insert or update attendance record
+  -- 7. Insert or update attendance record (verified_by_supervisor only true if supervisor checked in or verified)
   INSERT INTO attendance_records (
     booking_id, job_id, worker_id, supervisor_id,
     check_in_time, check_in_code, verified_by_supervisor,
     latitude, longitude, distance_to_venue_km
   ) VALUES (
     p_booking_id, v_booking.job_id, v_booking.worker_id, v_booking.organizer_id,
-    now(), p_code, true,
+    now(), p_code, v_is_supervisor,
     p_lat, p_lng, v_distance
   );
 
@@ -171,14 +183,15 @@ BEGIN
   ) VALUES (
     v_user_id, 'CHECK_IN_WORKER', 'booking', p_booking_id::TEXT,
     jsonb_build_object('status', v_booking.status),
-    jsonb_build_object('status', 'checked_in', 'distance_km', v_distance)
+    jsonb_build_object('status', 'checked_in', 'distance_km', v_distance, 'supervisor_verified', v_is_supervisor)
   );
 
   RETURN jsonb_build_object(
     'success', true,
     'status', 'checked_in',
     'check_in_time', now(),
-    'distance_km', v_distance
+    'distance_km', v_distance,
+    'verified_by_supervisor', v_is_supervisor
   );
 END;
 $$;
@@ -199,9 +212,19 @@ DECLARE
   v_job RECORD;
   v_hours NUMERIC;
 BEGIN
+  -- 0. Authentication requirement
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
+  END IF;
+
   SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
   IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND', 'message', 'Booking record not found');
+  END IF;
+
+  -- Caller must be worker, organizer, or admin
+  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized for this booking.');
   END IF;
 
   IF NOT validate_booking_transition(v_booking.status, 'checked_out') THEN
@@ -263,13 +286,17 @@ DECLARE
   v_booking RECORD;
   v_job RECORD;
 BEGIN
-  SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
+  IF v_organizer_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
   END IF;
 
-  IF v_booking.organizer_id != v_organizer_id THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
+  SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND', 'message', 'Booking not found');
+  END IF;
+
+  IF v_booking.organizer_id != v_organizer_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Only the shift organizer or administrator can approve attendance.');
   END IF;
 
   IF NOT validate_booking_transition(v_booking.status, 'completed') THEN
@@ -344,13 +371,17 @@ DECLARE
   v_job RECORD;
   v_standby RECORD;
 BEGIN
-  SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Authentication required.');
   END IF;
 
-  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
+  SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND', 'message', 'Booking not found');
+  END IF;
+
+  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to cancel this booking.');
   END IF;
 
   IF NOT validate_booking_transition(v_booking.status, 'cancelled') THEN

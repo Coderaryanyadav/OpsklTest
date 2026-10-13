@@ -76,6 +76,18 @@ BEGIN
     );
   END IF;
 
+  -- 2b. Authoritative Platform Killswitch Check
+  IF EXISTS (
+    SELECT 1 FROM platform_settings
+    WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'BOOKINGS_PAUSED',
+      'message', 'Shift applications and bookings are temporarily paused platform-wide.'
+    );
+  END IF;
+
   -- 3. Validate status
   IF v_job.status NOT IN ('open', 'filling') THEN
     RETURN jsonb_build_object(

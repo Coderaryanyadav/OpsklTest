@@ -244,7 +244,7 @@ export function SwipeCard({
             </View>
             <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
               <Text style={[styles.upiGuaranteeText, { color: colors.success }]}>
-                ⚡ Escrow Secured
+                ⚡ Direct UPI on Sign-off
               </Text>
             </View>
           </View>

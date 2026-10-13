@@ -84,31 +84,26 @@ ALTER TABLE payment_reconciliation_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Organizers can view their own shift invoices"
   ON organizer_invoices FOR SELECT
   USING (
-    organizer_id IN (
-      SELECT id FROM organizer_profiles WHERE user_id = auth.uid()
-    ) OR
-    EXISTS (
-      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
-    )
+    organizer_id = auth.uid() OR is_current_admin()
   );
 
 CREATE POLICY "Admins can manage all invoices"
   ON organizer_invoices FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    is_current_admin()
   );
 
 -- 8. RLS POLICIES FOR WEBHOOK EVENTS & RECONCILIATION
 CREATE POLICY "Admins can view and manage webhook events"
   ON payment_webhook_events FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    is_current_admin()
   );
 
 CREATE POLICY "Admins can view and manage reconciliation logs"
   ON payment_reconciliation_logs FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    is_current_admin()
   );
 
 -- 9. RPC: SERVER-SIDE AUTHORITATIVE FINANCIAL CALCULATOR
@@ -335,6 +330,38 @@ BEGIN
     WHERE provider_order_id = v_order_id OR id::TEXT = (p_payload->>'invoice_id');
 
     IF FOUND THEN
+      -- Validate amount: recorded amount must match expected payable amount
+      IF v_amount < v_invoice.total_payable THEN
+        INSERT INTO payment_reconciliation_logs (
+          reconciliation_type,
+          reference_id,
+          status,
+          expected_amount,
+          recorded_amount,
+          discrepancy_amount,
+          notes
+        ) VALUES (
+          'invoice_collection',
+          v_invoice.invoice_number,
+          'discrepancy',
+          v_invoice.total_payable,
+          v_amount,
+          (v_invoice.total_payable - v_amount),
+          'Underpayment detected via webhook: expected ₹' || v_invoice.total_payable || ', received ₹' || v_amount
+        );
+
+        UPDATE payment_webhook_events
+        SET status = 'discrepancy'
+        WHERE event_id = p_event_id;
+
+        RETURN jsonb_build_object(
+          'success', false,
+          'error', 'Underpayment discrepancy detected',
+          'expected', v_invoice.total_payable,
+          'received', v_amount
+        );
+      END IF;
+
       -- Update invoice to escrow_funded
       UPDATE organizer_invoices
       SET
@@ -499,6 +526,15 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Booking not found');
   END IF;
 
+  -- 1b. Authorization check
+  IF auth.uid() IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  IF v_booking.job_organizer_id != auth.uid() AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Only the shift organizer or administrator can initiate payout.');
+  END IF;
+
   IF v_booking.status NOT IN ('completed', 'completed_awaiting_review') THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -599,3 +635,8 @@ BEGIN
   );
 END;
 $$;
+
+-- 14. SECURITY HARDENING: REVOKE UNRESTRICTED EXECUTE ON WEBHOOK INGESTION
+REVOKE EXECUTE ON FUNCTION process_payment_webhook_safe(TEXT, TEXT, TEXT, JSONB) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION process_payment_webhook_safe(TEXT, TEXT, TEXT, JSONB) TO service_role;
+

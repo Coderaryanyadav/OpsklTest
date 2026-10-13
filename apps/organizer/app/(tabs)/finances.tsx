@@ -23,10 +23,13 @@ import {
   OrganizerInvoice,
 } from '@opskil/shared';
 
+import { useAuth } from '@opskil/design-system';
+
 type ActiveView = 'invoices' | 'reconciliation';
 
 export default function OrganizerFinancesScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { session } = useAuth();
 
   const [finances, setFinances] = useState<OrganizerFinancesSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,9 +38,16 @@ export default function OrganizerFinancesScreen() {
 
   const [selectedInvoice, setSelectedInvoice] = useState<OrganizerInvoice | null>(null);
 
+  const organizerId = session?.user?.id;
+
   const loadData = useCallback(async () => {
+    if (!organizerId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
-      const data = await fetchOrganizerFinancesSummary('org-current-profile');
+      const data = await fetchOrganizerFinancesSummary(organizerId);
       setFinances(data);
     } catch {
       // Fallback in service
@@ -45,7 +55,7 @@ export default function OrganizerFinancesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [organizerId]);
 
   useEffect(() => {
     loadData();

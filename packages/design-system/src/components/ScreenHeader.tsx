@@ -33,18 +33,30 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
         {onBack ? (
           <Pressable
             onPress={onBack}
-            style={{
-              padding: spacing.xs,
-              marginRight: spacing.sm,
-              minWidth: 36,
-              minHeight: 36,
+            style={({ pressed }) => ({
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: pressed ? colors.surfaceMuted : 'transparent',
               justifyContent: 'center',
               alignItems: 'center',
-            }}
+              marginRight: spacing.sm,
+            })}
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={{ fontSize: 20, color: colors.textPrimary }}>←</Text>
+            <View
+              style={{
+                width: 10,
+                height: 10,
+                borderLeftWidth: 2.2,
+                borderBottomWidth: 2.2,
+                borderColor: colors.textPrimary,
+                transform: [{ rotate: '45deg' }],
+                marginLeft: 3,
+              }}
+            />
           </Pressable>
         ) : null}
 

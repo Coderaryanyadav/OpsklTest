@@ -82,24 +82,25 @@ export default function WorkerOnboardingScreen() {
     setErrors({});
     setLoading(true);
 
+    const userId = session?.user?.id;
+    if (!userId) {
+      setErrors({ upiId: 'Authentication required. Please sign in with your mobile number to complete profile registration.' });
+      setLoading(false);
+      return;
+    }
+
     try {
-      const userId = session?.user?.id || 'worker-demo-id';
-      // Persist profile updates
-      try {
-        await updateWorkerProfile(userId, {
-          skills: selectedSkills,
-          serviceAreas: selectedLocalities,
-          upiId: upiId.trim() || undefined,
-          availabilityStatus: 'available',
-          profileCompletionStatus: 'completed',
-        });
-      } catch {
-        // Fallback for offline demo sessions
-      }
+      await updateWorkerProfile(userId, {
+        skills: selectedSkills,
+        serviceAreas: selectedLocalities,
+        upiId: upiId.trim() || undefined,
+        availabilityStatus: 'available',
+        profileCompletionStatus: 'completed',
+      });
 
       Alert.alert(
-        'Profile Verified & Ready',
-        'Your profile has been created. You can now browse verified single-day shifts in Mumbai and swipe right to apply.',
+        'Profile Completed',
+        'Your worker profile is ready. You can now browse verified event shifts across Mumbai.',
         [
           {
             text: 'Browse Shifts',
@@ -107,6 +108,8 @@ export default function WorkerOnboardingScreen() {
           },
         ]
       );
+    } catch (err: any) {
+      Alert.alert('Profile Setup Error', err.message || 'Unable to update profile. Please check your connection and retry.');
     } finally {
       setLoading(false);
     }

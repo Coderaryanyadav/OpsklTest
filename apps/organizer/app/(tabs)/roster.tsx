@@ -140,19 +140,36 @@ export default function OrganizerRosterScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
-  const organizerId = session?.user?.id || 'org-apex-01';
+  const organizerId = session?.user?.id;
 
   const loadApplications = useCallback(async () => {
+    if (!organizerId) {
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setApplications(SEED_APPLICATIONS as any);
+      } else {
+        setApplications([]);
+      }
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       const data = await fetchOrganizerApplications(organizerId);
       if (data.length > 0) {
         setApplications(data);
-      } else {
+      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
         setApplications(SEED_APPLICATIONS as any);
+      } else {
+        setApplications([]);
       }
     } catch (err) {
       console.error('Failed to load applications', err);
-      setApplications(SEED_APPLICATIONS as any);
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setApplications(SEED_APPLICATIONS as any);
+      } else {
+        setApplications([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -168,12 +185,14 @@ export default function OrganizerRosterScreen() {
     loadApplications();
   };
 
+  const effectiveOrgId = organizerId || session?.user?.id || 'org-apex-01';
+
   /**
    * Shortlist Applicant
    */
   const handleShortlist = async (app: JobApplication) => {
     setActionInProgress(app.id);
-    const res = await updateApplicationStatusSafe(app.id, 'shortlisted', organizerId);
+    const res = await updateApplicationStatusSafe(app.id, 'shortlisted', effectiveOrgId);
     setActionInProgress(null);
 
     if (res.success) {
@@ -203,7 +222,7 @@ export default function OrganizerRosterScreen() {
           style: 'destructive',
           onPress: async () => {
             setActionInProgress(app.id);
-            const res = await updateApplicationStatusSafe(app.id, 'rejected', organizerId);
+            const res = await updateApplicationStatusSafe(app.id, 'rejected', effectiveOrgId);
             setActionInProgress(null);
 
             if (res.success) {
@@ -238,7 +257,7 @@ export default function OrganizerRosterScreen() {
             const res = await confirmWorkerBookingSafe(
               app.jobId,
               app.workerId,
-              organizerId
+              effectiveOrgId
             );
             setActionInProgress(null);
 

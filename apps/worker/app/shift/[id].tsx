@@ -9,6 +9,7 @@ import {
   Badge,
   Button,
   WageText,
+  EmptyState,
   useAuth,
 } from '@opskil/design-system';
 import {
@@ -29,19 +30,28 @@ export default function WorkerShiftDetailScreen() {
 
   const [shift, setShift] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function loadShift() {
-      if (!id) return;
+      if (!id) {
+        setError('Invalid shift identifier.');
+        setLoading(false);
+        return;
+      }
       try {
+        setLoading(true);
+        setError(null);
         const data = await fetchJobById(id);
         if (data) {
           setShift(data);
+        } else {
+          setError('Shift not found or has been concluded.');
         }
-      } catch (err) {
-        console.error('Failed to load shift details', err);
+      } catch (err: any) {
+        setError(err?.message || 'Unable to load shift details.');
       } finally {
         setLoading(false);
       }
@@ -49,71 +59,25 @@ export default function WorkerShiftDetailScreen() {
     loadShift();
   }, [id]);
 
-  // Fallback shift details if network or test environment without mock
-  const activeShift: Job = shift || {
-    id: id || 'shift-101',
-    organizerId: 'org-apex-01',
-    title: 'Registration Desk & VIP Usher',
-    category: 'conference',
-    venueName: 'Jio World Convention Centre, Pavilion 2',
-    venueAddress: 'G Block BKC, Bandra Kurla Complex, Bandra East, Mumbai, Maharashtra 400098',
-    landmark: 'Opposite Bharat Diamond Bourse',
-    city: 'Mumbai',
-    zone: 'Bandra Kurla Complex (BKC)',
-    date: '2026-10-14',
-    startTime: '08:30',
-    endTime: '17:30',
-    durationHours: 9,
-    hourlyRate: 185,
-    totalPay: 1665,
-    slotsTotal: 12,
-    slotsFilled: 8,
-    dressCode: 'Crisp black formal collared shirt, black formal trousers, black formal shoes. Hair neatly groomed.',
-    duties: [
-      'Scan attendee QR entry passes at turnstiles using provided handheld terminals',
-      'Issue delegate badge lanyards and conference kits',
-      'Direct delegates toward Keynote Hall A and Executive Boardrooms',
-      'Assist with on-site attendee queries and information requests',
-    ],
-    perks: ['Catered lunch & refreshments provided', 'Air conditioned hall', 'Direct UPI payout within 2 hours of shift completion'],
-    requiredSkills: ['Guest Relations', 'Fluent English', 'Basic Tech Navigation'],
-    breaksMinutes: 45,
-    mealProvided: true,
-    transportProvided: false,
-    overtimePolicy: '₹200/hr after scheduled shift duration.',
-    supervisorName: 'Rohit Verma',
-    supervisorPhone: '+91 98201 98201',
-    status: 'open',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    organizer: {
-      id: 'org-apex-01',
-      businessName: 'Apex Event Productions Pvt Ltd',
-      businessType: 'event_agency',
-      verificationStatus: 'verified',
-      profileCompletionStatus: 'completed',
-      businessContactPhone: '+91 98201 98201',
-      rating: 4.9,
-      totalEventsHosted: 42,
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    },
-  };
-
-  const totalPay = activeShift.hourlyRate * activeShift.durationHours;
-
   const handleApply = async () => {
+    if (!shift) return;
+    if (!session?.user?.id) {
+      Alert.alert('Sign In Required', 'Please sign in to apply for this shift.', [
+        { text: 'OK', onPress: () => router.push('/auth/login') },
+      ]);
+      return;
+    }
+
     setSubmitting(true);
-    const workerId = session?.user?.id || 'demo-worker-id';
-    const result = await applyForJobSafe(activeShift.id, workerId);
+    const result = await applyForJobSafe(shift.id, session.user.id);
     setSubmitting(false);
 
     if (result.success) {
       setApplied(true);
       Alert.alert(
         'Interest Expressed',
-        `Your profile has been submitted to ${activeShift.organizer?.businessName || 'the organizer'}. Organizers explicitly select workers for the shift roster. You will be notified once reviewed.`,
-        [{ text: 'OK' }]
+        `Your profile has been submitted to ${shift.organizer?.businessName || 'the organizer'}. You will receive a notification once the organizer reviews the applicants and confirms the roster.`,
+        [{ text: 'View My Applications', onPress: () => router.push('/(tabs)/my-shifts') }, { text: 'Done' }]
       );
     } else {
       Alert.alert(
@@ -128,28 +92,52 @@ export default function WorkerShiftDetailScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 12, color: colors.textSecondary }}>Loading shift specs...</Text>
+        <Text style={[typography.body, { marginTop: 12, color: colors.textSecondary }]}>
+          Loading verified shift details…
+        </Text>
       </SafeAreaView>
     );
   }
 
+  if (error || !shift) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScreenHeader title="Shift Details" onBack={() => router.back()} />
+        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
+          <EmptyState
+            title="Shift Unavailable"
+            description={error || 'This shift is no longer open for new applications or does not exist.'}
+            actionLabel="Return to Discovery"
+            onAction={() => router.back()}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const totalPay = shift.hourlyRate * shift.durationHours;
+  const slotsRemaining = Math.max(0, shift.slotsTotal - shift.slotsFilled);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
       <ScreenHeader
-        title="Shift Details"
-        subtitle={activeShift.category.toUpperCase()}
+        title={shift.title}
+        subtitle={`${shift.category.toUpperCase()} • ${shift.zone}`}
         onBack={() => router.back()}
         rightAction={
           <Badge
-            label={`${activeShift.durationHours}h SHIFT`}
+            label={`${shift.durationHours}h Shift`}
             variant="neutral"
             size="sm"
           />
         }
       />
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-        {/* Wage Guarantee Card */}
+      <ScrollView
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Wage Card */}
         <Card
           variant="elevated"
           style={{
@@ -161,15 +149,15 @@ export default function WorkerShiftDetailScreen() {
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }}>
-                Guaranteed Payout
+              <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }]}>
+                Guaranteed Shift Wage
               </Text>
               <WageText style={{ marginTop: 2 }}>{formatINR(totalPay)}</WageText>
               <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
-                {formatINR(activeShift.hourlyRate)}/hr × {activeShift.durationHours} hours
+                {formatINR(shift.hourlyRate)}/hr • {shift.durationHours} scheduled hours
               </Text>
             </View>
-            <Badge label="SAME-DAY UPI" variant="success" />
+            <Badge label="Direct UPI Settlement" variant="success" size="sm" />
           </View>
 
           <View
@@ -180,134 +168,163 @@ export default function WorkerShiftDetailScreen() {
               borderRadius: radii.md,
             }}
           >
-            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              🛡️ Payment held securely in Opskl Escrow before shift starts. Released immediately upon supervisor attendance approval.
+            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
+              ⚡ Wages are settled directly via UPI to your bank account upon shift completion and organizer sign-off.
             </Text>
           </View>
         </Card>
 
-        {/* Shift Role & Timing */}
-        <Card variant="outlined">
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        {/* Organizer Card */}
+        <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>{activeShift.title}</Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-                Organized by {activeShift.organizer?.businessName || 'Event Host'}
+              <Text style={[typography.caption, { color: colors.textMuted, textTransform: 'uppercase' }]}>
+                Event Host
               </Text>
+              <Text style={[typography.subtitle, { color: colors.textPrimary, marginTop: 2 }]}>
+                {shift.organizer?.businessName || 'Verified Organizer'}
+              </Text>
+              {shift.organizer?.businessType && (
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1, textTransform: 'capitalize' }}>
+                  {shift.organizer.businessType.replace('_', ' ')}
+                </Text>
+              )}
             </View>
-            {activeShift.organizer?.verificationStatus === 'verified' && (
-              <Badge label="✓ VERIFIED" variant="success" size="sm" />
+            {shift.organizer?.verificationStatus === 'verified' && (
+              <Badge label="Verified Host" variant="success" size="sm" />
             )}
           </View>
+        </Card>
 
-          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-          <View style={{ gap: spacing.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, width: 26 }}>📅</Text>
-              <View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>
-                  {formatISTDate(activeShift.date)}
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  {formatTimeRange(activeShift.startTime, activeShift.endTime)} ({activeShift.durationHours} hours)
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, width: 26 }}>📍</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>
-                  {activeShift.venueName}
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                  {activeShift.venueAddress}
-                </Text>
-                {activeShift.landmark && (
-                  <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
-                    Landmark: {activeShift.landmark}
-                  </Text>
-                )}
-              </View>
+        {/* Schedule & Venue Card */}
+        <Card variant="outlined" style={{ borderRadius: radii.xl, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📅</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                {formatISTDate(shift.date)}
+              </Text>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+                {formatTimeRange(shift.startTime, shift.endTime)} ({shift.durationHours} hours)
+              </Text>
             </View>
           </View>
+
+          <View style={{ height: 1, backgroundColor: colors.border }} />
+
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📍</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                {shift.venueName}
+              </Text>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                {shift.venueAddress}
+              </Text>
+              {shift.landmark ? (
+                <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 4 }}>
+                  Landmark: {shift.landmark}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          {shift.reportingInstructions ? (
+            <>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <Text style={{ fontSize: 18, marginRight: 10, marginTop: 2 }}>📌</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    Reporting Instructions
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                    {shift.reportingInstructions}
+                  </Text>
+                </View>
+              </View>
+            </>
+          ) : null}
         </Card>
 
         {/* Duties */}
-        <Card variant="outlined">
-          <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-            Shift Responsibilities
-          </Text>
-          {activeShift.duties.map((duty, idx) => (
-            <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
-              <Text style={{ color: colors.primary, fontWeight: '700', marginRight: 8, fontSize: 14 }}>
-                •
-              </Text>
-              <Text style={{ flex: 1, fontSize: 13, color: colors.textPrimary, lineHeight: 19 }}>
-                {duty}
-              </Text>
-            </View>
-          ))}
-        </Card>
+        {shift.duties && shift.duties.length > 0 && (
+          <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+              Responsibilities
+            </Text>
+            {shift.duties.map((duty, idx) => (
+              <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 }}>
+                <Text style={{ color: colors.primary, fontWeight: '700', marginRight: 8, fontSize: 14 }}>
+                  •
+                </Text>
+                <Text style={{ flex: 1, fontSize: 13, color: colors.textPrimary, lineHeight: 19 }}>
+                  {duty}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        )}
 
-        {/* Working Conditions */}
-        <Card variant="outlined">
+        {/* Working Conditions & Perks */}
+        <Card variant="outlined" style={{ borderRadius: radii.xl }}>
           <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
             Conditions & Logistics
           </Text>
           <View style={{ gap: 8 }}>
             <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              🍽️ Meals: {activeShift.mealProvided ? 'Provided on-site' : 'Self-arranged'}
+              🍽️ Meals: {shift.mealProvided ? 'Provided on-site' : 'Self-arranged'}
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              🚕 Travel: {activeShift.transportProvided ? 'Allowance / cab provided' : 'Self-arranged'}
+              🚕 Travel: {shift.transportProvided ? 'Allowance / cab provided' : 'Self-arranged'}
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              ☕ Breaks: {activeShift.breaksMinutes || 30} minutes
+              ☕ Breaks: {shift.breaksMinutes ? `${shift.breaksMinutes} minutes` : 'Standard rest breaks'}
             </Text>
-            {activeShift.overtimePolicy && (
+            {shift.overtimePolicy ? (
               <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                ⏱️ Overtime: {activeShift.overtimePolicy}
+                ⏱️ Overtime: {shift.overtimePolicy}
               </Text>
-            )}
-            {activeShift.applicationDeadline && (
+            ) : null}
+            {shift.applicationDeadline ? (
               <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>
-                ⏳ Deadline: {formatDeadline(activeShift.applicationDeadline)}
+                ⏳ Application Deadline: {formatDeadline(shift.applicationDeadline)}
               </Text>
-            )}
+            ) : null}
           </View>
         </Card>
 
-        {/* Dress Code & Requirements */}
-        <Card variant="outlined">
-          <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-            Dress Code & Hygiene
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19 }}>
-            {activeShift.dressCode}
-          </Text>
-        </Card>
+        {/* Dress Code */}
+        {shift.dressCode ? (
+          <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+            <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
+              Dress Code & Presentation
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19 }}>
+              {shift.dressCode}
+            </Text>
+          </Card>
+        ) : null}
 
-        {/* Notice on marketplace policy */}
+        {/* Staffing Status */}
         <View
           style={{
             padding: spacing.md,
             backgroundColor: colors.surfaceMuted,
-            borderRadius: radii.md,
+            borderRadius: radii.lg,
             borderLeftWidth: 3,
             borderLeftColor: colors.primary,
           }}
         >
           <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            ℹ️ <Text style={{ fontWeight: '700' }}>Opskl Marketplace Policy:</Text> Expressing interest informs the organizer that you are available. You are only scheduled once the organizer explicitly selects and confirms your booking.
+            ℹ️ <Text style={{ fontWeight: '700' }}>Shift Status:</Text> {slotsRemaining} of {shift.slotsTotal} spots remaining. Expressing interest submits your profile for organizer review.
           </Text>
         </View>
 
-        {/* Action Button */}
+        {/* Primary Action Button */}
         <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl }}>
           <Button
-            title={applied ? '✓ Interest Expressed (Awaiting Selection)' : 'Express Interest / Apply'}
+            title={applied ? '✓ Interest Expressed' : 'Express Interest / Apply'}
             variant={applied ? 'secondary' : 'primary'}
             size="lg"
             disabled={applied}

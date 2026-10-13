@@ -31,7 +31,7 @@ export async function fetchWorkerEarningsSummary(
     .eq('id', workerId)
     .single();
 
-  const defaultUpiId = profile?.upi_id || 'aryan@okhdfcbank';
+  const defaultUpiId = profile?.upi_id || '';
 
   // 2. Fetch all bookings for worker to categorize lifecycle stages
   const { data: bookings } = await supabase
@@ -121,8 +121,9 @@ export async function fetchWorkerEarningsSummary(
     }
   }
 
-  // Provide realistic fallback baseline if fresh user
-  if (records.length === 0 && confirmedUpcomingWages === 0) {
+  // Provide fallback baseline only if explicitly running with demo fixtures flag or in test
+  const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' || process.env.NODE_ENV === 'test';
+  if (records.length === 0 && confirmedUpcomingWages === 0 && allowDemoFixtures) {
     confirmedUpcomingWages = 1650;
     completedAwaitingApproval = 1500;
     approvedAwaitingPayment = 1450;
@@ -285,8 +286,9 @@ export async function fetchOrganizerFinancesSummary(
     }
   }
 
-  // Realistic mock baseline if brand new account
-  if (invoices.length === 0) {
+  // Provide mock baseline only if explicitly configured for demo mode or in test
+  const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' || process.env.NODE_ENV === 'test';
+  if (invoices.length === 0 && allowDemoFixtures) {
     const calc1 = calculateJobFinancials(12, 1600);
     const calc2 = calculateJobFinancials(8, 1400);
 

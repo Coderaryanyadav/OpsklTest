@@ -208,13 +208,58 @@ export async function applyForJobSafe(
   logger.info('Executing safe job application submission', { jobId, workerId });
 
   try {
-    // 1. Try invoking safe atomic RPC function if Supabase instance has it
+    // 1. Invoke authoritative atomic RPC function
     const { data: rpcData, error: rpcError } = await supabase.rpc('apply_for_job_safe', {
       p_job_id: jobId,
       p_notes: notes ?? null,
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('RPC error in apply_for_job_safe', rpcError);
+
+      try {
+        const { data: job } = await supabase
+          .from('jobs')
+          .select('id, status, slots_total, slots_filled')
+          .eq('id', jobId)
+          .single();
+
+        if (job) {
+          if (job.status !== 'open' || job.slots_filled >= job.slots_total) {
+            return {
+              success: false,
+              errorCode: 'JOB_CLOSED',
+              errorMessage: 'This shift is no longer open for new applications.',
+            };
+          }
+
+          const { data: existingApp } = await supabase
+            .from('job_applications')
+            .select('id, status')
+            .eq('job_id', jobId)
+            .eq('worker_id', workerId)
+            .maybeSingle();
+
+          if (existingApp) {
+            return {
+              success: false,
+              errorCode: 'ALREADY_APPLIED',
+              errorMessage: 'You have already applied for this shift.',
+            };
+          }
+        }
+      } catch {
+        // Fallback check errored; proceed to return rpcError
+      }
+
+      return {
+        success: false,
+        errorCode: rpcError.code || 'TRANSACTION_ERROR',
+        errorMessage: rpcError.message || 'Application transaction failed on server.',
+      };
+    }
+
+    if (rpcData) {
       if (rpcData.success) {
         return {
           success: true,
@@ -235,101 +280,10 @@ export async function applyForJobSafe(
       };
     }
 
-    // 2. Direct client fallback with comprehensive server validations
-    // A. Verify job status and eligibility
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id, status, slots_total, slots_filled, application_deadline')
-      .eq('id', jobId)
-      .single();
-
-    if (jobError || !job) {
-      return {
-        success: false,
-        errorCode: 'JOB_NOT_FOUND',
-        errorMessage: 'The shift could not be found.',
-      };
-    }
-
-    if (job.status !== 'open' && job.status !== 'filling') {
-      return {
-        success: false,
-        errorCode: 'JOB_CLOSED',
-        errorMessage: 'This shift is no longer open for new applications.',
-      };
-    }
-
-    if (job.application_deadline && new Date(job.application_deadline).getTime() < Date.now()) {
-      return {
-        success: false,
-        errorCode: 'DEADLINE_PASSED',
-        errorMessage: 'The application deadline for this shift has passed.',
-      };
-    }
-
-    if (job.slots_filled >= job.slots_total) {
-      return {
-        success: false,
-        errorCode: 'SLOTS_FULL',
-        errorMessage: 'All openings for this shift have already been filled.',
-      };
-    }
-
-    // B. Check for existing application (duplicate protection)
-    const { data: existingApp } = await supabase
-      .from('job_applications')
-      .select('id, status')
-      .eq('job_id', jobId)
-      .eq('worker_id', workerId)
-      .maybeSingle();
-
-    if (existingApp) {
-      return {
-        success: false,
-        errorCode: 'ALREADY_APPLIED',
-        errorMessage: 'You have already applied for this shift.',
-      };
-    }
-
-    // C. Insert application record
-    const { data: appData, error: appError } = await supabase
-      .from('job_applications')
-      .insert({
-        job_id: jobId,
-        worker_id: workerId,
-        status: 'applied',
-        notes,
-      })
-      .select()
-      .single();
-
-    if (appError) {
-      logger.error('Application insertion failed', appError);
-      return {
-        success: false,
-        errorCode: 'INSERTION_FAILED',
-        errorMessage: appError.message || 'Failed to submit application.',
-      };
-    }
-
-    // D. Record right swipe event
-    await supabase
-      .from('swipe_events')
-      .upsert(
-        { worker_id: workerId, job_id: jobId, direction: 'right' },
-        { onConflict: 'worker_id,job_id' }
-      );
-
     return {
-      success: true,
-      application: {
-        id: appData.id,
-        jobId: appData.job_id,
-        workerId: appData.worker_id,
-        status: appData.status,
-        appliedAt: appData.applied_at,
-        notes: appData.notes,
-      },
+      success: false,
+      errorCode: 'UNKNOWN_RESPONSE',
+      errorMessage: 'No data returned from application transaction.',
     };
   } catch (err: any) {
     logger.error('Unexpected error applying for job', err);
@@ -541,59 +495,19 @@ export async function createJobSafe(
       },
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('RPC error in create_job_safe', rpcError);
+      return { success: false, error: rpcError.message || 'Server error creating shift listing.' };
+    }
+
+    if (rpcData) {
       if (rpcData.success) {
         return { success: true, jobId: rpcData.job_id };
       }
       return { success: false, error: rpcData.message || rpcData.error_code };
     }
 
-    // 2. Direct client fallback with validation
-    const totalPay = job.totalPay ?? (job.hourlyRate! * job.durationHours!);
-    const { data, error } = await supabase
-      .from('jobs')
-      .insert({
-        organizer_id: organizerId,
-        title: job.title,
-        category: job.category,
-        venue_name: job.venueName,
-        venue_address: job.venueAddress,
-        landmark: job.landmark,
-        city: job.city || 'Mumbai',
-        zone: job.zone,
-        date: job.date,
-        start_time: job.startTime,
-        end_time: job.endTime,
-        duration_hours: job.durationHours,
-        hourly_rate: job.hourlyRate,
-        total_pay: totalPay,
-        slots_total: job.slotsTotal,
-        slots_filled: 0,
-        dress_code: job.dressCode,
-        duties: job.duties || [],
-        perks: job.perks || [],
-        required_skills: job.requiredSkills || [],
-        breaks_minutes: job.breaksMinutes ?? 30,
-        meal_provided: job.mealProvided ?? false,
-        transport_provided: job.transportProvided ?? false,
-        overtime_policy: job.overtimePolicy,
-        reporting_instructions: job.reportingInstructions,
-        cancellation_policy: job.cancellationPolicy,
-        application_deadline: job.applicationDeadline,
-        payment_deadline: job.paymentDeadline,
-        supervisor_name: job.supervisorName,
-        supervisor_phone: job.supervisorPhone,
-        status: job.status || 'open',
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      logger.error('Failed to create shift listing', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, jobId: data.id };
+    return { success: false, error: 'Unexpected empty response from create_job_safe.' };
   } catch (err: any) {
     logger.error('Unexpected error in createJobSafe', err);
     return { success: false, error: err.message };
@@ -765,14 +679,22 @@ export async function confirmWorkerBookingSafe(
   logger.info('Executing safe worker booking confirmation', { jobId, workerId, organizerId });
 
   try {
-    // 1. Try atomic RPC
+    // Invoke authoritative atomic database transaction
     const { data: rpcData, error: rpcError } = await supabase.rpc('confirm_worker_booking_safe', {
       p_job_id: jobId,
       p_worker_id: workerId,
       p_notes: notes ?? null,
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('RPC error in confirm_worker_booking_safe', rpcError);
+      return {
+        success: false,
+        error: rpcError.message || 'Server-side booking confirmation transaction failed.',
+      };
+    }
+
+    if (rpcData) {
       if (rpcData.success) {
         return {
           success: true,
@@ -781,93 +703,14 @@ export async function confirmWorkerBookingSafe(
       }
       return {
         success: false,
-        error: rpcData.message || rpcData.error_code,
+        error: rpcData.message || rpcData.error_code || 'Worker selection could not be confirmed.',
       };
     }
 
-    // 2. Fallback direct atomic operations
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('id, slots_total, slots_filled, hourly_rate, total_pay, title')
-      .eq('id', jobId)
-      .single();
-
-    if (jobError || !job) {
-      return { success: false, error: 'Shift not found' };
-    }
-
-    if (job.slots_filled >= job.slots_total) {
-      return {
-        success: false,
-        error: `Headcount limit reached. All ${job.slots_total} openings are filled.`,
-      };
-    }
-
-    // Check duplicate
-    const { data: existingBooking } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('job_id', jobId)
-      .eq('worker_id', workerId)
-      .maybeSingle();
-
-    if (existingBooking) {
-      return { success: false, error: 'Worker is already confirmed for this shift.' };
-    }
-
-    // Update application
-    await supabase
-      .from('job_applications')
-      .update({ status: 'confirmed' })
-      .match({ job_id: jobId, worker_id: workerId });
-
-    // Insert booking
-    const { data: bookingData, error: bookingError } = await supabase
-      .from('bookings')
-      .insert({
-        job_id: jobId,
-        worker_id: workerId,
-        organizer_id: organizerId,
-        status: 'confirmed',
-        agreed_hourly_rate: job.hourly_rate,
-        agreed_total_pay: job.total_pay,
-      })
-      .select()
-      .single();
-
-    if (bookingError) {
-      return { success: false, error: bookingError.message };
-    }
-
-    // Increment filled slots
-    const newFilled = job.slots_filled + 1;
-    await supabase
-      .from('jobs')
-      .update({
-        slots_filled: newFilled,
-        status: newFilled >= job.slots_total ? 'filled' : 'open',
-      })
-      .eq('id', jobId);
-
-    // Create notification
-    await supabase.from('notifications').insert({
-      user_id: workerId,
-      title: '🎉 Shift Booking Confirmed!',
-      body: `You have been selected for ${job.title}. Tap to view your shift ticket and briefing.`,
-      type: 'booking_confirmed',
-      data: { job_id: jobId, booking_id: bookingData.id },
-    });
-
-    // Create audit log
-    await supabase.from('audit_logs').insert({
-      actor_id: organizerId,
-      action: 'CONFIRM_WORKER_BOOKING',
-      entity_type: 'booking',
-      entity_id: bookingData.id,
-      new_state: { job_id: jobId, worker_id: workerId, total_pay: job.total_pay },
-    });
-
-    return { success: true, booking: bookingData };
+    return {
+      success: false,
+      error: 'Unexpected empty response from booking confirmation transaction.',
+    };
   } catch (err: any) {
     logger.error('Unexpected error confirming worker', err);
     return { success: false, error: err.message };
@@ -883,47 +726,22 @@ export async function updateApplicationStatusSafe(
   organizerId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    logger.info('Updating application status safe', { applicationId, newStatus, organizerId });
     const { data: rpcData, error: rpcError } = await supabase.rpc('update_application_status_safe', {
       p_application_id: applicationId,
       p_new_status: newStatus,
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('RPC error in update_application_status_safe', rpcError);
+      return { success: false, error: rpcError.message || 'Server error updating application status.' };
+    }
+
+    if (rpcData) {
       return { success: rpcData.success, error: rpcData.message };
     }
 
-    // Direct fallback
-    const { data: appData, error: appError } = await supabase
-      .from('job_applications')
-      .update({ status: newStatus })
-      .eq('id', applicationId)
-      .select('*, jobs(title)')
-      .single();
-
-    if (appError) {
-      return { success: false, error: appError.message };
-    }
-
-    if (newStatus === 'shortlisted' && appData) {
-      await supabase.from('notifications').insert({
-        user_id: appData.worker_id,
-        title: '⭐ Profile Shortlisted',
-        body: `You have been shortlisted for ${appData.jobs?.title || 'the shift'}.`,
-        type: 'application_shortlisted',
-        data: { job_id: appData.job_id },
-      });
-    }
-
-    // Audit log
-    await supabase.from('audit_logs').insert({
-      actor_id: organizerId,
-      action: 'UPDATE_APPLICATION_STATUS',
-      entity_type: 'application',
-      entity_id: applicationId,
-      new_state: { status: newStatus },
-    });
-
-    return { success: true };
+    return { success: false, error: 'Empty response updating application status.' };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

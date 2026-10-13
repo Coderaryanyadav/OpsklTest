@@ -21,13 +21,13 @@ ALTER TABLE jobs
 CREATE OR REPLACE VIEW shifts AS SELECT * FROM jobs;
 
 -- 4. Enable notification and audit log insertion policies for authorized actions
-CREATE POLICY "Organizers and system insert notifications"
+CREATE POLICY "Users insert own notifications or admins"
   ON notifications FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.uid() IS NOT NULL AND (user_id = auth.uid() OR is_current_admin()));
 
-CREATE POLICY "Actors insert audit logs"
+CREATE POLICY "Authenticated actors insert own audit logs"
   ON audit_logs FOR INSERT
-  WITH CHECK (actor_id = auth.uid() OR actor_id IS NULL);
+  WITH CHECK (auth.uid() IS NOT NULL AND (actor_id = auth.uid() OR is_current_admin()));
 
 -- 5. Atomic RPC: Create Job with Server-Side Validations & Audit Log
 CREATE OR REPLACE FUNCTION create_job_safe(

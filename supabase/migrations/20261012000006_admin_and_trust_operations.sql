@@ -93,14 +93,20 @@ AS $$
 DECLARE
   v_dispute RECORD;
   v_booking RECORD;
+  v_admin_id UUID := auth.uid();
   v_admin_role user_role;
 BEGIN
-  -- Verify admin role
+  -- 1. Strictly derive caller identity from auth.uid()
+  IF v_admin_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  -- Verify actual caller has administrator role
   SELECT role INTO v_admin_role
   FROM profiles
-  WHERE id = COALESCE(p_admin_id, auth.uid());
+  WHERE id = v_admin_id;
 
-  IF v_admin_role != 'admin' THEN
+  IF v_admin_role IS NULL OR v_admin_role != 'admin' THEN
     RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Requires administrator role.');
   END IF;
 
@@ -121,7 +127,7 @@ BEGIN
   SET
     status = p_status,
     resolution_notes = p_resolution_notes,
-    resolved_by = COALESCE(p_admin_id, auth.uid()),
+    resolved_by = v_admin_id,
     resolved_at = now()
   WHERE id = p_dispute_id;
 
@@ -147,7 +153,7 @@ BEGIN
   -- Immutable audit log
   INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, changes)
   VALUES (
-    COALESCE(p_admin_id, auth.uid()),
+    v_admin_id,
     'admin_resolve_dispute',
     'disputes',
     p_dispute_id,
@@ -176,13 +182,18 @@ SET search_path = public
 AS $$
 DECLARE
   v_case RECORD;
+  v_admin_id UUID := auth.uid();
   v_admin_role user_role;
 BEGIN
+  IF v_admin_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
-  WHERE id = COALESCE(p_admin_id, auth.uid());
+  WHERE id = v_admin_id;
 
-  IF v_admin_role != 'admin' THEN
+  IF v_admin_role IS NULL OR v_admin_role != 'admin' THEN
     RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Requires administrator role.');
   END IF;
 
@@ -198,7 +209,7 @@ BEGIN
   SET
     status = p_status,
     rejection_reason = p_rejection_reason,
-    reviewed_by = COALESCE(p_admin_id, auth.uid()),
+    reviewed_by = v_admin_id,
     reviewed_at = now()
   WHERE id = p_case_id;
 
@@ -209,21 +220,23 @@ BEGIN
     SET
       is_aadhaar_verified = CASE WHEN v_case.document_type = 'aadhaar' THEN true ELSE is_aadhaar_verified END,
       is_pan_verified = CASE WHEN v_case.document_type = 'pan' THEN true ELSE is_pan_verified END,
+      verification_status = 'verified',
       updated_at = now()
-    WHERE user_id = v_case.profile_id;
+    WHERE id = v_case.profile_id;
 
     -- Check if organizer profile
     UPDATE organizer_profiles
     SET
       is_gstin_verified = CASE WHEN v_case.document_type = 'gstin' THEN true ELSE is_gstin_verified END,
+      verification_status = 'verified',
       updated_at = now()
-    WHERE user_id = v_case.profile_id;
+    WHERE id = v_case.profile_id;
   END IF;
 
   -- Immutable audit log
   INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, changes)
   VALUES (
-    COALESCE(p_admin_id, auth.uid()),
+    v_admin_id,
     'admin_verify_document',
     'verification_cases',
     p_case_id,
@@ -242,7 +255,7 @@ $$;
 -- 7. RPC: ADMIN MODERATE JOB SAFE (WITH REASON & AUDIT)
 CREATE OR REPLACE FUNCTION admin_moderate_job_safe(
   p_job_id UUID,
-  p_new_status job_status,
+  p_new_status shift_status,
   p_moderation_reason TEXT,
   p_admin_id UUID DEFAULT NULL
 )
@@ -253,13 +266,18 @@ SET search_path = public
 AS $$
 DECLARE
   v_job RECORD;
+  v_admin_id UUID := auth.uid();
   v_admin_role user_role;
 BEGIN
+  IF v_admin_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
-  WHERE id = COALESCE(p_admin_id, auth.uid());
+  WHERE id = v_admin_id;
 
-  IF v_admin_role != 'admin' THEN
+  IF v_admin_role IS NULL OR v_admin_role != 'admin' THEN
     RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Requires administrator role.');
   END IF;
 
@@ -280,7 +298,7 @@ BEGIN
   -- Immutable audit log
   INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, changes)
   VALUES (
-    COALESCE(p_admin_id, auth.uid()),
+    v_admin_id,
     'admin_moderate_job',
     'jobs',
     p_job_id,
@@ -310,13 +328,18 @@ SET search_path = public
 AS $$
 DECLARE
   v_report RECORD;
+  v_admin_id UUID := auth.uid();
   v_admin_role user_role;
 BEGIN
+  IF v_admin_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
-  WHERE id = COALESCE(p_admin_id, auth.uid());
+  WHERE id = v_admin_id;
 
-  IF v_admin_role != 'admin' THEN
+  IF v_admin_role IS NULL OR v_admin_role != 'admin' THEN
     RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Requires administrator role.');
   END IF;
 
@@ -333,14 +356,14 @@ BEGIN
     status = p_status,
     action_taken = p_action_taken,
     staff_notes = p_staff_notes,
-    resolved_by = COALESCE(p_admin_id, auth.uid()),
+    resolved_by = v_admin_id,
     resolved_at = now()
   WHERE id = p_report_id;
 
   -- Immutable audit log
   INSERT INTO audit_logs (actor_id, action, entity_type, entity_id, changes)
   VALUES (
-    COALESCE(p_admin_id, auth.uid()),
+    v_admin_id,
     'admin_resolve_safety_report',
     'safety_reports',
     p_report_id,
@@ -354,3 +377,10 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'report_id', p_report_id, 'status', p_status);
 END;
 $$;
+
+-- 9. RESTRICT EXECUTION OF ADMINISTRATIVE FUNCTIONS
+REVOKE EXECUTE ON FUNCTION admin_resolve_dispute_safe(UUID, TEXT, TEXT, NUMERIC, UUID) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION admin_verify_case_safe(UUID, TEXT, TEXT, UUID) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION admin_moderate_job_safe(UUID, shift_status, TEXT, UUID) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) FROM PUBLIC, anon;
+

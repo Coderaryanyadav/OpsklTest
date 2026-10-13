@@ -227,7 +227,24 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_caller_id UUID := auth.uid();
+  v_effective_id UUID;
 BEGIN
+  IF v_caller_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required to register device token.');
+  END IF;
+
+  -- Ensure caller can only register for themselves unless admin
+  IF p_user_id IS NOT NULL AND p_user_id != v_caller_id THEN
+    IF NOT is_current_admin() THEN
+      RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Cannot register push tokens for another user.');
+    END IF;
+    v_effective_id := p_user_id;
+  ELSE
+    v_effective_id := v_caller_id;
+  END IF;
+
   INSERT INTO user_push_tokens (
     user_id,
     expo_push_token,
@@ -236,7 +253,7 @@ BEGIN
     is_active,
     updated_at
   ) VALUES (
-    p_user_id,
+    v_effective_id,
     p_expo_token,
     p_platform,
     p_device_name,
@@ -262,12 +279,28 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_caller_id UUID := auth.uid();
+  v_effective_id UUID;
 BEGIN
+  IF v_caller_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required to revoke device token.');
+  END IF;
+
+  IF p_user_id IS NOT NULL AND p_user_id != v_caller_id THEN
+    IF NOT is_current_admin() THEN
+      RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Cannot revoke push tokens for another user.');
+    END IF;
+    v_effective_id := p_user_id;
+  ELSE
+    v_effective_id := v_caller_id;
+  END IF;
+
   UPDATE user_push_tokens
   SET
     is_active = false,
     updated_at = now()
-  WHERE user_id = p_user_id AND expo_push_token = p_expo_token;
+  WHERE user_id = v_effective_id AND expo_push_token = p_expo_token;
 
   RETURN jsonb_build_object('success', true);
 END;

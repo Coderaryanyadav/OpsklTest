@@ -109,23 +109,44 @@ export default function OrganizerDashboardScreen() {
   const { session } = useAuth();
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
+  const organizerId = session?.user?.id;
+
   const [shifts, setShifts] = useState<Job[]>([]);
   const [metrics, setMetrics] = useState<OrganizerMetrics>({
-    activeJobs: 3,
-    openPositions: 5,
-    newApplications: 17,
-    shortlistedApplicants: 6,
-    confirmedWorkers: 23,
-    upcomingEvents: 3,
-    completedShifts: 12,
-    totalStaffingSpend: 38250,
+    activeJobs: 0,
+    openPositions: 0,
+    newApplications: 0,
+    shortlistedApplicants: 0,
+    confirmedWorkers: 0,
+    upcomingEvents: 0,
+    completedShifts: 0,
+    totalStaffingSpend: 0,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const organizerId = session?.user?.id || 'org-apex-01';
-
   const loadData = useCallback(async () => {
+    if (!organizerId) {
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setShifts(SEED_ORGANIZER_SHIFTS);
+        setMetrics({
+          activeJobs: 3,
+          openPositions: 5,
+          newApplications: 17,
+          shortlistedApplicants: 6,
+          confirmedWorkers: 23,
+          upcomingEvents: 3,
+          completedShifts: 12,
+          totalStaffingSpend: 38250,
+        });
+      } else {
+        setShifts([]);
+      }
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       const [jobsData, metricsData] = await Promise.all([
         fetchOrganizerJobs(organizerId),
@@ -134,16 +155,20 @@ export default function OrganizerDashboardScreen() {
 
       if (jobsData.length > 0) {
         setShifts(jobsData);
-      } else {
+      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
         setShifts(SEED_ORGANIZER_SHIFTS);
+      } else {
+        setShifts([]);
       }
 
-      if (metricsData.activeJobs > 0 || metricsData.totalStaffingSpend > 0) {
-        setMetrics(metricsData);
-      }
+      setMetrics(metricsData);
     } catch (err) {
       console.error('Failed to load organizer data', err);
-      setShifts(SEED_ORGANIZER_SHIFTS);
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+        setShifts(SEED_ORGANIZER_SHIFTS);
+      } else {
+        setShifts([]);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -163,7 +188,8 @@ export default function OrganizerDashboardScreen() {
     const isPaused = shift.status === 'paused';
     const newStatus = isPaused ? 'open' : 'paused';
 
-    const res = await updateJobStatus(shift.id, organizerId, newStatus);
+    const effectiveOrgId = organizerId || session?.user?.id || 'org-apex-01';
+    const res = await updateJobStatus(shift.id, effectiveOrgId, newStatus);
     if (res.success) {
       setShifts((prev) =>
         prev.map((s) => (s.id === shift.id ? { ...s, status: newStatus } : s))

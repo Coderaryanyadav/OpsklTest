@@ -276,8 +276,9 @@ export function useDiscoveryFeed(workerId: string | null) {
         if (!isMounted.current) return;
 
         let activeJobs = result.jobs;
-        // If Supabase returned 0 items, use seed jobs matching current filters for Mumbai market demo
-        if (activeJobs.length === 0) {
+        // Strict integrity: only use seed fixtures if explicitly configured for demo mode
+        const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true';
+        if (activeJobs.length === 0 && allowDemoFixtures) {
           activeJobs = SEED_MUMBAI_JOBS.filter((job) => {
             if (filters.category && filters.category !== 'all' && job.category !== filters.category) {
               return false;

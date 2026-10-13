@@ -23,12 +23,15 @@ import {
   WorkerEarningsSummary,
   PaymentRecord,
   isValidIndianUpiId,
+  updateWorkerProfile,
 } from '@opskil/shared';
+import { useAuth } from '@opskil/design-system';
 
 type LedgerFilter = 'all' | 'settled' | 'pending' | 'failed' | 'disputed';
 
 export default function WorkerEarningsScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { session } = useAuth();
 
   const [summary, setSummary] = useState<WorkerEarningsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,21 +41,32 @@ export default function WorkerEarningsScreen() {
   // Modals
   const [selectedRecord, setSelectedRecord] = useState<PaymentRecord | null>(null);
   const [showUpiModal, setShowUpiModal] = useState(false);
-  const [upiInput, setUpiInput] = useState('aryan@okhdfcbank');
+  const [upiInput, setUpiInput] = useState('');
   const [upiError, setUpiError] = useState('');
   const [upiSuccess, setUpiSuccess] = useState(false);
+  const [savingUpi, setSavingUpi] = useState(false);
+
+  const workerId = session?.user?.id;
 
   const loadData = useCallback(async () => {
+    if (!workerId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
-      const data = await fetchWorkerEarningsSummary('worker-current-profile');
+      const data = await fetchWorkerEarningsSummary(workerId);
       setSummary(data);
+      if (data?.defaultUpiId) {
+        setUpiInput(data.defaultUpiId);
+      }
     } catch {
       // Fallback handled in service
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [workerId]);
 
   useEffect(() => {
     loadData();
@@ -63,20 +77,31 @@ export default function WorkerEarningsScreen() {
     loadData();
   };
 
-  const handleSaveUpi = () => {
-    if (!isValidIndianUpiId(upiInput)) {
+  const handleSaveUpi = async () => {
+    const trimmed = upiInput.trim();
+    if (!isValidIndianUpiId(trimmed)) {
       setUpiError('Please enter a valid Indian UPI handle (e.g. name@bank)');
       return;
     }
     setUpiError('');
-    if (summary) {
-      setSummary({ ...summary, defaultUpiId: upiInput.trim() });
+    setSavingUpi(true);
+    try {
+      if (workerId) {
+        await updateWorkerProfile(workerId, { upiId: trimmed });
+      }
+      if (summary) {
+        setSummary({ ...summary, defaultUpiId: trimmed });
+      }
+      setUpiSuccess(true);
+      setTimeout(() => {
+        setUpiSuccess(false);
+        setShowUpiModal(false);
+      }, 1000);
+    } catch (err: any) {
+      setUpiError(err?.message || 'Failed to save UPI handle. Please try again.');
+    } finally {
+      setSavingUpi(false);
     }
-    setUpiSuccess(true);
-    setTimeout(() => {
-      setUpiSuccess(false);
-      setShowUpiModal(false);
-    }, 1200);
   };
 
   const filteredRecords = (summary?.records || []).filter((r) => {
@@ -625,8 +650,9 @@ export default function WorkerEarningsScreen() {
                 style={{ flex: 1 }}
               />
               <Button
-                title="Save & Verify"
+                title={savingUpi ? 'Saving...' : 'Save & Verify'}
                 variant="primary"
+                loading={savingUpi}
                 onPress={handleSaveUpi}
                 style={{ flex: 1 }}
               />

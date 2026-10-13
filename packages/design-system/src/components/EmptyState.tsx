@@ -4,27 +4,36 @@ import { useOpsklTheme } from '../context/ThemeContext';
 import { Button } from './Button';
 
 export interface EmptyStateProps {
-  icon?: string;
+  icon?: React.ReactNode | string;
   title: string;
   description: string;
   actionTitle?: string;
+  actionLabel?: string;
   onAction?: () => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = '🔍',
+  icon,
   title,
   description,
   actionTitle,
+  actionLabel,
   onAction,
 }) => {
   const { colors, spacing, typography } = useOpsklTheme();
+  const resolvedActionTitle = actionTitle || actionLabel;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceMuted }]}>
-        <Text style={styles.icon}>{icon}</Text>
-      </View>
+      {icon ? (
+        <View style={[styles.iconContainer, { backgroundColor: colors.surfaceMuted }]}>
+          {typeof icon === 'string' ? (
+            <Text style={styles.icon}>{icon}</Text>
+          ) : (
+            icon
+          )}
+        </View>
+      ) : null}
       <Text style={[typography.h2, { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.xs }]}>
         {title}
       </Text>
@@ -43,9 +52,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {description}
       </Text>
 
-      {actionTitle && onAction ? (
+      {resolvedActionTitle && onAction ? (
         <Button
-          title={actionTitle}
+          title={resolvedActionTitle}
           onPress={onAction}
           variant="primary"
           size="md"

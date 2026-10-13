@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
   style,
   textStyle,
 }) => {
-  const { colors, radii, spacing, typography } = useOpsklTheme();
+  const { colors, radii, spacing } = useOpsklTheme();
 
   const getVariantStyles = (): { bg: string; text: string; dot: string } => {
     switch (variant) {
@@ -77,8 +77,10 @@ export const Badge: React.FC<BadgeProps> = ({
           alignSelf: 'flex-start',
           backgroundColor: bg,
           paddingVertical: isSm ? 2 : spacing.xxs + 1,
-          paddingHorizontal: isSm ? spacing.xs + 2 : spacing.sm + 2,
+          paddingHorizontal: isSm ? spacing.xs + 4 : spacing.sm + 4,
           borderRadius: radii.full,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 0, 0, 0.04)',
         },
         style,
       ]}
@@ -98,10 +100,9 @@ export const Badge: React.FC<BadgeProps> = ({
         style={[
           {
             color: text,
-            fontSize: isSm ? typography.micro.fontSize : typography.caption.fontSize,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.3,
+            fontSize: isSm ? 11 : 12,
+            fontWeight: '600',
+            letterSpacing: -0.1,
           },
           textStyle,
         ]}

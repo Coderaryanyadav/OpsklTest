@@ -42,6 +42,20 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
+  CREATE TYPE job_status AS ENUM (
+    'draft',
+    'open',
+    'filling',
+    'filled',
+    'in_progress',
+    'completed',
+    'cancelled'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE application_status AS ENUM (
     'applied',
     'shortlisted',
@@ -83,6 +97,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- 4. WORKER PROFILES
 CREATE TABLE IF NOT EXISTS worker_profiles (
   id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID GENERATED ALWAYS AS (id) STORED,
   preferred_locality TEXT NOT NULL DEFAULT 'Mumbai',
   service_areas TEXT[] NOT NULL DEFAULT '{}',
   skills TEXT[] NOT NULL DEFAULT '{}',
@@ -91,6 +106,8 @@ CREATE TABLE IF NOT EXISTS worker_profiles (
   availability_status TEXT NOT NULL DEFAULT 'available' CHECK (availability_status IN ('available', 'busy', 'paused')),
   profile_completion_status TEXT NOT NULL DEFAULT 'incomplete' CHECK (profile_completion_status IN ('incomplete', 'completed')),
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
+  is_aadhaar_verified BOOLEAN NOT NULL DEFAULT false,
+  is_pan_verified BOOLEAN NOT NULL DEFAULT false,
   rating NUMERIC(3, 2) DEFAULT 5.00,
   total_reviews INTEGER NOT NULL DEFAULT 0,
   shifts_completed INTEGER NOT NULL DEFAULT 0,
@@ -102,10 +119,12 @@ CREATE TABLE IF NOT EXISTS worker_profiles (
 -- 5. ORGANIZER PROFILES
 CREATE TABLE IF NOT EXISTS organizer_profiles (
   id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID GENERATED ALWAYS AS (id) STORED,
   business_name TEXT NOT NULL,
   business_contact_email TEXT,
   business_contact_phone TEXT NOT NULL,
   gstin TEXT,
+  is_gstin_verified BOOLEAN NOT NULL DEFAULT false,
   business_type TEXT NOT NULL DEFAULT 'event_agency' CHECK (business_type IN ('event_agency', 'corporate', 'venue_manager', 'independent')),
   billing_address TEXT,
   verification_status TEXT NOT NULL DEFAULT 'unverified' CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')),
@@ -381,6 +400,19 @@ ALTER TABLE disputes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE verification_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- Helper function to prevent RLS infinite recursion
+CREATE OR REPLACE FUNCTION is_current_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+
 -- 1. Profiles
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT USING (auth.uid() = id);
@@ -390,7 +422,7 @@ CREATE POLICY "Users can update their own profile"
 
 CREATE POLICY "Admins full access to profiles"
   ON profiles FOR ALL USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    is_current_admin()
   );
 
 -- 2. Worker Profiles
@@ -532,5 +564,64 @@ CREATE POLICY "Users create verification cases"
 -- 15. Audit Logs
 CREATE POLICY "Admins view audit logs"
   ON audit_logs FOR SELECT USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    is_current_admin()
   );
+
+-- 16. COLUMN-LEVEL INTEGRITY TRIGGERS (Prevent users from altering administrative/verification status)
+CREATE OR REPLACE FUNCTION check_worker_profile_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF is_current_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
+     NEW.rating IS DISTINCT FROM OLD.rating OR
+     NEW.total_reviews IS DISTINCT FROM OLD.total_reviews OR
+     NEW.shifts_completed IS DISTINCT FROM OLD.shifts_completed OR
+     NEW.is_aadhaar_verified IS DISTINCT FROM OLD.is_aadhaar_verified OR
+     NEW.is_pan_verified IS DISTINCT FROM OLD.is_pan_verified THEN
+    RAISE EXCEPTION 'Unauthorized: Administrative and verification fields cannot be modified directly by workers.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_protect_worker_profile ON worker_profiles;
+CREATE TRIGGER trg_protect_worker_profile
+  BEFORE UPDATE ON worker_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION check_worker_profile_update();
+
+CREATE OR REPLACE FUNCTION check_organizer_profile_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF is_current_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
+     NEW.rating IS DISTINCT FROM OLD.rating OR
+     NEW.total_events_hosted IS DISTINCT FROM OLD.total_events_hosted OR
+     NEW.is_gstin_verified IS DISTINCT FROM OLD.is_gstin_verified THEN
+    RAISE EXCEPTION 'Unauthorized: Administrative and verification fields cannot be modified directly by organizers.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_protect_organizer_profile ON organizer_profiles;
+CREATE TRIGGER trg_protect_organizer_profile
+  BEFORE UPDATE ON organizer_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION check_organizer_profile_update();
