@@ -128,14 +128,25 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized for this booking');
   END IF;
 
+  v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
+
   -- Require a valid check-in code
   IF p_code IS NULL OR length(trim(p_code)) < 4 THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CODE', 'message', 'A valid 4-6 digit shift check-in PIN or QR code is required.');
   END IF;
 
-  v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
+  -- For worker self-check-in, verify code matches the booking's generated check-in code
+  IF NOT v_is_supervisor AND v_booking.check_in_code IS NOT NULL THEN
+    IF trim(p_code) != trim(v_booking.check_in_code) THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'INVALID_CHECK_IN_CODE',
+        'message', 'Check-in code does not match the shift ticket code.'
+      );
+    END IF;
+  END IF;
 
-  -- 5. Calculate GPS distance if coordinates provided
+  -- 5. Calculate GPS distance if coordinates provided and enforce geofence boundary
   IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
     v_distance := round(
       (6371 * acos(
@@ -146,6 +157,15 @@ BEGIN
         ))
       ))::numeric, 2
     );
+
+    -- Enforce geofence boundary for worker self check-in (maximum 5.0 km radius)
+    IF NOT v_is_supervisor AND v_distance > 5.0 THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'OUT_OF_GEOFENCE_RANGE',
+        'message', 'Check-in location is outside the venue geofence boundary (' || v_distance || ' km away, max 5.0 km allowed).'
+      );
+    END IF;
   END IF;
 
   -- 6. Transition status
@@ -554,12 +574,16 @@ DECLARE
   v_respondent_id UUID;
   v_dispute_id UUID;
 BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
   SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
   END IF;
 
-  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id THEN
+  IF v_user_id != v_booking.worker_id AND v_user_id != v_booking.organizer_id AND NOT is_current_admin() THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
   END IF;
 
@@ -604,3 +628,23 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'status', 'disputed', 'dispute_id', v_dispute_id);
 END;
 $$;
+
+-- 11. RESTRICT RPC EXECUTION PRIVILEGES
+REVOKE EXECUTE ON FUNCTION check_in_worker_safe(UUID, TEXT, NUMERIC, NUMERIC) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION check_in_worker_safe(UUID, TEXT, NUMERIC, NUMERIC) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION check_out_worker_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION check_out_worker_safe(UUID, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION complete_shift_and_approve_attendance(UUID, NUMERIC) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION complete_shift_and_approve_attendance(UUID, NUMERIC) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION cancel_booking_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION cancel_booking_safe(UUID, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION report_worker_no_show_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION report_worker_no_show_safe(UUID, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) TO authenticated;
+

@@ -101,6 +101,11 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
   END IF;
 
+  -- Disallow caller spoofing another administrator identity
+  IF p_admin_id IS NOT NULL AND p_admin_id != v_admin_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Caller cannot specify a different administrator identity.');
+  END IF;
+
   -- Verify actual caller has administrator role
   SELECT role INTO v_admin_role
   FROM profiles
@@ -189,6 +194,10 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
   END IF;
 
+  IF p_admin_id IS NOT NULL AND p_admin_id != v_admin_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Caller cannot specify a different administrator identity.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
   WHERE id = v_admin_id;
@@ -273,6 +282,10 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
   END IF;
 
+  IF p_admin_id IS NOT NULL AND p_admin_id != v_admin_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Caller cannot specify a different administrator identity.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
   WHERE id = v_admin_id;
@@ -335,6 +348,10 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
   END IF;
 
+  IF p_admin_id IS NOT NULL AND p_admin_id != v_admin_id THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Caller cannot specify a different administrator identity.');
+  END IF;
+
   SELECT role INTO v_admin_role
   FROM profiles
   WHERE id = v_admin_id;
@@ -380,9 +397,16 @@ $$;
 
 -- 9. RESTRICT EXECUTION OF ADMINISTRATIVE FUNCTIONS
 REVOKE EXECUTE ON FUNCTION admin_resolve_dispute_safe(UUID, TEXT, TEXT, NUMERIC, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION admin_resolve_dispute_safe(UUID, TEXT, TEXT, NUMERIC, UUID) TO authenticated;
+
 REVOKE EXECUTE ON FUNCTION admin_verify_case_safe(UUID, TEXT, TEXT, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION admin_verify_case_safe(UUID, TEXT, TEXT, UUID) TO authenticated;
+
 REVOKE EXECUTE ON FUNCTION admin_moderate_job_safe(UUID, shift_status, TEXT, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION admin_moderate_job_safe(UUID, shift_status, TEXT, UUID) TO authenticated;
+
 REVOKE EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEXT, UUID) TO authenticated;
 
 -- 10. RPC: USER REQUEST ACCOUNT DELETION SAFE (WITH COMPLIANCE AUDIT)
 CREATE OR REPLACE FUNCTION request_account_deletion_safe(
@@ -425,4 +449,7 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'requested_at', v_now);
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION request_account_deletion_safe(TEXT) TO authenticated;
 

@@ -496,17 +496,22 @@ export async function initiateWorkerPayoutSafe(
       p_idempotency_key: idempotencyKey ?? null,
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('RPC error in initiate_worker_payout_safe', rpcError);
+      return { success: false, error: rpcError.message };
+    }
+
+    if (rpcData) {
       return {
         success: rpcData.success,
         paymentId: rpcData.payment_id,
-        status: rpcData.status,
+        status: rpcData.status || 'processing',
         utr: rpcData.utr,
         error: rpcData.error,
       };
     }
 
-    return { success: true, status: 'escrow_locked' };
+    return { success: false, error: 'No response data from payout transaction.' };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

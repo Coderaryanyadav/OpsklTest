@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   duration_hours NUMERIC(4, 2) NOT NULL,
   hourly_rate NUMERIC(8, 2) NOT NULL CHECK (hourly_rate >= 100),
   total_pay NUMERIC(8, 2) NOT NULL,
+  wage_per_worker NUMERIC(8, 2) GENERATED ALWAYS AS (total_pay) STORED,
   slots_total INTEGER NOT NULL CHECK (slots_total > 0),
   slots_filled INTEGER NOT NULL DEFAULT 0 CHECK (slots_filled <= slots_total),
   dress_code TEXT,
@@ -276,6 +277,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   type TEXT NOT NULL,
   read BOOLEAN NOT NULL DEFAULT false,
   metadata JSONB DEFAULT '{}',
+  data JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -316,6 +318,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   entity_type TEXT NOT NULL,
   entity_id TEXT NOT NULL,
   changes JSONB DEFAULT '{}',
+  old_state JSONB DEFAULT '{}',
+  new_state JSONB DEFAULT '{}',
   ip_address TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -380,6 +384,130 @@ DROP TRIGGER IF EXISTS trg_jobs_updated_at ON jobs;
 CREATE TRIGGER trg_jobs_updated_at BEFORE UPDATE ON jobs FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
 -- ==============================================================================
+-- AUTOMATED USER & PROFILE PROVISIONING
+-- ==============================================================================
+
+-- 1. Trigger function on auth.users to automatically provision profile records
+CREATE OR REPLACE FUNCTION public.handle_new_user_provisioning()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_role user_role;
+  v_phone TEXT;
+  v_name TEXT;
+  v_email TEXT;
+BEGIN
+  -- Determine role from raw_user_meta_data, default to 'worker'. Never allow self-service admin role.
+  v_role := CASE
+    WHEN (NEW.raw_user_meta_data->>'role') = 'organizer' THEN 'organizer'::user_role
+    ELSE 'worker'::user_role
+  END;
+
+  v_phone := COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone', '91' || substr(replace(NEW.id::text, '-', ''), 1, 10));
+  v_name := COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'User ' || substr(NEW.id::text, 1, 6));
+  v_email := NEW.email;
+
+  -- Insert core profile
+  INSERT INTO public.profiles (
+    id, role, phone, full_name, email, city, is_active
+  ) VALUES (
+    NEW.id, v_role, v_phone, v_name, v_email, 'Mumbai', true
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = COALESCE(EXCLUDED.email, profiles.email);
+
+  -- Insert role-specific profile
+  IF v_role = 'worker' THEN
+    INSERT INTO public.worker_profiles (
+      id, preferred_locality, skills, availability_status, profile_completion_status, verification_status
+    ) VALUES (
+      NEW.id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  ELSIF v_role = 'organizer' THEN
+    INSERT INTO public.organizer_profiles (
+      id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status
+    ) VALUES (
+      NEW.id, v_name, v_phone, v_email, 'event_agency', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Attach trigger to auth.users if auth schema is present
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'auth' AND table_name = 'users') THEN
+    DROP TRIGGER IF EXISTS trg_on_auth_user_created ON auth.users;
+    CREATE TRIGGER trg_on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_provisioning();
+  END IF;
+END $$;
+
+-- 2. Authoritative RPC for idempotent onboarding profile provisioning / repair
+CREATE OR REPLACE FUNCTION ensure_user_profile_provisioned_safe(
+  p_role user_role DEFAULT 'worker',
+  p_full_name TEXT DEFAULT NULL,
+  p_phone TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_existing_profile RECORD;
+  v_role user_role := COALESCE(p_role, 'worker');
+  v_name TEXT;
+  v_phone TEXT;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  -- Disallow regular user elevating to admin
+  IF v_role = 'admin' THEN
+    v_role := 'worker';
+  END IF;
+
+  SELECT * INTO v_existing_profile FROM profiles WHERE id = v_user_id;
+
+  IF FOUND THEN
+    v_role := v_existing_profile.role;
+  ELSE
+    v_name := COALESCE(p_full_name, 'User ' || substr(v_user_id::text, 1, 6));
+    v_phone := COALESCE(p_phone, '91' || substr(replace(v_user_id::text, '-', ''), 1, 10));
+
+    INSERT INTO profiles (id, role, phone, full_name, city, is_active)
+    VALUES (v_user_id, v_role, v_phone, v_name, 'Mumbai', true)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  IF v_role = 'worker' THEN
+    INSERT INTO worker_profiles (id, preferred_locality, skills, availability_status, profile_completion_status, verification_status)
+    VALUES (v_user_id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified')
+    ON CONFLICT (id) DO NOTHING;
+  ELSIF v_role = 'organizer' THEN
+    INSERT INTO organizer_profiles (id, business_name, business_contact_phone, business_type, profile_completion_status, verification_status)
+    VALUES (v_user_id, COALESCE(p_full_name, 'Independent Organizer'), COALESCE(p_phone, ''), 'independent', 'incomplete', 'unverified')
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'user_id', v_user_id,
+    'role', v_role
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT) TO authenticated;
+
+-- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 
@@ -417,6 +545,9 @@ $$;
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT USING (auth.uid() = id);
 
+CREATE POLICY "Users can insert their own profile"
+  ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Users can update their own profile"
   ON profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -429,8 +560,21 @@ CREATE POLICY "Admins full access to profiles"
 CREATE POLICY "Workers can view own worker profile"
   ON worker_profiles FOR SELECT USING (auth.uid() = id);
 
+CREATE POLICY "Workers can insert own worker profile"
+  ON worker_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Workers can update own worker profile"
   ON worker_profiles FOR UPDATE USING (auth.uid() = id);
+
+-- 3. Organizer Profiles
+CREATE POLICY "Organizers view their own profile"
+  ON organizer_profiles FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Organizers insert their own profile"
+  ON organizer_profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Organizers update their own profile"
+  ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
 
 CREATE POLICY "Organizers can view applicant worker profiles"
   ON worker_profiles FOR SELECT USING (

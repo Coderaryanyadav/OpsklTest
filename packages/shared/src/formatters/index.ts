@@ -51,6 +51,19 @@ export function formatISTDate(dateStr: string): string {
 }
 
 /**
+ * Return calendar date string in Indian Standard Time (Asia/Kolkata) formatted as YYYY-MM-DD.
+ * Prevents UTC timezone drift causing shifts created between 00:00 and 05:30 IST to be saved as yesterday.
+ */
+export function getTodayDateIST(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+/**
  * Format shift time range from 24hr HH:MM strings (e.g. "09:00" -> "9:00 AM – 6:00 PM")
  */
 export function formatTimeRange(start: string, end: string): string {

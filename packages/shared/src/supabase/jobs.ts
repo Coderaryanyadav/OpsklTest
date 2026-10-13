@@ -53,13 +53,13 @@ function mapJobRow(row: any): Job {
     organizer: row.organizer_profiles
       ? {
           id: row.organizer_profiles.id || row.organizer_id,
-          businessName: row.organizer_profiles.business_name || 'Verified Event Host',
-          verificationStatus: row.organizer_profiles.verification_status || 'verified',
-          rating: Number(row.organizer_profiles.rating || 5.0),
-          totalEventsHosted: row.organizer_profiles.total_events_hosted || 1,
+          businessName: row.organizer_profiles.business_name || 'Event Host',
+          verificationStatus: row.organizer_profiles.verification_status || 'unverified',
+          rating: Number(row.organizer_profiles.rating ?? 0),
+          totalEventsHosted: row.organizer_profiles.total_events_hosted ?? 0,
           businessContactPhone: row.organizer_profiles.business_contact_phone || '',
           businessType: row.organizer_profiles.business_type || 'event_agency',
-          profileCompletionStatus: row.organizer_profiles.profile_completion_status || 'completed',
+          profileCompletionStatus: row.organizer_profiles.profile_completion_status || 'incomplete',
           createdAt: row.organizer_profiles.created_at || row.created_at,
           updatedAt: row.organizer_profiles.updated_at || row.updated_at,
         }
@@ -215,43 +215,7 @@ export async function applyForJobSafe(
     });
 
     if (rpcError) {
-      logger.error('RPC error in apply_for_job_safe', rpcError);
-
-      try {
-        const { data: job } = await supabase
-          .from('jobs')
-          .select('id, status, slots_total, slots_filled')
-          .eq('id', jobId)
-          .single();
-
-        if (job) {
-          if (job.status !== 'open' || job.slots_filled >= job.slots_total) {
-            return {
-              success: false,
-              errorCode: 'JOB_CLOSED',
-              errorMessage: 'This shift is no longer open for new applications.',
-            };
-          }
-
-          const { data: existingApp } = await supabase
-            .from('job_applications')
-            .select('id, status')
-            .eq('job_id', jobId)
-            .eq('worker_id', workerId)
-            .maybeSingle();
-
-          if (existingApp) {
-            return {
-              success: false,
-              errorCode: 'ALREADY_APPLIED',
-              errorMessage: 'You have already applied for this shift.',
-            };
-          }
-        }
-      } catch {
-        // Fallback check errored; proceed to return rpcError
-      }
-
+      logger.error('RPC error in apply_for_job_safe — failing closed', rpcError);
       return {
         success: false,
         errorCode: rpcError.code || 'TRANSACTION_ERROR',

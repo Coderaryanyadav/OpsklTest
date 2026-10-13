@@ -109,6 +109,11 @@ DECLARE
   v_should_deliver BOOLEAN := true;
   v_delivery_status TEXT := 'delivered';
 BEGIN
+  -- 0. Authorization Guard: Only service_role, admin, or the user themselves
+  IF auth.uid() IS NOT NULL AND auth.uid() != p_user_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Users cannot send notifications to other accounts.');
+  END IF;
+
   -- 1. Idempotency Check
   IF p_idempotency_key IS NOT NULL THEN
     SELECT id INTO v_existing_id
@@ -319,3 +324,13 @@ EXCEPTION
   WHEN undefined_object THEN null;
   WHEN others THEN null;
 END $$;
+
+-- 11. RESTRICT RPC EXECUTION PRIVILEGES
+REVOKE EXECUTE ON FUNCTION send_notification_safe(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION send_notification_safe(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB, TEXT, TEXT) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION register_push_token_safe(UUID, TEXT, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION register_push_token_safe(UUID, TEXT, TEXT, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) TO authenticated;

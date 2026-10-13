@@ -21,7 +21,7 @@ jest.mock('../supabase/client', () => {
   };
 });
 
-const { __mockRpc, __mockFrom } = require('../supabase/client');
+const { __mockRpc } = require('../supabase/client');
 
 describe('Phase 3 — Marketplace Discovery, Distance & Server-side Eligibility', () => {
   beforeEach(() => {
@@ -150,76 +150,28 @@ describe('Phase 3 — Marketplace Discovery, Distance & Server-side Eligibility'
       expect(res.errorCode).toBe('SLOTS_FULL');
     });
 
-    test('Client direct fallback rejects closed job if RPC is unavailable', async () => {
-      // Simulate RPC not found
+    test('Fails closed and rejects application if authoritative RPC encounters transaction error', async () => {
       __mockRpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'function apply_for_job_safe does not exist' },
-      });
-
-      // Mock jobs query returning closed job
-      __mockFrom.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: {
-                id: 'job-1',
-                status: 'filled',
-                slots_total: 10,
-                slots_filled: 10,
-              },
-              error: null,
-            }),
-          }),
-        }),
+        error: { message: 'Transaction rolled back', code: 'TRANSACTION_ERROR' },
       });
 
       const res = await applyForJobSafe('job-1', 'worker-1');
       expect(res.success).toBe(false);
-      expect(res.errorCode).toBe('JOB_CLOSED');
+      expect(res.errorCode).toBe('TRANSACTION_ERROR');
+      expect(res.errorMessage).toBe('Transaction rolled back');
     });
 
-    test('Client direct fallback detects duplicate application if RPC is unavailable', async () => {
-      // Simulate RPC not found
+    test('Fails closed if authoritative RPC returns unexpected connection failure', async () => {
       __mockRpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'RPC error' },
-      });
-
-      // Mock open job
-      __mockFrom.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: {
-                id: 'job-1',
-                status: 'open',
-                slots_total: 10,
-                slots_filled: 5,
-              },
-              error: null,
-            }),
-          }),
-        }),
-      });
-
-      // Mock existing application found
-      __mockFrom.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              maybeSingle: jest.fn().mockResolvedValue({
-                data: { id: 'app-999', status: 'applied' },
-                error: null,
-              }),
-            }),
-          }),
-        }),
+        error: { message: 'Database connection failed' },
       });
 
       const res = await applyForJobSafe('job-1', 'worker-1');
       expect(res.success).toBe(false);
-      expect(res.errorCode).toBe('ALREADY_APPLIED');
+      expect(res.errorCode).toBe('TRANSACTION_ERROR');
+      expect(res.errorMessage).toBe('Database connection failed');
     });
   });
 });

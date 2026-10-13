@@ -59,21 +59,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!p && u.id) {
         const defaultRole = (u.user_metadata?.role as any) || 'worker';
         const defaultName = u.user_metadata?.full_name || 'Member';
-        const { data: createdProfile } = await supabase
-          .from('profiles')
-          .insert({
-            id: u.id,
-            phone: u.phone || '',
-            full_name: defaultName,
-            role: defaultRole,
-            city: 'Mumbai',
-            is_active: true,
-          })
-          .select()
-          .maybeSingle();
+        const phone = u.phone || u.user_metadata?.phone || '';
 
-        if (createdProfile) {
-          p = createdProfile as Profile;
+        // Authoritative server-side profile provisioning
+        try {
+          await supabase.rpc('ensure_user_profile_provisioned_safe', {
+            p_role: defaultRole,
+            p_full_name: defaultName,
+            p_phone: phone,
+          });
+        } catch (rpcErr) {
+          logger.warn('Profile provisioning RPC failed, attempting direct insert fallback', { rpcErr });
+        }
+
+        p = await fetchUserProfile(u.id);
+
+        if (!p) {
+          const { data: createdProfile } = await supabase
+            .from('profiles')
+            .insert({
+              id: u.id,
+              phone: phone,
+              full_name: defaultName,
+              role: defaultRole,
+              city: 'Mumbai',
+              is_active: true,
+            })
+            .select()
+            .maybeSingle();
+
+          if (createdProfile) {
+            p = createdProfile as Profile;
+          }
         }
       }
       setProfile(p);

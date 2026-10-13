@@ -22,6 +22,7 @@ import {
 import {
   ShiftCategory,
   formatINR,
+  getTodayDateIST,
   createJobSafe,
   calculateJobFinancials,
 } from '@opskil/shared';
@@ -68,7 +69,7 @@ export default function OrganizerCreateShiftScreen() {
   const [slotsTotal, setSlotsTotal] = useState('8');
 
   // Step 2: Schedule & Venue
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateIST();
   const [date, setDate] = useState(todayStr);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('18:00');

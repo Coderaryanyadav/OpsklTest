@@ -24,6 +24,7 @@ import {
   Booking,
   formatINR,
   formatISTDate,
+  getTodayDateIST,
   formatTimeRange,
   fetchWorkerBookings,
   checkInWorkerSafe,
@@ -55,7 +56,7 @@ const SEED_WORKER_BOOKINGS: Booking[] = [
       landmark: 'Opposite Bharat Diamond Bourse',
       city: 'Mumbai',
       zone: 'Bandra Kurla Complex (BKC)',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDateIST(),
       startTime: '08:30',
       endTime: '17:30',
       durationHours: 9,
@@ -317,7 +318,7 @@ export default function WorkerMyShiftsScreen() {
     }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateIST();
 
   const upcomingBookings = bookings.filter(
     (b) => b.status === 'confirmed' && (b.job?.date || '') > todayStr

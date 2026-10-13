@@ -125,7 +125,8 @@ DECLARE
   v_gst_amount NUMERIC(10, 2);
   v_total_payable NUMERIC(10, 2);
 BEGIN
-  SELECT id, wage_per_worker, slots_filled, slots_total
+  -- Read actual columns defined on the jobs table
+  SELECT id, total_pay, hourly_rate, duration_hours, slots_filled, slots_total
   INTO v_job
   FROM jobs
   WHERE id = p_job_id;
@@ -134,9 +135,14 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Job not found');
   END IF;
 
-  -- Headcount is slots_filled if > 0, else total required slots
-  v_headcount := GREATEST(v_job.slots_filled, 1);
-  v_wage_per_worker := v_job.wage_per_worker;
+  -- Headcount is slots_filled if > 0, else total requested slots (never truncating unstaffed shifts to 1)
+  v_headcount := CASE
+    WHEN v_job.slots_filled > 0 THEN v_job.slots_filled
+    ELSE GREATEST(v_job.slots_total, 1)
+  END;
+
+  -- Canonical wage per worker: total_pay or hourly_rate * duration_hours
+  v_wage_per_worker := COALESCE(v_job.total_pay, ROUND(v_job.hourly_rate * v_job.duration_hours, 2));
   
   -- 100% of agreed wage belongs strictly to workers
   v_wage_total := ROUND(v_wage_per_worker * v_headcount, 2);
@@ -167,7 +173,7 @@ $$;
 -- 10. RPC: GENERATE OR UPDATE AUTHORITATIVE SHIFT INVOICE
 CREATE OR REPLACE FUNCTION generate_job_invoice_safe(
   p_job_id UUID,
-  p_organizer_id UUID
+  p_organizer_id UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -175,12 +181,26 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+  v_job RECORD;
   v_calc JSONB;
   v_invoice_number TEXT;
   v_invoice_id UUID;
   v_existing_id UUID;
   v_due_date TIMESTAMPTZ;
 BEGIN
+  -- 0. Authorization guard & derive organizer identity from job record
+  SELECT id, organizer_id INTO v_job
+  FROM jobs
+  WHERE id = p_job_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Job not found');
+  END IF;
+
+  IF auth.uid() IS NULL OR (v_job.organizer_id != auth.uid() AND NOT is_current_admin()) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Unauthorized. Only the job organizer or administrator can generate invoices.');
+  END IF;
+
   -- Authoritative server calculation
   v_calc := calculate_shift_financials_safe(p_job_id);
   IF NOT (v_calc->>'success')::BOOLEAN THEN
@@ -234,7 +254,7 @@ BEGIN
   ) VALUES (
     v_invoice_number,
     p_job_id,
-    p_organizer_id,
+    v_job.organizer_id,
     (v_calc->>'wage_total')::NUMERIC,
     (v_calc->>'platform_fee')::NUMERIC,
     18.00,
@@ -330,8 +350,8 @@ BEGIN
     WHERE provider_order_id = v_order_id OR id::TEXT = (p_payload->>'invoice_id');
 
     IF FOUND THEN
-      -- Validate amount: recorded amount must match expected payable amount
-      IF v_amount < v_invoice.total_payable THEN
+      -- Validate exact amount match: recorded amount must match expected payable amount exactly
+      IF v_amount != v_invoice.total_payable THEN
         INSERT INTO payment_reconciliation_logs (
           reconciliation_type,
           reference_id,
@@ -346,8 +366,8 @@ BEGIN
           'discrepancy',
           v_invoice.total_payable,
           v_amount,
-          (v_invoice.total_payable - v_amount),
-          'Underpayment detected via webhook: expected ₹' || v_invoice.total_payable || ', received ₹' || v_amount
+          abs(v_invoice.total_payable - v_amount),
+          'Amount mismatch detected via webhook: expected ₹' || v_invoice.total_payable || ', received ₹' || v_amount
         );
 
         UPDATE payment_webhook_events
@@ -356,7 +376,7 @@ BEGIN
 
         RETURN jsonb_build_object(
           'success', false,
-          'error', 'Underpayment discrepancy detected',
+          'error', 'Payment amount mismatch detected',
           'expected', v_invoice.total_payable,
           'received', v_amount
         );
@@ -394,12 +414,40 @@ BEGIN
   ELSIF p_event_type = 'payout.processed' THEN
     -- Payout to worker succeeded
     v_record_id := (p_payload->>'payment_record_id')::UUID;
+    v_amount := COALESCE((p_payload->>'amount')::NUMERIC, 0.00);
     
     SELECT * INTO v_payout
     FROM payment_records
     WHERE id = v_record_id;
 
     IF FOUND THEN
+      -- Validate exact payout amount match
+      IF v_amount != v_payout.net_payout THEN
+        INSERT INTO payment_reconciliation_logs (
+          reconciliation_type,
+          reference_id,
+          status,
+          expected_amount,
+          recorded_amount,
+          discrepancy_amount,
+          notes
+        ) VALUES (
+          'payout',
+          v_record_id::TEXT,
+          'discrepancy',
+          v_payout.net_payout,
+          v_amount,
+          abs(v_payout.net_payout - v_amount),
+          'Payout amount mismatch: expected ₹' || v_payout.net_payout || ', received ₹' || v_amount
+        );
+
+        UPDATE payment_webhook_events
+        SET status = 'discrepancy'
+        WHERE event_id = p_event_id;
+
+        RETURN jsonb_build_object('success', false, 'error', 'Payout amount mismatch');
+      END IF;
+
       UPDATE payment_records
       SET
         status = 'settled',
@@ -570,7 +618,7 @@ BEGIN
     UPDATE payment_records
     SET
       upi_id = p_upi_id,
-      status = 'escrow_locked',
+      status = 'processing',
       failure_reason = null,
       idempotency_key = v_key
     WHERE id = v_existing_payment.id
@@ -579,12 +627,14 @@ BEGIN
     RETURN jsonb_build_object(
       'success', true,
       'payment_id', v_payment_id,
-      'status', 'escrow_locked',
-      'amount', v_existing_payment.net_payout
+      'status', 'processing',
+      'amount', v_existing_payment.net_payout,
+      'is_sandbox', true,
+      'mode', 'sandbox_simulated'
     );
   END IF;
 
-  -- 5. Insert fresh payment record
+  -- 5. Insert fresh payment record in processing state awaiting provider settlement
   INSERT INTO payment_records (
     booking_id,
     job_id,
@@ -606,7 +656,7 @@ BEGIN
     v_booking.agreed_total_pay,
     0.00, -- 100% of agreed wage to worker
     v_booking.agreed_total_pay,
-    'escrow_locked',
+    'processing',
     p_upi_id,
     now(),
     v_key,
@@ -623,20 +673,34 @@ BEGIN
     jsonb_build_object(
       'booking_id', p_booking_id,
       'amount', v_booking.agreed_total_pay,
-      'upi_id', p_upi_id
+      'upi_id', p_upi_id,
+      'status', 'processing',
+      'is_sandbox', true
     )
   );
 
   RETURN jsonb_build_object(
     'success', true,
     'payment_id', v_payment_id,
-    'status', 'escrow_locked',
-    'amount', v_booking.agreed_total_pay
+    'status', 'processing',
+    'amount', v_booking.agreed_total_pay,
+    'is_sandbox', true,
+    'mode', 'sandbox_simulated',
+    'message', 'Worker direct UPI payout initiated in sandbox mode. Awaiting provider confirmation.'
   );
 END;
 $$;
 
--- 14. SECURITY HARDENING: REVOKE UNRESTRICTED EXECUTE ON WEBHOOK INGESTION
+-- 14. SECURITY HARDENING: REVOKE UNRESTRICTED EXECUTE ON FINANCIAL RPCs
 REVOKE EXECUTE ON FUNCTION process_payment_webhook_safe(TEXT, TEXT, TEXT, JSONB) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION process_payment_webhook_safe(TEXT, TEXT, TEXT, JSONB) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION calculate_shift_financials_safe(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION calculate_shift_financials_safe(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION generate_job_invoice_safe(UUID, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION generate_job_invoice_safe(UUID, UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION initiate_worker_payout_safe(UUID, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION initiate_worker_payout_safe(UUID, TEXT, TEXT) TO authenticated;
 

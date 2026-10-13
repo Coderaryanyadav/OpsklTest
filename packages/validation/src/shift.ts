@@ -35,7 +35,12 @@ export const ShiftCreateSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
     .refine((val) => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
       return val >= today;
     }, 'Event date cannot be in the past'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be HH:MM'),
