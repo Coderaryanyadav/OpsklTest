@@ -164,10 +164,16 @@ export default function OrganizerDashboardScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <TouchableOpacity
               onPress={() => router.push('/notifications')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
+                width: 44,
+                height: 44,
+                minWidth: 44,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
                 backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.full,
-                padding: spacing.xs + 2,
                 borderWidth: 1,
                 borderColor: colors.border,
               }}

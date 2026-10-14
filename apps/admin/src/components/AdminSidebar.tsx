@@ -10,6 +10,7 @@ import {
   Briefcase,
   FileText,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { SystemOperationalStatus } from '@opskil/shared';
 
@@ -35,6 +36,8 @@ interface AdminSidebarProps {
   pendingVerificationsCount: number;
   activeDisputesCount: number;
   urgentSafetyCount: number;
+  adminUser?: { email?: string; fullName?: string } | null;
+  onSignOut?: () => void;
 }
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -44,6 +47,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   pendingVerificationsCount,
   activeDisputesCount,
   urgentSafetyCount,
+  adminUser,
+  onSignOut,
 }) => {
   const navItems = [
     {
@@ -257,14 +262,58 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             fontWeight: 700,
             fontSize: 12,
             color: '#FFFFFF',
+            flexShrink: 0,
           }}
         >
-          AY
+          {(() => {
+            if (adminUser?.fullName) {
+              const parts = adminUser.fullName.trim().split(/\s+/);
+              if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+              return parts[0].substring(0, 2).toUpperCase();
+            }
+            if (adminUser?.email) {
+              return adminUser.email.substring(0, 2).toUpperCase();
+            }
+            return 'AD';
+          })()}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#FFFFFF' }}>Platform Administrator</div>
-          <div style={{ fontSize: 11, color: '#737373' }}>Ops & Compliance</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {adminUser?.fullName || 'Platform Administrator'}
+          </div>
+          <div style={{ fontSize: 11, color: '#737373', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {adminUser?.email || 'Ops & Compliance'}
+          </div>
         </div>
+
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            title="Sign Out of Admin Console"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#A3A3A3',
+              cursor: 'pointer',
+              padding: 6,
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.15s, background-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#EF4444';
+              e.currentTarget.style.backgroundColor = '#262626';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#A3A3A3';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <LogOut size={16} />
+          </button>
+        )}
       </div>
     </aside>
   );

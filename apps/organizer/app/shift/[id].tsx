@@ -47,6 +47,9 @@ export default function OrganizerShiftDetailScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Modal actions
+  const [checkInBooking, setCheckInBooking] = useState<Booking | null>(null);
+  const [manualCode, setManualCode] = useState('');
+  const [checkInError, setCheckInError] = useState<string | null>(null);
   const [noShowBooking, setNoShowBooking] = useState<Booking | null>(null);
   const [noShowReason, setNoShowReason] = useState('');
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
@@ -118,41 +121,38 @@ export default function OrganizerShiftDetailScreen() {
   /**
    * Supervisor Check-In Verification
    */
-  const handleVerifyCheckIn = async (booking: Booking) => {
-    const workerName = booking.worker?.profile?.fullName || 'Worker';
-    if (!booking.checkInCode) {
-      Alert.alert(
-        'Check-In Credential Required',
-        `No check-in credential has been provisioned for ${workerName}. Arrival cannot be verified without a provisioned token.`
-      );
+  const handleVerifyCheckIn = (booking: Booking) => {
+    setCheckInBooking(booking);
+    setManualCode(booking.checkInCode || '');
+    setCheckInError(null);
+  };
+
+  const submitManualCheckIn = async () => {
+    if (!checkInBooking) return;
+    const codeToVerify = manualCode.trim().toUpperCase();
+    if (!codeToVerify) {
+      setCheckInError('Please enter the verification pass code presented by the worker.');
       return;
     }
-
-    Alert.alert(
-      'Confirm Check-In',
-      `Confirm on-site arrival of ${workerName}?\nVerification Token: ${booking.checkInCode}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm Arrival',
-          onPress: async () => {
-            const res = await checkInWorkerSafe(booking.id, booking.checkInCode!);
-            if (res.success) {
-              setCrew((prev) =>
-                prev.map((c) =>
-                  c.id === booking.id
-                    ? { ...c, status: 'checked_in', checkInTime: new Date().toISOString() }
-                    : c
-                )
-              );
-              Alert.alert('Check-In Verified', `${workerName} marked present on-site.`);
-            } else {
-              Alert.alert('Error', res.error || 'Failed to verify check-in.');
-            }
-          },
-        },
-      ]
-    );
+    setActionBusy(true);
+    setCheckInError(null);
+    const res = await checkInWorkerSafe(checkInBooking.id, codeToVerify);
+    setActionBusy(false);
+    if (res.success) {
+      setCrew((prev) =>
+        prev.map((c) =>
+          c.id === checkInBooking.id
+            ? { ...c, status: 'checked_in', checkInTime: new Date().toISOString() }
+            : c
+        )
+      );
+      const workerName = checkInBooking.worker?.profile?.fullName || 'Worker';
+      setCheckInBooking(null);
+      setManualCode('');
+      Alert.alert('Check-In Verified', `${workerName} marked present on-site.`);
+    } else {
+      setCheckInError(res.error || 'Failed to verify check-in code. Please check the code and retry.');
+    }
   };
 
   /**
@@ -496,6 +496,61 @@ export default function OrganizerShiftDetailScreen() {
           })
         )}
       </ScrollView>
+
+      {/* Manual Check-In Verification Modal */}
+      <Modal visible={Boolean(checkInBooking)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Verify Worker Arrival</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
+              Confirm check-in for {checkInBooking?.worker?.profile?.fullName || 'Worker'}. Enter the pass code shown on their Opskl app pass:
+            </Text>
+
+            <View style={{ marginVertical: spacing.md }}>
+              <Input
+                label="Worker Pass Code"
+                value={manualCode}
+                onChangeText={(val) => {
+                  setManualCode(val);
+                  if (checkInError) setCheckInError(null);
+                }}
+                placeholder="e.g. OP-4829"
+                autoCapitalize="characters"
+                error={checkInError || undefined}
+              />
+              {checkInBooking?.checkInCode ? (
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
+                  Expected System Token: {checkInBooking.checkInCode}
+                </Text>
+              ) : null}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Cancel"
+                  variant="outline"
+                  size="md"
+                  onPress={() => {
+                    setCheckInBooking(null);
+                    setManualCode('');
+                    setCheckInError(null);
+                  }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Verify Arrival"
+                  variant="primary"
+                  size="md"
+                  loading={actionBusy}
+                  onPress={submitManualCheckIn}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* No-Show Documentation Modal */}
       <Modal visible={Boolean(noShowBooking)} transparent animationType="fade">

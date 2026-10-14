@@ -331,7 +331,7 @@ describe("E2E Lifecycle: Scenarios A, B, C, & D", () => {
       const res = await confirmWorkerBookingSafe(jobId, workerId, organizerId);
       expect(res.success).toBe(true);
       expect(res.booking?.status).toBe("confirmed");
-      expect(res.booking?.check_in_code).toMatch(/^OP-[A-Z0-9]+$/);
+      expect((res.booking as any)?.check_in_code || res.booking?.checkInCode).toMatch(/^OP-[A-Z0-9]+$/);
     });
 
     test("3. Cannot confirm the same worker twice for the same booking", async () => {

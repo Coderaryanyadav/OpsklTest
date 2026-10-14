@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   Badge,
+  EmptyState,
   KeyboardAwareContainer,
   useAuth,
 } from '@opskil/design-system';
@@ -115,11 +116,41 @@ export default function WorkerOnboardingScreen() {
     }
   };
 
+  useEffect(() => {
+    if (!session?.user?.id) {
+      Alert.alert(
+        'Authentication Required',
+        'Please sign in or enter your email to complete worker registration.',
+        [
+          {
+            text: 'Sign In / Register',
+            onPress: () => router.replace('/auth/login' as any),
+          },
+          {
+            text: 'Back',
+            style: 'cancel',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    }
+  }, [session?.user?.id]);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Worker Profile Setup" onBack={() => router.back()} />
 
-      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, gap: spacing.md }}>
+      {!session?.user?.id ? (
+        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
+          <EmptyState
+            title="Authentication Required"
+            description="Please sign in or verify your email OTP before completing your worker registration profile."
+            actionLabel="Sign In / Register"
+            onAction={() => router.replace('/auth/login' as any)}
+          />
+        </View>
+      ) : (
+        <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, gap: spacing.md }}>
         {/* Progress & Value Prop Banner */}
         <View
           style={{
@@ -290,6 +321,7 @@ export default function WorkerOnboardingScreen() {
           />
         </View>
       </KeyboardAwareContainer>
+      )}
     </SafeAreaView>
   );
 }

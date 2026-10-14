@@ -19,6 +19,7 @@ import {
   formatDeadline,
   fetchJobById,
   applyForJobSafe,
+  fetchWorkerJobStatus,
   Job,
 } from '@opskil/shared';
 import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
@@ -33,6 +34,7 @@ export default function WorkerShiftDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+  const [isBooked, setIsBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -45,11 +47,23 @@ export default function WorkerShiftDetailScreen() {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchJobById(id);
+        const [data, statusData] = await Promise.all([
+          fetchJobById(id),
+          session?.user?.id ? fetchWorkerJobStatus(id, session.user.id) : Promise.resolve(null),
+        ]);
         if (data) {
           setShift(data);
         } else {
           setError('Shift not found or has been concluded.');
+        }
+
+        if (statusData) {
+          if (statusData.isBooked) {
+            setIsBooked(true);
+            setApplied(true);
+          } else if (statusData.hasApplied) {
+            setApplied(true);
+          }
         }
       } catch (err: any) {
         setError(err?.message || 'Unable to load shift details.');
@@ -58,7 +72,7 @@ export default function WorkerShiftDetailScreen() {
       }
     }
     loadShift();
-  }, [id]);
+  }, [id, session?.user?.id]);
 
   const handleApply = async () => {
     if (!shift) return;
@@ -330,20 +344,40 @@ export default function WorkerShiftDetailScreen() {
           }}
         >
           <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            ℹ️ <Text style={{ fontWeight: '700' }}>Shift Status:</Text> {slotsRemaining} of {shift.slotsTotal} spots remaining. Expressing interest submits your profile for organizer review.
+            ℹ️ <Text style={{ fontWeight: '700' }}>Shift Status:</Text>{' '}
+            {isBooked
+              ? 'You are confirmed on the crew roster for this shift!'
+              : applied
+              ? 'Your application has been received and is under organizer review.'
+              : `${slotsRemaining} of ${shift.slotsTotal} spots remaining. Expressing interest submits your profile for organizer review.`}
           </Text>
         </View>
 
         {/* Primary Action Button */}
-        <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl }}>
-          <Button
-            title={applied ? '✓ Interest Expressed' : 'Express Interest / Apply'}
-            variant={applied ? 'secondary' : 'primary'}
-            size="lg"
-            disabled={applied}
-            loading={submitting}
-            onPress={handleApply}
-          />
+        <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.xs }}>
+          {isBooked ? (
+            <Button
+              title="✓ Confirmed on Roster • View in My Shifts"
+              variant="primary"
+              size="lg"
+              onPress={() => router.push('/(tabs)/my-shifts')}
+            />
+          ) : applied ? (
+            <Button
+              title="✓ Already Applied • View My Shifts"
+              variant="secondary"
+              size="lg"
+              onPress={() => router.push('/(tabs)/my-shifts')}
+            />
+          ) : (
+            <Button
+              title="Express Interest / Apply"
+              variant="primary"
+              size="lg"
+              loading={submitting}
+              onPress={handleApply}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

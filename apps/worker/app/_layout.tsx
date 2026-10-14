@@ -38,6 +38,13 @@ function RootNavigator() {
             presentation: 'card',
           }}
         />
+        <Stack.Screen
+          name="notifications"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
         <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
       </Stack>
     </>

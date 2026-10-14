@@ -99,6 +99,7 @@ export default function WorkerDiscoverScreen() {
           {/* Notifications Button */}
           <Pressable
             onPress={() => router.push('/notifications')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={[
               styles.iconBtn,
               { backgroundColor: colors.surfaceMuted, borderRadius: radii.full },
@@ -112,6 +113,7 @@ export default function WorkerDiscoverScreen() {
           {/* View Mode Toggle (Swipe vs List for Accessibility) */}
           <Pressable
             onPress={() => setViewMode((prev) => (prev === 'swipe' ? 'list' : 'swipe'))}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={[
               styles.iconBtn,
               { backgroundColor: colors.surfaceMuted, borderRadius: radii.full },
@@ -129,6 +131,7 @@ export default function WorkerDiscoverScreen() {
           {/* Filter Trigger Button */}
           <Pressable
             onPress={() => setFilterSheetVisible(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={[
               styles.filterBtn,
               {
@@ -460,13 +463,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filterBtn: {
-    paddingHorizontal: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 7,
     borderWidth: 1,
   },

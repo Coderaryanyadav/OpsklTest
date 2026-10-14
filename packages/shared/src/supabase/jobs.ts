@@ -1276,3 +1276,39 @@ export async function disputeBookingSafe(
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Check if a worker has already applied or is booked for a specific shift
+ */
+export async function fetchWorkerJobStatus(
+  jobId: string,
+  workerId: string
+): Promise<{ hasApplied: boolean; isBooked: boolean; applicationStatus?: string; bookingStatus?: string }> {
+  try {
+    const [appRes, bookRes] = await Promise.all([
+      supabase
+        .from('job_applications')
+        .select('status')
+        .eq('job_id', jobId)
+        .eq('worker_id', workerId)
+        .maybeSingle(),
+      supabase
+        .from('bookings')
+        .select('status')
+        .eq('job_id', jobId)
+        .eq('worker_id', workerId)
+        .maybeSingle(),
+    ]);
+
+    return {
+      hasApplied: !!appRes.data,
+      isBooked: !!bookRes.data,
+      applicationStatus: appRes.data?.status,
+      bookingStatus: bookRes.data?.status,
+    };
+  } catch (err) {
+    logger.error('Failed to query worker job status', err, { jobId, workerId });
+    return { hasApplied: false, isBooked: false };
+  }
+}
+

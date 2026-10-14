@@ -15,6 +15,8 @@ import {
   Card,
   Badge,
   Button,
+  EmptyState,
+  useAuth,
   usePushNotifications,
 } from '@opskil/design-system';
 import {
@@ -33,6 +35,7 @@ type ActiveTab = 'inbox' | 'preferences';
 export default function OrganizerNotificationsScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const router = useRouter();
+  const { session } = useAuth();
   const { permissionGranted, requestPermission } = usePushNotifications();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('inbox');
@@ -42,9 +45,16 @@ export default function OrganizerNotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [primingDismissed, setPrimingDismissed] = useState(false);
 
-  const organizerId = 'org-current-profile';
+  const organizerId = session?.user?.id;
 
   const loadData = useCallback(async () => {
+    if (!organizerId) {
+      setNotifications([]);
+      setPreferences(null);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       const [notifs, prefs] = await Promise.all([
         fetchUserNotifications(organizerId),
@@ -63,6 +73,8 @@ export default function OrganizerNotificationsScreen() {
   useEffect(() => {
     loadData();
 
+    if (!organizerId) return;
+
     // Subscribe to Realtime notifications with automatic channel cleanup
     const unsubscribe = subscribeToUserNotifications(organizerId, (newNotif) => {
       setNotifications((prev) => [newNotif, ...prev]);
@@ -79,6 +91,7 @@ export default function OrganizerNotificationsScreen() {
   };
 
   const handleMarkAllRead = async () => {
+    if (!organizerId) return;
     await markAllNotificationsAsRead(organizerId);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
@@ -100,7 +113,7 @@ export default function OrganizerNotificationsScreen() {
     key: keyof UserNotificationPreferences,
     value: boolean
   ) => {
-    if (!preferences) return;
+    if (!preferences || !organizerId) return;
     const updated = { ...preferences, [key]: value };
     setPreferences(updated);
     await updateUserNotificationPreferences(organizerId, { [key]: value });
@@ -203,7 +216,16 @@ export default function OrganizerNotificationsScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {!organizerId ? (
+        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
+          <EmptyState
+            title="Sign In Required"
+            description="Please sign in to view your organizer crew alerts and shift notifications."
+            actionLabel="Sign In"
+            onAction={() => router.push('/auth/login')}
+          />
+        </View>
+      ) : loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>

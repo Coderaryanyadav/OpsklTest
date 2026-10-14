@@ -54,6 +54,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   // Status and feedback
+  const [adminUser, setAdminUser] = useState<{ email?: string; fullName?: string } | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemOperationalStatus>(getSystemOperationalStatus());
   const [pilotMetrics] = useState<PilotMetricsSummary>(calculatePilotMetricsSummary());
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
@@ -105,7 +106,7 @@ export default function AdminDashboardPage() {
 
         const { data: profile } = await adminSupabase
           .from('profiles')
-          .select('role, is_active')
+          .select('role, is_active, full_name, email')
           .eq('id', session.user.id)
           .maybeSingle();
 
@@ -114,6 +115,11 @@ export default function AdminDashboardPage() {
           router.push('/login');
           return;
         }
+
+        setAdminUser({
+          email: profile.email || session.user.email || 'admin@opskil.com',
+          fullName: profile.full_name || 'Opskl Administrator',
+        });
 
         await loadAdminData();
       } catch (err) {
@@ -124,6 +130,14 @@ export default function AdminDashboardPage() {
 
     checkAuthAndLoad();
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await adminSupabase.auth.signOut();
+    } finally {
+      window.location.href = '/login';
+    }
+  };
 
   const handleToggleBookingPause = async (reason?: string) => {
     const nextPaused = !systemStatus.isBookingPaused;
@@ -263,6 +277,8 @@ export default function AdminDashboardPage() {
         pendingVerificationsCount={verifications.filter((v) => v.status === 'pending').length}
         activeDisputesCount={disputes.filter((d) => d.status !== 'resolved').length}
         urgentSafetyCount={safetyReports.filter((s) => s.status !== 'resolved').length}
+        adminUser={adminUser}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Workspace */}

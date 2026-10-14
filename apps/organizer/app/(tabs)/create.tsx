@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   Pressable,
   Alert,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
   Card,
   Badge,
   WageText,
+  KeyboardAwareContainer,
   useAuth,
 } from '@opskil/design-system';
 import {
@@ -294,11 +294,7 @@ export default function OrganizerCreateShiftScreen() {
         </View>
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}>
         {/* STEP 1: ROLE & CATEGORY */}
         {step === 1 && (
           <View style={{ gap: spacing.md }}>
@@ -767,7 +763,7 @@ export default function OrganizerCreateShiftScreen() {
             </Card>
           </View>
         )}
-      </ScrollView>
+      </KeyboardAwareContainer>
 
       {/* Floating Bottom Navigation Bar */}
       <View
