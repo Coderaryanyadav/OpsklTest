@@ -2,12 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { logger } from '@opskil/shared';
 import { adminSupabase } from '../../lib/supabase';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,8 +46,7 @@ export default function AdminLoginPage() {
           return;
         }
 
-        router.push('/');
-        router.refresh();
+        window.location.href = '/';
       } else {
         setErrorMsg('Authentication succeeded but no active session was returned.');
       }

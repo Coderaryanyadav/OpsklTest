@@ -6,6 +6,8 @@ node_modules/
 # Testing & Coverage
 coverage/
 *.lcov
+test-results/
+playwright-report/
 
 # Expo & React Native
 .expo/
@@ -50,3 +52,4 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+    
