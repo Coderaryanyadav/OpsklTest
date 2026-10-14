@@ -62,7 +62,17 @@ export const logger = {
 
   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
     const sanitized = context ? redactSensitiveData(context) : undefined;
-    const errMessage = error instanceof Error ? error.message : String(error || '');
+    let errMessage = '';
+    if (error instanceof Error) {
+      errMessage = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      const anyErr = error as any;
+      errMessage = anyErr.message || anyErr.error_description || anyErr.msg || JSON.stringify(error);
+      if (anyErr.details) errMessage += ` (${anyErr.details})`;
+      if (anyErr.hint) errMessage += ` [Hint: ${anyErr.hint}]`;
+    } else {
+      errMessage = String(error || '');
+    }
     console.error(`[OPSKL ERROR] ${message} — ${errMessage}`, sanitized ? JSON.stringify(sanitized) : '');
   },
 

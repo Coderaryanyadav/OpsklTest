@@ -4119,6 +4119,21 @@ $$;
 REVOKE EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO service_role, authenticated;
 
+-- 25. GLOBAL SCHEMA PERMISSIONS
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+GRANT SELECT ON public.jobs TO anon, authenticated;
+GRANT SELECT ON public.organizer_profiles TO anon, authenticated;
+GRANT SELECT ON public.worker_profiles TO anon, authenticated;
+
+
 
 
 

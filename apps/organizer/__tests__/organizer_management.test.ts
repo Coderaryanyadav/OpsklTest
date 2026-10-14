@@ -29,7 +29,12 @@ describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
   });
 
   describe('Job Creation Wizard Validation (Client & Schema Rules)', () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
 
     const validPayload = {
       title: 'Registration Desk & VIP Usher',
