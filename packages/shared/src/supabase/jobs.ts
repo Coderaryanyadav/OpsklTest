@@ -156,6 +156,28 @@ export async function fetchDiscoveryFeed(
           .eq('direction', 'left'),
       ]);
 
+      if (applicationsRes.error) {
+        logger.error('Failed to query applied jobs for discovery exclusion', applicationsRes.error);
+        return {
+          jobs: [],
+          totalCount: 0,
+          page,
+          hasMore: false,
+          error: `Error checking prior applications: ${applicationsRes.error.message}`,
+        };
+      }
+
+      if (swipeEventsRes.error) {
+        logger.error('Failed to query swipe events for discovery exclusion', swipeEventsRes.error);
+        return {
+          jobs: [],
+          totalCount: 0,
+          page,
+          hasMore: false,
+          error: `Error checking swipe history: ${swipeEventsRes.error.message}`,
+        };
+      }
+
       const appliedIds = (applicationsRes.data || []).map((a: any) => a.job_id);
       const passedIds = (swipeEventsRes.data || []).map((s: any) => s.job_id);
       excludedJobIds = Array.from(new Set([...appliedIds, ...passedIds]));

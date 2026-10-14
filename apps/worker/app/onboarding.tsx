@@ -275,7 +275,7 @@ export default function WorkerOnboardingScreen() {
             }}
             placeholder="e.g. aryan@okhdfcbank"
             error={errors.upiId}
-            helperText="100% of agreed shift wage is transferred upon supervisor check-out. 0 platform fees deducted."
+            helperText="100% of agreed shift wage is paid out after supervisor attendance sign-off. Zero platform fees deducted."
           />
         </Card>
 

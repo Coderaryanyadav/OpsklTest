@@ -17,12 +17,18 @@ import {
 jest.mock('../supabase/client', () => {
   const mockRpc = jest.fn();
   const mockFrom = jest.fn();
+  const client = {
+    rpc: mockRpc,
+    from: mockFrom,
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'admin-1', email: 'admin@opskil.com' } } }),
+    },
+  };
 
   return {
-    supabase: {
-      rpc: mockRpc,
-      from: mockFrom,
-    },
+    supabase: client,
+    getSharedSupabaseClient: () => client,
+    setSharedSupabaseClient: jest.fn(),
     __mockRpc: mockRpc,
     __mockFrom: mockFrom,
   };

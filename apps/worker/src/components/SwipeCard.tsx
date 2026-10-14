@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   View,
   Text,
@@ -55,6 +56,7 @@ export interface SwipeCardProps {
   onSwipeLeft: (job: Job) => void;
   onPressDetails: (job: Job) => void;
   isTopCard: boolean;
+  disabled?: boolean;
 }
 
 export function SwipeCard({
@@ -64,23 +66,29 @@ export function SwipeCard({
   onSwipeLeft,
   onPressDetails,
   isTopCard,
+  disabled = false,
 }: SwipeCardProps) {
   const { colors, radii, typography, isDark } = useOpsklTheme();
   const reducedMotion = useReducedMotion();
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const actionDispatched = useRef(false);
 
   const handleApplyAction = () => {
+    if (actionDispatched.current) return;
+    actionDispatched.current = true;
     onSwipeRight(job);
   };
 
   const handlePassAction = () => {
+    if (actionDispatched.current) return;
+    actionDispatched.current = true;
     onSwipeLeft(job);
   };
 
   const panGesture = Gesture.Pan()
-    .enabled(isTopCard)
+    .enabled(isTopCard && !disabled)
     .onUpdate((event) => {
       'worklet';
       translateX.value = event.translationX;

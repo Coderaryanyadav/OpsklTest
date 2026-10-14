@@ -294,7 +294,7 @@ export default function WorkerMyShiftsScreen() {
               );
               Alert.alert(
                 '✓ Shift Concluded',
-                'Your check-out is complete. Once supervisor signs off, direct UPI payout will be released to your handle.'
+                'Your check-out is complete. Once supervisor reviews and approves attendance, UPI payout will be initiated.'
               );
             } else {
               Alert.alert('Check-Out Error', res.error || 'Failed to check out.');

@@ -250,7 +250,16 @@ export default function OrganizerCreateShiftScreen() {
       return;
     }
 
-    const organizerId = session?.user?.id || 'org-apex-01';
+    const organizerId = session?.user?.id;
+    if (!organizerId) {
+      setSubmitting(false);
+      Alert.alert(
+        'Authentication Required',
+        'You must be signed in with an active organizer account to create or publish a shift.',
+        [{ text: 'Sign In', onPress: () => router.push('/auth/login') }]
+      );
+      return;
+    }
 
     const result = await createJobSafe(
       {

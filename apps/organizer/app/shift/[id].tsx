@@ -18,6 +18,7 @@ import {
   Button,
   WageText,
   Input,
+  EmptyState,
 } from '@opskil/design-system';
 import {
   Booking,
@@ -35,120 +36,6 @@ import {
 } from '@opskil/shared';
 import { Star, CheckCircle2 } from 'lucide-react-native';
 
-const SEED_ROSTER: Booking[] = [
-  {
-    id: 'roster-seed-1',
-    jobId: 'org-shift-1',
-    workerId: 'worker-101',
-    organizerId: 'org-apex-01',
-    status: 'checked_in',
-    agreedHourlyRate: 185,
-    agreedTotalPay: 1665,
-    checkInCode: 'OP-4829',
-    checkInTime: '2026-10-14T08:24:00Z',
-    confirmedAt: '2026-10-12T10:00:00Z',
-    worker: {
-      id: 'worker-101',
-      preferredLocality: 'Bandra West',
-      skills: ['Registration Scanning', 'VIP Ushering'],
-      experienceYears: 3,
-      rating: 4.92,
-      totalReviews: 18,
-      shiftsCompleted: 14,
-      verificationStatus: 'verified',
-      profile: {
-        id: 'worker-101',
-        fullName: 'Aryan Yadav',
-        phone: '+91 98200 98200',
-        city: 'Mumbai',
-        role: 'worker',
-        isActive: true,
-        createdAt: '',
-        updatedAt: '',
-      },
-      availabilityStatus: 'available',
-      profileCompletionStatus: 'completed',
-      serviceAreas: [],
-      createdAt: '',
-      updatedAt: '',
-    },
-  },
-  {
-    id: 'roster-seed-2',
-    jobId: 'org-shift-1',
-    workerId: 'worker-102',
-    organizerId: 'org-apex-01',
-    status: 'confirmed',
-    agreedHourlyRate: 185,
-    agreedTotalPay: 1665,
-    checkInCode: 'OP-5192',
-    confirmedAt: '2026-10-12T11:00:00Z',
-    worker: {
-      id: 'worker-102',
-      preferredLocality: 'Andheri East',
-      skills: ['Ticketing Desk', 'Customer Service'],
-      experienceYears: 2,
-      rating: 4.88,
-      totalReviews: 12,
-      shiftsCompleted: 9,
-      verificationStatus: 'verified',
-      profile: {
-        id: 'worker-102',
-        fullName: 'Neha Kulkarni',
-        phone: '+91 98199 98199',
-        city: 'Mumbai',
-        role: 'worker',
-        isActive: true,
-        createdAt: '',
-        updatedAt: '',
-      },
-      availabilityStatus: 'available',
-      profileCompletionStatus: 'completed',
-      serviceAreas: [],
-      createdAt: '',
-      updatedAt: '',
-    },
-  },
-  {
-    id: 'roster-seed-3',
-    jobId: 'org-shift-1',
-    workerId: 'worker-103',
-    organizerId: 'org-apex-01',
-    status: 'completed_awaiting_review',
-    agreedHourlyRate: 185,
-    agreedTotalPay: 1665,
-    checkInCode: 'OP-8831',
-    checkInTime: '2026-10-14T08:15:00Z',
-    checkOutTime: '2026-10-14T17:35:00Z',
-    confirmedAt: '2026-10-12T12:00:00Z',
-    worker: {
-      id: 'worker-103',
-      preferredLocality: 'Goregaon East',
-      skills: ['Queue Marshall'],
-      experienceYears: 1,
-      rating: 4.75,
-      totalReviews: 7,
-      shiftsCompleted: 6,
-      verificationStatus: 'verified',
-      profile: {
-        id: 'worker-103',
-        fullName: 'Vikram Joshi',
-        phone: '+91 98330 98330',
-        city: 'Mumbai',
-        role: 'worker',
-        isActive: true,
-        createdAt: '',
-        updatedAt: '',
-      },
-      availabilityStatus: 'available',
-      profileCompletionStatus: 'completed',
-      serviceAreas: [],
-      createdAt: '',
-      updatedAt: '',
-    },
-  },
-];
-
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -157,6 +44,7 @@ export default function OrganizerShiftDetailScreen() {
   const [job, setJob] = useState<Job | null>(null);
   const [crew, setCrew] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Modal actions
   const [noShowBooking, setNoShowBooking] = useState<Booking | null>(null);
@@ -166,22 +54,29 @@ export default function OrganizerShiftDetailScreen() {
   const [actionBusy, setActionBusy] = useState(false);
 
   const loadShiftData = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setError('Invalid shift identifier.');
+      setLoading(false);
+      return;
+    }
     try {
+      setLoading(true);
+      setError(null);
       const [jobData, crewData] = await Promise.all([
         fetchJobById(id),
         fetchJobBookings(id),
       ]);
 
-      if (jobData) setJob(jobData);
-      if (crewData.length > 0) {
-        setCrew(crewData);
+      if (jobData) {
+        setJob(jobData);
       } else {
-        setCrew(SEED_ROSTER);
+        setError('Shift not found or access denied.');
       }
-    } catch (err) {
+      setCrew(crewData || []);
+    } catch (err: any) {
       console.error('Failed to load shift details', err);
-      setCrew(SEED_ROSTER);
+      setError(err?.message || 'Failed to load shift details.');
+      setCrew([]);
     } finally {
       setLoading(false);
     }
@@ -191,31 +86,34 @@ export default function OrganizerShiftDetailScreen() {
     loadShiftData();
   }, [loadShiftData]);
 
-  // Fallback job info if fresh
-  const activeJob: Job = job || {
-    id: id || 'org-shift-1',
-    organizerId: 'org-apex-01',
-    title: 'Registration Desk & VIP Usher',
-    category: 'conference',
-    venueName: 'Jio World Convention Centre, Pavilion 2',
-    venueAddress: 'G Block BKC, Bandra East, Mumbai 400098',
-    city: 'Mumbai',
-    zone: 'Bandra Kurla Complex (BKC)',
-    date: '2026-10-14',
-    startTime: '08:30',
-    endTime: '17:30',
-    durationHours: 9,
-    hourlyRate: 185,
-    totalPay: 1665,
-    slotsTotal: 12,
-    slotsFilled: 8,
-    duties: ['Scan attendee passes', 'Issue VIP badges'],
-    supervisorName: 'Rohit Verma',
-    supervisorPhone: '+91 98201 98201',
-    status: 'open',
-    createdAt: '',
-    updatedAt: '',
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[typography.body, { marginTop: 12, color: colors.textSecondary }]}>
+          Loading live shift console…
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScreenHeader title="Shift Console" onBack={() => router.back()} />
+        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
+          <EmptyState
+            title="Shift Not Found"
+            description={error || 'This shift is unavailable or you do not have permission to view it.'}
+            actionLabel="Return to Dashboard"
+            onAction={() => router.back()}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const activeJob: Job = job;
 
   /**
    * Supervisor Check-In Verification
@@ -425,8 +323,33 @@ export default function OrganizerShiftDetailScreen() {
           </Text>
         </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} />
+        {crew.length === 0 ? (
+          <Card
+            variant="outlined"
+            style={{
+              padding: spacing.xl,
+              alignItems: 'center',
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: radii.lg,
+            }}
+          >
+            <Text style={{ fontSize: 36 }}>👥</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.sm, textAlign: 'center' }]}>
+              No Confirmed Crew Yet
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, lineHeight: 18 }}>
+              Workers shortlisted and confirmed from your applicant queue will appear here with on-site arrival codes and live attendance tracking.
+            </Text>
+            <View style={{ marginTop: spacing.md }}>
+              <Button
+                title="View Hiring Queue"
+                variant="outline"
+                size="sm"
+                onPress={() => router.push('/(tabs)/roster' as any)}
+              />
+            </View>
+          </Card>
         ) : (
           crew.map((member) => {
             const worker = member.worker;

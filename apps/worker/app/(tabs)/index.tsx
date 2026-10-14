@@ -298,6 +298,7 @@ export default function WorkerDiscoverScreen() {
                 onSwipeLeft={onPass}
                 onPressDetails={setDetailJob}
                 isTopCard={true}
+                disabled={Boolean(inFlightApplication)}
               />
             )}
           </View>

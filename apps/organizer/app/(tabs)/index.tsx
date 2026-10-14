@@ -188,7 +188,11 @@ export default function OrganizerDashboardScreen() {
     const isPaused = shift.status === 'paused';
     const newStatus = isPaused ? 'open' : 'paused';
 
-    const effectiveOrgId = organizerId || session?.user?.id || 'org-apex-01';
+    const effectiveOrgId = organizerId || session?.user?.id;
+    if (!effectiveOrgId) {
+      Alert.alert('Authentication Required', 'Please sign in to manage shift status.');
+      return;
+    }
     const res = await updateJobStatus(shift.id, effectiveOrgId, newStatus);
     if (res.success) {
       setShifts((prev) =>

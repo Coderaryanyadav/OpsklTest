@@ -139,13 +139,14 @@ export default function OrganizerRosterScreen() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
   const organizerId = session?.user?.id;
 
   const loadApplications = useCallback(async () => {
     if (!organizerId) {
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
         setApplications(SEED_APPLICATIONS as any);
       } else {
         setApplications([]);
@@ -156,21 +157,19 @@ export default function OrganizerRosterScreen() {
     }
 
     try {
+      setError(null);
       const data = await fetchOrganizerApplications(organizerId);
       if (data.length > 0) {
         setApplications(data);
-      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
         setApplications(SEED_APPLICATIONS as any);
       } else {
         setApplications([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load applications', err);
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setApplications(SEED_APPLICATIONS as any);
-      } else {
-        setApplications([]);
-      }
+      setError(err?.message || 'Could not load applicant roster.');
+      setApplications([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -186,12 +185,21 @@ export default function OrganizerRosterScreen() {
     loadApplications();
   };
 
-  const effectiveOrgId = organizerId || session?.user?.id || 'org-apex-01';
+  const effectiveOrgId = organizerId || session?.user?.id;
 
   /**
    * Shortlist Applicant
    */
   const handleShortlist = async (app: JobApplication) => {
+    if (!effectiveOrgId) {
+      Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
+      return;
+    }
+    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
+      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
+      return;
+    }
+
     setActionInProgress(app.id);
     const res = await updateApplicationStatusSafe(app.id, 'shortlisted', effectiveOrgId);
     setActionInProgress(null);
@@ -213,6 +221,15 @@ export default function OrganizerRosterScreen() {
    * Reject Applicant
    */
   const handleReject = async (app: JobApplication) => {
+    if (!effectiveOrgId) {
+      Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
+      return;
+    }
+    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
+      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
+      return;
+    }
+
     Alert.alert(
       'Decline Application',
       `Are you sure you want to pass on ${app.worker?.profile?.fullName || 'this applicant'}?`,
@@ -243,6 +260,15 @@ export default function OrganizerRosterScreen() {
    * Select Candidate / Confirm Booking (Enforces Headcount & Audit Trail)
    */
   const handleConfirmBooking = async (app: JobApplication) => {
+    if (!effectiveOrgId) {
+      Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
+      return;
+    }
+    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
+      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
+      return;
+    }
+
     const workerName = app.worker?.profile?.fullName || 'the candidate';
     const shiftTitle = app.job?.title || 'the shift';
 
@@ -379,6 +405,19 @@ export default function OrganizerRosterScreen() {
           <View style={{ gap: spacing.md }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
+          </View>
+        ) : error ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 32 }}>⚠️</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 12 }]}>
+              Unable to Load Roster
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+              {error}
+            </Text>
+            <View style={{ marginTop: spacing.md }}>
+              <Button title="Retry Connection" variant="primary" size="md" onPress={onRefresh} />
+            </View>
           </View>
         ) : filtered.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>

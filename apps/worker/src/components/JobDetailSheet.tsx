@@ -138,7 +138,7 @@ export function JobDetailSheet({
             <View style={[styles.escrowNotice, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 }]}>
               <Zap size={15} color={colors.primary} strokeWidth={2.2} />
               <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, flex: 1 }}>
-                Shift wages are calculated from verified attendance hours. Upon supervisor check-out and attendance sign-off, direct UPI transfer initiates to your registered bank account.
+                Shift wages are calculated from verified attendance hours. Once supervisor reviews attendance and approves hours, payout processing begins through bank rails to your verified UPI handle.
               </Text>
             </View>
           </View>

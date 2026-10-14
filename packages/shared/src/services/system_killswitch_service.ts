@@ -1,6 +1,6 @@
 import { SystemOperationalStatus } from '../types';
 import { logger } from '../utils/logger';
-import { supabase } from '../supabase/client';
+import { getSharedSupabaseClient } from '../supabase/client';
 
 let currentOperationalStatus: SystemOperationalStatus = {
   isOperational: true,
@@ -26,7 +26,8 @@ export function getSystemOperationalStatus(): SystemOperationalStatus {
  */
 export async function syncKillswitchFromDatabase(): Promise<SystemOperationalStatus> {
   try {
-    const { data } = await supabase
+    const client = getSharedSupabaseClient();
+    const { data } = await client
       .from('platform_settings')
       .select('value')
       .eq('key', 'booking_killswitch')
@@ -72,10 +73,11 @@ export async function setBookingPauseStatusSafe(
     : undefined;
 
   try {
-    const userRes = await supabase.auth.getUser();
+    const client = getSharedSupabaseClient();
+    const userRes = await client.auth.getUser();
     const effectiveActor = userRes.data?.user?.email || userRes.data?.user?.id || pausedBy;
 
-    const { error } = await supabase
+    const { error } = await client
       .from('platform_settings')
       .upsert({
         key: 'booking_killswitch',
@@ -154,7 +156,7 @@ export function setBookingPauseStatus(
 
   // Authoritatively persist to database platform_settings table
   try {
-    supabase
+    getSharedSupabaseClient()
       .from('platform_settings')
       .upsert({
         key: 'booking_killswitch',

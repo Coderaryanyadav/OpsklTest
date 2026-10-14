@@ -1,4 +1,5 @@
-import { supabase } from './client';
+import { getSharedSupabaseClient } from './client';
+import { SupabaseClient } from '@supabase/supabase-js';
 import {
   AdminOverviewMetrics,
   VerificationCase,
@@ -10,6 +11,8 @@ import {
 } from '../types';
 import { logger } from '../utils/logger';
 
+const getClient = (): SupabaseClient => getSharedSupabaseClient();
+
 /**
  * Fetch platform overview metrics for admin dashboard
  */
@@ -17,6 +20,7 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
   logger.info('Fetching admin overview metrics');
 
   try {
+    const client = getClient();
     const [
       shiftsRes,
       workersRes,
@@ -26,13 +30,13 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
       safetyRes,
       paymentsRes,
     ] = await Promise.all([
-      supabase.from('jobs').select('*', { count: 'exact', head: true }).in('status', ['open', 'filling']),
-      supabase.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('is_aadhaar_verified', true),
-      supabase.from('organizer_profiles').select('*', { count: 'exact', head: true }).eq('is_gstin_verified', true),
-      supabase.from('verification_cases').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('disputes').select('*', { count: 'exact', head: true }).in('status', ['open', 'under_review']),
-      supabase.from('safety_reports').select('*', { count: 'exact', head: true }).in('severity', ['high', 'critical']).eq('status', 'open'),
-      supabase.from('payment_records').select('amount, platform_fee, status'),
+      client.from('jobs').select('*', { count: 'exact', head: true }).in('status', ['open', 'filling']),
+      client.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('is_aadhaar_verified', true),
+      client.from('organizer_profiles').select('*', { count: 'exact', head: true }).eq('is_gstin_verified', true),
+      client.from('verification_cases').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      client.from('disputes').select('*', { count: 'exact', head: true }).in('status', ['open', 'under_review']),
+      client.from('safety_reports').select('*', { count: 'exact', head: true }).in('severity', ['high', 'critical']).eq('status', 'open'),
+      client.from('payment_records').select('amount, platform_fee, status'),
     ]);
 
     const hasQueryErrors = Boolean(
@@ -97,7 +101,7 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
 export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
   logger.info('Fetching verification queue');
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('verification_cases')
     .select('*')
     .order('created_at', { ascending: false });
@@ -133,7 +137,7 @@ export async function resolveVerificationCaseSafe(
   logger.info('Resolving verification case', { caseId, status });
 
   try {
-    const { data, error } = await supabase.rpc('admin_verify_case_safe', {
+    const { data, error } = await getClient().rpc('admin_verify_case_safe', {
       p_case_id: caseId,
       p_status: status,
       p_rejection_reason: rejectionReason ?? null,
@@ -156,7 +160,7 @@ export async function resolveVerificationCaseSafe(
 export async function fetchDisputesQueue(): Promise<Dispute[]> {
   logger.info('Fetching disputes queue');
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('disputes')
     .select('*')
     .order('created_at', { ascending: false });
@@ -194,7 +198,7 @@ export async function resolveDisputeSafe(
   logger.info('Resolving dispute', { disputeId, status, adjustedPayout });
 
   try {
-    const { data, error } = await supabase.rpc('admin_resolve_dispute_safe', {
+    const { data, error } = await getClient().rpc('admin_resolve_dispute_safe', {
       p_dispute_id: disputeId,
       p_status: status,
       p_resolution_notes: resolutionNotes,
@@ -218,7 +222,7 @@ export async function resolveDisputeSafe(
 export async function fetchSafetyReportsQueue(): Promise<SafetyReport[]> {
   logger.info('Fetching safety reports queue');
 
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('safety_reports')
     .select('*')
     .order('created_at', { ascending: false });
@@ -257,7 +261,7 @@ export async function resolveSafetyReportSafe(
   adminId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.rpc('admin_resolve_safety_report_safe', {
+    const { data, error } = await getClient().rpc('admin_resolve_safety_report_safe', {
       p_report_id: reportId,
       p_status: status,
       p_action_taken: actionTaken,
@@ -279,7 +283,7 @@ export async function resolveSafetyReportSafe(
  * Fetch Jobs for Moderation
  */
 export async function fetchModerationJobs(): Promise<Job[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('jobs')
     .select('*')
     .order('created_at', { ascending: false })
@@ -326,7 +330,7 @@ export async function moderateJobSafe(
   adminId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { data, error } = await supabase.rpc('admin_moderate_job_safe', {
+    const { data, error } = await getClient().rpc('admin_moderate_job_safe', {
       p_job_id: jobId,
       p_new_status: newStatus,
       p_moderation_reason: moderationReason,
@@ -347,7 +351,7 @@ export async function moderateJobSafe(
  * Fetch Immutable Audit Logs
  */
 export async function fetchAuditLogs(limit: number = 50): Promise<AuditLog[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('audit_logs')
     .select('*')
     .order('created_at', { ascending: false })
@@ -374,7 +378,7 @@ export async function fetchAuditLogs(limit: number = 50): Promise<AuditLog[]> {
  * Fetch System Configuration Settings
  */
 export async function fetchPlatformSettings(): Promise<PlatformSetting[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getClient()
     .from('platform_settings')
     .select('*');
 

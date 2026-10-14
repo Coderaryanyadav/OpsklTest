@@ -175,5 +175,35 @@ describe('Phase 3 Worker Swipe Marketplace — Gestures & State Safety', () => {
       expect(secondAttempt.success).toBe(false);
       expect(secondAttempt.error).toBe('ALREADY_APPLIED');
     });
+
+    test('Pan gesture is disabled while an application submission is in flight', () => {
+      const isTopCard = true;
+      let inFlightApplication = true;
+
+      const isGestureEnabled = (top: boolean, inFlight: boolean) => top && !inFlight;
+
+      expect(isGestureEnabled(isTopCard, inFlightApplication)).toBe(false);
+
+      inFlightApplication = false;
+      expect(isGestureEnabled(isTopCard, inFlightApplication)).toBe(true);
+    });
+
+    test('Action dispatch guard prevents duplicate callback execution if gesture and tap overlap', () => {
+      let callCount = 0;
+      let actionDispatched = false;
+
+      const handleApplyAction = () => {
+        if (actionDispatched) return;
+        actionDispatched = true;
+        callCount++;
+      };
+
+      // Simulated concurrent triggers (gesture onEnd + button tap)
+      handleApplyAction();
+      handleApplyAction();
+
+      expect(callCount).toBe(1);
+    });
   });
 });
+

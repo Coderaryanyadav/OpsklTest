@@ -213,5 +213,43 @@ describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
         p_new_status: 'paused',
       });
     });
+
+    test('updateJobStatus fails closed when unauthenticated or RPC errors out', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Unauthorized organizer account' },
+      });
+
+      const res = await updateJobStatus('job-1', 'unauth-org', 'paused');
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Unauthorized');
+    });
+
+    test('createJobSafe fails closed without creating database record if RPC fails', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Database constraint violation' },
+      });
+
+      const res = await createJobSafe(
+        {
+          title: 'Test',
+          category: 'conference',
+          venueName: 'Test Venue',
+          venueAddress: 'Test Address',
+          city: 'Mumbai',
+          date: '2026-10-20',
+          startTime: '09:00',
+          endTime: '17:00',
+          hourlyRate: 150,
+          totalPay: 1200,
+          slotsTotal: 5,
+        } as any,
+        'org-1'
+      );
+      expect(res.success).toBe(false);
+      expect(res.error).toBeDefined();
+    });
   });
 });
+

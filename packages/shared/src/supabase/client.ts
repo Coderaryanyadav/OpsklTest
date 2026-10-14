@@ -56,88 +56,69 @@ const universalStorage = {
         // Fallback
       }
     }
-    if (typeof document !== 'undefined') {
-      try {
-        document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; path=/; max-age=604800; SameSite=Lax`;
-        if (key.includes('auth-token') || key.includes('token')) {
-          try {
-            const parsed = JSON.parse(value);
-            if (parsed?.access_token) {
-              document.cookie = `sb-access-token=${encodeURIComponent(parsed.access_token)}; path=/; max-age=604800; SameSite=Lax`;
-            }
-            if (parsed?.refresh_token) {
-              document.cookie = `sb-refresh-token=${encodeURIComponent(parsed.refresh_token)}; path=/; max-age=604800; SameSite=Lax`;
-            }
-          } catch {
-            // value is raw string
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
     await memoryStorage.setItem(key, value);
   },
-  removeItem: async (key: string): Promise<void> => {
-    if (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative') {
-      try {
-        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        if (AsyncStorage?.removeItem) {
-          await AsyncStorage.removeItem(key);
-          return;
+    removeItem: async (key: string): Promise<void> => {
+      if (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative') {
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          if (AsyncStorage?.removeItem) {
+            await AsyncStorage.removeItem(key);
+            return;
+          }
+        } catch {
+          // Fallback
         }
-      } catch {
-        // Fallback
       }
-    }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        window.localStorage.removeItem(key);
-      } catch {
-        // Fallback
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.removeItem(key);
+        } catch {
+          // Fallback
+        }
       }
-    }
-    if (typeof document !== 'undefined') {
-      try {
-        document.cookie = `${encodeURIComponent(key)}=; path=/; max-age=0; SameSite=Lax`;
-        document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
-        document.cookie = 'sb-refresh-token=; path=/; max-age=0; SameSite=Lax';
-      } catch {
-        // Fallback
-      }
-    }
-    await memoryStorage.removeItem(key);
-  },
+      await memoryStorage.removeItem(key);
+    },
 };
 
-export const isSupabaseConfigured = Boolean(
-  (process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-  (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-);
+  export const isSupabaseConfigured = Boolean(
+    (process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+    (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  );
 
-if (!isSupabaseConfigured) {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn(
-      '[OPSKL CONFIG WARNING] Live Supabase credentials are not set in environment. Running with placeholder sandbox configuration. Supply EXPO_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL for live database access.'
-    );
+  if(!isSupabaseConfigured) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(
+        '[OPSKL CONFIG WARNING] Live Supabase credentials are not set in environment. Running with placeholder sandbox configuration. Supply EXPO_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL for live database access.'
+      );
+    }
   }
-}
 
 const SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  'https://placeholder-opskil.supabase.co';
+    process.env.EXPO_PUBLIC_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    'https://placeholder-opskil.supabase.co';
 
-const SUPABASE_ANON_KEY =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder_anon_key_for_client_app';
+  const SUPABASE_ANON_KEY =
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder_anon_key_for_client_app';
 
-export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    storage: universalStorage,
-    autoRefreshToken: typeof window !== 'undefined' || (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative'),
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+  export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      storage: universalStorage,
+      autoRefreshToken: typeof window !== 'undefined' || (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative'),
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
+  });
+
+  let sharedClientInstance: SupabaseClient | null = null;
+
+  export function setSharedSupabaseClient(client: SupabaseClient | null): void {
+    sharedClientInstance = client;
+  }
+
+export function getSharedSupabaseClient(): SupabaseClient {
+    return sharedClientInstance || supabase;
+}
