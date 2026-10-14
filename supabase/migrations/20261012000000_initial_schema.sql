@@ -623,7 +623,7 @@ CREATE POLICY "Organizers update their own profile"
 CREATE POLICY "Admins full access to organizer profiles"
   ON organizer_profiles FOR ALL USING (is_current_admin());
 
--- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
+-- Restricted public view for organizer cards (protects sensitive gstin, billing_address, phone/email)
 CREATE OR REPLACE VIEW public_organizer_cards AS
   SELECT
     id,
@@ -634,7 +634,14 @@ CREATE OR REPLACE VIEW public_organizer_cards AS
     total_events_hosted,
     created_at
   FROM organizer_profiles
-  WHERE verification_status = 'verified';
+  WHERE verification_status = 'verified'
+     OR is_current_admin()
+     OR id = auth.uid()
+     OR EXISTS (
+       SELECT 1 FROM jobs j 
+       WHERE j.organizer_id = organizer_profiles.id 
+         AND j.status IN ('open', 'filling', 'filled', 'in_progress', 'completed')
+     );
 
 GRANT SELECT ON public_organizer_cards TO anon, authenticated;
 
@@ -659,6 +666,10 @@ CREATE OR REPLACE VIEW worker_applicant_profiles AS
       SELECT 1 FROM job_applications ja
       JOIN jobs j ON j.id = ja.job_id
       WHERE ja.worker_id = wp.id AND j.organizer_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.worker_id = wp.id AND b.organizer_id = auth.uid()
     );
 
 GRANT SELECT ON worker_applicant_profiles TO authenticated;

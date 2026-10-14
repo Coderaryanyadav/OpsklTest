@@ -68,6 +68,68 @@ function mapJobRow(row: any): Job {
 }
 
 /**
+ * Enriches jobs with public organizer card projection without relying on sensitive base table
+ */
+async function enrichJobsWithOrganizerCards(rawJobs: any[]): Promise<Job[]> {
+  if (!rawJobs || rawJobs.length === 0) return [];
+  const organizerIds = Array.from(
+    new Set(rawJobs.map((r: any) => r.organizer_id).filter(Boolean))
+  );
+
+  const cardsMap = new Map<string, any>();
+  if (organizerIds.length > 0) {
+    try {
+      const { data: cards, error } = await supabase
+        .from('public_organizer_cards')
+        .select('*')
+        .in('id', organizerIds);
+
+      if (!error && cards) {
+        cards.forEach((c: any) => cardsMap.set(c.id, c));
+      }
+    } catch (err) {
+      logger.warn('Failed to query public_organizer_cards view', { err });
+    }
+  }
+
+  return rawJobs.map((row: any) => {
+    const card = cardsMap.get(row.organizer_id);
+    const org = card
+      ? {
+          id: card.id,
+          businessName: card.business_name || 'Event Host',
+          businessContactPhone: '',
+          businessType: card.business_type || 'event_agency',
+          verificationStatus: card.verification_status || 'unverified',
+          profileCompletionStatus: 'completed',
+          rating: Number(card.rating ?? 0),
+          totalEventsHosted: card.total_events_hosted ?? 0,
+          createdAt: card.created_at || row.created_at,
+          updatedAt: card.created_at || row.updated_at,
+        }
+      : row.organizer_profiles
+      ? {
+          id: row.organizer_profiles.id || row.organizer_id,
+          businessName: row.organizer_profiles.business_name || 'Event Host',
+          verificationStatus: row.organizer_profiles.verification_status || 'unverified',
+          rating: Number(row.organizer_profiles.rating ?? 0),
+          totalEventsHosted: row.organizer_profiles.total_events_hosted ?? 0,
+          businessContactPhone: row.organizer_profiles.business_contact_phone || '',
+          businessType: row.organizer_profiles.business_type || 'event_agency',
+          profileCompletionStatus: row.organizer_profiles.profile_completion_status || 'incomplete',
+          createdAt: row.organizer_profiles.created_at || row.created_at,
+          updatedAt: row.organizer_profiles.updated_at || row.updated_at,
+        }
+      : undefined;
+
+    return mapJobRow({
+      ...row,
+      organizer_profiles: org,
+    });
+  });
+}
+
+/**
  * Fetch discovery feed for workers with deterministic ordering, server-side filtering,
  * and exclusion of already-swiped or already-applied jobs.
  */
@@ -101,7 +163,7 @@ export async function fetchDiscoveryFeed(
 
     let query = supabase
       .from('jobs')
-      .select('*, organizer_profiles(*)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .in('status', ['open', 'filling']);
 
     // Exclude already processed jobs
@@ -143,7 +205,7 @@ export async function fetchDiscoveryFeed(
       return { jobs: [], totalCount: 0, page, hasMore: false };
     }
 
-    const jobs = (data || []).map(mapJobRow);
+    const jobs = await enrichJobsWithOrganizerCards(data || []);
     const totalCount = count || jobs.length;
     const hasMore = offset + jobs.length < totalCount;
 
@@ -184,7 +246,7 @@ export async function fetchJobs(filters?: {
 export async function fetchJobById(jobId: string): Promise<Job | null> {
   const { data, error } = await supabase
     .from('jobs')
-    .select('*, organizer_profiles(*)')
+    .select('*')
     .eq('id', jobId)
     .single();
 
@@ -193,7 +255,8 @@ export async function fetchJobById(jobId: string): Promise<Job | null> {
     return null;
   }
 
-  return mapJobRow(data);
+  const [enriched] = await enrichJobsWithOrganizerCards([data]);
+  return enriched || mapJobRow(data);
 }
 
 /**
@@ -327,12 +390,12 @@ export async function undoSwipePass(
 }
 
 /**
- * Fetch all applications for a worker with job details
+ * Fetch all applications for a worker with job details and safe organizer card projection
  */
 export async function fetchWorkerApplications(workerId: string): Promise<JobApplication[]> {
   const { data, error } = await supabase
     .from('job_applications')
-    .select('*, jobs(*, organizer_profiles(*))')
+    .select('*, jobs(*)')
     .eq('worker_id', workerId)
     .order('applied_at', { ascending: false });
 
@@ -341,6 +404,11 @@ export async function fetchWorkerApplications(workerId: string): Promise<JobAppl
     return [];
   }
 
+  const rawJobs = (data || []).map((r: any) => r.jobs).filter(Boolean);
+  const enrichedJobs = await enrichJobsWithOrganizerCards(rawJobs);
+  const jobsById = new Map<string, Job>();
+  enrichedJobs.forEach((j) => jobsById.set(j.id, j));
+
   return (data || []).map((row: any) => ({
     id: row.id,
     jobId: row.job_id,
@@ -348,7 +416,7 @@ export async function fetchWorkerApplications(workerId: string): Promise<JobAppl
     status: row.status,
     appliedAt: row.applied_at,
     notes: row.notes,
-    job: row.jobs ? mapJobRow(row.jobs) : undefined,
+    job: row.jobs ? jobsById.get(row.jobs.id) || mapJobRow(row.jobs) : undefined,
   }));
 }
 
@@ -362,21 +430,11 @@ export async function fetchApplicationsForJob(jobId: string): Promise<JobApplica
       status,
       applied_at,
       notes,
-      worker_profiles:worker_id (
+      profiles:worker_id (
         id,
-        preferred_locality,
-        skills,
-        experience_years,
-        rating,
-        total_reviews,
-        shifts_completed,
-        verification_status,
-        profiles (
-          id,
-          full_name,
-          phone,
-          avatar_url
-        )
+        full_name,
+        phone,
+        avatar_url
       )
     `)
     .eq('job_id', jobId)
@@ -387,15 +445,62 @@ export async function fetchApplicationsForJob(jobId: string): Promise<JobApplica
     return [];
   }
 
-  return (data || []).map((row: any) => ({
-    id: row.id,
-    jobId: row.job_id,
-    workerId: row.worker_id,
-    status: row.status,
-    appliedAt: row.applied_at,
-    notes: row.notes,
-    worker: row.worker_profiles,
-  }));
+  const workerIds = Array.from(
+    new Set((data || []).map((row: any) => row.worker_id).filter(Boolean))
+  );
+  const workerProfilesMap = new Map<string, any>();
+  if (workerIds.length > 0) {
+    try {
+      const { data: wapData } = await supabase
+        .from('worker_applicant_profiles')
+        .select('*')
+        .in('id', workerIds);
+      (wapData || []).forEach((wp: any) => workerProfilesMap.set(wp.id, wp));
+    } catch (wapErr) {
+      logger.warn('Failed to fetch worker_applicant_profiles view', { wapErr });
+    }
+  }
+
+  return (data || []).map((row: any) => {
+    const wap = workerProfilesMap.get(row.worker_id) || {};
+    const prof = row.profiles;
+    return {
+      id: row.id,
+      jobId: row.job_id,
+      workerId: row.worker_id,
+      status: row.status,
+      appliedAt: row.applied_at,
+      notes: row.notes,
+      worker: {
+        id: row.worker_id,
+        preferredLocality: wap.preferred_locality || '',
+        serviceAreas: [],
+        skills: wap.skills || [],
+        experienceYears: wap.experience_years || 0,
+        availabilityStatus: 'available',
+        profileCompletionStatus: 'completed',
+        verificationStatus: wap.verification_status || 'unverified',
+        rating: wap.rating != null ? Number(wap.rating) : 0,
+        totalReviews: wap.total_reviews || 0,
+        shiftsCompleted: wap.shifts_completed || 0,
+        createdAt: '',
+        updatedAt: '',
+        profile: prof
+          ? {
+              id: prof.id,
+              role: 'worker',
+              phone: prof.phone || '',
+              fullName: prof.full_name || 'Worker',
+              avatarUrl: prof.avatar_url,
+              city: 'Mumbai',
+              isActive: true,
+              createdAt: '',
+              updatedAt: '',
+            }
+          : undefined,
+      },
+    };
+  });
 }
 
 export async function confirmWorkerBooking(
@@ -571,21 +676,11 @@ export async function fetchOrganizerApplications(
         slots_total,
         slots_filled
       ),
-      worker_profiles (
+      profiles:worker_id (
         id,
-        preferred_locality,
-        skills,
-        experience_years,
-        rating,
-        total_reviews,
-        shifts_completed,
-        verification_status,
-        profiles (
-          id,
-          full_name,
-          phone,
-          avatar_url
-        )
+        full_name,
+        phone,
+        avatar_url
       )
     `)
     .eq('jobs.organizer_id', organizerId)
@@ -602,45 +697,63 @@ export async function fetchOrganizerApplications(
     return [];
   }
 
-  return (data || []).map((row: any) => ({
-    id: row.id,
-    jobId: row.job_id,
-    workerId: row.worker_id,
-    status: row.status,
-    appliedAt: row.applied_at,
-    notes: row.notes,
-    job: row.jobs ? mapJobRow(row.jobs) : undefined,
-    worker: row.worker_profiles
-      ? {
-          id: row.worker_profiles.id,
-          preferredLocality: row.worker_profiles.preferred_locality,
-          serviceAreas: [],
-          skills: row.worker_profiles.skills || [],
-          experienceYears: row.worker_profiles.experience_years || 0,
-          availabilityStatus: 'available',
-          profileCompletionStatus: 'completed',
-          verificationStatus: row.worker_profiles.verification_status || 'unverified',
-          rating: row.worker_profiles.rating != null ? Number(row.worker_profiles.rating) : 0,
-          totalReviews: row.worker_profiles.total_reviews || 0,
-          shiftsCompleted: row.worker_profiles.shifts_completed || 0,
-          createdAt: '',
-          updatedAt: '',
-          profile: row.worker_profiles.profiles
-            ? {
-                id: row.worker_profiles.profiles.id,
-                role: 'worker',
-                phone: row.worker_profiles.profiles.phone,
-                fullName: row.worker_profiles.profiles.full_name,
-                avatarUrl: row.worker_profiles.profiles.avatar_url,
-                city: 'Mumbai',
-                isActive: true,
-                createdAt: '',
-                updatedAt: '',
-              }
-            : undefined,
-        }
-      : undefined,
-  }));
+  const workerIds = Array.from(
+    new Set((data || []).map((row: any) => row.worker_id).filter(Boolean))
+  );
+  const workerProfilesMap = new Map<string, any>();
+  if (workerIds.length > 0) {
+    try {
+      const { data: wapData } = await supabase
+        .from('worker_applicant_profiles')
+        .select('*')
+        .in('id', workerIds);
+      (wapData || []).forEach((wp: any) => workerProfilesMap.set(wp.id, wp));
+    } catch (wapErr) {
+      logger.warn('Failed to fetch worker_applicant_profiles view', { wapErr });
+    }
+  }
+
+  return (data || []).map((row: any) => {
+    const wap = workerProfilesMap.get(row.worker_id) || {};
+    const prof = row.profiles;
+    return {
+      id: row.id,
+      jobId: row.job_id,
+      workerId: row.worker_id,
+      status: row.status,
+      appliedAt: row.applied_at,
+      notes: row.notes,
+      job: row.jobs ? mapJobRow(row.jobs) : undefined,
+      worker: {
+        id: row.worker_id,
+        preferredLocality: wap.preferred_locality || '',
+        serviceAreas: [],
+        skills: wap.skills || [],
+        experienceYears: wap.experience_years || 0,
+        availabilityStatus: 'available',
+        profileCompletionStatus: 'completed',
+        verificationStatus: wap.verification_status || 'unverified',
+        rating: wap.rating != null ? Number(wap.rating) : 0,
+        totalReviews: wap.total_reviews || 0,
+        shiftsCompleted: wap.shifts_completed || 0,
+        createdAt: '',
+        updatedAt: '',
+        profile: prof
+          ? {
+              id: prof.id,
+              role: 'worker',
+              phone: prof.phone || '',
+              fullName: prof.full_name || 'Worker',
+              avatarUrl: prof.avatar_url,
+              city: 'Mumbai',
+              isActive: true,
+              createdAt: '',
+              updatedAt: '',
+            }
+          : undefined,
+      },
+    };
+  });
 }
 
 /**
@@ -841,7 +954,7 @@ function mapBookingRow(row: any): Booking {
 export async function fetchWorkerBookings(workerId: string): Promise<Booking[]> {
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, jobs(*, organizer_profiles(*))')
+    .select('*, jobs(*)')
     .eq('worker_id', workerId)
     .order('confirmed_at', { ascending: false });
 
@@ -850,16 +963,35 @@ export async function fetchWorkerBookings(workerId: string): Promise<Booking[]> 
     return [];
   }
 
-  return (data || []).map(mapBookingRow);
+  const rawJobs = (data || []).map((r: any) => r.jobs).filter(Boolean);
+  const enrichedJobs = await enrichJobsWithOrganizerCards(rawJobs);
+  const jobsById = new Map<string, Job>();
+  enrichedJobs.forEach((j) => jobsById.set(j.id, j));
+
+  return (data || []).map((row: any) => {
+    const b = mapBookingRow(row);
+    if (row.jobs && jobsById.has(row.jobs.id)) {
+      b.job = jobsById.get(row.jobs.id);
+    }
+    return b;
+  });
 }
 
 /**
- * Fetch all confirmed bookings for a specific shift
+ * Fetch all confirmed bookings for a specific shift with safe worker applicant profile projection
  */
 export async function fetchJobBookings(jobId: string): Promise<Booking[]> {
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, worker_profiles(*, profiles(*))')
+    .select(`
+      *,
+      profiles:worker_id (
+        id,
+        full_name,
+        phone,
+        avatar_url
+      )
+    `)
     .eq('job_id', jobId)
     .order('confirmed_at', { ascending: false });
 
@@ -868,7 +1000,56 @@ export async function fetchJobBookings(jobId: string): Promise<Booking[]> {
     return [];
   }
 
-  return (data || []).map(mapBookingRow);
+  const workerIds = Array.from(
+    new Set((data || []).map((row: any) => row.worker_id).filter(Boolean))
+  );
+  const workerProfilesMap = new Map<string, any>();
+  if (workerIds.length > 0) {
+    try {
+      const { data: wapData } = await supabase
+        .from('worker_applicant_profiles')
+        .select('*')
+        .in('id', workerIds);
+      (wapData || []).forEach((wp: any) => workerProfilesMap.set(wp.id, wp));
+    } catch (wapErr) {
+      logger.warn('Failed to fetch worker_applicant_profiles view for bookings', { wapErr });
+    }
+  }
+
+  return (data || []).map((row: any) => {
+    const wap = workerProfilesMap.get(row.worker_id) || {};
+    const prof = row.profiles;
+    const b = mapBookingRow(row);
+    b.worker = {
+      id: row.worker_id,
+      preferredLocality: wap.preferred_locality || '',
+      serviceAreas: [],
+      skills: wap.skills || [],
+      experienceYears: wap.experience_years || 0,
+      availabilityStatus: 'available',
+      profileCompletionStatus: 'completed',
+      verificationStatus: wap.verification_status || 'unverified',
+      rating: wap.rating != null ? Number(wap.rating) : 0,
+      totalReviews: wap.total_reviews || 0,
+      shiftsCompleted: wap.shifts_completed || 0,
+      createdAt: '',
+      updatedAt: '',
+      profile: prof
+        ? {
+            id: prof.id,
+            role: 'worker',
+            phone: prof.phone || '',
+            fullName: prof.full_name || 'Worker',
+            avatarUrl: prof.avatar_url,
+            city: 'Mumbai',
+            isActive: true,
+            createdAt: '',
+            updatedAt: '',
+          }
+        : undefined,
+    };
+    return b;
+  });
 }
 
 /**

@@ -52,7 +52,26 @@ const universalStorage = {
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.setItem(key, value);
-        return;
+      } catch {
+        // Fallback
+      }
+    }
+    if (typeof document !== 'undefined') {
+      try {
+        document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; path=/; max-age=604800; SameSite=Lax`;
+        if (key.includes('auth-token') || key.includes('token')) {
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed?.access_token) {
+              document.cookie = `sb-access-token=${encodeURIComponent(parsed.access_token)}; path=/; max-age=604800; SameSite=Lax`;
+            }
+            if (parsed?.refresh_token) {
+              document.cookie = `sb-refresh-token=${encodeURIComponent(parsed.refresh_token)}; path=/; max-age=604800; SameSite=Lax`;
+            }
+          } catch {
+            // value is raw string
+          }
+        }
       } catch {
         // Fallback
       }
@@ -74,7 +93,15 @@ const universalStorage = {
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         window.localStorage.removeItem(key);
-        return;
+      } catch {
+        // Fallback
+      }
+    }
+    if (typeof document !== 'undefined') {
+      try {
+        document.cookie = `${encodeURIComponent(key)}=; path=/; max-age=0; SameSite=Lax`;
+        document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
+        document.cookie = 'sb-refresh-token=; path=/; max-age=0; SameSite=Lax';
       } catch {
         // Fallback
       }

@@ -1,10 +1,16 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
   const { pathname } = request.nextUrl;
 
-  // Exclude assets, Next internals, api, and login
+  // Exclude static assets, api, next internals, and login page
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -12,23 +18,69 @@ export function middleware(request: NextRequest) {
     pathname.includes('.') ||
     pathname === '/login'
   ) {
-    return NextResponse.next();
+    return response;
   }
 
-  // Check for presence of Supabase auth cookies
-  const hasAuthToken =
-    request.cookies.has('sb-access-token') ||
-    request.cookies.has('sb-refresh-token') ||
-    request.cookies.has('supabase-auth-token');
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Enforce server-side route boundary
-  if (!hasAuthToken && process.env.NODE_ENV === 'production') {
+  // If live credentials are not configured (e.g. static build or sandbox testing without keys), pass through
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    return response;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({
+          request,
+        });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
+
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Server-side verification that authenticated session is an active admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== 'admin' || !profile.is_active) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('error', 'unauthorized_role');
+      return NextResponse.redirect(loginUrl);
+    }
+  } catch {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

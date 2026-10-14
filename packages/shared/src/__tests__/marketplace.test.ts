@@ -4,7 +4,7 @@ import {
   formatDeadline,
   formatWageSummary,
 } from '../formatters';
-import { applyForJobSafe } from '../supabase/jobs';
+import { applyForJobSafe, recordSwipePass } from '../supabase/jobs';
 
 // Mock Supabase client to test server-side eligibility checks and edge cases
 jest.mock('../supabase/client', () => {
@@ -172,6 +172,31 @@ describe('Phase 3 — Marketplace Discovery, Distance & Server-side Eligibility'
       expect(res.success).toBe(false);
       expect(res.errorCode).toBe('TRANSACTION_ERROR');
       expect(res.errorMessage).toBe('Database connection failed');
+    });
+
+    test('recordSwipePass preserves right-swipes and rejects overwriting existing right swipe', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error_code: 'ALREADY_APPLIED',
+          message: 'Cannot pass a shift that has already been applied for or saved.',
+        },
+        error: null,
+      });
+
+      const res = await recordSwipePass('job-1', 'worker-1');
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Cannot pass a shift that has already been applied for or saved.');
+    });
+
+    test('recordSwipePass successfully records pass when no prior right-swipe exists', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: { success: true },
+        error: null,
+      });
+
+      const res = await recordSwipePass('job-2', 'worker-1');
+      expect(res.success).toBe(true);
     });
   });
 });

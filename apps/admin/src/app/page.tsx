@@ -27,8 +27,8 @@ import {
   getSystemOperationalStatus,
   syncKillswitchFromDatabase,
   SystemOperationalStatus,
-  supabase,
 } from '@opskil/shared';
+import { adminSupabase } from '../lib/supabase';
 
 import { AdminSidebar, AdminModule } from '../components/AdminSidebar';
 import { AdminHeader } from '../components/AdminHeader';
@@ -97,20 +97,20 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const checkAuthAndLoad = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await adminSupabase.auth.getSession();
         if (!session) {
           router.push('/login');
           return;
         }
 
-        const { data: profile } = await supabase
+        const { data: profile } = await adminSupabase
           .from('profiles')
           .select('role, is_active')
           .eq('id', session.user.id)
           .maybeSingle();
 
         if (!profile || profile.role !== 'admin' || !profile.is_active) {
-          await supabase.auth.signOut();
+          await adminSupabase.auth.signOut();
           router.push('/login');
           return;
         }

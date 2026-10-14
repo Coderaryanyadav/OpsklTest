@@ -1,10 +1,8 @@
--- Opskl Consolidated Full Schema Release
--- Production Ready
-
 -- ============================================================================
--- Migration: 20261012000000_initial_schema.sql
+-- OPSKL AUTOMATED CONSOLIDATED DATABASE SCHEMA & RPC RELEASE (AUDITED)
 -- ============================================================================
 
+-- MIGRATION: 20261012000000_initial_schema.sql
 -- ==============================================================================
 -- OPSKL MASTER DATABASE SCHEMA & MIGRATION
 -- Market: India (Single-Day Event Shift Marketplace)
@@ -630,7 +628,7 @@ CREATE POLICY "Organizers update their own profile"
 CREATE POLICY "Admins full access to organizer profiles"
   ON organizer_profiles FOR ALL USING (is_current_admin());
 
--- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
+-- Restricted public view for organizer cards (protects sensitive gstin, billing_address, phone/email)
 CREATE OR REPLACE VIEW public_organizer_cards AS
   SELECT
     id,
@@ -641,7 +639,14 @@ CREATE OR REPLACE VIEW public_organizer_cards AS
     total_events_hosted,
     created_at
   FROM organizer_profiles
-  WHERE verification_status = 'verified';
+  WHERE verification_status = 'verified'
+     OR is_current_admin()
+     OR id = auth.uid()
+     OR EXISTS (
+       SELECT 1 FROM jobs j 
+       WHERE j.organizer_id = organizer_profiles.id 
+         AND j.status IN ('open', 'filling', 'filled', 'in_progress', 'completed')
+     );
 
 GRANT SELECT ON public_organizer_cards TO anon, authenticated;
 
@@ -666,6 +671,10 @@ CREATE OR REPLACE VIEW worker_applicant_profiles AS
       SELECT 1 FROM job_applications ja
       JOIN jobs j ON j.id = ja.job_id
       WHERE ja.worker_id = wp.id AND j.organizer_id = auth.uid()
+    )
+    OR EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.worker_id = wp.id AND b.organizer_id = auth.uid()
     );
 
 GRANT SELECT ON worker_applicant_profiles TO authenticated;
@@ -880,10 +889,7 @@ CREATE TRIGGER trg_protect_organizer_profile
   EXECUTE FUNCTION check_organizer_profile_update();
 
 
--- ============================================================================
--- Migration: 20261012000001_marketplace_discovery.sql
--- ============================================================================
-
+-- MIGRATION: 20261012000001_marketplace_discovery.sql
 -- ============================================================================
 -- OPSKL MARKETPLACE DISCOVERY & SWIPE TRANSACTIONS (PHASE 3)
 -- Enhanced shift attributes, server-side eligibility checks & atomic application RPC
@@ -1072,10 +1078,26 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
   END IF;
 
+  -- Do not overwrite an existing right swipe or active job application
+  IF EXISTS (
+    SELECT 1 FROM swipe_events
+    WHERE worker_id = v_worker_id AND job_id = p_job_id AND direction = 'right'
+  ) OR EXISTS (
+    SELECT 1 FROM job_applications
+    WHERE worker_id = v_worker_id AND job_id = p_job_id
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'ALREADY_APPLIED',
+      'message', 'Cannot pass a shift that has already been applied for or saved.'
+    );
+  END IF;
+
   INSERT INTO swipe_events (worker_id, job_id, direction)
   VALUES (v_worker_id, p_job_id, 'left')
   ON CONFLICT (worker_id, job_id)
-  DO UPDATE SET direction = 'left', created_at = now();
+  DO UPDATE SET direction = 'left', created_at = now()
+  WHERE swipe_events.direction != 'right';
 
   RETURN jsonb_build_object('success', true);
 END;
@@ -1106,11 +1128,14 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION record_swipe_pass(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION record_swipe_pass(UUID) TO authenticated;
 
--- ============================================================================
--- Migration: 20261012000002_organizer_management.sql
--- ============================================================================
+REVOKE EXECUTE ON FUNCTION undo_swipe_event(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION undo_swipe_event(UUID) TO authenticated;
 
+
+-- MIGRATION: 20261012000002_organizer_management.sql
 -- ============================================================================
 -- OPSKL ORGANIZER JOB MANAGEMENT & HIRING ENGINE (PHASE 4)
 -- Multi-step shift specs, atomic booking RPCs, notifications & audit trails
@@ -1244,16 +1269,11 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME_ORDER', 'message', 'Shift end time must be after shift start time.');
   END IF;
 
-  -- Reconcile duration hours with start/end time
-  DECLARE
-    v_calculated_duration NUMERIC := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
-  BEGIN
-    IF v_duration_hours IS NULL OR abs(v_duration_hours - v_calculated_duration) > 0.5 THEN
-      v_duration_hours := v_calculated_duration;
-    END IF;
-  END;
+  -- Strictly derive duration unconditionally from start and end times
+  v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
 
-  IF v_duration_hours <= 0 OR v_duration_hours > 24 THEN
+  -- Strictly enforce minimum 0.5 hours (30 min) and maximum 24 hours
+  IF v_duration_hours < 0.5 OR v_duration_hours > 24.0 THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 0.5 and 24 hours.');
   END IF;
 
@@ -1604,10 +1624,7 @@ REVOKE EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) FROM PUBLI
 GRANT EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) TO authenticated;
 
 
--- ============================================================================
--- Migration: 20261012000003_booking_attendance_engine.sql
--- ============================================================================
-
+-- MIGRATION: 20261012000003_booking_attendance_engine.sql
 -- ============================================================================
 -- OPSKL BOOKING & ATTENDANCE ENGINE (PHASE 5)
 -- Complete lifecycle state machine, auditable check-in/out, no-show & disputes
@@ -2314,10 +2331,7 @@ GRANT EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) TO authenticate
 
 
 
--- ============================================================================
--- Migration: 20261012000004_payments_and_earnings.sql
--- ============================================================================
-
+-- MIGRATION: 20261012000004_payments_and_earnings.sql
 -- ============================================================================
 -- OPSKL PAYMENTS & EARNINGS ENGINE (PHASE 6)
 -- Authoritative financial records, Indian payment provider abstraction,
@@ -3061,10 +3075,7 @@ GRANT EXECUTE ON FUNCTION initiate_worker_payout_safe(UUID, TEXT, TEXT) TO authe
 
 
 
--- ============================================================================
--- Migration: 20261012000005_notifications_and_realtime.sql
--- ============================================================================
-
+-- MIGRATION: 20261012000005_notifications_and_realtime.sql
 -- ============================================================================
 -- OPSKL NOTIFICATIONS & REAL-TIME ENGINE (PHASE 7)
 -- Multi-channel event-driven notifications (In-app, Expo Push, WhatsApp, SMS),
@@ -3403,10 +3414,7 @@ REVOKE EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) TO authenticated;
 
 
--- ============================================================================
--- Migration: 20261012000006_admin_and_trust_operations.sql
--- ============================================================================
-
+-- MIGRATION: 20261012000006_admin_and_trust_operations.sql
 -- ============================================================================
 -- OPSKL ADMIN & TRUST OPERATIONS ENGINE (PHASE 8)
 -- Trust & Safety escalation queue, verification review, dispute adjudication,
@@ -3821,7 +3829,7 @@ GRANT EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEX
 CREATE TABLE IF NOT EXISTS account_deletion_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'cancelled', 'failed')),
   reason TEXT,
   scheduled_purge_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -4028,20 +4036,49 @@ BEGIN
       updated_at = v_now
     WHERE id = v_rec.user_id;
 
-    -- Redact and permanently disable auth user account in auth.users
+    -- Invalidate and permanently disable auth user account in auth.users
+    DECLARE
+      v_auth_ok BOOLEAN := true;
+      v_auth_err TEXT := NULL;
     BEGIN
-      UPDATE auth.users
-      SET
-        email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
-        phone = NULL,
-        raw_user_meta_data = '{}'::jsonb,
-        banned_until = '3000-01-01 00:00:00+00'::timestamptz
-      WHERE id = v_rec.user_id;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Could not mutate auth.users: %', SQLERRM;
+      BEGIN
+        UPDATE auth.users
+        SET
+          email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
+          phone = NULL,
+          raw_user_meta_data = '{}'::jsonb,
+          banned_until = '3000-01-01 00:00:00+00'::timestamptz
+        WHERE id = v_rec.user_id;
+      EXCEPTION WHEN OTHERS THEN
+        v_auth_ok := false;
+        v_auth_err := SQLERRM;
+      END;
+
+      IF NOT v_auth_ok THEN
+        -- Mark as failed/retryable; never mark completed if auth invalidation fails
+        UPDATE account_deletion_requests
+        SET status = 'failed', updated_at = v_now
+        WHERE id = v_rec.request_id;
+
+        INSERT INTO audit_logs (
+          actor_id, action, entity_type, entity_id, changes, created_at
+        ) VALUES (
+          COALESCE(auth.uid(), v_rec.user_id),
+          'account_purge_failed',
+          'profile',
+          v_rec.user_id::text,
+          jsonb_build_object(
+            'request_id', v_rec.request_id,
+            'error', v_auth_err,
+            'status', 'failed'
+          ),
+          v_now
+        );
+        CONTINUE;
+      END IF;
     END;
 
-    -- Mark request as completed
+    -- Mark request as completed only when all purge and credential invalidation steps succeed
     UPDATE account_deletion_requests 
     SET status = 'completed', updated_at = v_now 
     WHERE id = v_rec.request_id;

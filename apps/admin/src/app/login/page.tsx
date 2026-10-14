@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailPassword, supabase, logger } from '@opskil/shared';
+import { logger } from '@opskil/shared';
+import { adminSupabase } from '../../lib/supabase';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -24,22 +25,31 @@ export default function AdminLoginPage() {
 
     try {
       logger.info('Admin login attempt', { email });
-      const res = await signInWithEmailPassword({ email, password });
-      if (res?.session) {
+      const { data: authData, error: authError } = await adminSupabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (authData?.session) {
         // Enforce administrator role and active status
-        const { data: profile, error: profError } = await supabase
+        const { data: profile, error: profError } = await adminSupabase
           .from('profiles')
           .select('role, is_active')
-          .eq('id', res.session.user.id)
+          .eq('id', authData.session.user.id)
           .maybeSingle();
 
         if (profError || !profile || profile.role !== 'admin' || !profile.is_active) {
-          await supabase.auth.signOut();
+          await adminSupabase.auth.signOut();
           setErrorMsg('Access denied: Active administrator credentials required for this portal.');
           return;
         }
 
         router.push('/');
+        router.refresh();
       } else {
         setErrorMsg('Authentication succeeded but no active session was returned.');
       }

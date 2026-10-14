@@ -131,16 +131,11 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME_ORDER', 'message', 'Shift end time must be after shift start time.');
   END IF;
 
-  -- Reconcile duration hours with start/end time
-  DECLARE
-    v_calculated_duration NUMERIC := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
-  BEGIN
-    IF v_duration_hours IS NULL OR abs(v_duration_hours - v_calculated_duration) > 0.5 THEN
-      v_duration_hours := v_calculated_duration;
-    END IF;
-  END;
+  -- Strictly derive duration unconditionally from start and end times
+  v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
 
-  IF v_duration_hours <= 0 OR v_duration_hours > 24 THEN
+  -- Strictly enforce minimum 0.5 hours (30 min) and maximum 24 hours
+  IF v_duration_hours < 0.5 OR v_duration_hours > 24.0 THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 0.5 and 24 hours.');
   END IF;
 

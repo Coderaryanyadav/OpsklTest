@@ -412,7 +412,7 @@ GRANT EXECUTE ON FUNCTION admin_resolve_safety_report_safe(UUID, TEXT, TEXT, TEX
 CREATE TABLE IF NOT EXISTS account_deletion_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'cancelled', 'failed')),
   reason TEXT,
   scheduled_purge_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -619,20 +619,49 @@ BEGIN
       updated_at = v_now
     WHERE id = v_rec.user_id;
 
-    -- Redact and permanently disable auth user account in auth.users
+    -- Invalidate and permanently disable auth user account in auth.users
+    DECLARE
+      v_auth_ok BOOLEAN := true;
+      v_auth_err TEXT := NULL;
     BEGIN
-      UPDATE auth.users
-      SET
-        email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
-        phone = NULL,
-        raw_user_meta_data = '{}'::jsonb,
-        banned_until = '3000-01-01 00:00:00+00'::timestamptz
-      WHERE id = v_rec.user_id;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Could not mutate auth.users: %', SQLERRM;
+      BEGIN
+        UPDATE auth.users
+        SET
+          email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
+          phone = NULL,
+          raw_user_meta_data = '{}'::jsonb,
+          banned_until = '3000-01-01 00:00:00+00'::timestamptz
+        WHERE id = v_rec.user_id;
+      EXCEPTION WHEN OTHERS THEN
+        v_auth_ok := false;
+        v_auth_err := SQLERRM;
+      END;
+
+      IF NOT v_auth_ok THEN
+        -- Mark as failed/retryable; never mark completed if auth invalidation fails
+        UPDATE account_deletion_requests
+        SET status = 'failed', updated_at = v_now
+        WHERE id = v_rec.request_id;
+
+        INSERT INTO audit_logs (
+          actor_id, action, entity_type, entity_id, changes, created_at
+        ) VALUES (
+          COALESCE(auth.uid(), v_rec.user_id),
+          'account_purge_failed',
+          'profile',
+          v_rec.user_id::text,
+          jsonb_build_object(
+            'request_id', v_rec.request_id,
+            'error', v_auth_err,
+            'status', 'failed'
+          ),
+          v_now
+        );
+        CONTINUE;
+      END IF;
     END;
 
-    -- Mark request as completed
+    -- Mark request as completed only when all purge and credential invalidation steps succeed
     UPDATE account_deletion_requests 
     SET status = 'completed', updated_at = v_now 
     WHERE id = v_rec.request_id;

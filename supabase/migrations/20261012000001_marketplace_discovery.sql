@@ -186,10 +186,26 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
   END IF;
 
+  -- Do not overwrite an existing right swipe or active job application
+  IF EXISTS (
+    SELECT 1 FROM swipe_events
+    WHERE worker_id = v_worker_id AND job_id = p_job_id AND direction = 'right'
+  ) OR EXISTS (
+    SELECT 1 FROM job_applications
+    WHERE worker_id = v_worker_id AND job_id = p_job_id
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error_code', 'ALREADY_APPLIED',
+      'message', 'Cannot pass a shift that has already been applied for or saved.'
+    );
+  END IF;
+
   INSERT INTO swipe_events (worker_id, job_id, direction)
   VALUES (v_worker_id, p_job_id, 'left')
   ON CONFLICT (worker_id, job_id)
-  DO UPDATE SET direction = 'left', created_at = now();
+  DO UPDATE SET direction = 'left', created_at = now()
+  WHERE swipe_events.direction != 'right';
 
   RETURN jsonb_build_object('success', true);
 END;
@@ -219,3 +235,9 @@ BEGIN
   RETURN jsonb_build_object('success', true);
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION record_swipe_pass(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION record_swipe_pass(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION undo_swipe_event(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION undo_swipe_event(UUID) TO authenticated;
