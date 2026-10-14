@@ -39,7 +39,7 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
     test('fetches live platform metrics with baseline fallback', async () => {
       const resolvedResult = {
         count: 48,
-        data: [{ amount: 50000, platform_fee: 5000 }],
+        data: [{ amount: 50000, platform_fee: 5000, status: 'pending' }],
         error: null,
       };
       const queryMock: any = {

@@ -516,12 +516,14 @@ export interface PlatformSetting {
 export interface AdminOverviewMetrics {
   activeShifts: number;
   totalEscrowHeld: number;
+  settledPayoutsTotal?: number;
   verifiedWorkersCount: number;
   activeOrganizersCount: number;
   platformFeesCollected: number;
   pendingVerificationsCount: number;
   openDisputesCount: number;
   criticalSafetyReportsCount: number;
+  hasQueryErrors?: boolean;
 }
 
 export interface PilotMetricsSummary {

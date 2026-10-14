@@ -357,14 +357,22 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.role != OLD.role THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'admin'
-    ) THEN
-      RAISE EXCEPTION 'Unauthorized: Users cannot change their assigned role.';
-    END IF;
+  IF is_current_admin() THEN
+    RETURN NEW;
   END IF;
+
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Unauthorized: Users cannot change their assigned role.';
+  END IF;
+
+  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+    RAISE EXCEPTION 'Unauthorized: Account activation status cannot be modified directly by users.';
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Profile ID cannot be modified.';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -612,8 +620,8 @@ CREATE POLICY "Organizers insert their own profile"
 CREATE POLICY "Organizers update their own profile"
   ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Public verified organizer card view"
-  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
+CREATE POLICY "Admins full access to organizer profiles"
+  ON organizer_profiles FOR ALL USING (is_current_admin());
 
 -- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
 CREATE OR REPLACE VIEW public_organizer_cards AS
@@ -630,7 +638,7 @@ CREATE OR REPLACE VIEW public_organizer_cards AS
 
 GRANT SELECT ON public_organizer_cards TO anon, authenticated;
 
--- Restricted view for applicant worker profiles (protects sensitive worker upi_id)
+-- Restricted view for applicant worker profiles (protects sensitive worker upi_id and enforces applicant relationship)
 CREATE OR REPLACE VIEW worker_applicant_profiles AS
   SELECT
     wp.id,
@@ -643,18 +651,17 @@ CREATE OR REPLACE VIEW worker_applicant_profiles AS
     wp.verification_status,
     wp.is_aadhaar_verified,
     wp.is_pan_verified
-  FROM worker_profiles wp;
-
-GRANT SELECT ON worker_applicant_profiles TO authenticated;
-
-CREATE POLICY "Organizers can view applicant worker profiles"
-  ON worker_profiles FOR SELECT USING (
-    EXISTS (
+  FROM worker_profiles wp
+  WHERE
+    wp.id = auth.uid()
+    OR is_current_admin()
+    OR EXISTS (
       SELECT 1 FROM job_applications ja
       JOIN jobs j ON j.id = ja.job_id
-      WHERE ja.worker_id = worker_profiles.id AND j.organizer_id = auth.uid()
-    )
-  );
+      WHERE ja.worker_id = wp.id AND j.organizer_id = auth.uid()
+    );
+
+GRANT SELECT ON worker_applicant_profiles TO authenticated;
 
 -- 4. Organizer Memberships
 CREATE POLICY "Members view team memberships"
@@ -804,6 +811,10 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Profile ID cannot be modified.';
+  END IF;
+
   IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
      NEW.rating IS DISTINCT FROM OLD.rating OR
      NEW.total_reviews IS DISTINCT FROM OLD.total_reviews OR
@@ -811,6 +822,12 @@ BEGIN
      NEW.is_aadhaar_verified IS DISTINCT FROM OLD.is_aadhaar_verified OR
      NEW.is_pan_verified IS DISTINCT FROM OLD.is_pan_verified THEN
     RAISE EXCEPTION 'Unauthorized: Administrative and verification fields cannot be modified directly by workers.';
+  END IF;
+
+  IF NEW.upi_id IS DISTINCT FROM OLD.upi_id AND NEW.upi_id IS NOT NULL AND trim(NEW.upi_id) != '' THEN
+    IF NEW.upi_id !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
+      RAISE EXCEPTION 'Invalid UPI ID format. Payout destination handle must be valid (e.g. name@bank).';
+    END IF;
   END IF;
 
   RETURN NEW;
@@ -832,6 +849,10 @@ AS $$
 BEGIN
   IF is_current_admin() THEN
     RETURN NEW;
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Organizer profile ID cannot be modified.';
   END IF;
 
   IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR

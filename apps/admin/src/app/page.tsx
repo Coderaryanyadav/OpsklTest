@@ -57,6 +57,7 @@ export default function AdminDashboardPage() {
   const [systemStatus, setSystemStatus] = useState<SystemOperationalStatus>(getSystemOperationalStatus());
   const [pilotMetrics] = useState<PilotMetricsSummary>(calculatePilotMetricsSummary());
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   const loadAdminData = async () => {
     try {
@@ -80,8 +81,14 @@ export default function AdminDashboardPage() {
       if (syncedStatus) {
         setSystemStatus(syncedStatus);
       }
-    } catch (err) {
+      if (m.hasQueryErrors) {
+        setDashboardError('Telemetry query warning: One or more database queries encountered errors. Displayed figures may be partial.');
+      } else {
+        setDashboardError(null);
+      }
+    } catch (err: any) {
       console.error('Failed to load admin data', err);
+      setDashboardError(err.message || 'Failed to connect to database operations services.');
     } finally {
       setLoading(false);
     }
@@ -124,7 +131,7 @@ export default function AdminDashboardPage() {
     const res = await setBookingPauseStatusSafe(
       nextPaused,
       nextPaused ? pauseReason : undefined,
-      'Ops Director (Aryan Yadav)',
+      undefined,
       nextPaused ? `Notice: New shift bookings are temporarily paused due to: ${pauseReason}` : undefined
     );
 
@@ -270,6 +277,32 @@ export default function AdminDashboardPage() {
         />
 
         <main style={{ padding: '24px 28px', flex: 1, maxWidth: 1400 }}>
+          {dashboardError && (
+            <div
+              style={{
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #F87171',
+                color: '#991B1B',
+                padding: '12px 16px',
+                borderRadius: 8,
+                marginBottom: 20,
+                fontSize: 13,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>⚠️ {dashboardError}</span>
+              <button
+                onClick={() => setDashboardError(null)}
+                style={{ background: 'none', border: 'none', color: '#991B1B', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>

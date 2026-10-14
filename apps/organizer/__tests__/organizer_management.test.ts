@@ -21,7 +21,7 @@ jest.mock('@opskil/shared/src/supabase/client', () => {
   };
 });
 
-const { __mockRpc, __mockFrom } = require('@opskil/shared/src/supabase/client');
+const { __mockRpc } = require('@opskil/shared/src/supabase/client');
 
 describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
   beforeEach(() => {
@@ -200,18 +200,18 @@ describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
       expect(res.success).toBe(true);
     });
 
-    test('updates shift status to paused or cancelled with audit log', async () => {
-      __mockFrom.mockReturnValueOnce({
-        update: jest.fn().mockReturnValue({
-          match: jest.fn().mockResolvedValue({ error: null }),
-        }),
-      });
-      __mockFrom.mockReturnValueOnce({
-        insert: jest.fn().mockResolvedValue({ error: null }),
+    test('updates shift status to paused or cancelled via authoritative RPC', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: { success: true, status: 'paused' },
+        error: null,
       });
 
       const res = await updateJobStatus('job-1', 'org-apex-01', 'paused');
       expect(res.success).toBe(true);
+      expect(__mockRpc).toHaveBeenCalledWith('update_job_status_safe', {
+        p_job_id: 'job-1',
+        p_new_status: 'paused',
+      });
     });
   });
 });

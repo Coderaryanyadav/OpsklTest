@@ -32,8 +32,13 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
       supabase.from('verification_cases').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('disputes').select('*', { count: 'exact', head: true }).in('status', ['open', 'under_review']),
       supabase.from('safety_reports').select('*', { count: 'exact', head: true }).in('severity', ['high', 'critical']).eq('status', 'open'),
-      supabase.from('payment_records').select('amount, platform_fee').in('status', ['processing', 'settled']),
+      supabase.from('payment_records').select('amount, platform_fee, status'),
     ]);
+
+    const hasQueryErrors = Boolean(
+      shiftsRes.error || workersRes.error || organizersRes.error ||
+      verificationsRes.error || disputesRes.error || safetyRes.error || paymentsRes.error
+    );
 
     if (shiftsRes.error) logger.error('Failed to query active shifts count', shiftsRes.error);
     if (workersRes.error) logger.error('Failed to query verified workers count', workersRes.error);
@@ -41,37 +46,47 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
     if (verificationsRes.error) logger.error('Failed to query verification queue count', verificationsRes.error);
     if (disputesRes.error) logger.error('Failed to query disputes count', disputesRes.error);
     if (safetyRes.error) logger.error('Failed to query safety reports count', safetyRes.error);
+    if (paymentsRes.error) logger.error('Failed to query payment records', paymentsRes.error);
 
-    let totalEscrow = 0;
+    let totalEscrowHeld = 0;
+    let settledPayouts = 0;
     let platformFees = 0;
     if (paymentsRes && paymentsRes.data && Array.isArray(paymentsRes.data)) {
       for (const p of paymentsRes.data) {
-        totalEscrow += Number(p.amount) || 0;
-        platformFees += Number(p.platform_fee) || 0;
+        if (p.status === 'pending') {
+          totalEscrowHeld += Number(p.amount) || 0;
+        } else if (p.status === 'settled') {
+          settledPayouts += Number(p.amount) || 0;
+          platformFees += Number(p.platform_fee) || 0;
+        }
       }
     }
 
     return {
       activeShifts: shiftsRes.count ?? 0,
-      totalEscrowHeld: Math.round(totalEscrow),
+      totalEscrowHeld: Math.round(totalEscrowHeld),
+      settledPayoutsTotal: Math.round(settledPayouts),
       verifiedWorkersCount: workersRes.count ?? 0,
       activeOrganizersCount: organizersRes.count ?? 0,
       platformFeesCollected: Math.round(platformFees),
       pendingVerificationsCount: verificationsRes.count ?? 0,
       openDisputesCount: disputesRes.count ?? 0,
       criticalSafetyReportsCount: safetyRes.count ?? 0,
+      hasQueryErrors,
     };
   } catch (err: any) {
     logger.error('Failed to fetch admin overview metrics', err);
     return {
       activeShifts: 0,
       totalEscrowHeld: 0,
+      settledPayoutsTotal: 0,
       verifiedWorkersCount: 0,
       activeOrganizersCount: 0,
       platformFeesCollected: 0,
       pendingVerificationsCount: 0,
       openDisputesCount: 0,
       criticalSafetyReportsCount: 0,
+      hasQueryErrors: true,
     };
   }
 }

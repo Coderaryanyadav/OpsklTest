@@ -619,6 +619,19 @@ BEGIN
       updated_at = v_now
     WHERE id = v_rec.user_id;
 
+    -- Redact and permanently disable auth user account in auth.users
+    BEGIN
+      UPDATE auth.users
+      SET
+        email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
+        phone = NULL,
+        raw_user_meta_data = '{}'::jsonb,
+        banned_until = '3000-01-01 00:00:00+00'::timestamptz
+      WHERE id = v_rec.user_id;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE 'Could not mutate auth.users: %', SQLERRM;
+    END;
+
     -- Mark request as completed
     UPDATE account_deletion_requests 
     SET status = 'completed', updated_at = v_now 

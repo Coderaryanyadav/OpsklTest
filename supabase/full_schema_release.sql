@@ -364,14 +364,22 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.role != OLD.role THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid() AND role = 'admin'
-    ) THEN
-      RAISE EXCEPTION 'Unauthorized: Users cannot change their assigned role.';
-    END IF;
+  IF is_current_admin() THEN
+    RETURN NEW;
   END IF;
+
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    RAISE EXCEPTION 'Unauthorized: Users cannot change their assigned role.';
+  END IF;
+
+  IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+    RAISE EXCEPTION 'Unauthorized: Account activation status cannot be modified directly by users.';
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Profile ID cannot be modified.';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -619,8 +627,8 @@ CREATE POLICY "Organizers insert their own profile"
 CREATE POLICY "Organizers update their own profile"
   ON organizer_profiles FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Public verified organizer card view"
-  ON organizer_profiles FOR SELECT USING (verification_status = 'verified');
+CREATE POLICY "Admins full access to organizer profiles"
+  ON organizer_profiles FOR ALL USING (is_current_admin());
 
 -- Restricted public view for verified organizer cards (protects sensitive gstin, billing_address, phone/email)
 CREATE OR REPLACE VIEW public_organizer_cards AS
@@ -637,7 +645,7 @@ CREATE OR REPLACE VIEW public_organizer_cards AS
 
 GRANT SELECT ON public_organizer_cards TO anon, authenticated;
 
--- Restricted view for applicant worker profiles (protects sensitive worker upi_id)
+-- Restricted view for applicant worker profiles (protects sensitive worker upi_id and enforces applicant relationship)
 CREATE OR REPLACE VIEW worker_applicant_profiles AS
   SELECT
     wp.id,
@@ -650,18 +658,17 @@ CREATE OR REPLACE VIEW worker_applicant_profiles AS
     wp.verification_status,
     wp.is_aadhaar_verified,
     wp.is_pan_verified
-  FROM worker_profiles wp;
-
-GRANT SELECT ON worker_applicant_profiles TO authenticated;
-
-CREATE POLICY "Organizers can view applicant worker profiles"
-  ON worker_profiles FOR SELECT USING (
-    EXISTS (
+  FROM worker_profiles wp
+  WHERE
+    wp.id = auth.uid()
+    OR is_current_admin()
+    OR EXISTS (
       SELECT 1 FROM job_applications ja
       JOIN jobs j ON j.id = ja.job_id
-      WHERE ja.worker_id = worker_profiles.id AND j.organizer_id = auth.uid()
-    )
-  );
+      WHERE ja.worker_id = wp.id AND j.organizer_id = auth.uid()
+    );
+
+GRANT SELECT ON worker_applicant_profiles TO authenticated;
 
 -- 4. Organizer Memberships
 CREATE POLICY "Members view team memberships"
@@ -811,6 +818,10 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Profile ID cannot be modified.';
+  END IF;
+
   IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
      NEW.rating IS DISTINCT FROM OLD.rating OR
      NEW.total_reviews IS DISTINCT FROM OLD.total_reviews OR
@@ -818,6 +829,12 @@ BEGIN
      NEW.is_aadhaar_verified IS DISTINCT FROM OLD.is_aadhaar_verified OR
      NEW.is_pan_verified IS DISTINCT FROM OLD.is_pan_verified THEN
     RAISE EXCEPTION 'Unauthorized: Administrative and verification fields cannot be modified directly by workers.';
+  END IF;
+
+  IF NEW.upi_id IS DISTINCT FROM OLD.upi_id AND NEW.upi_id IS NOT NULL AND trim(NEW.upi_id) != '' THEN
+    IF NEW.upi_id !~* '^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$' THEN
+      RAISE EXCEPTION 'Invalid UPI ID format. Payout destination handle must be valid (e.g. name@bank).';
+    END IF;
   END IF;
 
   RETURN NEW;
@@ -839,6 +856,10 @@ AS $$
 BEGIN
   IF is_current_admin() THEN
     RETURN NEW;
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Organizer profile ID cannot be modified.';
   END IF;
 
   IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
@@ -1186,7 +1207,7 @@ BEGIN
     WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
   ) OR NOT EXISTS (
     SELECT 1 FROM organizer_profiles 
-    WHERE id = v_organizer_id
+    WHERE id = v_organizer_id AND (verification_status = 'verified' OR is_current_admin())
   ) THEN
     RETURN jsonb_build_object(
       'success', false, 
@@ -1195,19 +1216,50 @@ BEGIN
     );
   END IF;
 
-  -- Server-side validation: minimum wage
-  IF v_hourly_rate < 100 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be at least ₹100/hr');
+  -- Server-side validation: text lengths
+  IF length(trim(COALESCE(v_title, ''))) < 3 OR length(trim(COALESCE(v_title, ''))) > 150 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TITLE', 'message', 'Shift title must be between 3 and 150 characters.');
   END IF;
 
-  -- Server-side validation: slots total
-  IF v_slots_total <= 0 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be at least 1 worker');
+  IF length(trim(COALESCE(v_venue_address, ''))) < 5 OR length(trim(COALESCE(v_venue_address, ''))) > 500 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_VENUE', 'message', 'Venue address must be between 5 and 500 characters.');
   END IF;
 
-  -- Server-side validation: duration hours
-  IF v_duration_hours <= 0 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be greater than 0 hours');
+  -- Server-side validation: minimum and maximum wage
+  IF v_hourly_rate < 100 OR v_hourly_rate > 10000 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be between ₹100 and ₹10,000/hr.');
+  END IF;
+
+  -- Server-side validation: slots total bounds
+  IF v_slots_total < 1 OR v_slots_total > 500 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be between 1 and 500 workers.');
+  END IF;
+
+  -- Server-side validation: start and end times
+  IF v_start_time IS NULL OR v_end_time IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME', 'message', 'Shift start and end times are required.');
+  END IF;
+
+  IF v_end_time <= v_start_time THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME_ORDER', 'message', 'Shift end time must be after shift start time.');
+  END IF;
+
+  -- Reconcile duration hours with start/end time
+  DECLARE
+    v_calculated_duration NUMERIC := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
+  BEGIN
+    IF v_duration_hours IS NULL OR abs(v_duration_hours - v_calculated_duration) > 0.5 THEN
+      v_duration_hours := v_calculated_duration;
+    END IF;
+  END;
+
+  IF v_duration_hours <= 0 OR v_duration_hours > 24 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 0.5 and 24 hours.');
+  END IF;
+
+  -- Server-side validation: array size bounds
+  IF cardinality(v_duties) > 20 OR cardinality(v_required_skills) > 20 OR cardinality(v_perks) > 20 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ARRAY_TOO_LARGE', 'message', 'Duties, required skills, and perks lists must not exceed 20 items.');
   END IF;
 
   -- Server-side validation: date not in the past
@@ -1541,6 +1593,15 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION create_job_safe(JSONB) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION create_job_safe(JSONB) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION confirm_worker_booking_safe(UUID, UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION confirm_worker_booking_safe(UUID, UUID, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) TO authenticated;
 
 
 -- ============================================================================
@@ -3966,6 +4027,19 @@ BEGIN
       is_active = false,
       updated_at = v_now
     WHERE id = v_rec.user_id;
+
+    -- Redact and permanently disable auth user account in auth.users
+    BEGIN
+      UPDATE auth.users
+      SET
+        email = 'purged_' || v_rec.user_id::text || '@opskil.internal',
+        phone = NULL,
+        raw_user_meta_data = '{}'::jsonb,
+        banned_until = '3000-01-01 00:00:00+00'::timestamptz
+      WHERE id = v_rec.user_id;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE NOTICE 'Could not mutate auth.users: %', SQLERRM;
+    END;
 
     -- Mark request as completed
     UPDATE account_deletion_requests 

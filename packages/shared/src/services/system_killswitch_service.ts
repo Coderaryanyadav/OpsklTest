@@ -72,6 +72,9 @@ export async function setBookingPauseStatusSafe(
     : undefined;
 
   try {
+    const userRes = await supabase.auth.getUser();
+    const effectiveActor = userRes.data?.user?.email || userRes.data?.user?.id || pausedBy;
+
     const { error } = await supabase
       .from('platform_settings')
       .upsert({
@@ -79,7 +82,7 @@ export async function setBookingPauseStatusSafe(
         value: {
           is_paused: paused,
           reason: reason ?? null,
-          paused_by: pausedBy,
+          paused_by: effectiveActor,
           paused_at: nextPausedAt,
           outage_message: nextOutageMessage ?? null,
         },

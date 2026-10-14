@@ -94,7 +94,7 @@ BEGIN
     WHERE id = v_organizer_id AND role IN ('organizer', 'admin') AND is_active = true
   ) OR NOT EXISTS (
     SELECT 1 FROM organizer_profiles 
-    WHERE id = v_organizer_id
+    WHERE id = v_organizer_id AND (verification_status = 'verified' OR is_current_admin())
   ) THEN
     RETURN jsonb_build_object(
       'success', false, 
@@ -103,19 +103,50 @@ BEGIN
     );
   END IF;
 
-  -- Server-side validation: minimum wage
-  IF v_hourly_rate < 100 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be at least ₹100/hr');
+  -- Server-side validation: text lengths
+  IF length(trim(COALESCE(v_title, ''))) < 3 OR length(trim(COALESCE(v_title, ''))) > 150 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TITLE', 'message', 'Shift title must be between 3 and 150 characters.');
   END IF;
 
-  -- Server-side validation: slots total
-  IF v_slots_total <= 0 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be at least 1 worker');
+  IF length(trim(COALESCE(v_venue_address, ''))) < 5 OR length(trim(COALESCE(v_venue_address, ''))) > 500 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_VENUE', 'message', 'Venue address must be between 5 and 500 characters.');
   END IF;
 
-  -- Server-side validation: duration hours
-  IF v_duration_hours <= 0 THEN
-    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be greater than 0 hours');
+  -- Server-side validation: minimum and maximum wage
+  IF v_hourly_rate < 100 OR v_hourly_rate > 10000 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be between ₹100 and ₹10,000/hr.');
+  END IF;
+
+  -- Server-side validation: slots total bounds
+  IF v_slots_total < 1 OR v_slots_total > 500 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be between 1 and 500 workers.');
+  END IF;
+
+  -- Server-side validation: start and end times
+  IF v_start_time IS NULL OR v_end_time IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME', 'message', 'Shift start and end times are required.');
+  END IF;
+
+  IF v_end_time <= v_start_time THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TIME_ORDER', 'message', 'Shift end time must be after shift start time.');
+  END IF;
+
+  -- Reconcile duration hours with start/end time
+  DECLARE
+    v_calculated_duration NUMERIC := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
+  BEGIN
+    IF v_duration_hours IS NULL OR abs(v_duration_hours - v_calculated_duration) > 0.5 THEN
+      v_duration_hours := v_calculated_duration;
+    END IF;
+  END;
+
+  IF v_duration_hours <= 0 OR v_duration_hours > 24 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 0.5 and 24 hours.');
+  END IF;
+
+  -- Server-side validation: array size bounds
+  IF cardinality(v_duties) > 20 OR cardinality(v_required_skills) > 20 OR cardinality(v_perks) > 20 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ARRAY_TOO_LARGE', 'message', 'Duties, required skills, and perks lists must not exceed 20 items.');
   END IF;
 
   -- Server-side validation: date not in the past
@@ -449,3 +480,12 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION update_job_status_safe(UUID, shift_status, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION create_job_safe(JSONB) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION create_job_safe(JSONB) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION confirm_worker_booking_safe(UUID, UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION confirm_worker_booking_safe(UUID, UUID, TEXT) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) TO authenticated;

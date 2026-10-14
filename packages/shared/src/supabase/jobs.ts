@@ -275,22 +275,25 @@ export async function applyForJob(jobId: string, workerId: string, notes?: strin
  */
 export async function recordSwipePass(
   jobId: string,
-  workerId: string
+  _workerId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('swipe_events')
-      .upsert(
-        { worker_id: workerId, job_id: jobId, direction: 'left' },
-        { onConflict: 'worker_id,job_id' }
-      );
+    const { data: rpcData, error: rpcError } = await supabase.rpc('record_swipe_pass', {
+      p_job_id: jobId,
+    });
 
-    if (error) {
-      logger.error('Failed to record pass swipe event', error);
-      return { success: false, error: error.message };
+    if (rpcError) {
+      logger.error('RPC error in record_swipe_pass', rpcError, { jobId, workerId: _workerId });
+      return { success: false, error: rpcError.message };
     }
+
+    if (rpcData && !rpcData.success) {
+      return { success: false, error: rpcData.message || rpcData.error_code };
+    }
+
     return { success: true };
   } catch (err: any) {
+    logger.error('Unexpected error in recordSwipePass', err, { jobId, workerId: _workerId });
     return { success: false, error: err.message };
   }
 }
@@ -300,22 +303,25 @@ export async function recordSwipePass(
  */
 export async function undoSwipePass(
   jobId: string,
-  workerId: string
+  _workerId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('swipe_events')
-      .delete()
-      .eq('worker_id', workerId)
-      .eq('job_id', jobId)
-      .eq('direction', 'left');
+    const { data: rpcData, error: rpcError } = await supabase.rpc('undo_swipe_event', {
+      p_job_id: jobId,
+    });
 
-    if (error) {
-      logger.error('Failed to undo swipe event', error);
-      return { success: false, error: error.message };
+    if (rpcError) {
+      logger.error('RPC error in undo_swipe_event', rpcError, { jobId, workerId: _workerId });
+      return { success: false, error: rpcError.message };
     }
+
+    if (rpcData && !rpcData.success) {
+      return { success: false, error: rpcData.message || rpcData.error_code };
+    }
+
     return { success: true };
   } catch (err: any) {
+    logger.error('Unexpected error in undoSwipePass', err, { jobId, workerId: _workerId });
     return { success: false, error: err.message };
   }
 }
@@ -349,7 +355,30 @@ export async function fetchWorkerApplications(workerId: string): Promise<JobAppl
 export async function fetchApplicationsForJob(jobId: string): Promise<JobApplication[]> {
   const { data, error } = await supabase
     .from('job_applications')
-    .select('*, worker_profiles(*, profiles(*))')
+    .select(`
+      id,
+      job_id,
+      worker_id,
+      status,
+      applied_at,
+      notes,
+      worker_profiles:worker_id (
+        id,
+        preferred_locality,
+        skills,
+        experience_years,
+        rating,
+        total_reviews,
+        shifts_completed,
+        verification_status,
+        profiles (
+          id,
+          full_name,
+          phone,
+          avatar_url
+        )
+      )
+    `)
     .eq('job_id', jobId)
     .order('applied_at', { ascending: false });
 
@@ -471,47 +500,27 @@ export async function updateJobStatus(
   newStatus: ShiftStatus
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const rpcRes = await supabase.rpc('update_job_status_safe', {
+    logger.info('Updating job status', { jobId, organizerId, newStatus });
+    const { data: rpcData, error: rpcError } = await supabase.rpc('update_job_status_safe', {
       p_job_id: jobId,
       p_new_status: newStatus,
     });
 
-    if (rpcRes) {
-      const { data: rpcData, error: rpcError } = rpcRes;
-      if (rpcError) {
-        logger.error('RPC error in update_job_status_safe', rpcError);
-        return { success: false, error: rpcError.message };
-      }
-      if (rpcData) {
-        if (rpcData.success) {
-          return { success: true };
-        }
-        return { success: false, error: rpcData.message || rpcData.error_code };
-      }
+    if (rpcError) {
+      logger.error('RPC error in update_job_status_safe', rpcError, { jobId, organizerId });
+      return { success: false, error: rpcError.message || 'Failed to update shift status.' };
     }
 
-    const { error } = await supabase
-      .from('jobs')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .match({ id: jobId, organizer_id: organizerId });
-
-    if (error) {
-      logger.error('Failed to update shift status', error);
-      return { success: false, error: error.message };
+    if (rpcData) {
+      if (rpcData.success) {
+        return { success: true };
+      }
+      return { success: false, error: rpcData.message || rpcData.error_code || 'Failed to update shift status.' };
     }
 
-    // Insert audit log
-    await supabase.from('audit_logs').insert({
-      actor_id: organizerId,
-      action: 'UPDATE_JOB_STATUS',
-      entity_type: 'job',
-      entity_id: jobId,
-      new_state: { status: newStatus },
-    });
-
-    return { success: true };
+    return { success: false, error: 'Empty response from shift status update transaction.' };
   } catch (err: any) {
-    logger.error('Unexpected error in updateJobStatus', err);
+    logger.error('Unexpected error in updateJobStatus', err, { jobId, organizerId });
     return { success: false, error: err.message };
   }
 }
@@ -522,7 +531,7 @@ export async function updateJobStatus(
 export async function fetchOrganizerJobs(organizerId: string): Promise<Job[]> {
   const { data, error } = await supabase
     .from('jobs')
-    .select('*, organizer_profiles(*)')
+    .select('*, organizer_profiles(id, business_name, business_type, verification_status, rating, total_events_hosted, created_at)')
     .eq('organizer_id', organizerId)
     .order('date', { ascending: false });
 
