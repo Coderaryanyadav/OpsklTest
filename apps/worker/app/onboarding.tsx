@@ -14,6 +14,7 @@ import {
 } from '@opskil/design-system';
 import {
   updateWorkerProfile,
+  updateUserProfile,
   isValidIndianUpiId,
 } from '@opskil/shared';
 
@@ -85,6 +86,10 @@ export default function WorkerOnboardingScreen() {
     }
 
     try {
+      await updateUserProfile(userId, {
+        fullName: fullName.trim(),
+      });
+
       await updateWorkerProfile(userId, {
         skills: selectedSkills,
         serviceAreas: selectedLocalities,

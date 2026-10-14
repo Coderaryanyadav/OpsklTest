@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useOpsklTheme, Card, Badge, Button, useAuth } from '@opskil/design-system';
-import { fetchOrganizerProfile, OrganizerProfile, requestAccountDeletionSafe } from '@opskil/shared';
+import { useOpsklTheme, Card, Badge, Button, Input, useAuth } from '@opskil/design-system';
+import { fetchOrganizerProfile, updateOrganizerProfile, OrganizerProfile, requestAccountDeletionSafe } from '@opskil/shared';
+import { GstinSchema } from '@opskil/validation';
 
 export default function OrganizerProfileScreen() {
   const router = useRouter();
@@ -12,6 +13,15 @@ export default function OrganizerProfileScreen() {
 
   const [organizerData, setOrganizerData] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Edit organization profile state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [formBusinessName, setFormBusinessName] = useState('');
+  const [formGstin, setFormGstin] = useState('');
+  const [formBillingAddress, setFormBillingAddress] = useState('');
+  const [formContactPhone, setFormContactPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const userId = session?.user?.id;
 
@@ -32,6 +42,50 @@ export default function OrganizerProfileScreen() {
     }
     loadProfile();
   }, [userId]);
+
+  const handleOpenEdit = () => {
+    setFormBusinessName(organizerData?.businessName || userProfile?.fullName || '');
+    setFormGstin(organizerData?.gstin || '');
+    setFormBillingAddress(organizerData?.billingAddress || '');
+    setFormContactPhone(organizerData?.businessContactPhone || userProfile?.phone || '');
+    setEditError(null);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!userId) return;
+    if (formBusinessName.trim().length < 2) {
+      setEditError('Please enter a valid organization or business name.');
+      return;
+    }
+    const trimmedGstin = formGstin.trim().toUpperCase();
+    if (trimmedGstin) {
+      const gstinResult = GstinSchema.safeParse(trimmedGstin);
+      if (!gstinResult.success) {
+        setEditError('Please enter a valid 15-character Indian GSTIN (e.g. 27AABCA1234F1Z5)');
+        return;
+      }
+    }
+    setSaving(true);
+    setEditError(null);
+    try {
+      await updateOrganizerProfile(userId, {
+        businessName: formBusinessName.trim(),
+        gstin: trimmedGstin || undefined,
+        billingAddress: formBillingAddress.trim() || undefined,
+        contactPhone: formContactPhone.trim() || undefined,
+        profileCompletionStatus: 'completed',
+      });
+      const updated = await fetchOrganizerProfile(userId);
+      setOrganizerData(updated);
+      setEditModalVisible(false);
+      Alert.alert('Profile Updated', 'Organization profile details have been saved.');
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update organization profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleOpenUrl = async (url: string) => {
     try {
@@ -193,9 +247,15 @@ export default function OrganizerProfileScreen() {
                 </View>
               </View>
 
-              <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+              <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', gap: spacing.sm }}>
                 <Button
-                  title="View GST Invoices & Statements"
+                  title="Edit Profile"
+                  variant="primary"
+                  size="sm"
+                  onPress={handleOpenEdit}
+                />
+                <Button
+                  title="View Invoices"
                   variant="outline"
                   size="sm"
                   onPress={() => router.push('/(tabs)/finances')}
@@ -292,6 +352,100 @@ export default function OrganizerProfileScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View
+            style={{
+              paddingHorizontal: spacing.lg,
+              paddingVertical: spacing.md,
+              backgroundColor: colors.surface,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Edit Organization Profile</Text>
+            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+              <Text style={{ fontSize: 15, color: colors.textSecondary }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+            {editError ? (
+              <View
+                style={{
+                  backgroundColor: colors.surfaceMuted,
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.danger,
+                  padding: spacing.md,
+                  borderRadius: radii.sm,
+                }}
+              >
+                <Text style={{ color: colors.danger, fontSize: 13 }}>{editError}</Text>
+              </View>
+            ) : null}
+
+            <Input
+              label="Organization / Business Legal Name"
+              value={formBusinessName}
+              onChangeText={setFormBusinessName}
+              placeholder="e.g. Apex Events Pvt Ltd"
+            />
+
+            <Input
+              label="Indian GSTIN (Optional)"
+              value={formGstin}
+              onChangeText={setFormGstin}
+              placeholder="e.g. 27AABCA1234F1Z5"
+              autoCapitalize="characters"
+              maxLength={15}
+            />
+
+            <Input
+              label="Billing / Registered Office Address"
+              value={formBillingAddress}
+              onChangeText={setFormBillingAddress}
+              placeholder="e.g. Unit 402, Trade Centre, BKC, Mumbai 400051"
+              multiline
+              numberOfLines={2}
+            />
+
+            <Input
+              label="Operational Contact Phone"
+              value={formContactPhone}
+              onChangeText={setFormContactPhone}
+              placeholder="e.g. 9820198201"
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+
+            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+              <Button
+                title={saving ? 'Saving...' : 'Save Organization Details'}
+                variant="primary"
+                size="lg"
+                onPress={handleSaveProfile}
+                disabled={saving}
+              />
+              <Button
+                title="Cancel"
+                variant="outline"
+                size="md"
+                onPress={() => setEditModalVisible(false)}
+                disabled={saving}
+              />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

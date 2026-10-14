@@ -158,6 +158,36 @@ export async function updateOrganizerProfile(
   return data;
 }
 
+export async function updateUserProfile(
+  userId: string,
+  updates: Partial<{
+    fullName: string;
+    city: string;
+    avatarUrl: string;
+  }>
+) {
+  logger.info('Updating user base profile', { userId });
+
+  const payload: Record<string, any> = {};
+  if (updates.fullName !== undefined) payload.full_name = updates.fullName;
+  if (updates.city !== undefined) payload.city = updates.city;
+  if (updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    logger.error('Failed to update user profile', error, { userId });
+    throw error;
+  }
+
+  return data;
+}
+
 /**
  * Submit an authoritative account deletion request.
  * Persists an immutable audit log record and triggers account deactivation.
