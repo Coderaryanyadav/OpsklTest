@@ -157,14 +157,29 @@ export default function OrganizerProfileScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <View
         style={{
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 14,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
       >
-        <Text style={[typography.h2, { color: colors.textPrimary }]}>Organization Profile</Text>
+        <Text
+          style={[
+            typography.h2,
+            {
+              color: colors.textPrimary,
+              fontWeight: '700',
+              letterSpacing: -0.5,
+            },
+          ]}
+        >
+          Organization Profile
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+          Business credentials, GSTIN registration and account settings
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>

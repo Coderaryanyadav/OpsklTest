@@ -15,6 +15,7 @@ import {
   Badge,
   WageText,
   Button,
+  FileText,
 } from '@opskil/design-system';
 import {
   formatINR,
@@ -78,37 +79,67 @@ export default function OrganizerFinancesScreen() {
       {/* Header */}
       <View
         style={{
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 14,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
         }}
       >
-        <View>
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Finances & Invoices</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-            Transparent staffing billing • GST compliant statements
-          </Text>
-        </View>
-
         <View
           style={{
-            backgroundColor: colors.surfaceMuted,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radii.full,
-            paddingHorizontal: spacing.sm + 2,
-            paddingVertical: spacing.xs,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: '700', color: organizerProfile?.gstin ? colors.primary : colors.textMuted }}>
-            {organizerProfile?.gstin ? `GST: ${organizerProfile.gstin}` : 'GST UNREGISTERED'}
+          <Text
+            style={[
+              typography.h2,
+              {
+                color: colors.textPrimary,
+                fontWeight: '700',
+                letterSpacing: -0.5,
+              },
+            ]}
+          >
+            Finances & Invoices
           </Text>
+
+          <View
+            style={{
+              backgroundColor: colors.surfaceMuted,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radii.full,
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: '700',
+                letterSpacing: 0.3,
+                color: organizerProfile?.gstin ? colors.textPrimary : colors.textMuted,
+              }}
+            >
+              {organizerProfile?.gstin ? 'GST REGISTERED' : 'UNREGISTERED'}
+            </Text>
+          </View>
         </View>
+
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.textSecondary,
+            marginTop: 4,
+            lineHeight: 18,
+          }}
+        >
+          Transparent staffing billing • GST compliant statements
+        </Text>
       </View>
 
       {loading ? (
@@ -193,28 +224,46 @@ export default function OrganizerFinancesScreen() {
           </Card>
 
           {/* Transparent Cost Breakdown Cards */}
-          <Text style={[typography.label, { color: colors.textMuted, marginTop: spacing.xs }]}>
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '700',
+              letterSpacing: 0.8,
+              color: colors.textMuted,
+              marginTop: spacing.xs,
+              textTransform: 'uppercase',
+            }}
+          >
             TRANSPARENT COST COMPOSITION
           </Text>
 
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
             {/* 1. Worker Wages (Sacrosanct pass-through) */}
             <Card
               variant="outlined"
               style={{
                 flex: 1,
                 backgroundColor: colors.surface,
-                padding: spacing.md,
+                padding: 10,
+                borderRadius: radii.lg,
               }}
             >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.textMuted,
+                  fontWeight: '700',
+                  letterSpacing: 0.2,
+                }}
+                numberOfLines={1}
+              >
                 WORKER WAGES
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(finances?.workerWageTotals || 0)}
               </Text>
-              <Text style={{ fontSize: 10, color: colors.success, fontWeight: '600', marginTop: 2 }}>
-                100% to workers
+              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '500', marginTop: 2 }}>
+                100% to crew
               </Text>
             </Card>
 
@@ -224,17 +273,26 @@ export default function OrganizerFinancesScreen() {
               style={{
                 flex: 1,
                 backgroundColor: colors.surface,
-                padding: spacing.md,
+                padding: 10,
+                borderRadius: radii.lg,
               }}
             >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
-                OPSKL SERVICE FEE
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.textMuted,
+                  fontWeight: '700',
+                  letterSpacing: 0.2,
+                }}
+                numberOfLines={1}
+              >
+                PLATFORM FEE
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.primary, marginTop: 4 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(finances?.opskilServiceFees || 0)}
               </Text>
               <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
-                10% Platform fee
+                10% escrow fee
               </Text>
             </Card>
 
@@ -244,17 +302,26 @@ export default function OrganizerFinancesScreen() {
               style={{
                 flex: 1,
                 backgroundColor: colors.surface,
-                padding: spacing.md,
+                padding: 10,
+                borderRadius: radii.lg,
               }}
             >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: colors.textMuted,
+                  fontWeight: '700',
+                  letterSpacing: 0.2,
+                }}
+                numberOfLines={1}
+              >
                 GST (18%)
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(finances?.applicableTaxes || 0)}
               </Text>
               <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
-                On fee only (ITC claim)
+                ITC claimable
               </Text>
             </Card>
           </View>
@@ -317,49 +384,100 @@ export default function OrganizerFinancesScreen() {
           {/* Section 1: Invoices */}
           {activeView === 'invoices' ? (
             <View style={{ gap: spacing.sm }}>
-              {(finances?.invoices || []).map((inv) => (
-                <TouchableOpacity
-                  key={inv.id}
-                  activeOpacity={0.8}
-                  onPress={() => setSelectedInvoice(inv)}
+              {(finances?.invoices || []).length === 0 ? (
+                <Card
+                  variant="outlined"
+                  style={{
+                    padding: spacing.xl,
+                    alignItems: 'center',
+                    backgroundColor: colors.surface,
+                    borderRadius: radii.xl,
+                  }}
                 >
-                  <Card variant="outlined" style={{ padding: spacing.md }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View style={{ flex: 1, marginRight: spacing.md }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
-                            {inv.invoiceNumber}
+                  <View
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 26,
+                      backgroundColor: colors.surfaceMuted,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <FileText size={24} color={colors.textPrimary} strokeWidth={1.8} />
+                  </View>
+                  <Text
+                    style={[
+                      typography.h3,
+                      {
+                        color: colors.textPrimary,
+                        fontWeight: '700',
+                        letterSpacing: -0.3,
+                        textAlign: 'center',
+                      },
+                    ]}
+                  >
+                    No Invoices Issued Yet
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      textAlign: 'center',
+                      marginTop: 4,
+                      lineHeight: 18,
+                      maxWidth: 280,
+                    }}
+                  >
+                    When your shift bookings complete attendance check-out and escrow settlement, official GST tax invoices will appear here.
+                  </Text>
+                </Card>
+              ) : (
+                (finances?.invoices || []).map((inv) => (
+                  <TouchableOpacity
+                    key={inv.id}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedInvoice(inv)}
+                  >
+                    <Card variant="outlined" style={{ padding: spacing.md }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1, marginRight: spacing.md }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+                              {inv.invoiceNumber}
+                            </Text>
+                            {inv.isSandbox && (
+                              <Badge label="SANDBOX" variant="neutral" size="sm" />
+                            )}
+                          </View>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
+                            {inv.jobTitle}
                           </Text>
-                          {inv.isSandbox && (
-                            <Badge label="SANDBOX" variant="neutral" size="sm" />
-                          )}
+                          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                            {inv.slotsCount} workers • Wages {formatINR(inv.wageTotal)} + Fee {formatINR(inv.platformFee)} + GST {formatINR(inv.gstAmount)}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
+                            Due by {new Date(inv.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </Text>
                         </View>
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
-                          {inv.jobTitle}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                          {inv.slotsCount} workers • Wages {formatINR(inv.wageTotal)} + Fee {formatINR(inv.platformFee)} + GST {formatINR(inv.gstAmount)}
-                        </Text>
-                        <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
-                          Due by {new Date(inv.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </Text>
-                      </View>
 
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
-                          {formatINR(inv.totalPayable)}
-                        </Text>
-                        <Badge
-                          label={inv.status === 'escrow_funded' ? 'FUNDED IN ESCROW' : inv.status.toUpperCase()}
-                          variant={inv.status === 'escrow_funded' ? 'success' : 'warning'}
-                          size="sm"
-                          style={{ marginTop: 6 }}
-                        />
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Text style={{ fontSize: 17, fontWeight: '800', color: colors.textPrimary }}>
+                            {formatINR(inv.totalPayable)}
+                          </Text>
+                          <Badge
+                            label={inv.status === 'escrow_funded' ? 'FUNDED IN ESCROW' : inv.status.toUpperCase()}
+                            variant={inv.status === 'escrow_funded' ? 'success' : 'warning'}
+                            size="sm"
+                            style={{ marginTop: 6 }}
+                          />
+                        </View>
                       </View>
-                    </View>
-                  </Card>
-                </TouchableOpacity>
-              ))}
+                    </Card>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           ) : (
             /* Section 2: Reconciliation Logs */

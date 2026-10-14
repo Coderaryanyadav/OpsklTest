@@ -268,8 +268,19 @@ export default function WorkerMyShiftsScreen() {
           },
         ]}
       >
-        <Text style={[typography.h2, { color: colors.textPrimary }]}>My Shifts & Attendance</Text>
-        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+        <Text
+          style={[
+            typography.h2,
+            {
+              color: colors.textPrimary,
+              fontWeight: '700',
+              letterSpacing: -0.5,
+            },
+          ]}
+        >
+          My Shifts & Attendance
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
           Digital check-in passes, active shift timer & payment settlement
         </Text>
 
@@ -277,7 +288,7 @@ export default function WorkerMyShiftsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, marginTop: spacing.md }}
+          contentContainerStyle={{ gap: 8, marginTop: 14, paddingRight: 20 }}
         >
           {(
             [
@@ -741,14 +752,14 @@ export default function WorkerMyShiftsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   tabChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderWidth: 1,
   },
   ticketDivider: {

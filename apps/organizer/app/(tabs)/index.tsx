@@ -396,8 +396,8 @@ export default function OrganizerDashboardScreen() {
 
 const styles = StyleSheet.create({
   headerBar: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
   },

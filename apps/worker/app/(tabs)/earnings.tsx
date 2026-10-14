@@ -126,48 +126,71 @@ export default function WorkerEarningsScreen() {
       {/* Header */}
       <View
         style={{
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 14,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
         }}
       >
-        <View>
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Earnings & Payouts</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-            Direct-to-bank UPI transfers • 0 platform commission from wages
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Text
+            style={[
+              typography.h2,
+              {
+                color: colors.textPrimary,
+                fontWeight: '700',
+                letterSpacing: -0.5,
+              },
+            ]}
+          >
+            Earnings & Payouts
           </Text>
+
+          <TouchableOpacity
+            onPress={() => setShowUpiModal(true)}
+            style={{
+              backgroundColor: colors.surfaceMuted,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: radii.full,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Manage default payout UPI handle"
+          >
+            {summary?.defaultUpiId ? (
+              <ShieldCheck size={12} color={colors.primary} strokeWidth={2.4} />
+            ) : (
+              <CreditCard size={12} color={colors.primary} strokeWidth={2.2} />
+            )}
+            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.3, color: colors.primary }}>
+              {summary?.defaultUpiId ? 'UPI LINKED' : 'ADD UPI'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          onPress={() => setShowUpiModal(true)}
+        <Text
           style={{
-            backgroundColor: colors.surfaceMuted,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radii.full,
-            paddingHorizontal: spacing.sm + 4,
-            paddingVertical: spacing.xs + 2,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 5,
+            fontSize: 13,
+            color: colors.textSecondary,
+            marginTop: 4,
+            lineHeight: 18,
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Manage default payout UPI handle"
         >
-          {summary?.defaultUpiId ? (
-            <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
-          ) : (
-            <CreditCard size={13} color={colors.primary} strokeWidth={2.2} />
-          )}
-          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-            {summary?.defaultUpiId ? 'UPI LINKED' : 'ADD UPI'}
-          </Text>
-        </TouchableOpacity>
+          Direct-to-bank UPI transfers • 0 platform commission from wages
+        </Text>
       </View>
 
       {loading ? (
