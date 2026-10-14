@@ -292,9 +292,9 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({
                   padding: '9px 18px',
                   borderRadius: 8,
                   border: 'none',
-                  backgroundColor: targetJob.action === 'cancelled' ? '#DC2626' : '#2563EB',
+                  backgroundColor: targetJob.action === 'cancelled' ? '#DC2626' : '#000000',
                   color: '#FFFFFF',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',
                 }}

@@ -56,7 +56,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           label: 'Verification Queue',
           icon: <ShieldCheck size={16} />,
           badge: pendingVerificationsCount > 0 ? pendingVerificationsCount : undefined,
-          badgeColor: '#2563EB',
+          badgeColor: '#262626',
         },
         {
           id: 'disputes' as AdminModule,
@@ -88,12 +88,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside
       style={{
         width: 260,
-        backgroundColor: '#0C1527',
-        color: '#F8FAFC',
+        backgroundColor: '#000000',
+        color: '#FFFFFF',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRight: '1px solid #1E293B',
+        borderRight: '1px solid #262626',
         height: '100vh',
         position: 'sticky',
         top: 0,
@@ -105,18 +105,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div
           style={{
             padding: '20px 20px 16px 20px',
-            borderBottom: '1px solid #1E293B',
+            borderBottom: '1px solid #262626',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
+                backgroundColor: '#FFFFFF',
+                color: '#000000',
                 fontWeight: 900,
-                fontSize: 14,
+                fontSize: 13,
                 padding: '4px 8px',
-                borderRadius: 6,
+                borderRadius: 4,
                 letterSpacing: 0.5,
               }}
             >
@@ -125,8 +125,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <span
               style={{
                 fontSize: 11,
-                fontWeight: 800,
-                color: '#94A3B8',
+                fontWeight: 700,
+                color: '#737373',
                 letterSpacing: 1,
               }}
             >
@@ -142,15 +142,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               alignItems: 'center',
               gap: 8,
               padding: '6px 10px',
-              backgroundColor: systemStatus.isBookingPaused ? 'rgba(220, 38, 38, 0.2)' : 'rgba(22, 163, 74, 0.15)',
+              backgroundColor: systemStatus.isBookingPaused ? 'rgba(220, 38, 38, 0.15)' : '#121212',
               borderRadius: 6,
-              border: `1px solid ${systemStatus.isBookingPaused ? '#DC2626' : '#16A34A'}`,
+              border: `1px solid ${systemStatus.isBookingPaused ? '#DC2626' : '#262626'}`,
             }}
           >
             <div
               style={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: '50%',
                 backgroundColor: systemStatus.isBookingPaused ? '#DC2626' : '#16A34A',
               }}
@@ -159,7 +159,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: systemStatus.isBookingPaused ? '#FCA5A5' : '#86EFAC',
+                color: systemStatus.isBookingPaused ? '#FCA5A5' : '#E5E5E5',
               }}
             >
               {systemStatus.isBookingPaused ? 'BOOKINGS PAUSED' : 'ALL SYSTEMS LIVE'}
@@ -174,8 +174,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <div
                 style={{
                   fontSize: 10,
-                  fontWeight: 800,
-                  color: '#64748B',
+                  fontWeight: 700,
+                  color: '#737373',
                   letterSpacing: 1,
                   padding: '4px 8px',
                   marginBottom: 4,
@@ -196,13 +196,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         justifyContent: 'space-between',
                         width: '100%',
                         padding: '9px 12px',
-                        borderRadius: 8,
+                        borderRadius: 6,
                         border: 'none',
-                        backgroundColor: isActive ? '#2563EB' : 'transparent',
-                        color: isActive ? '#FFFFFF' : '#CBD5E1',
+                        backgroundColor: isActive ? '#262626' : 'transparent',
+                        color: isActive ? '#FFFFFF' : '#A3A3A3',
                         cursor: 'pointer',
                         fontSize: 13,
-                        fontWeight: isActive ? 700 : 500,
+                        fontWeight: isActive ? 600 : 500,
                         textAlign: 'left',
                         transition: 'background-color 0.15s ease',
                       }}
@@ -215,11 +215,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         <span
                           style={{
                             fontSize: 11,
-                            fontWeight: 800,
+                            fontWeight: 700,
                             padding: '1px 6px',
                             borderRadius: 10,
                             backgroundColor: isActive ? '#FFFFFF' : item.badgeColor,
-                            color: isActive ? '#101D36' : '#FFFFFF',
+                            color: isActive ? '#000000' : '#FFFFFF',
                           }}
                         >
                           {item.badge}
@@ -238,7 +238,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div
         style={{
           padding: '16px',
-          borderTop: '1px solid #1E293B',
+          borderTop: '1px solid #262626',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -246,24 +246,24 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       >
         <div
           style={{
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             borderRadius: '50%',
-            backgroundColor: '#1E293B',
-            border: '1px solid #334155',
+            backgroundColor: '#262626',
+            border: '1px solid #404040',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: 13,
-            color: '#60A5FA',
+            fontWeight: 700,
+            fontSize: 12,
+            color: '#FFFFFF',
           }}
         >
           AY
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#F8FAFC' }}>Aryan Yadav</div>
-          <div style={{ fontSize: 11, color: '#64748B' }}>Super Administrator</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#FFFFFF' }}>Platform Administrator</div>
+          <div style={{ fontSize: 11, color: '#737373' }}>Ops & Compliance</div>
         </div>
       </div>
     </aside>

@@ -80,7 +80,7 @@ export const Badge: React.FC<BadgeProps> = ({
           paddingHorizontal: isSm ? spacing.xs + 4 : spacing.sm + 4,
           borderRadius: radii.full,
           borderWidth: 1,
-          borderColor: 'rgba(0, 0, 0, 0.04)',
+          borderColor: colors.border,
         },
         style,
       ]}

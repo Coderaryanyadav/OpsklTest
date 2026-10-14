@@ -24,7 +24,7 @@ import {
   confirmWorkerBookingSafe,
   updateApplicationStatusSafe,
 } from '@opskil/shared';
-import { ClipboardList, Phone, MapPin } from 'lucide-react-native';
+import { ClipboardList, Phone, MapPin, AlertTriangle } from 'lucide-react-native';
 
 type FilterTab = 'all' | 'applied' | 'shortlisted' | 'confirmed' | 'rejected';
 
@@ -281,7 +281,7 @@ export default function OrganizerRosterScreen() {
           </View>
         ) : error ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ fontSize: 32 }}>⚠️</Text>
+            <AlertTriangle size={32} color={colors.danger} strokeWidth={2} />
             <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 12 }]}>
               Unable to Load Roster
             </Text>
@@ -333,10 +333,10 @@ export default function OrganizerRosterScreen() {
                     <View
                       style={[
                         styles.avatarCircle,
-                        { backgroundColor: isDark ? '#1E293B' : '#E2E8F0', borderRadius: radii.full },
+                        { backgroundColor: isDark ? '#262626' : '#F5F5F5', borderRadius: radii.full },
                       ]}
                     >
-                      <Text style={[styles.avatarText, { color: colors.primary }]}>
+                      <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
                         {profile?.fullName ? profile.fullName.slice(0, 2).toUpperCase() : 'WK'}
                       </Text>
                     </View>
@@ -414,7 +414,7 @@ export default function OrganizerRosterScreen() {
                         style={[
                           styles.skillPill,
                           {
-                            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+                            backgroundColor: isDark ? '#262626' : '#F5F5F5',
                             borderColor: colors.border,
                             borderRadius: radii.full,
                           },
@@ -463,7 +463,7 @@ export default function OrganizerRosterScreen() {
                   ) : (
                     <>
                       <Button
-                        title="✕ Decline"
+                        title="Decline"
                         variant="ghost"
                         size="sm"
                         fullWidth={false}
@@ -473,7 +473,7 @@ export default function OrganizerRosterScreen() {
 
                       {!isShortlisted && (
                         <Button
-                          title="⭐ Shortlist"
+                          title="Shortlist"
                           variant="outline"
                           size="sm"
                           fullWidth={false}
@@ -484,7 +484,7 @@ export default function OrganizerRosterScreen() {
 
                       <View style={{ flex: 1 }}>
                         <Button
-                          title={slotsRemaining === 0 ? 'Full' : '✓ Confirm & Book'}
+                          title={slotsRemaining === 0 ? 'Full' : 'Confirm & Book'}
                           variant="primary"
                           size="sm"
                           disabled={slotsRemaining === 0}

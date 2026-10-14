@@ -34,7 +34,7 @@ export const MumbaiPilotDashboard: React.FC<MumbaiPilotDashboardProps> = ({ pilo
           <div style={{ fontSize: 24, fontWeight: 800, color: '#101D36', marginTop: 4 }}>
             {pilotMetrics.totalPositionsFilled} / {pilotMetrics.totalPositionsRequested}
           </div>
-          <div style={{ fontSize: 11, color: '#2563EB', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: '#737373', marginTop: 4, fontWeight: 600 }}>
             {pilotMetrics.fillRatePct.toFixed(1)}% Fill Rate
           </div>
         </div>
@@ -104,8 +104,8 @@ export const MumbaiPilotDashboard: React.FC<MumbaiPilotDashboardProps> = ({ pilo
                       borderRadius: 12,
                       fontSize: 11,
                       fontWeight: 700,
-                      backgroundColor: rec.completedCount > 0 ? '#DCFCE7' : '#EFF6FF',
-                      color: rec.completedCount > 0 ? '#16A34A' : '#2563EB',
+                      backgroundColor: rec.completedCount > 0 ? '#DCFCE7' : '#F5F5F5',
+                      color: rec.completedCount > 0 ? '#16A34A' : '#262626',
                       textTransform: 'uppercase',
                     }}
                   >

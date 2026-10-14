@@ -215,8 +215,9 @@ export default function AdminLoginPage() {
             style={{
               textAlign: 'center',
               fontSize: '13px',
-              color: 'var(--teal-color)',
+              color: 'var(--text-secondary)',
               marginTop: '8px',
+              textDecoration: 'underline',
             }}
           >
             ← Return to Overview Shell

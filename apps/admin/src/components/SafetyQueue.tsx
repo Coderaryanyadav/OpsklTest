@@ -97,13 +97,13 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                             ? '#FEE2E2'
                             : r.severity === 'high'
                             ? '#FEF3C7'
-                            : '#EFF6FF',
+                            : '#F5F5F5',
                         color:
                           r.severity === 'critical'
                             ? '#DC2626'
                             : r.severity === 'high'
                             ? '#D97706'
-                            : '#2563EB',
+                            : '#262626',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -113,7 +113,7 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                   <td style={{ padding: '12px 16px', textTransform: 'capitalize' }}>
                     {r.category.replace('_', ' ')}
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#475569', maxWidth: 280 }}>
+                  <td style={{ padding: '12px 16px', color: '#737373', maxWidth: 280 }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {r.description}
                     </div>
@@ -143,10 +143,10 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                       style={{
                         padding: '6px 12px',
                         borderRadius: 6,
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#2563EB',
-                        fontWeight: 700,
+                        color: '#000000',
+                        fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
                       }}

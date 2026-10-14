@@ -215,10 +215,10 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                       style={{
                         padding: '6px 12px',
                         borderRadius: 6,
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#2563EB',
-                        fontWeight: 700,
+                        color: '#000000',
+                        fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
                       }}
@@ -283,7 +283,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748B' }}>Storage Reference:</span>
-                <span style={{ fontSize: 12, color: '#2563EB' }}>{selectedCase.documentStoragePath || 'Secured Private Vault'}</span>
+                <span style={{ fontSize: 12, color: '#737373', fontFamily: 'monospace' }}>{selectedCase.documentStoragePath || 'Secured Private Vault'}</span>
               </div>
             </div>
 

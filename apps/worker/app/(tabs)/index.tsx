@@ -25,7 +25,7 @@ import { SwipeCard } from '../../src/components/SwipeCard';
 import { CardActionControls } from '../../src/components/CardActionControls';
 import { JobDetailSheet } from '../../src/components/JobDetailSheet';
 import { FilterSheet } from '../../src/components/FilterSheet';
-import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle } from 'lucide-react-native';
+import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
 import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/location';
 
 export default function WorkerDiscoverScreen() {
@@ -206,7 +206,7 @@ export default function WorkerDiscoverScreen() {
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
-          <Text style={{ fontSize: 32 }}>⚠️</Text>
+          <AlertTriangle size={36} color={colors.danger} strokeWidth={2} />
           <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.sm }]}>
             Connection Error
           </Text>
@@ -223,9 +223,9 @@ export default function WorkerDiscoverScreen() {
           contentContainerStyle={[styles.centerContainer, { padding: spacing.xl }]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <Text style={{ fontSize: 44 }}>🎉</Text>
+          <CheckCircle2 size={44} color={colors.textPrimary} strokeWidth={1.8} />
           <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
-            All Caught Up!
+            All Caught Up
           </Text>
           <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 20 }}>
             You have reviewed all available shifts in {activeZone.label}. Expand your filters or check back shortly for newly published events.
@@ -325,8 +325,8 @@ export default function WorkerDiscoverScreen() {
             <Text style={[typography.caption, { color: colors.textMuted }]}>
               {cards.length} shifts open in {activeZone.label}
             </Text>
-            <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '700' }}>
-              ⚡ Transparent Payouts
+            <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+              Escrow-Protected Payouts
             </Text>
           </View>
 

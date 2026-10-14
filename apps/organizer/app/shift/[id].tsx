@@ -34,7 +34,7 @@ import {
   recordNoShowSafe,
   cancelBookingSafe,
 } from '@opskil/shared';
-import { Star, CheckCircle2 } from 'lucide-react-native';
+import { Star, CheckCircle2, Users } from 'lucide-react-native';
 
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
@@ -145,7 +145,7 @@ export default function OrganizerShiftDetailScreen() {
                     : c
                 )
               );
-              Alert.alert('✓ Check-In Verified', `${workerName} marked present on-site.`);
+              Alert.alert('Check-In Verified', `${workerName} marked present on-site.`);
             } else {
               Alert.alert('Error', res.error || 'Failed to verify check-in.');
             }
@@ -177,7 +177,7 @@ export default function OrganizerShiftDetailScreen() {
                     : c
                 )
               );
-              Alert.alert('✓ Check-Out Recorded', `${workerName} check-out recorded.`);
+              Alert.alert('Check-Out Recorded', `${workerName} check-out recorded.`);
             } else {
               Alert.alert('Error', res.error || 'Failed to check out.');
             }
@@ -334,7 +334,7 @@ export default function OrganizerShiftDetailScreen() {
               borderRadius: radii.lg,
             }}
           >
-            <Text style={{ fontSize: 36 }}>👥</Text>
+            <Users size={36} color={colors.textMuted} strokeWidth={1.8} />
             <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.sm, textAlign: 'center' }]}>
               No Confirmed Crew Yet
             </Text>

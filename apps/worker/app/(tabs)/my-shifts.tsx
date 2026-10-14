@@ -43,6 +43,7 @@ import {
   Check,
   ShieldCheck,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react-native';
 
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -123,7 +124,7 @@ export default function WorkerMyShiftsScreen() {
 
     Alert.alert(
       'On-Site Shift Check-In',
-      `Your official check-in code for this shift is:\n\n🔑 ${booking.checkInCode}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
+      `Your official check-in code for this shift is:\n\nPass Code: ${booking.checkInCode}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -327,7 +328,7 @@ export default function WorkerMyShiftsScreen() {
           </View>
         ) : error ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ fontSize: 32 }}>⚠️</Text>
+            <AlertTriangle size={32} color={colors.danger} strokeWidth={2} />
             <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
               Could Not Load Bookings
             </Text>
@@ -436,8 +437,8 @@ export default function WorkerMyShiftsScreen() {
                     style={[
                       styles.passBox,
                       {
-                        backgroundColor: isDark ? '#064E3B' : '#ECFDF5',
-                        borderColor: isDark ? '#047857' : '#A7F3D0',
+                        backgroundColor: colors.surfaceMuted,
+                        borderColor: colors.border,
                         borderRadius: radii.md,
                       },
                     ]}

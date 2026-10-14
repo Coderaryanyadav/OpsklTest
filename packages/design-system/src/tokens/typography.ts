@@ -78,6 +78,13 @@ export const typography: Record<string, TextStyle> = {
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  label: {
+    fontSize: fontSizes.xs,
+    lineHeight: lineHeights.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
   wageCallout: {
     fontSize: 26,
     lineHeight: 32,

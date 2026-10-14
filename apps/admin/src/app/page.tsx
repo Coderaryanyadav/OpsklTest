@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
   const { title, subtitle } = getPageTitle(activeModule);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F5F7FB' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F5F5F5' }}>
       {/* Fixed Navigation Sidebar */}
       <AdminSidebar
         activeModule={activeModule}
@@ -293,7 +293,7 @@ export default function AdminDashboardPage() {
                 justifyContent: 'space-between',
               }}
             >
-              <span>⚠️ {dashboardError}</span>
+              <span>Notice: {dashboardError}</span>
               <button
                 onClick={() => setDashboardError(null)}
                 style={{ background: 'none', border: 'none', color: '#991B1B', cursor: 'pointer', fontWeight: 700 }}
@@ -304,9 +304,10 @@ export default function AdminDashboardPage() {
           )}
 
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: '#64748B' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>⚡</div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Loading operations console...</div>
+            <div style={{ padding: '60px', textAlign: 'center', color: '#737373' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                Loading operations console…
+              </div>
             </div>
           ) : (
             <>

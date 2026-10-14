@@ -348,27 +348,27 @@ export function SwipeCard({
           {/* Amenities & Conditions Pills */}
           <View style={styles.amenitiesRow}>
             {job.mealProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Utensils size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Meals</Text>
               </View>
             )}
             {job.transportProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Car size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Travel Allowance</Text>
               </View>
             )}
             {job.breaksMinutes ? (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Coffee size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>{job.breaksMinutes}m Break</Text>
               </View>
             ) : null}
             {job.applicationDeadline && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#312E81' : '#EEF2FF', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                <Clock size={12} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.amenityText, { color: colors.primary }]}>
+              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Clock size={12} color={colors.textPrimary} strokeWidth={2} />
+                <Text style={[styles.amenityText, { color: colors.textPrimary }]}>
                   {formatDeadline(job.applicationDeadline)}
                 </Text>
               </View>

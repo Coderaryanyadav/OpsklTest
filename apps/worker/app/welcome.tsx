@@ -1,41 +1,44 @@
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Button, Badge } from '@opskil/design-system';
+import { Briefcase, ShieldCheck, ArrowRight, Clock } from 'lucide-react-native';
 
 export default function WorkerWelcomeScreen() {
   const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={{
-          flex: 1,
-          padding: spacing.xl,
-          justifyContent: 'space-between',
-        }}
-      >
-        {/* Top Branding & Dev Badge */}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { padding: spacing.xl }]}>
+        {/* Top Header */}
         <View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Badge label="WORKER PORTAL" variant="neutral" size="sm" />
-            <Badge label="MUMBAI REGION" variant="info" size="sm" />
+          <View style={styles.badgeRow}>
+            <Badge label="OPSKL MARKETPLACE" variant="neutral" size="sm" withDot={false} />
+            <Badge label="MUMBAI REGION" variant="neutral" size="sm" />
           </View>
 
-          <View style={{ alignItems: 'center', marginTop: spacing.xxl }}>
+          <View style={[styles.heroBlock, { marginTop: spacing.xxl }]}>
+            {/* Minimalist Monogram */}
             <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: spacing.lg,
-              }}
+              style={[
+                styles.monogramBadge,
+                {
+                  backgroundColor: colors.primary,
+                  borderColor: colors.border,
+                },
+              ]}
             >
-              <Text style={{ fontSize: 44, color: '#FFFFFF' }}>⚡</Text>
+              <Text
+                style={{
+                  fontSize: 32,
+                  fontWeight: '900',
+                  color: colors.textInverse,
+                  letterSpacing: -1,
+                }}
+              >
+                O
+              </Text>
             </View>
 
             <Text style={[typography.display, { color: colors.textPrimary, textAlign: 'center' }]}>
@@ -44,73 +47,173 @@ export default function WorkerWelcomeScreen() {
             <Text
               style={[
                 typography.subtitle,
-                { color: colors.primary, textAlign: 'center', marginTop: 4 },
+                {
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                  marginTop: 6,
+                  fontWeight: '500',
+                },
               ]}
             >
-              Work Shifts. Guaranteed Daily Pay.
+              Single-day event staffing marketplace
             </Text>
           </View>
         </View>
 
-        {/* Feature Highlights */}
-        <View style={{ gap: spacing.md }}>
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              padding: spacing.md,
-              borderRadius: radii.lg,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
-              💵 100% Transparent Daily Wages
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-              Fixed hourly rates (₹150 – ₹250/hr). Wages held in escrow and settled to your UPI.
-            </Text>
-          </View>
-
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              padding: spacing.md,
-              borderRadius: radii.lg,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
-              📍 Top Mumbai Exhibition Hubs
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-              Shifts at Jio World Convention Centre (BKC), NESCO (Goregaon), and CIDCO (Vashi).
-            </Text>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
+        {/* Value Proposition Cards — Strict Monochrome */}
         <View style={{ gap: spacing.sm }}>
-          <Button
-            title="Explore Available Shifts"
-            variant="primary"
-            size="lg"
-            onPress={() => router.push('/(tabs)' as any)}
-          />
-          <Button
-            title="Worker Sign In"
-            variant="outline"
-            size="md"
-            onPress={() => router.push('/auth/login' as any)}
-          />
-          <Button
-            title="New Worker Onboarding"
-            variant="ghost"
-            size="sm"
+          <View
+            style={[
+              styles.featureCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.md,
+              },
+            ]}
+          >
+            <View style={styles.cardHeaderRow}>
+              <View
+                style={[
+                  styles.iconWrap,
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                ]}
+              >
+                <Clock size={16} color={colors.textPrimary} strokeWidth={2.2} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                  Single-Day Shifts
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                  Discover verified exhibition, hospitality, and corporate event positions.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.featureCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.md,
+              },
+            ]}
+          >
+            <View style={styles.cardHeaderRow}>
+              <View
+                style={[
+                  styles.iconWrap,
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                ]}
+              >
+                <ShieldCheck size={16} color={colors.textPrimary} strokeWidth={2.2} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                  Escrow-Protected Payouts
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                  Shift wages are funded prior to call time and released upon attendance sign-off.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Clear Dual Pathways */}
+        <View style={{ gap: spacing.sm }}>
+          <View style={styles.dualActionContainer}>
+            {/* Primary Path: Find Work */}
+            <Button
+              title="Find Work as Crew"
+              variant="primary"
+              size="lg"
+              icon={<Briefcase size={18} color={colors.textInverse} strokeWidth={2} />}
+              onPress={() => router.push('/(tabs)' as any)}
+            />
+
+            {/* Secondary Path: Sign In */}
+            <Button
+              title="Sign In to Existing Account"
+              variant="outline"
+              size="md"
+              onPress={() => router.push('/auth/login' as any)}
+            />
+          </View>
+
+          {/* Tertiary Action: New Crew Onboarding */}
+          <Pressable
             onPress={() => router.push('/onboarding' as any)}
-          />
+            style={({ pressed }) => [
+              styles.onboardingLink,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="New worker registration"
+          >
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+              First time working with Opskl? Complete Worker Registration
+            </Text>
+            <ArrowRight size={14} color={colors.textSecondary} strokeWidth={2} style={{ marginLeft: 4 }} />
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroBlock: {
+    alignItems: 'center',
+  },
+  monogramBadge: {
+    width: 68,
+    height: 68,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  featureCard: {
+    borderWidth: 1,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  dualActionContainer: {
+    gap: 8,
+  },
+  onboardingLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+});

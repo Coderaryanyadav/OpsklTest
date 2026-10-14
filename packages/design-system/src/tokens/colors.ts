@@ -1,52 +1,27 @@
 /**
- * OPSKL DESIGN SYSTEM COLOR PALETTE
- * Tailored for high-clarity on-the-go mobility in Indian ambient lighting conditions.
- * Brand signature: Deep Emerald (#0F766E) with Electric Teal accent.
+ * OPSKL DESIGN SYSTEM — STRICT MONOCHROME PALETTE
+ * Apple-Level Polish · High Contrast · Strict Restraint
+ *
+ * Core Tokens:
+ * - Primary Black: #000000
+ * - Primary White: #FFFFFF
+ * - Soft White: #F5F5F5
+ * - Light Neutral: #E5E5E5
+ * - Mid Gray: #737373
+ * - Dark Neutral: #262626
  */
 
-export const brandColors = {
-  emerald950: '#022C22',
-  emerald900: '#064E3B',
-  emerald800: '#065F46',
-  emerald700: '#047857',
-  emerald600: '#059669',
-  emerald500: '#10B981',
-  emerald400: '#34D399',
-  emerald300: '#6EE7B7',
-  emerald200: '#A7F3D0',
-  emerald100: '#D1FAE5',
-  emerald50: '#ECFDF5',
-
-  teal600: '#0D9488',
-  teal500: '#14B8A6',
-  teal400: '#2DD4BF',
-
-  slate950: '#020617',
-  slate900: '#0F172A',
-  slate800: '#1E293B',
-  slate700: '#334155',
-  slate600: '#475569',
-  slate500: '#64748B',
-  slate400: '#94A3B8',
-  slate300: '#CBD5E1',
-  slate200: '#E2E8F0',
-  slate100: '#F1F5F9',
-  slate50: '#F8FAFC',
-
-  white: '#FFFFFF',
+export const monochrome = {
   black: '#000000',
-
-  amber500: '#F59E0B',
-  amber600: '#D97706',
-  amber50: '#FFFBEB',
-
-  red500: '#EF4444',
-  red600: '#DC2626',
-  red50: '#FEF2F2',
-
-  blue500: '#3B82F6',
-  blue600: '#2563EB',
-  blue50: '#EFF6FF',
+  white: '#FFFFFF',
+  softWhite: '#F5F5F5',
+  lightNeutral: '#E5E5E5',
+  borderLight: '#E5E5E5',
+  midGray: '#737373',
+  darkNeutral: '#262626',
+  surfaceDark: '#121212',
+  cardDark: '#1A1A1A',
+  borderDark: '#262626',
 } as const;
 
 export interface OpsklThemeColors {
@@ -65,6 +40,7 @@ export interface OpsklThemeColors {
   border: string;
   borderMuted: string;
   borderFocus: string;
+  // Semantic indicators strictly reserved for functional status/safety/error handling
   success: string;
   successLight: string;
   warning: string;
@@ -77,55 +53,57 @@ export interface OpsklThemeColors {
 }
 
 export const lightColors: OpsklThemeColors = {
-  primary: '#2563EB',
-  primaryHover: '#1D4ED8',
-  primaryLight: '#EFF6FF',
-  accent: '#3B82F6',
-  background: '#F5F7FB',
+  primary: '#000000',
+  primaryHover: '#262626',
+  primaryLight: '#F5F5F5',
+  accent: '#000000',
+  background: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  surfaceMuted: '#F1F5F9',
-  textPrimary: '#101D36',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
+  surfaceMuted: '#F5F5F5',
+  textPrimary: '#000000',
+  textSecondary: '#737373',
+  textMuted: '#A3A3A3',
   textInverse: '#FFFFFF',
-  border: '#E2E8F0',
-  borderMuted: '#F1F5F9',
-  borderFocus: '#2563EB',
+  border: '#E5E5E5',
+  borderMuted: '#F5F5F5',
+  borderFocus: '#000000',
+  // Functional semantic status colors
   success: '#16A34A',
-  successLight: '#DCFCE7',
+  successLight: '#F0FDF4',
   warning: '#D97706',
-  warningLight: '#FEF3C7',
+  warningLight: '#FFFBEB',
   danger: '#DC2626',
-  dangerLight: '#FEE2E2',
-  info: '#2563EB',
-  infoLight: '#EFF6FF',
-  cardShadow: 'rgba(16, 29, 54, 0.06)',
+  dangerLight: '#FEF2F2',
+  info: '#262626',
+  infoLight: '#F5F5F5',
+  cardShadow: 'rgba(0, 0, 0, 0.04)',
 };
 
 export const darkColors: OpsklThemeColors = {
-  primary: '#3B82F6',
-  primaryHover: '#60A5FA',
-  primaryLight: '#1E3A8A',
-  accent: '#60A5FA',
-  background: '#0B1120',
-  surface: '#111C33',
-  surfaceElevated: '#172545',
-  surfaceMuted: '#1E2E50',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  textInverse: '#0B1120',
-  border: '#1E2E50',
-  borderMuted: '#142038',
-  borderFocus: '#3B82F6',
+  primary: '#FFFFFF',
+  primaryHover: '#E5E5E5',
+  primaryLight: '#1A1A1A',
+  accent: '#FFFFFF',
+  background: '#000000',
+  surface: '#121212',
+  surfaceElevated: '#1A1A1A',
+  surfaceMuted: '#1E1E1E',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A3A3A3',
+  textMuted: '#737373',
+  textInverse: '#000000',
+  border: '#262626',
+  borderMuted: '#1A1A1A',
+  borderFocus: '#FFFFFF',
+  // Functional semantic status colors
   success: '#22C55E',
   successLight: '#14532D',
   warning: '#F59E0B',
   warningLight: '#78350F',
   danger: '#EF4444',
   dangerLight: '#7F1D1D',
-  info: '#3B82F6',
-  infoLight: '#1E3A8A',
-  cardShadow: 'rgba(0, 0, 0, 0.5)',
+  info: '#E5E5E5',
+  infoLight: '#262626',
+  cardShadow: 'rgba(0, 0, 0, 0.6)',
 };

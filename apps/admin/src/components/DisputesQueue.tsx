@@ -118,13 +118,13 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                           d.status === 'resolved'
                             ? '#DCFCE7'
                             : d.status === 'under_review'
-                            ? '#EFF6FF'
+                            ? '#F5F5F5'
                             : '#FEF3C7',
                         color:
                           d.status === 'resolved'
                             ? '#16A34A'
                             : d.status === 'under_review'
-                            ? '#2563EB'
+                            ? '#262626'
                             : '#D97706',
                         textTransform: 'uppercase',
                       }}
@@ -143,10 +143,10 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                       style={{
                         padding: '6px 12px',
                         borderRadius: 6,
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#2563EB',
-                        fontWeight: 700,
+                        color: '#000000',
+                        fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
                       }}
@@ -307,9 +307,9 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   padding: '9px 18px',
                   borderRadius: 8,
                   border: 'none',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: '#000000',
                   color: '#FFFFFF',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',
                   opacity: resolving ? 0.7 : 1,

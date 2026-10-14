@@ -16,6 +16,7 @@ import {
   Badge,
   Button,
   ShiftCardSkeleton,
+  EmptyState,
   useAuth,
 } from '@opskil/design-system';
 import {
@@ -29,7 +30,7 @@ import {
   fetchOrganizerProfile,
   updateJobStatus,
 } from '@opskil/shared';
-import { Bell, MapPin } from 'lucide-react-native';
+import { Bell, MapPin, Calendar } from 'lucide-react-native';
 
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
@@ -274,6 +275,16 @@ export default function OrganizerDashboardScreen() {
           <View style={{ gap: spacing.md, marginTop: spacing.xs }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
+          </View>
+        ) : shifts.length === 0 ? (
+          <View style={{ marginTop: spacing.lg, paddingVertical: spacing.xl }}>
+            <EmptyState
+              icon={<Calendar size={36} color={colors.textSecondary} strokeWidth={1.8} />}
+              title="No Shifts Published Yet"
+              description="Create and publish your first event shift to begin receiving applications from verified event crew."
+              actionTitle="Create your first shift"
+              onAction={() => router.push('/(tabs)/create' as any)}
+            />
           </View>
         ) : (
           shifts.map((shift) => {

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SystemOperationalStatus } from '@opskil/shared';
+import { Play, Pause, Check, X } from 'lucide-react';
 
 interface AdminHeaderProps {
   title: string;
@@ -24,7 +25,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header
       style={{
         backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #E2E8F0',
+        borderBottom: '1px solid #E5E5E5',
         padding: '16px 28px',
         display: 'flex',
         flexDirection: 'column',
@@ -36,13 +37,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#737373' }}>
             <span>Console</span>
             <span>/</span>
-            <span style={{ fontWeight: 600, color: '#2563EB' }}>{title}</span>
+            <span style={{ fontWeight: 600, color: '#000000' }}>{title}</span>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#101D36', marginTop: 2 }}>{title}</h1>
-          {subtitle && <p style={{ fontSize: 13, color: '#64748B', marginTop: 1 }}>{subtitle}</p>}
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#000000', marginTop: 2, letterSpacing: '-0.3px' }}>
+            {title}
+          </h1>
+          {subtitle && <p style={{ fontSize: 13, color: '#737373', marginTop: 1 }}>{subtitle}</p>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -54,17 +57,27 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               alignItems: 'center',
               gap: 8,
               padding: '8px 14px',
-              borderRadius: 8,
-              border: `1.5px solid ${systemStatus.isBookingPaused ? '#16A34A' : '#DC2626'}`,
-              backgroundColor: systemStatus.isBookingPaused ? '#DCFCE7' : '#FEE2E2',
+              borderRadius: 6,
+              border: `1px solid ${systemStatus.isBookingPaused ? '#16A34A' : '#DC2626'}`,
+              backgroundColor: systemStatus.isBookingPaused ? '#F0FDF4' : '#FEF2F2',
               color: systemStatus.isBookingPaused ? '#16A34A' : '#DC2626',
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: 12,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            <span>{systemStatus.isBookingPaused ? '▶️ Resume Bookings' : '⏸️ Emergency Pause Bookings'}</span>
+            {systemStatus.isBookingPaused ? (
+              <>
+                <Play size={13} strokeWidth={2.5} />
+                <span>Resume Shift Bookings</span>
+              </>
+            ) : (
+              <>
+                <Pause size={13} strokeWidth={2.5} />
+                <span>Emergency Pause Bookings</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -73,19 +86,22 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       {actionSuccessMessage && (
         <div
           style={{
-            backgroundColor: '#DCFCE7',
+            backgroundColor: '#F0FDF4',
             border: '1px solid #16A34A',
             color: '#15803D',
             padding: '10px 14px',
-            borderRadius: 8,
+            borderRadius: 6,
             fontSize: 13,
-            fontWeight: 600,
+            fontWeight: 500,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <span>✓ {actionSuccessMessage}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Check size={14} strokeWidth={2.5} />
+            <span>{actionSuccessMessage}</span>
+          </div>
           {onDismissMessage && (
             <button
               onClick={onDismissMessage}
@@ -94,10 +110,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 border: 'none',
                 color: '#15803D',
                 cursor: 'pointer',
-                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
               }}
+              aria-label="Dismiss message"
             >
-              ✕
+              <X size={14} strokeWidth={2} />
             </button>
           )}
         </div>

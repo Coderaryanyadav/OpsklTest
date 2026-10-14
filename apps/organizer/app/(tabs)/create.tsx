@@ -32,41 +32,8 @@ import {
   MapPin,
   User,
   ShieldCheck,
-  Building,
 } from 'lucide-react-native';
 
-const PRESET_MUMBAI_VENUES = [
-  {
-    name: 'Jio World Convention Centre, Pavilion 2',
-    address: 'G Block BKC, Bandra Kurla Complex, Bandra East, Mumbai 400098',
-    landmark: 'Opposite Bharat Diamond Bourse',
-    zone: 'Bandra Kurla Complex (BKC)',
-  },
-  {
-    name: 'Bombay Exhibition Centre (NESCO), Hall 4',
-    address: 'Western Express Highway, Goregaon East, Mumbai 400063',
-    landmark: 'Near Ram Mandir Railway Station',
-    zone: 'Goregaon & NESCO',
-  },
-  {
-    name: 'Taj Lands End, Grand Ballroom',
-    address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
-    landmark: 'Near Bandra Fort',
-    zone: 'Andheri & Western Suburbs',
-  },
-  {
-    name: 'CIDCO Exhibition Centre, Hall 1',
-    address: 'Sector 30A, Vashi, Navi Mumbai 400703',
-    landmark: 'Opposite Vashi Railway Station',
-    zone: 'Navi Mumbai (Vashi / CIDCO)',
-  },
-  {
-    name: 'Grand Hyatt Mumbai Hotel & Residences',
-    address: 'Off Western Express Highway, Santacruz East, Mumbai 400055',
-    landmark: 'Near Vakola Junction',
-    zone: 'Andheri & Western Suburbs',
-  },
-];
 
 const CATEGORIES: { label: string; value: ShiftCategory }[] = [
   { label: 'Conference', value: 'conference' },
@@ -427,52 +394,6 @@ export default function OrganizerCreateShiftScreen() {
                   placeholder="18:00"
                 />
               </View>
-            </View>
-
-            {/* Quick Mumbai Venues Selector */}
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Building size={14} color={colors.primary} strokeWidth={2.2} />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Quick Mumbai Venues
-                </Text>
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {PRESET_MUMBAI_VENUES.map((preset) => {
-                  const isMatch = venueName === preset.name;
-                  return (
-                    <Pressable
-                      key={preset.name}
-                      onPress={() => {
-                        setVenueName(preset.name);
-                        setVenueAddress(preset.address);
-                        setLandmark(preset.landmark);
-                        setZone(preset.zone);
-                      }}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: 20,
-                        backgroundColor: isMatch ? colors.primary : colors.surfaceMuted,
-                        borderWidth: 1,
-                        borderColor: isMatch ? colors.primary : colors.border,
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Select venue ${preset.name}`}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: isMatch ? '700' : '500',
-                          color: isMatch ? '#FFFFFF' : colors.textPrimary,
-                        }}
-                      >
-                        {preset.name.split(',')[0]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
             </View>
 
             <Input

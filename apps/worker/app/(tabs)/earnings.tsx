@@ -184,8 +184,8 @@ export default function WorkerEarningsScreen() {
           <Card
             variant="elevated"
             style={{
-              backgroundColor: '#0F172A',
-              borderColor: 'rgba(255,255,255,0.12)',
+              backgroundColor: '#000000',
+              borderColor: '#262626',
               borderWidth: 1,
               borderRadius: radii.xl,
               padding: spacing.lg,
@@ -229,7 +229,7 @@ export default function WorkerEarningsScreen() {
                   Receiving Bank UPI Handle
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                  <ShieldCheck size={14} color="#10B981" strokeWidth={2.4} />
+                  <ShieldCheck size={14} color={colors.success} strokeWidth={2.4} />
                   <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700', fontFamily: 'monospace' }}>
                     {summary?.defaultUpiId || 'Not linked yet'}
                   </Text>

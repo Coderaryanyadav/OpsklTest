@@ -113,7 +113,7 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
           <tbody>
             {settings.map((s) => (
               <tr key={s.key} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#2563EB' }}>
+                <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#000000' }}>
                   {s.key}
                 </td>
                 <td style={{ padding: '12px 16px', fontWeight: 700, color: '#101D36' }}>

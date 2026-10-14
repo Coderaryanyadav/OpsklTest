@@ -170,7 +170,7 @@ export default function WorkerShiftDetailScreen() {
             }}
           >
             <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              ⚡ Shift wages are calculated from verified attendance hours. Once supervisor reviews attendance and approves hours, payout processing begins through bank rails to your verified UPI handle.
+              Shift wages are calculated from verified attendance hours. Once supervisor reviews attendance and approves hours, payout processing begins through bank rails to your verified UPI handle.
             </Text>
           </View>
         </Card>

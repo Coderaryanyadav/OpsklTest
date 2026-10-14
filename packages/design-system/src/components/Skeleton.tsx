@@ -68,7 +68,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   }, [opacityAnim]);
 
   const baseRadius = borderRadius !== undefined ? borderRadius : radii.sm;
-  const skeletonColor = isDark ? '#1E293B' : '#E2E8F0';
+  const skeletonColor = isDark ? '#262626' : '#E5E5E5';
 
   return (
     <Animated.View

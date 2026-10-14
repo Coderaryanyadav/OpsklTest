@@ -13,43 +13,43 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
       title: 'Gross Marketplace Volume (GMV)',
       value: metrics ? formatINR(metrics.totalEscrowHeld + metrics.platformFeesCollected) : '₹0',
       subtitle: 'Total worker wages + platform fees processed',
-      trend: '+18.4% this month',
-      trendColor: '#16A34A',
+      status: metrics ? 'Escrow & platform fees' : 'Data unavailable',
+      statusColor: '#737373',
     },
     {
-      title: 'Total Shifts Completed',
-      value: metrics ? (metrics.activeShifts * 4).toString() : '0',
-      subtitle: `${metrics?.activeShifts || 0} shifts currently open`,
-      trend: '100% verified attendance',
-      trendColor: '#2563EB',
+      title: 'Active Event Shifts',
+      value: metrics ? metrics.activeShifts.toString() : '0',
+      subtitle: 'Shifts currently published in marketplace',
+      status: metrics?.activeShifts ? `${metrics.activeShifts} open for staffing` : 'No active shifts',
+      statusColor: '#737373',
     },
     {
-      title: 'Active Worker Roster',
+      title: 'Verified Worker Roster',
       value: metrics ? metrics.verifiedWorkersCount.toLocaleString() : '0',
       subtitle: 'Verified event professionals ready for shifts',
-      trend: '98.2% show-up reliability',
-      trendColor: '#16A34A',
+      status: metrics?.verifiedWorkersCount ? 'KYC verified workforce' : 'Roster awaiting signups',
+      statusColor: '#737373',
     },
     {
       title: 'Active Event Organizers',
       value: metrics ? metrics.activeOrganizersCount.toLocaleString() : '0',
       subtitle: 'Verified corporate & exhibition agencies',
-      trend: 'Mumbai service region',
-      trendColor: '#475569',
+      status: 'Mumbai service region',
+      statusColor: '#737373',
     },
     {
       title: 'Active Disputes',
       value: metrics ? metrics.openDisputesCount.toString() : '0',
       subtitle: 'Pending attendance or wage arbitration',
-      trend: metrics && metrics.openDisputesCount > 0 ? 'Requires operational review' : '0 unresolved disputes',
-      trendColor: metrics && metrics.openDisputesCount > 0 ? '#DC2626' : '#16A34A',
+      status: metrics && metrics.openDisputesCount > 0 ? 'Requires operational review' : '0 unresolved disputes',
+      statusColor: metrics && metrics.openDisputesCount > 0 ? '#DC2626' : '#16A34A',
     },
     {
       title: 'Verification Backlog',
       value: metrics ? metrics.pendingVerificationsCount.toString() : '0',
       subtitle: 'Worker & organizer documents awaiting review',
-      trend: 'SLA target: < 2 hours',
-      trendColor: '#D97706',
+      status: metrics && metrics.pendingVerificationsCount > 0 ? 'Awaiting KYC compliance' : 'Queue clear',
+      statusColor: metrics && metrics.pendingVerificationsCount > 0 ? '#D97706' : '#16A34A',
     },
   ];
 
@@ -57,7 +57,7 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
         gap: 16,
       }}
     >
@@ -66,33 +66,36 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
           key={card.title}
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: 12,
+            border: '1px solid #E5E5E5',
+            borderRadius: 8,
             padding: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
           }}
         >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>{card.title}</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#737373', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {card.title}
+            </div>
             <div
               style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color: '#101D36',
-                marginTop: 6,
-                letterSpacing: -0.5,
+                fontSize: 26,
+                fontWeight: 700,
+                color: '#000000',
+                marginTop: 8,
+                letterSpacing: '-0.5px',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
               {card.value}
             </div>
           </div>
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #F1F5F9' }}>
-            <div style={{ fontSize: 12, color: '#64748B' }}>{card.subtitle}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: card.trendColor, marginTop: 4 }}>
-              {card.trend}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #F5F5F5' }}>
+            <div style={{ fontSize: 12, color: '#737373' }}>{card.subtitle}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: card.statusColor, marginTop: 4 }}>
+              {card.status}
             </div>
           </div>
         </div>

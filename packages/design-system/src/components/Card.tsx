@@ -33,8 +33,8 @@ export const Card: React.FC<CardProps> = ({
     borderRadius: radii.lg,
     padding: cardPadding,
     borderWidth: 1,
-    borderColor: variant === 'outlined' ? colors.border : isDark ? colors.border : 'rgba(226, 232, 240, 0.8)',
-    ...(variant === 'elevated' ? (isDark ? shadows.sm : shadows.md) : {}),
+    borderColor: colors.border,
+    ...(variant === 'elevated' ? (isDark ? shadows.sm : shadows.sm) : {}),
   };
 
   if (onPress) {
