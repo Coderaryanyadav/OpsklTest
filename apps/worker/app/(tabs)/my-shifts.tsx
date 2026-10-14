@@ -383,26 +383,19 @@ export default function WorkerMyShiftsScreen() {
             const isNoShow = booking.status === 'no_show';
             const isCopied = copiedBookingId === booking.id;
 
-            let badgeVariant: 'success' | 'warning' | 'primary' | 'danger' | 'info' = 'primary';
             let badgeLabel = 'CONFIRMED';
 
             if (isCheckedIn) {
-              badgeVariant = 'success';
               badgeLabel = 'ON-SITE CHECKED IN';
             } else if (isAwaitingReview) {
-              badgeVariant = 'warning';
               badgeLabel = 'AWAITING SIGN-OFF';
             } else if (isCompleted) {
-              badgeVariant = 'success';
               badgeLabel = 'PAYOUT SETTLED';
             } else if (isDisputed) {
-              badgeVariant = 'warning';
               badgeLabel = 'DISPUTED';
             } else if (isCancelled) {
-              badgeVariant = 'danger';
               badgeLabel = 'CANCELLED';
             } else if (isNoShow) {
-              badgeVariant = 'danger';
               badgeLabel = 'NO-SHOW';
             }
 
@@ -419,13 +412,13 @@ export default function WorkerMyShiftsScreen() {
               >
                 {/* Header: Status & Wage */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Badge label={badgeLabel} variant={badgeVariant} />
+                  <Badge label={badgeLabel} variant="neutral" />
                   <View style={{ alignItems: 'flex-end' }}>
                     <WageText>{formatINR(booking.agreedTotalPay)}</WageText>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                      <ShieldCheck size={12} color={colors.success} strokeWidth={2.5} style={{ marginRight: 3 }} />
-                      <Text style={{ fontSize: 11, color: colors.success, fontWeight: '700' }}>
-                        Escrow Guaranteed
+                      <ShieldCheck size={12} color={colors.textPrimary} strokeWidth={2.2} style={{ marginRight: 3 }} />
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                        Direct Settlement
                       </Text>
                     </View>
                   </View>

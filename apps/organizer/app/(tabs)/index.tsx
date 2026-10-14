@@ -16,7 +16,6 @@ import {
   Badge,
   Button,
   ShiftCardSkeleton,
-  EmptyState,
   useAuth,
 } from '@opskil/design-system';
 import {
@@ -30,7 +29,7 @@ import {
   fetchOrganizerProfile,
   updateJobStatus,
 } from '@opskil/shared';
-import { Bell, MapPin, Calendar } from 'lucide-react-native';
+import { Bell, MapPin, Calendar, Users, ArrowRight } from 'lucide-react-native';
 
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
@@ -149,9 +148,9 @@ export default function OrganizerDashboardScreen() {
                 OPSKL ORGANIZER
               </Text>
               {organizerProfile?.verificationStatus === 'verified' ? (
-                <Badge label="VERIFIED ORG" variant="success" size="sm" />
+                <Badge label="VERIFIED ORG" variant="neutral" size="sm" />
               ) : organizerProfile?.verificationStatus === 'pending' ? (
-                <Badge label="VERIFICATION PENDING" variant="warning" size="sm" />
+                <Badge label="VERIFICATION PENDING" variant="neutral" size="sm" />
               ) : organizerProfile?.verificationStatus === 'unverified' ? (
                 <Badge label="UNVERIFIED" variant="neutral" size="sm" />
               ) : null}
@@ -213,54 +212,124 @@ export default function OrganizerDashboardScreen() {
           </View>
         )}
 
-        {/* Real Metrics Grid */}
+        {/* Actionable Operational Task Banner */}
+        {metrics.newApplications > 0 && (
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/roster' as any)}
+            style={[
+              styles.actionBanner,
+              {
+                backgroundColor: colors.surfaceMuted,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.sm + 4,
+                marginTop: spacing.md,
+                borderWidth: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Review pending candidate applications"
+          >
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Users size={18} color={colors.textPrimary} strokeWidth={2} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  {metrics.newApplications} Candidate Application{metrics.newApplications === 1 ? '' : 's'} Waiting
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                  Review qualifications, verified experience, and confirm bookings.
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={16} color={colors.textPrimary} strokeWidth={2} />
+          </TouchableOpacity>
+        )}
+
+        {/* Operational Overview KPI Row (Links to corresponding screens) */}
         <View style={styles.metricsGrid}>
-          {/* Row 1 */}
           <View style={styles.metricsRow}>
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
-              <Text style={styles.metricLabel}>Active Jobs</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.activeJobs}
-              </Text>
-            </View>
-
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
-              <Text style={styles.metricLabel}>Open Positions</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.openPositions}
-              </Text>
-            </View>
-
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/roster' as any)}
+              style={[
+                styles.metricCard,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View applicant roster"
+            >
               <Text style={styles.metricLabel}>New Applicants</Text>
               <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.newApplications}
               </Text>
-            </View>
-          </View>
+            </TouchableOpacity>
 
-          {/* Row 2 */}
-          <View style={[styles.metricsRow, { marginTop: 6 }]}>
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
-              <Text style={styles.metricLabel}>Shortlisted</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.shortlistedApplicants}
-              </Text>
-            </View>
-
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/roster' as any)}
+              style={[
+                styles.metricCard,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View confirmed crew"
+            >
               <Text style={styles.metricLabel}>Confirmed Crew</Text>
               <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.confirmedWorkers}
               </Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
-              <Text style={styles.metricLabel}>Staffing Spend</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary, fontSize: 15 }]}>
+            <TouchableOpacity
+              onPress={() => {}}
+              style={[
+                styles.metricCard,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View open positions"
+            >
+              <Text style={styles.metricLabel}>Open Positions</Text>
+              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+                {metrics.openPositions}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/finances' as any)}
+              style={[
+                styles.metricCard,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: radii.md,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="View staffing spend and finances"
+            >
+              <Text style={styles.metricLabel}>Spend (All-Time)</Text>
+              <Text style={[styles.metricValue, { color: colors.textPrimary, fontSize: 13 }]}>
                 {formatINR(metrics.totalStaffingSpend)}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -273,7 +342,7 @@ export default function OrganizerDashboardScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[typography.h3, { color: colors.textPrimary }]}>Live Event Shifts</Text>
           <Text style={{ fontSize: 12, color: colors.textMuted }}>
-            {shifts.length} total shifts
+            {shifts.length} active shift{shifts.length === 1 ? '' : 's'}
           </Text>
         </View>
 
@@ -283,14 +352,71 @@ export default function OrganizerDashboardScreen() {
             <ShiftCardSkeleton />
           </View>
         ) : shifts.length === 0 ? (
-          <View style={{ marginTop: spacing.lg, paddingVertical: spacing.xl }}>
-            <EmptyState
-              icon={<Calendar size={36} color={colors.textSecondary} strokeWidth={1.8} />}
-              title="No Shifts Published Yet"
-              description="Create and publish your first event shift to begin receiving applications from verified event crew."
-              actionTitle="Create your first shift"
-              onAction={() => router.push('/(tabs)/create' as any)}
-            />
+          /* First-Shift Onboarding State */
+          <View
+            style={[
+              styles.onboardingCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radii.xl,
+                padding: spacing.xl,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.onboardingIconWrap,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderRadius: radii.full,
+                },
+              ]}
+            >
+              <Calendar size={32} color={colors.textPrimary} strokeWidth={1.8} />
+            </View>
+
+            <Text
+              style={[
+                typography.h3,
+                {
+                  color: colors.textPrimary,
+                  marginTop: spacing.md,
+                  textAlign: 'center',
+                  fontWeight: '700',
+                },
+              ]}
+            >
+              Publish Your First Event Shift
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 13,
+                color: colors.textSecondary,
+                textAlign: 'center',
+                marginTop: 6,
+                lineHeight: 20,
+                maxWidth: 300,
+              }}
+            >
+              Define your venue, call time, and crew headcount in 5 simple steps. Pre-screened event crew in Mumbai will receive instant shift notifications.
+            </Text>
+
+            <View style={{ width: '100%', marginTop: spacing.xl, gap: 10 }}>
+              <Button
+                title="+ Create and Publish Shift"
+                variant="primary"
+                size="lg"
+                onPress={() => router.push('/(tabs)/create' as any)}
+              />
+              <Button
+                title="View Organization Profile"
+                variant="outline"
+                size="md"
+                onPress={() => router.push('/(tabs)/profile' as any)}
+              />
+            </View>
           </View>
         ) : (
           shifts.map((shift) => {
@@ -413,6 +539,9 @@ const styles = StyleSheet.create({
     marginRight: 6,
     letterSpacing: 0.5,
   },
+  actionBanner: {
+    marginVertical: 4,
+  },
   metricsGrid: {
     marginTop: 12,
   },
@@ -422,19 +551,31 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     flex: 1,
-    padding: 10,
+    padding: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   metricLabel: {
-    fontSize: 10,
-    color: '#64748B',
+    fontSize: 9,
+    color: '#737373',
     textTransform: 'uppercase',
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
   },
   metricValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     marginTop: 2,
+  },
+  onboardingCard: {
+    borderWidth: 1,
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  onboardingIconWrap: {
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

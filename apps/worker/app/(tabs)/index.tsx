@@ -25,7 +25,7 @@ import { SwipeCard } from '../../src/components/SwipeCard';
 import { CardActionControls } from '../../src/components/CardActionControls';
 import { JobDetailSheet } from '../../src/components/JobDetailSheet';
 import { FilterSheet } from '../../src/components/FilterSheet';
-import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle, CheckCircle2 } from 'lucide-react-native';
+import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle, Search, RefreshCw } from 'lucide-react-native';
 import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/location';
 
 export default function WorkerDiscoverScreen() {
@@ -37,6 +37,7 @@ export default function WorkerDiscoverScreen() {
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [viewMode, setViewMode] = useState<'swipe' | 'list'>('swipe');
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
 
   const {
     cards,
@@ -60,6 +61,18 @@ export default function WorkerDiscoverScreen() {
     onRetryFailedApplication,
     onRefresh,
   } = useDiscoveryFeed(session?.user?.id ?? null);
+
+  const handleRefresh = async () => {
+    setLastRefreshedAt(new Date());
+    await onRefresh();
+  };
+
+  const hasActiveFilters = Boolean(
+    (filters.category && filters.category !== 'all') ||
+    filters.minWage ||
+    filters.requiredSkill ||
+    activeZone.id !== MUMBAI_ZONES[0].id
+  );
 
   const handleApplyZone = (newFilters: any, zone: LocalityZone) => {
     setActiveZone(zone);
@@ -88,7 +101,7 @@ export default function WorkerDiscoverScreen() {
         <View style={styles.headerLeft}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={[styles.brandTitle, { color: colors.primary }]}>OPSKL WORKER</Text>
-            <Badge label="MUMBAI" variant="success" size="sm" />
+            <Badge label="MUMBAI" variant="neutral" size="sm" />
           </View>
           <Text style={[typography.h2, { color: colors.textPrimary, marginTop: 2 }]}>
             Shift Discovery
@@ -221,40 +234,119 @@ export default function WorkerDiscoverScreen() {
           </View>
         </View>
       ) : cards.length === 0 ? (
-        /* Empty State */
+        /* Redesigned Compact Reassurance Empty State */
         <ScrollView
-          contentContainerStyle={[styles.centerContainer, { padding: spacing.xl }]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={[styles.emptyContainer, { padding: spacing.lg }]}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         >
-          <CheckCircle2 size={44} color={colors.textPrimary} strokeWidth={1.8} />
-          <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
-            All Caught Up
-          </Text>
-          <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 20 }}>
-            You have reviewed all available shifts in {activeZone.label}. Expand your filters or check back shortly for newly published events.
-          </Text>
+          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.xl }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceMuted, borderRadius: radii.full }]}>
+              {hasActiveFilters ? (
+                <SlidersHorizontal size={26} color={colors.textPrimary} strokeWidth={2} />
+              ) : (
+                <Search size={26} color={colors.textPrimary} strokeWidth={2} />
+              )}
+            </View>
 
-          <View style={{ gap: spacing.sm, marginTop: spacing.xl, width: '100%', maxWidth: 280 }}>
-            <Button
-              title="Change Locality / Filters"
-              variant="primary"
-              size="lg"
-              onPress={() => setFilterSheetVisible(true)}
-            />
-            {passedHistory.length > 0 && (
-              <Button
-                title={`Undo Last Pass (${passedHistory.length} skipped)`}
-                variant="secondary"
-                size="lg"
-                onPress={onUndo}
-              />
+            <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
+              {hasActiveFilters ? 'No Shifts Match Current Filters' : `No Shifts Currently in ${activeZone.coords.name || 'this Locality'}`}
+            </Text>
+
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
+              {hasActiveFilters
+                ? `No published shifts match your selected criteria in ${activeZone.label}. Try adjusting filters or expanding your search.`
+                : `There are currently no verified shifts posted in ${activeZone.label}. Organizers publish new shifts daily.`}
+            </Text>
+
+            {/* Active Filters Summary Chips */}
+            {hasActiveFilters && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: spacing.md }}>
+                {filters.category && filters.category !== 'all' && (
+                  <Badge label={`Category: ${filters.category.toUpperCase()}`} variant="neutral" size="sm" />
+                )}
+                {filters.minWage && (
+                  <Badge label={`Min ₹${filters.minWage}/hr`} variant="neutral" size="sm" />
+                )}
+                {filters.requiredSkill && (
+                  <Badge label={`Skill: ${filters.requiredSkill}`} variant="neutral" size="sm" />
+                )}
+                {activeZone.id !== MUMBAI_ZONES[0].id && (
+                  <Badge label={`Zone: ${activeZone.coords.name || activeZone.id}`} variant="neutral" size="sm" />
+                )}
+              </View>
             )}
-            <Button
-              title="Refresh Shift Deck"
-              variant="outline"
-              size="md"
-              onPress={onRefresh}
-            />
+
+            {/* Nearby Locality Suggestions */}
+            <View style={{ width: '100%', marginTop: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: colors.textMuted, textAlign: 'center', letterSpacing: 0.5 }}>
+                Try Nearby Localities
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: spacing.xs }}>
+                {MUMBAI_ZONES.filter((z) => z.id !== activeZone.id).slice(0, 3).map((zone) => (
+                  <Pressable
+                    key={zone.id}
+                    onPress={() => handleApplyZone({ ...filters, zone: zone.id }, zone)}
+                    style={({ pressed }) => [
+                      styles.zonePill,
+                      {
+                        backgroundColor: colors.surfaceMuted,
+                        borderColor: colors.border,
+                        borderRadius: radii.full,
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                  >
+                    <MapPin size={11} color={colors.textSecondary} strokeWidth={2} style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }}>
+                      {zone.coords.name || zone.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* Primary & Secondary Actions */}
+            <View style={{ gap: spacing.sm, marginTop: spacing.lg, width: '100%' }}>
+              <Button
+                title={hasActiveFilters ? "Clear Restrictive Filters" : "Change Filters / Locality"}
+                variant="primary"
+                size="md"
+                onPress={hasActiveFilters ? handleResetFilters : () => setFilterSheetVisible(true)}
+              />
+
+              {hasActiveFilters && (
+                <Button
+                  title="Modify Filter Settings"
+                  variant="outline"
+                  size="md"
+                  onPress={() => setFilterSheetVisible(true)}
+                />
+              )}
+
+              {passedHistory.length > 0 && (
+                <Button
+                  title={`Undo Passed Shifts (${passedHistory.length} skipped)`}
+                  variant="secondary"
+                  size="md"
+                  onPress={onUndo}
+                />
+              )}
+
+              <Pressable
+                onPress={handleRefresh}
+                style={({ pressed }) => [
+                  styles.refreshRow,
+                  { opacity: pressed ? 0.6 : 1 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh shift feed"
+              >
+                <RefreshCw size={13} color={colors.textSecondary} strokeWidth={2} style={{ marginRight: 6 }} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
+                  {refreshing ? 'Updating feed…' : `Refresh • Updated ${lastRefreshedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       ) : viewMode === 'swipe' ? (
@@ -536,6 +628,36 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  emptyCard: {
+    width: '100%',
+    maxWidth: 380,
+    padding: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zonePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+  },
+  refreshRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   deckWrapper: {
     flex: 1,

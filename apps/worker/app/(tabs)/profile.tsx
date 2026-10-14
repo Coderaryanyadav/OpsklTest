@@ -195,32 +195,106 @@ export default function WorkerProfileScreen() {
               </View>
             </Card>
 
-            {/* Verification & KYC Status */}
+            {/* Guided Account Completion Checklist */}
             <Card variant="outlined">
-              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Identity & Compliance
+              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: 2 }]}>
+                Account Completion Checklist
               </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
-                <Text style={{ fontSize: 14, color: colors.textPrimary }}>Government ID (Aadhaar / PAN)</Text>
-                {workerData?.verificationStatus === 'verified' ? (
-                  <Badge label="Verified" variant="success" size="sm" />
-                ) : (
-                  <Badge label="In Review" variant="warning" size="sm" />
-                )}
-              </View>
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
-                <Text style={{ fontSize: 14, color: colors.textPrimary }}>Bank Account / UPI</Text>
-                <Text style={{ fontSize: 13, color: workerData?.upiId ? colors.textPrimary : colors.textMuted, fontWeight: '500' }}>
-                  {workerData?.upiId || 'Not linked'}
-                </Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginBottom: spacing.sm }}>
+                Complete all 4 sections to maximize shift eligibility and automated payouts.
+              </Text>
+
+              <View style={{ gap: spacing.sm }}>
+                {/* 1. Personal Details */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                      1. Personal Information
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                      {userProfile?.fullName ? `${userProfile.fullName} (${displayPhone})` : 'Name and phone contact'}
+                    </Text>
+                  </View>
+                  <Badge
+                    label={userProfile?.fullName ? 'COMPLETED' : 'ACTION REQUIRED'}
+                    variant="neutral"
+                    size="sm"
+                  />
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+
+                {/* 2. Skills & Capabilities */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                      2. Skills & Event Capabilities
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                      {workerData?.skills && workerData.skills.length > 0
+                        ? `${workerData.skills.length} skills listed (${workerData.skills.slice(0, 2).join(', ')}${workerData.skills.length > 2 ? '…' : ''})`
+                        : 'No event skills selected yet'}
+                    </Text>
+                  </View>
+                  <Badge
+                    label={workerData?.skills && workerData.skills.length > 0 ? 'COMPLETED' : 'PENDING'}
+                    variant="neutral"
+                    size="sm"
+                  />
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+
+                {/* 3. Government ID Verification */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                      3. Identity Verification (Aadhaar / PAN)
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                      {workerData?.verificationStatus === 'verified'
+                        ? 'Government KYC verified'
+                        : 'Identity review in progress'}
+                    </Text>
+                  </View>
+                  <Badge
+                    label={workerData?.verificationStatus === 'verified' ? 'VERIFIED' : 'IN REVIEW'}
+                    variant={workerData?.verificationStatus === 'verified' ? 'neutral' : 'neutral'}
+                    size="sm"
+                  />
+                </View>
+
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+
+                {/* 4. Receiving UPI Handle */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                      4. Receiving Bank UPI Handle
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                      {workerData?.upiId ? workerData.upiId : 'Required for direct shift wage disbursement'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => router.push('/(tabs)/earnings' as any)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Manage payout UPI handle"
+                  >
+                    <Badge
+                      label={workerData?.upiId ? 'LINKED' : 'ADD UPI'}
+                      variant="neutral"
+                      size="sm"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             </Card>
 
-            {/* Skills & Badges */}
+            {/* Skills & Badges Tags */}
             <Card variant="outlined">
               <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Skills & Capabilities
+                Selected Capabilities
               </Text>
               {workerData?.skills && workerData.skills.length > 0 ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -236,8 +310,8 @@ export default function WorkerProfileScreen() {
                         borderColor: colors.border,
                       }}
                     >
-                      <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
-                        ✓ {skill}
+                      <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600' }}>
+                        {skill}
                       </Text>
                     </View>
                   ))}

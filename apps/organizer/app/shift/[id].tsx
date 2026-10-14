@@ -278,7 +278,7 @@ export default function OrganizerShiftDetailScreen() {
         title="Live Shift Console"
         subtitle={activeJob.title}
         onBack={() => router.back()}
-        rightAction={<Badge label={`${activeJob.durationHours}h SHIFT`} variant="info" size="sm" />}
+        rightAction={<Badge label={`${activeJob.durationHours}h SHIFT`} variant="neutral" size="sm" />}
       />
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
@@ -295,7 +295,7 @@ export default function OrganizerShiftDetailScreen() {
             </View>
             <Badge
               label={checkedInCount === crew.length ? 'ALL PRESENT' : `${crew.length - checkedInCount} PENDING`}
-              variant={checkedInCount === crew.length ? 'success' : 'warning'}
+              variant="neutral"
             />
           </View>
 

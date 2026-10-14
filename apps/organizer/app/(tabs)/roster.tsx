@@ -400,11 +400,6 @@ export default function OrganizerRosterScreen() {
 
             const slotsRemaining = job ? Math.max(0, job.slotsTotal - (job.slotsFilled || 0)) : 0;
 
-            let statusVariant: 'success' | 'warning' | 'primary' | 'neutral' | 'danger' = 'primary';
-            if (isConfirmed) statusVariant = 'success';
-            else if (isShortlisted) statusVariant = 'warning';
-            else if (isRejected) statusVariant = 'danger';
-
             return (
               <Card
                 key={app.id}
@@ -431,7 +426,7 @@ export default function OrganizerRosterScreen() {
                           {profile?.fullName || 'Opskl Candidate'}
                         </Text>
                         {isVerified && (
-                          <Badge label="ID VERIFIED" variant="success" size="sm" />
+                          <Badge label="ID VERIFIED" variant="neutral" size="sm" />
                         )}
                       </View>
 
@@ -452,7 +447,7 @@ export default function OrganizerRosterScreen() {
 
                   <Badge
                     label={app.status.toUpperCase()}
-                    variant={statusVariant}
+                    variant="neutral"
                     size="sm"
                   />
                 </View>

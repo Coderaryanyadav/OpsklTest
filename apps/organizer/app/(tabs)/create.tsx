@@ -65,7 +65,7 @@ const WIZARD_STEPS = [
 export default function OrganizerCreateShiftScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { colors, spacing, typography, isDark } = useOpsklTheme();
+  const { colors, spacing, typography } = useOpsklTheme();
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -530,11 +530,11 @@ export default function OrganizerCreateShiftScreen() {
               helperText="Wages are deposited into direct settlement upon shift sign-off"
             />
 
-            {/* Live Interactive Billing Inspector */}
+            {/* Live Interactive Billing Inspector — Strict Monochrome */}
             <Card
               variant="elevated"
               style={{
-                backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
+                backgroundColor: colors.surfaceMuted,
                 borderColor: colors.border,
                 borderWidth: 1,
                 padding: spacing.md,
@@ -542,10 +542,10 @@ export default function OrganizerCreateShiftScreen() {
               }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Live Billing Inspector
+                <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Billing Breakdown
                 </Text>
-                <Badge label="100% WAGE SHIELD" variant="success" size="sm" />
+                <Badge label="ESTIMATED COST" variant="neutral" size="sm" />
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -579,14 +579,14 @@ export default function OrganizerCreateShiftScreen() {
               <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 2 }} />
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>Total Shift Escrow:</Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>Total Estimated Escrow:</Text>
                 <WageText style={{ fontSize: 18 }}>{formatINR(totalDeposit)}</WageText>
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                <ShieldCheck size={13} color={colors.success} strokeWidth={2.4} />
-                <Text style={{ fontSize: 11, color: colors.success, fontWeight: '600', flex: 1 }}>
-                  100% of worker wages are protected in escrow and disbursed directly with ₹0 deductions.
+                <ShieldCheck size={13} color={colors.textPrimary} strokeWidth={2.4} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500', flex: 1 }}>
+                  Wages are held in escrow and disbursed directly to workers upon attendance sign-off.
                 </Text>
               </View>
             </Card>
@@ -694,13 +694,13 @@ export default function OrganizerCreateShiftScreen() {
               </View>
             </Card>
 
-            {/* Comprehensive Financial Budget Card */}
+            {/* Comprehensive Financial Budget Card — Strict Monochrome */}
             <Card
               variant="outlined"
               style={{
-                borderColor: colors.primary,
-                borderWidth: 1.5,
-                backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
+                borderColor: colors.border,
+                borderWidth: 1,
+                backgroundColor: colors.surfaceMuted,
                 gap: 8,
               }}
             >
@@ -708,7 +708,7 @@ export default function OrganizerCreateShiftScreen() {
                 <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
                   Financial Summary & Budget
                 </Text>
-                <Badge label="VERIFIED RATES" variant="primary" size="sm" />
+                <Badge label="BUDGET SUMMARY" variant="neutral" size="sm" />
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -744,9 +744,9 @@ export default function OrganizerCreateShiftScreen() {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                <ShieldCheck size={13} color={colors.success} strokeWidth={2.4} />
-                <Text style={{ fontSize: 11, color: colors.success, fontWeight: '600', flex: 1 }}>
-                  100% Wage Protection: Workers receive full agreed wages without deduction upon sign-off.
+                <ShieldCheck size={13} color={colors.textPrimary} strokeWidth={2.4} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500', flex: 1 }}>
+                  Wages are held in escrow and released directly to crew upon supervisor attendance verification.
                 </Text>
               </View>
             </Card>

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Button, Badge } from '@opskil/design-system';
@@ -161,6 +161,27 @@ export default function WorkerWelcomeScreen() {
             </Text>
             <ArrowRight size={14} color={colors.textSecondary} strokeWidth={2} style={{ marginLeft: 4 }} />
           </Pressable>
+
+          {/* Organizer Portal Switch & Legal Footer */}
+          <View style={[styles.footerRow, { borderTopColor: colors.border, paddingTop: spacing.sm }]}>
+            <Text style={{ fontSize: 11, color: colors.textMuted, textAlign: 'center' }}>
+              Looking to hire event crew? Use the{' '}
+              <Text
+                style={{ color: colors.textPrimary, fontWeight: '700', textDecorationLine: 'underline' }}
+                onPress={() => {
+                  Alert.alert(
+                    'Organizer Console',
+                    'Opskl Organizer is available for event hosts, production agencies, and brands. Please open the Opskl Organizer app or contact support@opskil.com.'
+                  );
+                }}
+              >
+                Opskl Organizer Portal
+              </Text>
+            </Text>
+            <Text style={{ fontSize: 10, color: colors.textMuted, textAlign: 'center', marginTop: 4 }}>
+              By continuing, you agree to Opskl's Terms of Service & Privacy Policy.
+            </Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -215,5 +236,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
+  },
+  footerRow: {
+    borderTopWidth: 1,
+    marginTop: 4,
   },
 });

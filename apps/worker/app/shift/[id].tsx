@@ -178,7 +178,7 @@ export default function WorkerShiftDetailScreen() {
                 {formatINR(shift.hourlyRate)}/hr • {shift.durationHours} scheduled hours
               </Text>
             </View>
-            <Badge label="UPI on verified checkout" variant="success" size="sm" />
+            <Badge label="UPI DISBURSEMENT" variant="neutral" size="sm" />
           </View>
 
           <View
@@ -212,7 +212,7 @@ export default function WorkerShiftDetailScreen() {
               )}
             </View>
             {shift.organizer?.verificationStatus === 'verified' && (
-              <Badge label="Verified Host" variant="success" size="sm" />
+              <Badge label="Verified Host" variant="neutral" size="sm" />
             )}
           </View>
         </Card>

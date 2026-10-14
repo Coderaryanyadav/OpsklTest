@@ -138,7 +138,7 @@ export default function OrganizerFinancesScreen() {
             lineHeight: 18,
           }}
         >
-          Transparent staffing billing • GST compliant statements
+          Staffing billing ledgers • Itemized shift expense statements
         </Text>
       </View>
 
@@ -154,17 +154,18 @@ export default function OrganizerFinancesScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Executive Overview Grid */}
+          {/* Executive Overview Grid — Strict Monochrome */}
           <Card
             variant="elevated"
             style={{
-              backgroundColor: colors.primary,
-              borderColor: colors.primaryHover,
+              backgroundColor: '#000000',
+              borderColor: '#262626',
+              borderWidth: 1,
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '700', textTransform: 'uppercase' }}>
+                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase' }}>
                   Total Staffing Spend (All-time)
                 </Text>
                 <WageText style={{ color: '#FFFFFF', fontSize: 32, lineHeight: 38, marginTop: 4 }}>
@@ -180,22 +181,24 @@ export default function OrganizerFinancesScreen() {
                   return <Badge label="NO INVOICES" variant="neutral" size="sm" />;
                 }
                 if (hasDiscrepancy) {
-                  return <Badge label="DISCREPANCY" variant="danger" size="sm" />;
+                  return <Badge label="DISCREPANCY" variant="neutral" size="sm" />;
                 }
                 if (hasEscrowDue) {
-                  return <Badge label="ESCROW PENDING" variant="warning" size="sm" />;
+                  return <Badge label="ESCROW PENDING" variant="neutral" size="sm" />;
                 }
-                return <Badge label="RECONCILED" variant="success" size="sm" />;
+                return <Badge label="RECONCILED" variant="neutral" size="sm" />;
               })()}
             </View>
 
             <View
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.25)',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
                 borderRadius: radii.md,
                 padding: spacing.md,
                 marginTop: spacing.md,
                 gap: spacing.xs,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.12)',
               }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -214,7 +217,7 @@ export default function OrganizerFinancesScreen() {
                   style={{
                     fontSize: 13,
                     fontWeight: '700',
-                    color: (finances?.outstandingEscrowDue || 0) > 0 ? '#FEF08A' : '#FFFFFF',
+                    color: '#FFFFFF',
                   }}
                 >
                   {formatINR(finances?.outstandingEscrowDue || 0)}

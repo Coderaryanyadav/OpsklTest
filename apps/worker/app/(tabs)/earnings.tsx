@@ -189,7 +189,7 @@ export default function WorkerEarningsScreen() {
             lineHeight: 18,
           }}
         >
-          Direct-to-bank UPI transfers • 0 platform commission from wages
+          Direct UPI Settlement • Wages credited upon verified supervisor attendance sign-off
         </Text>
       </View>
 
@@ -203,7 +203,7 @@ export default function WorkerEarningsScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Main Balance Hero Card with Apple Card Aesthetic */}
+          {/* Main Balance Hero Card with Apple-Level Restraint */}
           <Card
             variant="elevated"
             style={{
@@ -223,11 +223,11 @@ export default function WorkerEarningsScreen() {
                   {formatINR(summary?.paidEarnings || 0)}
                 </WageText>
               </View>
-              <Badge label="100% WAGE GUARANTEE" variant="success" size="sm" />
+              <Badge label="SETTLED" variant="neutral" size="sm" />
             </View>
 
             <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: spacing.xs }}>
-              Transferred directly into your bank account via NPCI IMPS/UPI • ₹0 platform fees
+              Direct transfer to linked UPI handle upon supervisor attendance verification
             </Text>
 
             {/* UPI Account strip */}
@@ -252,7 +252,7 @@ export default function WorkerEarningsScreen() {
                   Receiving Bank UPI Handle
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                  <ShieldCheck size={14} color={colors.success} strokeWidth={2.4} />
+                  <ShieldCheck size={14} color="#FFFFFF" strokeWidth={2.4} />
                   <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700', fontFamily: 'monospace' }}>
                     {summary?.defaultUpiId || 'Not linked yet'}
                   </Text>
@@ -265,7 +265,7 @@ export default function WorkerEarningsScreen() {
             </TouchableOpacity>
           </Card>
 
-          {/* 5 Secondary Earnings Dimensions */}
+          {/* 5 Secondary Earnings Dimensions — Strict Monochrome */}
           <Text style={[typography.label, { color: colors.textMuted, marginTop: spacing.xs }]}>
             EARNINGS STATUS BREAKDOWN
           </Text>
@@ -278,13 +278,14 @@ export default function WorkerEarningsScreen() {
                 flex: 1,
                 minWidth: '47%',
                 backgroundColor: colors.surface,
+                borderColor: colors.border,
                 padding: spacing.md,
               }}
             >
               <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
                 CONFIRMED UPCOMING
               </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.info, marginTop: 4 }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(summary?.confirmedUpcomingWages || 0)}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
@@ -299,13 +300,14 @@ export default function WorkerEarningsScreen() {
                 flex: 1,
                 minWidth: '47%',
                 backgroundColor: colors.surface,
+                borderColor: colors.border,
                 padding: spacing.md,
               }}
             >
               <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
                 AWAITING SIGN-OFF
               </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.warning, marginTop: 4 }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(summary?.completedAwaitingApproval || 0)}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
@@ -320,17 +322,18 @@ export default function WorkerEarningsScreen() {
                 flex: 1,
                 minWidth: '47%',
                 backgroundColor: colors.surface,
+                borderColor: colors.border,
                 padding: spacing.md,
               }}
             >
               <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
-                APPROVED IN TRANSIT
+                APPROVED IN DISBURSEMENT
               </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary, marginTop: 4 }}>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                 {formatINR(summary?.approvedAwaitingPayment || 0)}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                Escrow release processing
+                Payout processing via UPI
               </Text>
             </Card>
 
@@ -340,7 +343,7 @@ export default function WorkerEarningsScreen() {
               style={{
                 flex: 1,
                 minWidth: '47%',
-                backgroundColor: (summary?.failedDelayedPayments || 0) > 0 ? '#FFF5F5' : colors.surface,
+                backgroundColor: colors.surface,
                 padding: spacing.md,
                 borderColor: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.border,
               }}
@@ -365,7 +368,7 @@ export default function WorkerEarningsScreen() {
                 {formatINR(summary?.failedDelayedPayments || 0)}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                {(summary?.failedDelayedPayments || 0) > 0 ? 'Tap to retry UPI' : '0 delayed payouts'}
+                {(summary?.failedDelayedPayments || 0) > 0 ? 'Tap to update UPI' : '0 delayed payouts'}
               </Text>
             </Card>
 
@@ -375,24 +378,24 @@ export default function WorkerEarningsScreen() {
                 variant="outlined"
                 style={{
                   width: '100%',
-                  backgroundColor: '#FFFBEB',
-                  borderColor: '#F59E0B',
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                   padding: spacing.md,
                 }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
-                    <Text style={{ fontSize: 11, color: '#B45309', fontWeight: '700' }}>
+                    <Text style={{ fontSize: 11, color: colors.textPrimary, fontWeight: '700' }}>
                       DISPUTED WAGES UNDER REVIEW
                     </Text>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#B45309', marginTop: 4 }}>
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
                       {formatINR(summary?.disputedAmounts || 0)}
                     </Text>
-                    <Text style={{ fontSize: 11, color: '#92400E', marginTop: 2 }}>
-                      Platform arbitrator assigned • Funds secured in escrow
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                      Arbitration assigned • Held pending resolution
                     </Text>
                   </View>
-                  <Badge label="IN DISPUTE" variant="warning" size="sm" />
+                  <Badge label="IN DISPUTE" variant="neutral" size="sm" />
                 </View>
               </Card>
             )}
