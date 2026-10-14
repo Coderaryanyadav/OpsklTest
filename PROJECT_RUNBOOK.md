@@ -142,6 +142,9 @@ Because both the Worker and Organizer apps are built with Expo, running them sim
    npm --workspace=@opskil/admin run dev -- -p 3000
    ```
    *Open [http://localhost:3000](http://localhost:3000) in your browser.*
+   - **Admin Portal**: [http://localhost:3000/login](http://localhost:3000/login)
+   - **Default Admin Account**: `admin@opskil.com` / `AdminOpskil2026!`
+   - **Provision/Update Admin Script**: `node scripts/create_admin.mjs <email> <password>`
 
 ---
 
