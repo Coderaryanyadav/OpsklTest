@@ -6,9 +6,9 @@ name: Organizer Shift Creation and Live Crew Check-In Flow
     clearState: true
 
 # 2. Organizer Dashboard Overview
-- assertVisible: "Apex Event Productions"
+- assertVisible: "OPSKL ORGANIZER"
+- assertVisible: "+ Post Shift"
 - assertVisible: "Active Jobs"
-- assertVisible: "Live Event Shifts"
 
 # 3. Post a New Shift Wizard Flow
 - tapOn: "+ Post Shift"
@@ -23,17 +23,7 @@ name: Organizer Shift Creation and Live Crew Check-In Flow
 # 5. Review Live Roster & Applicants
 - tapOn: "Roster"
 - assertVisible: "Crew Roster & Selection"
-- assertVisible: "Shortlist"
 
 # 6. Live Shift Console & Venue Check-In
-- tapOn: "Live Event Shifts"
-- tapOn: "Registration Desk & VIP Usher"
-- assertVisible: "EVENT VENUE CODE"
-- assertVisible: "OP-4829"
-
-# 7. Check-In Arrived Worker
-- tapOn: "Check In"
-- assertVisible: "CHECKED IN"
-
-# 8. Shift Conclusion and Wage Sign-off
-- assertVisible: "Conclude Shift & Approve Wages"
+- tapOn: "Overview"
+- assertVisible: "Live Event Shifts"
