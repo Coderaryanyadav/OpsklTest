@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   useOpsklTheme,
   useAuth,
@@ -12,10 +12,11 @@ import {
   Badge,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
-import { fetchUserProfile, supabase } from '@opskil/shared';
+import { fetchUserProfile, fetchWorkerProfile, supabase } from '@opskil/shared';
 
 export default function WorkerLoginScreen() {
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { sendEmailOtp, verifyEmailOtp } = useAuth();
 
@@ -73,7 +74,22 @@ export default function WorkerLoginScreen() {
           return;
         }
 
-        router.replace('/(tabs)' as any);
+        // Check if worker profile has completed profile onboarding
+        let wp = null;
+        try {
+          wp = await fetchWorkerProfile(res.session.user.id);
+        } catch {
+          // Non-critical check failure
+        }
+
+        if (!wp || wp.profileCompletionStatus !== 'completed' || !wp.skills || wp.skills.length === 0) {
+          const onboardingTarget = redirect
+            ? `/onboarding?redirect=${encodeURIComponent(redirect)}`
+            : '/onboarding';
+          router.replace(onboardingTarget as any);
+        } else {
+          router.replace((redirect || '/(tabs)') as any);
+        }
       } else {
         Alert.alert('Verification Pending', 'No active session was returned by the auth provider.');
       }

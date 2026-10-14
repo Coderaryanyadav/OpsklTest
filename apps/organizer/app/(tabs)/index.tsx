@@ -156,7 +156,7 @@ export default function OrganizerDashboardScreen() {
               ) : null}
             </View>
             <Text style={[typography.h2, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={1}>
-              {organizerProfile?.businessName || (organizerId ? 'My Organization' : 'Organizer details unavailable')}
+              {organizerProfile?.businessName || (organizerId ? 'My Organization' : 'Guest Organizer')}
             </Text>
           </View>
 
@@ -190,6 +190,44 @@ export default function OrganizerDashboardScreen() {
             />
           </View>
         </View>
+
+        {/* Guest Organizer Mode Banner */}
+        {!organizerId && (
+          <Card
+            variant="elevated"
+            style={{
+              marginTop: spacing.md,
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: radii.md,
+              padding: spacing.md,
+            }}
+          >
+            <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '700' }]}>
+              Sign In to Manage Shifts & Crew
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+              Sign in with your organization account to review candidate applications, confirm shift rosters, and manage supervisor attendance sign-offs.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+              <Button
+                title="Sign In as Organizer"
+                variant="primary"
+                size="sm"
+                fullWidth={false}
+                onPress={() => router.push('/auth/login?redirect=/(tabs)' as any)}
+              />
+              <Button
+                title="Create a Shift"
+                variant="outline"
+                size="sm"
+                fullWidth={false}
+                onPress={() => router.push('/(tabs)/create' as any)}
+              />
+            </View>
+          </Card>
+        )}
 
         {error && (
           <View

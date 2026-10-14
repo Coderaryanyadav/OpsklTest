@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Card,
@@ -31,6 +32,7 @@ import { useAuth } from '@opskil/design-system';
 type ActiveView = 'invoices' | 'reconciliation';
 
 export default function OrganizerFinancesScreen() {
+  const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { session } = useAuth();
 
@@ -142,7 +144,39 @@ export default function OrganizerFinancesScreen() {
         </Text>
       </View>
 
-      {loading ? (
+      {!organizerId ? (
+        <View style={{ flex: 1, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' }}>
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: colors.surfaceMuted,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <FileText size={28} color={colors.textPrimary} strokeWidth={2} />
+          </View>
+          <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+            Sign In to Access Organization Finances
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
+            Sign in with your organizer account to review staffing spend, invoice histories, GST breakdowns, and wage disbursements.
+          </Text>
+          <View style={{ marginTop: spacing.lg, width: '100%', maxWidth: 280 }}>
+            <Button
+              title="Sign In as Organizer"
+              variant="primary"
+              size="md"
+              onPress={() => router.push('/auth/login?redirect=/(tabs)/finances' as any)}
+            />
+          </View>
+        </View>
+      ) : loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[typography.body, { color: colors.textMuted, marginTop: spacing.md }]}>

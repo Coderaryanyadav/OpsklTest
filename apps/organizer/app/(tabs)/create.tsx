@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import {
   getTodayDateIST,
   createJobSafe,
   calculateJobFinancials,
+  universalStorage,
 } from '@opskil/shared';
 import { ShiftCreateSchema } from '@opskil/validation';
 import {
@@ -113,6 +114,44 @@ export default function OrganizerCreateShiftScreen() {
   const platformFee = financials.platformFeeAmount;
   const gstFee = financials.gstAmount;
   const totalDeposit = financials.totalPayableByOrganizer;
+
+  useEffect(() => {
+    async function restoreDraft() {
+      try {
+        const draftJson = await universalStorage.getItem('@opskil_organizer_shift_draft');
+        if (draftJson) {
+          const draft = JSON.parse(draftJson);
+          if (draft.title) setTitle(draft.title);
+          if (draft.category) setCategory(draft.category);
+          if (draft.slotsTotal) setSlotsTotal(String(draft.slotsTotal));
+          if (draft.date) setDate(draft.date);
+          if (draft.startTime) setStartTime(draft.startTime);
+          if (draft.endTime) setEndTime(draft.endTime);
+          if (draft.durationHours) setDurationHours(String(draft.durationHours));
+          if (draft.venueName) setVenueName(draft.venueName);
+          if (draft.venueAddress) setVenueAddress(draft.venueAddress);
+          if (draft.landmark) setLandmark(draft.landmark);
+          if (draft.zone) setZone(draft.zone);
+          if (draft.reportingInstructions) setReportingInstructions(draft.reportingInstructions);
+          if (draft.supervisorName) setSupervisorName(draft.supervisorName);
+          if (draft.supervisorPhone) setSupervisorPhone(draft.supervisorPhone);
+          if (draft.duties) setDuties(draft.duties);
+          if (draft.requiredSkills) setRequiredSkills(draft.requiredSkills);
+          if (draft.eligibilityCriteria) setEligibilityCriteria(draft.eligibilityCriteria);
+          if (draft.dressCode) setDressCode(draft.dressCode);
+          if (draft.hourlyRate) setHourlyRate(String(draft.hourlyRate));
+          if (draft.breaksMinutes) setBreaksMinutes(String(draft.breaksMinutes));
+          if (draft.mealProvided !== undefined) setMealProvided(Boolean(draft.mealProvided));
+          if (draft.transportProvided !== undefined) setTransportProvided(Boolean(draft.transportProvided));
+          if (draft.overtimePolicy) setOvertimePolicy(draft.overtimePolicy);
+          if (draft.cancellationPolicy) setCancellationPolicy(draft.cancellationPolicy);
+        }
+      } catch {
+        // Non-critical restore failure
+      }
+    }
+    restoreDraft();
+  }, []);
 
   const validateStep = (currentStep: number): boolean => {
     if (currentStep === 1) {
@@ -218,10 +257,30 @@ export default function OrganizerCreateShiftScreen() {
     const organizerId = session?.user?.id;
     if (!organizerId) {
       setSubmitting(false);
+      try {
+        await universalStorage.setItem(
+          '@opskil_organizer_shift_draft',
+          JSON.stringify({
+            title, category, slotsTotal, date, startTime, endTime, durationHours,
+            venueName, venueAddress, landmark, zone, reportingInstructions,
+            supervisorName, supervisorPhone, duties, requiredSkills,
+            eligibilityCriteria, dressCode, hourlyRate, breaksMinutes,
+            mealProvided, transportProvided, overtimePolicy, cancellationPolicy,
+          })
+        );
+      } catch {
+        // Non-critical
+      }
       Alert.alert(
-        'Authentication Required',
-        'You must be signed in with an active organizer account to create or publish a shift.',
-        [{ text: 'Sign In', onPress: () => router.push('/auth/login') }]
+        'Sign In Required',
+        'You must be signed in with an active organizer account to create or publish a shift. Your shift draft has been saved and will be restored when you sign in.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign In',
+            onPress: () => router.push('/auth/login?redirect=/(tabs)/create' as any),
+          },
+        ]
       );
       return;
     }
@@ -237,6 +296,11 @@ export default function OrganizerCreateShiftScreen() {
     setSubmitting(false);
 
     if (result.success) {
+      try {
+        await universalStorage.removeItem('@opskil_organizer_shift_draft');
+      } catch {
+        // Non-critical
+      }
       Alert.alert(
         status === 'draft' ? 'Draft Saved' : 'Shift Published Live',
         status === 'draft'

@@ -133,6 +133,49 @@ export default function WorkerProfileScreen() {
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={{ marginTop: 8, color: colors.textMuted }}>Loading profile…</Text>
           </View>
+        ) : !userId ? (
+          <>
+            {/* Guest Worker Card */}
+            <Card variant="elevated">
+              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+                <View
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: colors.surfaceMuted,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '800', color: colors.textPrimary }}>OP</Text>
+                </View>
+                <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+                  Guest Worker
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, maxWidth: 280, lineHeight: 18 }}>
+                  Sign in or complete profile registration to unlock shift applications, manage event skills, and track direct UPI payouts.
+                </Text>
+                <View style={{ marginTop: spacing.md, width: '100%', gap: spacing.sm }}>
+                  <Button
+                    title="Sign In as Worker"
+                    variant="primary"
+                    size="md"
+                    onPress={() => router.push('/auth/login?redirect=/(tabs)/profile' as any)}
+                  />
+                  <Button
+                    title="Register Worker Account"
+                    variant="outline"
+                    size="md"
+                    onPress={() => router.push('/onboarding' as any)}
+                  />
+                </View>
+              </View>
+            </Card>
+          </>
         ) : (
           <>
             {/* User Identity Card */}
@@ -206,13 +249,18 @@ export default function WorkerProfileScreen() {
 
               <View style={{ gap: spacing.sm }}>
                 {/* 1. Personal Details */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                <TouchableOpacity
+                  onPress={() => router.push('/onboarding' as any)}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit personal information"
+                >
                   <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                       1. Personal Information
                     </Text>
                     <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                      {userProfile?.fullName ? `${userProfile.fullName} (${displayPhone})` : 'Name and phone contact'}
+                      {userProfile?.fullName ? `${userProfile.fullName} (${displayPhone})` : 'Name and phone contact (tap to update)'}
                     </Text>
                   </View>
                   <Badge
@@ -220,12 +268,17 @@ export default function WorkerProfileScreen() {
                     variant="neutral"
                     size="sm"
                   />
-                </View>
+                </TouchableOpacity>
 
                 <View style={{ height: 1, backgroundColor: colors.border }} />
 
                 {/* 2. Skills & Capabilities */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                <TouchableOpacity
+                  onPress={() => router.push('/onboarding' as any)}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit event skills"
+                >
                   <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                       2. Skills & Event Capabilities
@@ -233,7 +286,7 @@ export default function WorkerProfileScreen() {
                     <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
                       {workerData?.skills && workerData.skills.length > 0
                         ? `${workerData.skills.length} skills listed (${workerData.skills.slice(0, 2).join(', ')}${workerData.skills.length > 2 ? '…' : ''})`
-                        : 'No event skills selected yet'}
+                        : 'No event skills selected yet (tap to add)'}
                     </Text>
                   </View>
                   <Badge
@@ -241,7 +294,7 @@ export default function WorkerProfileScreen() {
                     variant="neutral"
                     size="sm"
                   />
-                </View>
+                </TouchableOpacity>
 
                 <View style={{ height: 1, backgroundColor: colors.border }} />
 

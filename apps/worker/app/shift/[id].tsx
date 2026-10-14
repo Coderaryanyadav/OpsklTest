@@ -78,7 +78,12 @@ export default function WorkerShiftDetailScreen() {
     if (!shift) return;
     if (!session?.user?.id) {
       Alert.alert('Sign In Required', 'Please sign in to apply for this shift.', [
-        { text: 'OK', onPress: () => router.push('/auth/login') },
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign In',
+          onPress: () =>
+            router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any),
+        },
       ]);
       return;
     }

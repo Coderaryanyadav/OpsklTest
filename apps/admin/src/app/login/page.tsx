@@ -46,7 +46,9 @@ export default function AdminLoginPage() {
           return;
         }
 
-        window.location.href = '/';
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get('redirect') || '/';
+        window.location.href = redirectUrl;
       } else {
         setErrorMsg('Authentication succeeded but no active session was returned.');
       }

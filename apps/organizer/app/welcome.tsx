@@ -3,10 +3,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Button, Badge } from '@opskil/design-system';
 import { Users, ShieldCheck, Building2, ArrowRight } from 'lucide-react-native';
+import { universalStorage } from '@opskil/shared';
 
 export default function OrganizerWelcomeScreen() {
   const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
+
+  const handleNavigate = async (target: string, replace = false) => {
+    try {
+      await universalStorage.setItem('@opskil_organizer_welcome_seen', 'true');
+    } catch {
+      // Non-critical
+    }
+    if (replace) {
+      router.replace(target as any);
+    } else {
+      router.push(target as any);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -123,19 +137,19 @@ export default function OrganizerWelcomeScreen() {
               title="Open Operations Dashboard"
               variant="primary"
               size="lg"
-              onPress={() => router.push('/(tabs)' as any)}
+              onPress={() => handleNavigate('/(tabs)', true)}
             />
 
             <Button
               title="Organizer Sign In"
               variant="outline"
               size="md"
-              onPress={() => router.push('/auth/login' as any)}
+              onPress={() => handleNavigate('/auth/login')}
             />
           </View>
 
           <Pressable
-            onPress={() => router.push('/(tabs)/create' as any)}
+            onPress={() => handleNavigate('/(tabs)/create')}
             style={({ pressed }) => [
               styles.createLink,
               { opacity: pressed ? 0.7 : 1 },

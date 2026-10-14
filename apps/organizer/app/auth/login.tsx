@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   useOpsklTheme,
   useAuth,
@@ -16,6 +16,7 @@ import { fetchUserProfile, supabase } from '@opskil/shared';
 
 export default function OrganizerLoginScreen() {
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { sendEmailOtp, verifyEmailOtp } = useAuth();
 
@@ -73,7 +74,7 @@ export default function OrganizerLoginScreen() {
           return;
         }
 
-        router.replace('/(tabs)' as any);
+        router.replace((redirect || '/(tabs)') as any);
       } else {
         Alert.alert('Verification Pending', 'No session was returned by Supabase.');
       }

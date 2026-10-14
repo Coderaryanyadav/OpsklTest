@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Card,
@@ -37,6 +38,7 @@ import {
 type LedgerFilter = 'all' | 'settled' | 'pending' | 'failed' | 'disputed';
 
 export default function WorkerEarningsScreen() {
+  const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { session } = useAuth();
 
@@ -193,7 +195,39 @@ export default function WorkerEarningsScreen() {
         </Text>
       </View>
 
-      {loading ? (
+      {!workerId ? (
+        <View style={{ flex: 1, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' }}>
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: colors.surfaceMuted,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Receipt size={28} color={colors.textPrimary} strokeWidth={2} />
+          </View>
+          <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+            Sign In to Access Earnings
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
+            Sign in with your worker account to view settled wages, track pending attendance reviews, manage your receiving bank UPI handle, and download disbursement receipts.
+          </Text>
+          <View style={{ marginTop: spacing.lg, width: '100%', maxWidth: 280 }}>
+            <Button
+              title="Sign In as Worker"
+              variant="primary"
+              size="md"
+              onPress={() => router.push('/auth/login?redirect=/(tabs)/earnings' as any)}
+            />
+          </View>
+        </View>
+      ) : loading ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
           <ShiftCardSkeleton />
           <ShiftCardSkeleton />

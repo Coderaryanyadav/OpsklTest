@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   useOpsklTheme,
   ScreenHeader,
@@ -38,6 +38,7 @@ const PREFERRED_LOCALITIES = [
 
 export default function WorkerOnboardingScreen() {
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const { session } = useAuth();
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
@@ -99,13 +100,14 @@ export default function WorkerOnboardingScreen() {
         profileCompletionStatus: 'completed',
       });
 
+      const target = redirect || '/(tabs)';
       Alert.alert(
         'Profile Completed',
         'Your worker profile is ready. You can now browse verified event shifts across Mumbai.',
         [
           {
-            text: 'Browse Shifts',
-            onPress: () => router.replace('/(tabs)' as any),
+            text: target === '/(tabs)' ? 'Browse Shifts' : 'Continue',
+            onPress: () => router.replace(target as any),
           },
         ]
       );
@@ -115,26 +117,6 @@ export default function WorkerOnboardingScreen() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!session?.user?.id) {
-      Alert.alert(
-        'Authentication Required',
-        'Please sign in or enter your email to complete worker registration.',
-        [
-          {
-            text: 'Sign In / Register',
-            onPress: () => router.replace('/auth/login' as any),
-          },
-          {
-            text: 'Back',
-            style: 'cancel',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-    }
-  }, [session?.user?.id]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -146,7 +128,13 @@ export default function WorkerOnboardingScreen() {
             title="Authentication Required"
             description="Please sign in or verify your email OTP before completing your worker registration profile."
             actionLabel="Sign In / Register"
-            onAction={() => router.replace('/auth/login' as any)}
+            onAction={() =>
+              router.replace(
+                (redirect
+                  ? `/auth/login?redirect=${encodeURIComponent(`/onboarding?redirect=${encodeURIComponent(redirect)}`)}`
+                  : `/auth/login?redirect=/onboarding`) as any
+              )
+            }
           />
         </View>
       ) : (

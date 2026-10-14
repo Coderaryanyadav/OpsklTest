@@ -15,10 +15,22 @@ import {
   OrganizerProfile,
   UserRole,
   logger,
+  isSupabaseConfigured,
 } from '@opskil/shared';
 import type { User, Session } from '@supabase/supabase-js';
 
+export type AuthState =
+  | 'INITIALIZING'
+  | 'CONFIGURATION_ERROR'
+  | 'SIGNED_OUT'
+  | 'AUTHENTICATED_PROFILE_INCOMPLETE'
+  | 'AUTHENTICATED_PROFILE_COMPLETE'
+  | 'VERIFICATION_PENDING'
+  | 'VERIFICATION_ACTION_REQUIRED'
+  | 'READY';
+
 export interface AuthContextValue {
+  authState: AuthState;
   user: User | null;
   session: Session | null;
   profile: Profile | null;
@@ -248,8 +260,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const authState = useMemo<AuthState>(() => {
+    if (loading) return 'INITIALIZING';
+    if (!isSupabaseConfigured) return 'CONFIGURATION_ERROR';
+    if (!session || !user) return 'SIGNED_OUT';
+    if (!profile) return 'AUTHENTICATED_PROFILE_INCOMPLETE';
+
+    if (profile.role === 'worker') {
+      if (!workerProfile || workerProfile.profileCompletionStatus !== 'completed') {
+        return 'AUTHENTICATED_PROFILE_INCOMPLETE';
+      }
+      if (workerProfile.verificationStatus === 'pending') {
+        return 'VERIFICATION_PENDING';
+      }
+      if (workerProfile.verificationStatus === 'rejected') {
+        return 'VERIFICATION_ACTION_REQUIRED';
+      }
+      return 'READY';
+    }
+
+    if (profile.role === 'organizer') {
+      if (!organizerProfile || organizerProfile.profileCompletionStatus !== 'completed') {
+        return 'AUTHENTICATED_PROFILE_INCOMPLETE';
+      }
+      if (organizerProfile.verificationStatus === 'pending') {
+        return 'VERIFICATION_PENDING';
+      }
+      if (organizerProfile.verificationStatus === 'rejected') {
+        return 'VERIFICATION_ACTION_REQUIRED';
+      }
+      return 'READY';
+    }
+
+    return 'READY';
+  }, [loading, session, user, profile, workerProfile, organizerProfile]);
+
   const value = useMemo(
     () => ({
+      authState,
       user,
       session,
       profile,
@@ -266,7 +314,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       signOut: logout,
       refreshProfile,
     }),
-    [user, session, profile, workerProfile, organizerProfile, loading]
+    [authState, user, session, profile, workerProfile, organizerProfile, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

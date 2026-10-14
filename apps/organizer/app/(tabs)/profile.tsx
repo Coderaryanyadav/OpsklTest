@@ -188,6 +188,43 @@ export default function OrganizerProfileScreen() {
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={{ marginTop: 8, color: colors.textMuted }}>Loading organization…</Text>
           </View>
+        ) : !userId ? (
+          <>
+            {/* Guest Organizer Card */}
+            <Card variant="elevated">
+              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+                <View
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.surfaceMuted,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 22, fontWeight: '800', color: colors.textPrimary }}>OP</Text>
+                </View>
+                <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+                  Guest Organizer
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, maxWidth: 280, lineHeight: 18 }}>
+                  Sign in with your organization account to manage business credentials, submit GSTIN for verified invoices, and configure billing profiles.
+                </Text>
+                <View style={{ marginTop: spacing.md, width: '100%', gap: spacing.sm }}>
+                  <Button
+                    title="Sign In as Organizer"
+                    variant="primary"
+                    size="md"
+                    onPress={() => router.push('/auth/login?redirect=/(tabs)/profile' as any)}
+                  />
+                </View>
+              </View>
+            </Card>
+          </>
         ) : (
           <>
             {/* Organization Identity Card */}

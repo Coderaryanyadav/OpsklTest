@@ -3,10 +3,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Button, Badge } from '@opskil/design-system';
 import { Briefcase, ShieldCheck, ArrowRight, Clock } from 'lucide-react-native';
+import { universalStorage } from '@opskil/shared';
 
 export default function WorkerWelcomeScreen() {
   const router = useRouter();
   const { colors, spacing, radii, typography } = useOpsklTheme();
+
+  const handleNavigate = async (target: string, replace = false) => {
+    try {
+      await universalStorage.setItem('@opskil_worker_welcome_seen', 'true');
+    } catch {
+      // Non-critical
+    }
+    if (replace) {
+      router.replace(target as any);
+    } else {
+      router.push(target as any);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -134,7 +148,7 @@ export default function WorkerWelcomeScreen() {
               variant="primary"
               size="lg"
               icon={<Briefcase size={18} color={colors.textInverse} strokeWidth={2} />}
-              onPress={() => router.push('/(tabs)' as any)}
+              onPress={() => handleNavigate('/(tabs)', true)}
             />
 
             {/* Secondary Path: Sign In */}
@@ -142,13 +156,13 @@ export default function WorkerWelcomeScreen() {
               title="Sign In to Existing Account"
               variant="outline"
               size="md"
-              onPress={() => router.push('/auth/login' as any)}
+              onPress={() => handleNavigate('/auth/login')}
             />
           </View>
 
           {/* Tertiary Action: New Crew Onboarding */}
           <Pressable
-            onPress={() => router.push('/onboarding' as any)}
+            onPress={() => handleNavigate('/onboarding')}
             style={({ pressed }) => [
               styles.onboardingLink,
               { opacity: pressed ? 0.7 : 1 },

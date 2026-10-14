@@ -304,6 +304,67 @@ export default function OrganizerRosterScreen() {
               <Button title="Retry Connection" variant="primary" size="md" onPress={onRefresh} />
             </View>
           </View>
+        ) : !organizerId ? (
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radii.xl,
+                padding: spacing.xl,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.emptyIconCircle,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderRadius: radii.full,
+                },
+              ]}
+            >
+              <ClipboardList size={28} color={colors.textPrimary} strokeWidth={1.8} />
+            </View>
+
+            <Text
+              style={[
+                typography.h3,
+                {
+                  color: colors.textPrimary,
+                  marginTop: spacing.md,
+                  textAlign: 'center',
+                  fontWeight: '700',
+                  letterSpacing: -0.3,
+                },
+              ]}
+            >
+              Sign In to View Applicant Roster
+            </Text>
+
+            <Text
+              style={{
+                fontSize: 13,
+                color: colors.textSecondary,
+                textAlign: 'center',
+                marginTop: 6,
+                lineHeight: 20,
+                maxWidth: 290,
+              }}
+            >
+              Sign in with your verified organizer account to review candidate applications, verify worker qualifications, and confirm crew rosters.
+            </Text>
+
+            <View style={{ marginTop: spacing.xl, width: '100%', gap: 10 }}>
+              <Button
+                title="Sign In as Organizer"
+                variant="primary"
+                size="md"
+                onPress={() => router.push('/auth/login?redirect=/(tabs)/roster' as any)}
+              />
+            </View>
+          </View>
         ) : filtered.length === 0 ? (
           <View
             style={[

@@ -10,6 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import {
   useOpsklTheme,
@@ -49,6 +50,7 @@ import {
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
 export default function WorkerMyShiftsScreen() {
+  const router = useRouter();
   const { session } = useAuth();
   const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
 
@@ -332,7 +334,45 @@ export default function WorkerMyShiftsScreen() {
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {loading ? (
+        {!workerId ? (
+          <View style={{ padding: spacing.xl, alignItems: 'center' }}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: colors.surfaceMuted,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Ticket size={28} color={colors.textPrimary} strokeWidth={2} />
+            </View>
+            <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+              Sign In to Access Your Shifts
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
+              Sign in with your verified worker account to access confirmed shifts, digital check-in passes, supervisor sign-off timers, and live attendance tracking.
+            </Text>
+            <View style={{ marginTop: spacing.lg, width: '100%', maxWidth: 280, gap: spacing.sm }}>
+              <Button
+                title="Sign In as Worker"
+                variant="primary"
+                size="md"
+                onPress={() => router.push('/auth/login?redirect=/(tabs)/my-shifts' as any)}
+              />
+              <Button
+                title="Browse Open Shifts"
+                variant="outline"
+                size="md"
+                onPress={() => router.push('/(tabs)' as any)}
+              />
+            </View>
+          </View>
+        ) : loading ? (
           <View style={{ gap: spacing.md }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
