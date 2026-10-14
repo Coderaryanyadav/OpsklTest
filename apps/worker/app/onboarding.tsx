@@ -40,13 +40,8 @@ export default function WorkerOnboardingScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [fullName, setFullName] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([
-    'Registration Desk & Scanning',
-    'VIP Ushering & Concierge',
-  ]);
-  const [selectedLocalities, setSelectedLocalities] = useState<string[]>([
-    'Bandra Kurla Complex (BKC)',
-  ]);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedLocalities, setSelectedLocalities] = useState<string[]>([]);
   const [upiId, setUpiId] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

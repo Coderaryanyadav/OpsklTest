@@ -31,82 +31,6 @@ import {
 } from '@opskil/shared';
 import { Bell, MapPin } from 'lucide-react-native';
 
-// Fallback preview shifts for Mumbai event productions demo
-const SEED_ORGANIZER_SHIFTS: Job[] = [
-  {
-    id: 'org-shift-1',
-    organizerId: 'org-apex-01',
-    title: '[SAMPLE] Registration Desk & VIP Usher',
-    category: 'conference',
-    venueName: 'Jio World Convention Centre',
-    venueAddress: 'G Block BKC, Bandra East, Mumbai 400098',
-    city: 'Mumbai',
-    zone: 'Bandra Kurla Complex (BKC)',
-    date: '2026-10-14',
-    startTime: '08:30',
-    endTime: '17:30',
-    durationHours: 9,
-    hourlyRate: 185,
-    totalPay: 1665,
-    slotsTotal: 12,
-    slotsFilled: 8,
-    duties: ['Scan delegate badges', 'Issue VIP lanyards'],
-    supervisorName: 'Rohit Verma',
-    supervisorPhone: '+91 98201 98201',
-    status: 'filling',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'org-shift-2',
-    organizerId: 'org-apex-01',
-    title: '[SAMPLE] Exhibition Booth Assistants',
-    category: 'exhibition',
-    venueName: 'Bombay Exhibition Centre (NESCO)',
-    venueAddress: 'Western Express Highway, Goregaon East, Mumbai 400063',
-    city: 'Mumbai',
-    zone: 'Goregaon & NESCO',
-    date: '2026-10-15',
-    startTime: '09:00',
-    endTime: '18:00',
-    durationHours: 9,
-    hourlyRate: 175,
-    totalPay: 1575,
-    slotsTotal: 6,
-    slotsFilled: 5,
-    duties: ['Distribute brochures', 'Register booth visitors'],
-    supervisorName: 'Rohit Verma',
-    supervisorPhone: '+91 98201 98201',
-    status: 'filling',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'org-shift-3',
-    organizerId: 'org-apex-01',
-    title: '[SAMPLE] Crowd & Queue Marshalls',
-    category: 'activation',
-    venueName: 'CIDCO Exhibition Centre',
-    venueAddress: 'Sector 30A, Vashi, Navi Mumbai',
-    city: 'Mumbai',
-    zone: 'Navi Mumbai',
-    date: '2026-10-16',
-    startTime: '10:00',
-    endTime: '19:00',
-    durationHours: 9,
-    hourlyRate: 160,
-    totalPay: 1440,
-    slotsTotal: 10,
-    slotsFilled: 10,
-    duties: ['Barricade line management', 'Direct entrance flow'],
-    supervisorName: 'Pooja Mehta',
-    supervisorPhone: '+91 98330 45678',
-    status: 'filled',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
   const { session } = useAuth();
@@ -133,21 +57,17 @@ export default function OrganizerDashboardScreen() {
   const loadData = useCallback(async () => {
     if (!organizerId) {
       setOrganizerProfile(null);
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
-        setShifts(SEED_ORGANIZER_SHIFTS);
-        setMetrics({
-          activeJobs: 3,
-          openPositions: 5,
-          newApplications: 17,
-          shortlistedApplicants: 6,
-          confirmedWorkers: 23,
-          upcomingEvents: 3,
-          completedShifts: 12,
-          totalStaffingSpend: 38250,
-        });
-      } else {
-        setShifts([]);
-      }
+      setShifts([]);
+      setMetrics({
+        activeJobs: 0,
+        openPositions: 0,
+        newApplications: 0,
+        shortlistedApplicants: 0,
+        confirmedWorkers: 0,
+        upcomingEvents: 0,
+        completedShifts: 0,
+        totalStaffingSpend: 0,
+      });
       setLoading(false);
       setRefreshing(false);
       return;

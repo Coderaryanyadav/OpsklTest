@@ -19,7 +19,7 @@ export default function WorkerWelcomeScreen() {
         {/* Top Branding & Dev Badge */}
         <View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Badge label="PHASE 1 BUILD" variant="neutral" size="sm" />
+            <Badge label="WORKER PORTAL" variant="neutral" size="sm" />
             <Badge label="MUMBAI REGION" variant="info" size="sm" />
           </View>
 
@@ -98,7 +98,7 @@ export default function WorkerWelcomeScreen() {
             onPress={() => router.push('/(tabs)' as any)}
           />
           <Button
-            title="Worker Sign In (Placeholder)"
+            title="Worker Sign In"
             variant="outline"
             size="md"
             onPress={() => router.push('/auth/login' as any)}

@@ -26,109 +26,6 @@ import {
 } from '@opskil/shared';
 import { ClipboardList, Phone, MapPin } from 'lucide-react-native';
 
-// Initial fallback mock applications for demonstration if database has 0 applicants
-const SEED_APPLICATIONS: any[] = [
-  {
-    id: 'app-seed-1',
-    jobId: 'org-shift-1',
-    workerId: 'worker-101',
-    status: 'applied',
-    appliedAt: new Date().toISOString(),
-    notes: 'Available on-time. 3 years convention ushering experience in BKC.',
-    job: {
-      id: 'org-shift-1',
-      title: 'Registration Desk & VIP Usher',
-      venueName: 'Jio World Convention Centre, BKC',
-      date: '2026-10-14',
-      hourlyRate: 185,
-      totalPay: 1665,
-      slotsTotal: 12,
-      slotsFilled: 8,
-      reportingInstructions: 'Report to Exhibitor Gate 2 by 8:00 AM.',
-    },
-    worker: {
-      id: 'worker-101',
-      preferredLocality: 'Bandra West',
-      skills: ['Registration Scanning', 'VIP Ushering', 'English & Hindi'],
-      experienceYears: 3,
-      rating: 4.92,
-      totalReviews: 18,
-      shiftsCompleted: 14,
-      verificationStatus: 'verified',
-      profile: {
-        fullName: 'Aryan Yadav',
-        phone: '+91 98200 98200',
-      },
-    },
-  },
-  {
-    id: 'app-seed-2',
-    jobId: 'org-shift-1',
-    workerId: 'worker-102',
-    status: 'shortlisted',
-    appliedAt: new Date().toISOString(),
-    notes: 'Prior ticketing experience at NESCO and JWCC.',
-    job: {
-      id: 'org-shift-1',
-      title: 'Registration Desk & VIP Usher',
-      venueName: 'Jio World Convention Centre, BKC',
-      date: '2026-10-14',
-      hourlyRate: 185,
-      totalPay: 1665,
-      slotsTotal: 12,
-      slotsFilled: 8,
-      reportingInstructions: 'Report to Exhibitor Gate 2 by 8:00 AM.',
-    },
-    worker: {
-      id: 'worker-102',
-      preferredLocality: 'Andheri East',
-      skills: ['Ticketing Desk', 'Customer Service', 'Guest Relations'],
-      experienceYears: 2,
-      rating: 4.88,
-      totalReviews: 12,
-      shiftsCompleted: 9,
-      verificationStatus: 'verified',
-      profile: {
-        fullName: 'Neha Kulkarni',
-        phone: '+91 98199 98199',
-      },
-    },
-  },
-  {
-    id: 'app-seed-3',
-    jobId: 'org-shift-2',
-    workerId: 'worker-103',
-    status: 'applied',
-    appliedAt: new Date().toISOString(),
-    notes: 'Comfortable on feet for 9 hour exhibition shifts.',
-    job: {
-      id: 'org-shift-2',
-      title: 'Exhibition Booth Assistants',
-      venueName: 'Bombay Exhibition Centre (NESCO)',
-      date: '2026-10-15',
-      hourlyRate: 175,
-      totalPay: 1575,
-      slotsTotal: 6,
-      slotsFilled: 5,
-      reportingInstructions: 'Hall 4 Exhibitor reception desk at 8:45 AM.',
-    },
-    worker: {
-      id: 'worker-103',
-      preferredLocality: 'Goregaon East',
-      skills: ['Crowd Management', 'Queue Marshall', 'Hindi Fluency'],
-      experienceYears: 1,
-      rating: 4.75,
-      totalReviews: 7,
-      shiftsCompleted: 6,
-      verificationStatus: 'verified',
-      profile: {
-        fullName: 'Vikram Joshi',
-        phone: '+91 98330 98330',
-      },
-    },
-  },
-];
-
 type FilterTab = 'all' | 'applied' | 'shortlisted' | 'confirmed' | 'rejected';
 
 export default function OrganizerRosterScreen() {
@@ -146,11 +43,7 @@ export default function OrganizerRosterScreen() {
 
   const loadApplications = useCallback(async () => {
     if (!organizerId) {
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
-        setApplications(SEED_APPLICATIONS as any);
-      } else {
-        setApplications([]);
-      }
+      setApplications([]);
       setLoading(false);
       setRefreshing(false);
       return;
@@ -159,13 +52,7 @@ export default function OrganizerRosterScreen() {
     try {
       setError(null);
       const data = await fetchOrganizerApplications(organizerId);
-      if (data.length > 0) {
-        setApplications(data);
-      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
-        setApplications(SEED_APPLICATIONS as any);
-      } else {
-        setApplications([]);
-      }
+      setApplications(data || []);
     } catch (err: any) {
       console.error('Failed to load applications', err);
       setError(err?.message || 'Could not load applicant roster.');
@@ -195,11 +82,6 @@ export default function OrganizerRosterScreen() {
       Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
       return;
     }
-    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
-      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
-      return;
-    }
-
     setActionInProgress(app.id);
     const res = await updateApplicationStatusSafe(app.id, 'shortlisted', effectiveOrgId);
     setActionInProgress(null);
@@ -225,11 +107,6 @@ export default function OrganizerRosterScreen() {
       Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
       return;
     }
-    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
-      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
-      return;
-    }
-
     Alert.alert(
       'Decline Application',
       `Are you sure you want to pass on ${app.worker?.profile?.fullName || 'this applicant'}?`,
@@ -264,11 +141,6 @@ export default function OrganizerRosterScreen() {
       Alert.alert('Authentication Required', 'Please sign in with an organizer account.');
       return;
     }
-    if (app.id.startsWith('app-seed-') || (app as any).isSample) {
-      Alert.alert('Sample Applicant', 'Hiring actions cannot be performed on sample demonstration applicants.');
-      return;
-    }
-
     const workerName = app.worker?.profile?.fullName || 'the candidate';
     const shiftTitle = app.job?.title || 'the shift';
 
@@ -396,28 +268,6 @@ export default function OrganizerRosterScreen() {
         </ScrollView>
       </View>
 
-      {/* Demo Fixtures Banner if rendering sample data */}
-      {applications.some((a) => a.id.startsWith('app-seed-') || (a as any).isSample) && (
-        <View
-          style={{
-            backgroundColor: isDark ? '#422006' : '#FEFCE8',
-            borderColor: '#FACC15',
-            borderWidth: 1,
-            borderRadius: radii.md,
-            marginHorizontal: spacing.lg,
-            marginTop: spacing.sm,
-            padding: spacing.sm,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Text style={{ fontSize: 16 }}>⚠️</Text>
-          <Text style={{ fontSize: 12, color: isDark ? '#FEF08A' : '#854D0E', flex: 1, fontWeight: '500' }}>
-            DEMO MODE: Showing sample applicant previews. Real candidates will appear here as workers apply for your live events.
-          </Text>
-        </View>
-      )}
 
       {/* Applications Feed */}
       <ScrollView
@@ -458,7 +308,6 @@ export default function OrganizerRosterScreen() {
             const profile = worker?.profile;
             const job = app.job;
 
-            const isSampleApp = app.id.startsWith('app-seed-') || (app as any).isSample;
             const isVerified = worker?.verificationStatus === 'verified';
             const isConfirmed = app.status === 'confirmed';
             const isShortlisted = app.status === 'shortlisted';
@@ -497,11 +346,9 @@ export default function OrganizerRosterScreen() {
                         <Text style={[typography.h3, { color: colors.textPrimary }]}>
                           {profile?.fullName || 'Opskl Candidate'}
                         </Text>
-                        {isSampleApp ? (
-                          <Badge label="Sample Preview" variant="warning" size="sm" />
-                        ) : isVerified ? (
+                        {isVerified && (
                           <Badge label="ID VERIFIED" variant="success" size="sm" />
-                        ) : null}
+                        )}
                       </View>
 
                       <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>

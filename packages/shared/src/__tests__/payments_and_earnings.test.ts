@@ -225,46 +225,240 @@ describe('Phase 6 — Opskl Payments, Earnings & Financial Engine', () => {
   });
 
   describe('Worker Earnings & Organizer Financial Aggregation', () => {
-    test('fetches worker earnings summary and populates all 6 dimensions', async () => {
-      __mockFrom.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: { upi_id: 'aryan@okhdfcbank' }, error: null }),
-            order: jest.fn().mockResolvedValue({ data: [], error: null }),
+    test('fetches worker earnings summary and aggregates dimensions from real persisted rows', async () => {
+      __mockFrom.mockImplementation((table: string) => {
+        if (table === 'worker_profiles') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { upi_id: 'aryan@okhdfcbank' }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'bookings') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({
+                data: [
+                  { id: 'b-1', job_id: 'j-1', status: 'confirmed', agreed_total_pay: 1650 },
+                  { id: 'b-2', job_id: 'j-2', status: 'checked_in', agreed_total_pay: 1500 },
+                  { id: 'b-3', job_id: 'j-3', status: 'disputed', agreed_total_pay: 800 },
+                ],
+                error: null,
+              }),
+            }),
+          };
+        }
+        if (table === 'payment_records') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'pay-1',
+                      booking_id: 'b-1',
+                      job_id: 'j-1',
+                      worker_id: 'worker-101',
+                      organizer_id: 'org-1',
+                      amount: 1650,
+                      platform_fee: 0,
+                      net_payout: 1650,
+                      status: 'settled',
+                      upi_id: 'aryan@okhdfcbank',
+                      created_at: new Date().toISOString(),
+                    },
+                    {
+                      id: 'pay-2',
+                      booking_id: 'b-2',
+                      job_id: 'j-2',
+                      worker_id: 'worker-101',
+                      organizer_id: 'org-1',
+                      amount: 1500,
+                      platform_fee: 0,
+                      net_payout: 1500,
+                      status: 'processing',
+                      upi_id: 'aryan@okhdfcbank',
+                      created_at: new Date().toISOString(),
+                    },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({ data: [], error: null }),
+            }),
           }),
-        }),
+        };
       });
 
       const summary = await fetchWorkerEarningsSummary('worker-101');
       expect(summary.defaultUpiId).toBe('aryan@okhdfcbank');
-      expect(summary.paidEarnings).toBeGreaterThanOrEqual(0);
-      expect(summary.confirmedUpcomingWages).toBeGreaterThanOrEqual(0);
-      expect(summary.completedAwaitingApproval).toBeGreaterThanOrEqual(0);
-      expect(summary.approvedAwaitingPayment).toBeGreaterThanOrEqual(0);
-      expect(summary.failedDelayedPayments).toBeGreaterThanOrEqual(0);
-      expect(summary.records.length).toBeGreaterThan(0);
+      expect(summary.confirmedUpcomingWages).toBe(1650);
+      expect(summary.completedAwaitingApproval).toBe(1500);
+      expect(summary.disputedAmounts).toBe(800);
+      expect(summary.paidEarnings).toBe(1650);
+      expect(summary.approvedAwaitingPayment).toBe(1500);
+      expect(summary.totalEarnedAllTime).toBe(3150);
+      expect(summary.records.length).toBe(2);
+    });
+
+    test('returns clean zero balances and empty array for a brand new worker with 0 records', async () => {
+      __mockFrom.mockImplementation((table: string) => {
+        if (table === 'worker_profiles') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({ data: { upi_id: '' }, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'bookings') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          };
+        }
+        if (table === 'payment_records') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        };
+      });
+
+      const summary = await fetchWorkerEarningsSummary('new-worker-0');
+      expect(summary.paidEarnings).toBe(0);
+      expect(summary.confirmedUpcomingWages).toBe(0);
+      expect(summary.completedAwaitingApproval).toBe(0);
+      expect(summary.approvedAwaitingPayment).toBe(0);
+      expect(summary.failedDelayedPayments).toBe(0);
+      expect(summary.disputedAmounts).toBe(0);
+      expect(summary.totalEarnedAllTime).toBe(0);
+      expect(summary.records).toEqual([]);
     });
 
     test('fetches organizer finances summary and isolates worker wages from platform fees & GST', async () => {
-      __mockFrom.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            order: jest.fn().mockResolvedValue({ data: [], error: null }),
-          }),
-          order: jest.fn().mockReturnValue({
+      __mockFrom.mockImplementation((table: string) => {
+        if (table === 'organizer_invoices') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({
+                  data: [
+                    {
+                      id: 'inv-1',
+                      invoice_number: 'INV-202610-001',
+                      job_id: 'job-1',
+                      organizer_id: 'org-101',
+                      wage_total: 15000,
+                      platform_fee: 1500,
+                      gst_rate: 18.0,
+                      gst_amount: 270,
+                      total_payable: 16770,
+                      status: 'escrow_funded',
+                      payment_method: 'upi',
+                      due_date: '2026-10-20T18:00:00Z',
+                      paid_at: '2026-10-15T12:00:00Z',
+                      is_sandbox: true,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                      jobs: { title: 'Conference Usher Crew', slots_filled: 10, slots_total: 10 },
+                    },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === 'payment_reconciliation_logs') {
+          const orderMock = {
             limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+          };
+          return {
+            select: jest.fn().mockReturnValue({
+              in: jest.fn().mockReturnValue({
+                order: jest.fn().mockReturnValue(orderMock),
+              }),
+              order: jest.fn().mockReturnValue(orderMock),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({ data: [], error: null }),
+            }),
           }),
-        }),
+        };
       });
 
       const finances = await fetchOrganizerFinancesSummary('org-101');
-      expect(finances.workerWageTotals).toBeGreaterThan(0);
-      expect(finances.opskilServiceFees).toBeGreaterThan(0);
-      expect(finances.applicableTaxes).toBeGreaterThan(0);
-      expect(finances.totalPayableAllTime).toBe(
-        finances.workerWageTotals + finances.opskilServiceFees + finances.applicableTaxes
-      );
-      expect(finances.invoices.length).toBeGreaterThan(0);
+      expect(finances.workerWageTotals).toBe(15000);
+      expect(finances.opskilServiceFees).toBe(1500);
+      expect(finances.applicableTaxes).toBe(270);
+      expect(finances.totalPayableAllTime).toBe(16770);
+      expect(finances.settledAmount).toBe(16770);
+      expect(finances.invoices.length).toBe(1);
+    });
+
+    test('returns clean zero financial metrics for a brand new organizer with 0 invoices', async () => {
+      __mockFrom.mockImplementation((table: string) => {
+        if (table === 'organizer_invoices') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                order: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'payment_reconciliation_logs') {
+          return {
+            select: jest.fn().mockReturnValue({
+              order: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              order: jest.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        };
+      });
+
+      const finances = await fetchOrganizerFinancesSummary('new-org-0');
+      expect(finances.workerWageTotals).toBe(0);
+      expect(finances.opskilServiceFees).toBe(0);
+      expect(finances.applicableTaxes).toBe(0);
+      expect(finances.totalPayableAllTime).toBe(0);
+      expect(finances.settledAmount).toBe(0);
+      expect(finances.outstandingEscrowDue).toBe(0);
+      expect(finances.invoices).toEqual([]);
+      expect(finances.reconciliationLogs).toEqual([]);
     });
   });
 

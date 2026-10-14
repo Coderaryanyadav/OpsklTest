@@ -47,109 +47,6 @@ import {
 
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
-const SEED_WORKER_BOOKINGS: Booking[] = [
-  {
-    id: 'book-seed-1',
-    jobId: 'job-mum-101',
-    workerId: 'worker-101',
-    organizerId: 'org-apex-01',
-    status: 'confirmed',
-    agreedHourlyRate: 185,
-    agreedTotalPay: 1665,
-    checkInCode: 'OP-4829',
-    confirmedAt: new Date().toISOString(),
-    job: {
-      id: 'job-mum-101',
-      organizerId: 'org-apex-01',
-      title: 'Registration Desk & VIP Usher',
-      category: 'conference',
-      venueName: 'Jio World Convention Centre, Pavilion 2',
-      venueAddress: 'G Block BKC, Bandra East, Mumbai 400098',
-      landmark: 'Opposite Bharat Diamond Bourse',
-      city: 'Mumbai',
-      zone: 'Bandra Kurla Complex (BKC)',
-      date: getTodayDateIST(),
-      startTime: '08:30',
-      endTime: '17:30',
-      durationHours: 9,
-      hourlyRate: 185,
-      totalPay: 1665,
-      slotsTotal: 12,
-      slotsFilled: 8,
-      duties: ['Scan attendee QR passes', 'Issue delegate lanyards'],
-      supervisorName: 'Rohit Verma',
-      supervisorPhone: '+91 98201 98201',
-      reportingInstructions: 'Report to Gate 2 by 8:00 AM for briefing.',
-      cancellationPolicy: 'Free cancellation up to 24h prior to shift.',
-      status: 'open',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      organizer: {
-        id: 'org-apex-01',
-        businessName: '[Demo Host] Apex Event Productions',
-        businessType: 'event_agency',
-        verificationStatus: 'verified',
-        profileCompletionStatus: 'completed',
-        businessContactPhone: '+91 98201 98201',
-        rating: 4.9,
-        totalEventsHosted: 42,
-        createdAt: '',
-        updatedAt: '',
-      },
-    },
-  },
-  {
-    id: 'book-seed-2',
-    jobId: 'job-mum-102',
-    workerId: 'worker-101',
-    organizerId: 'org-nesco-02',
-    status: 'completed',
-    agreedHourlyRate: 175,
-    agreedTotalPay: 1575,
-    checkInCode: 'OP-9912',
-    checkInTime: '2026-10-10T09:02:00Z',
-    checkOutTime: '2026-10-10T18:05:00Z',
-    confirmedAt: '2026-10-08T12:00:00Z',
-    completedAt: '2026-10-10T18:30:00Z',
-    job: {
-      id: 'job-mum-102',
-      organizerId: 'org-nesco-02',
-      title: 'Exhibition Booth Assistant',
-      category: 'exhibition',
-      venueName: 'Bombay Exhibition Centre (NESCO), Hall 4',
-      venueAddress: 'Western Express Highway, Goregaon East, Mumbai',
-      city: 'Mumbai',
-      zone: 'Goregaon & NESCO',
-      date: '2026-10-10',
-      startTime: '09:00',
-      endTime: '18:00',
-      durationHours: 9,
-      hourlyRate: 175,
-      totalPay: 1575,
-      slotsTotal: 8,
-      slotsFilled: 8,
-      duties: ['Visitor inquiries', 'Brochures'],
-      supervisorName: 'Pooja Mehta',
-      supervisorPhone: '+91 98330 45678',
-      status: 'completed',
-      createdAt: '',
-      updatedAt: '',
-      organizer: {
-        id: 'org-nesco-02',
-        businessName: 'Spectra Trade Shows India',
-        businessType: 'corporate',
-        verificationStatus: 'verified',
-        profileCompletionStatus: 'completed',
-        businessContactPhone: '+91 98330 45678',
-        rating: 4.8,
-        totalEventsHosted: 28,
-        createdAt: '',
-        updatedAt: '',
-      },
-    },
-  },
-];
-
 export default function WorkerMyShiftsScreen() {
   const { session } = useAuth();
   const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
@@ -187,16 +84,7 @@ export default function WorkerMyShiftsScreen() {
 
   const loadBookings = useCallback(async () => {
     if (!workerId) {
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
-        setBookings(
-          SEED_WORKER_BOOKINGS.map((b) => ({
-            ...b,
-            job: b.job ? { ...b.job, title: `[SAMPLE] ${b.job.title}` } : undefined,
-          }))
-        );
-      } else {
-        setBookings([]);
-      }
+      setBookings([]);
       setLoading(false);
       setRefreshing(false);
       return;
@@ -204,18 +92,7 @@ export default function WorkerMyShiftsScreen() {
     try {
       setError(null);
       const data = await fetchWorkerBookings(workerId);
-      if (data.length > 0) {
-        setBookings(data);
-      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
-        setBookings(
-          SEED_WORKER_BOOKINGS.map((b) => ({
-            ...b,
-            job: b.job ? { ...b.job, title: `[SAMPLE] ${b.job.title}` } : undefined,
-          }))
-        );
-      } else {
-        setBookings([]);
-      }
+      setBookings(data || []);
     } catch (err: any) {
       console.error('Failed to load bookings', err);
       setError(err?.message || 'Could not load your shift bookings.');

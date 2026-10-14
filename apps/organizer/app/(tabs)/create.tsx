@@ -104,39 +104,37 @@ export default function OrganizerCreateShiftScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   // Step 1: Role & Category
-  const [title, setTitle] = useState('Registration Desk & Usher');
-  const [category, setCategory] = useState<ShiftCategory>('exhibition');
-  const [slotsTotal, setSlotsTotal] = useState('8');
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<ShiftCategory>('conference');
+  const [slotsTotal, setSlotsTotal] = useState('');
 
   // Step 2: Schedule & Venue
   const todayStr = getTodayDateIST();
   const [date, setDate] = useState(todayStr);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('18:00');
-  const [durationHours, setDurationHours] = useState('9');
-  const [venueName, setVenueName] = useState('Bombay Exhibition Centre (NESCO)');
-  const [venueAddress, setVenueAddress] = useState('Western Express Highway, Goregaon East, Mumbai 400063');
-  const [landmark, setLandmark] = useState('Near Ram Mandir Station');
-  const [zone, setZone] = useState('Goregaon & NESCO');
-  const [reportingInstructions, setReportingInstructions] = useState('Report to Exhibitor Gate 2 by 8:30 AM for on-site badge issue and morning briefing.');
-  const [supervisorName, setSupervisorName] = useState('Rohit Verma');
-  const [supervisorPhone, setSupervisorPhone] = useState('9820198201');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [durationHours, setDurationHours] = useState('');
+  const [venueName, setVenueName] = useState('');
+  const [venueAddress, setVenueAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [zone, setZone] = useState('Bandra Kurla Complex (BKC)');
+  const [reportingInstructions, setReportingInstructions] = useState('');
+  const [supervisorName, setSupervisorName] = useState('');
+  const [supervisorPhone, setSupervisorPhone] = useState('');
 
   // Step 3: Duties, Skills & Eligibility
-  const [duties, setDuties] = useState('Scan visitor passes at entry, distribute exhibitor guide booklets, guide delegates to Hall 4');
-  const [requiredSkills, setRequiredSkills] = useState('Customer Service, Fluent Hindi/English, Basic Smartphone Operation');
-  const [eligibilityCriteria, setEligibilityCriteria] = useState('Must be 18+ years old. Punctuality is strictly required.');
-  const [dressCode, setDressCode] = useState('Smart casuals or black collared polo. Dark formal trousers with closed-toe shoes.');
+  const [duties, setDuties] = useState('');
+  const [requiredSkills, setRequiredSkills] = useState('');
+  const [eligibilityCriteria, setEligibilityCriteria] = useState('');
+  const [dressCode, setDressCode] = useState('');
 
   // Step 4: Wages, Benefits & Terms
-  const [hourlyRate, setHourlyRate] = useState('175');
-  const [breaksMinutes, setBreaksMinutes] = useState('45');
-  const [mealProvided, setMealProvided] = useState(true);
+  const [hourlyRate, setHourlyRate] = useState('');
+  const [breaksMinutes, setBreaksMinutes] = useState('');
+  const [mealProvided, setMealProvided] = useState(false);
   const [transportProvided, setTransportProvided] = useState(false);
-  const [overtimePolicy, setOvertimePolicy] = useState('₹190/hr for additional show hours if requested on-site.');
-  const [cancellationPolicy, setCancellationPolicy] = useState(
-    'Free cancellation up to 24 hours prior to shift commencement. Emergency cancellations require 12 hours notice.'
-  );
+  const [overtimePolicy, setOvertimePolicy] = useState('');
+  const [cancellationPolicy, setCancellationPolicy] = useState('');
 
   // Calculations
   const parsedRate = parseFloat(hourlyRate) || 0;

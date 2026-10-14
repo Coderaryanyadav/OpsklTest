@@ -19,9 +19,7 @@ export default function WorkerLoginScreen() {
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const { sendEmailOtp, verifyEmailOtp } = useAuth();
 
-  const [email, setEmail] = useState(
-    process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' ? 'worker.demo@opskil.com' : ''
-  );
+  const [email, setEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);

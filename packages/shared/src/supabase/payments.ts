@@ -7,7 +7,6 @@ import {
   PaymentReconciliationLog,
 } from '../types';
 import { logger } from '../utils/logger';
-import { calculateJobFinancials } from '../payments/calculator';
 
 /**
  * Fetch complete Worker Earnings Summary
@@ -129,73 +128,6 @@ export async function fetchWorkerEarningsSummary(
     }
   }
 
-  // Provide fallback baseline only if explicitly running with demo fixtures flag or in test
-  const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' || process.env.NODE_ENV === 'test';
-  if (records.length === 0 && confirmedUpcomingWages === 0 && allowDemoFixtures) {
-    confirmedUpcomingWages = 1650;
-    completedAwaitingApproval = 1500;
-    approvedAwaitingPayment = 1450;
-    paidEarnings = 4850;
-    failedDelayedPayments = 0;
-    disputedAmounts = 0;
-
-    records.push(
-      {
-        id: 'pay-001',
-        bookingId: 'book-001',
-        jobId: 'job-001',
-        workerId,
-        organizerId: 'org-001',
-        amount: 1620,
-        platformFee: 0,
-        netPayout: 1620,
-        status: 'settled',
-        upiId: defaultUpiId,
-        utrReference: '428901827461',
-        escrowLockedAt: '2026-10-08T10:00:00Z',
-        settledAt: '2026-10-08T19:30:00Z',
-        createdAt: '2026-10-08T10:00:00Z',
-        jobTitle: 'Auto Expo India 2026',
-        shiftHours: 9,
-      },
-      {
-        id: 'pay-002',
-        bookingId: 'book-002',
-        jobId: 'job-002',
-        workerId,
-        organizerId: 'org-002',
-        amount: 1500,
-        platformFee: 0,
-        netPayout: 1500,
-        status: 'settled',
-        upiId: defaultUpiId,
-        utrReference: '428198273652',
-        escrowLockedAt: '2026-10-04T09:00:00Z',
-        settledAt: '2026-10-04T18:15:00Z',
-        createdAt: '2026-10-04T09:00:00Z',
-        jobTitle: 'Pharma BioTech Conclave',
-        shiftHours: 8,
-      },
-      {
-        id: 'pay-003',
-        bookingId: 'book-003',
-        jobId: 'job-003',
-        workerId,
-        organizerId: 'org-003',
-        amount: 1730,
-        platformFee: 0,
-        netPayout: 1730,
-        status: 'settled',
-        upiId: defaultUpiId,
-        utrReference: '427819283741',
-        escrowLockedAt: '2026-09-29T10:00:00Z',
-        settledAt: '2026-09-29T20:30:00Z',
-        createdAt: '2026-09-29T10:00:00Z',
-        jobTitle: 'Retail Leadership Mumbai',
-        shiftHours: 10,
-      }
-    );
-  }
 
   const totalEarnedAllTime = paidEarnings + approvedAwaitingPayment;
 
@@ -310,62 +242,6 @@ export async function fetchOrganizerFinancesSummary(
     }
   }
 
-  // Provide mock baseline only if explicitly configured for demo mode or in test
-  const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' || process.env.NODE_ENV === 'test';
-  if (invoices.length === 0 && allowDemoFixtures) {
-    const calc1 = calculateJobFinancials(12, 1600);
-    const calc2 = calculateJobFinancials(8, 1400);
-
-    workerWageTotals = calc1.totalWorkerWages + calc2.totalWorkerWages;
-    opskilServiceFees = calc1.platformFeeAmount + calc2.platformFeeAmount;
-    applicableTaxes = calc1.gstAmount + calc2.gstAmount;
-    settledAmount = calc1.totalPayableByOrganizer;
-    outstandingEscrowDue = calc2.totalPayableByOrganizer;
-
-    invoices.push(
-      {
-        id: 'inv-001',
-        invoiceNumber: 'INV-202610-82914',
-        jobId: 'job-apex-01',
-        organizerId,
-        wageTotal: calc1.totalWorkerWages,
-        platformFee: calc1.platformFeeAmount,
-        gstRate: 18.0,
-        gstAmount: calc1.gstAmount,
-        totalPayable: calc1.totalPayableByOrganizer,
-        status: 'escrow_funded',
-        paymentMethod: 'upi',
-        paymentProvider: 'razorpay',
-        dueDate: '2026-10-18T18:00:00Z',
-        paidAt: '2026-10-10T14:20:00Z',
-        isSandbox: true,
-        createdAt: '2026-10-09T10:00:00Z',
-        updatedAt: '2026-10-10T14:20:00Z',
-        jobTitle: 'Registration Desk & VIP Usher — Jio World Centre',
-        slotsCount: 12,
-      },
-      {
-        id: 'inv-002',
-        invoiceNumber: 'INV-202610-41029',
-        jobId: 'job-apex-02',
-        organizerId,
-        wageTotal: calc2.totalWorkerWages,
-        platformFee: calc2.platformFeeAmount,
-        gstRate: 18.0,
-        gstAmount: calc2.gstAmount,
-        totalPayable: calc2.totalPayableByOrganizer,
-        status: 'pending',
-        paymentMethod: 'upi',
-        paymentProvider: 'razorpay',
-        dueDate: '2026-10-22T18:00:00Z',
-        isSandbox: true,
-        createdAt: '2026-10-11T16:00:00Z',
-        updatedAt: '2026-10-11T16:00:00Z',
-        jobTitle: 'Hospitality Crew — BKC MMRDA Grounds',
-        slotsCount: 8,
-      }
-    );
-  }
 
   const reconciliationLogs: PaymentReconciliationLog[] = (logs || []).map((l: any) => ({
     id: l.id,

@@ -20,7 +20,7 @@ export default function OrganizerWelcomeScreen() {
         <View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Badge label="ORGANIZER CONSOLE" variant="primary" size="sm" />
-            <Badge label="PHASE 1 BUILD" variant="neutral" size="sm" />
+            <Badge label="PRODUCTION" variant="success" size="sm" />
           </View>
 
           <View style={{ alignItems: 'center', marginTop: spacing.xxl }}>
@@ -100,7 +100,7 @@ export default function OrganizerWelcomeScreen() {
             onPress={() => router.push('/(tabs)' as any)}
           />
           <Button
-            title="Organizer Sign In (Placeholder)"
+            title="Organizer Sign In"
             variant="outline"
             size="md"
             onPress={() => router.push('/auth/login' as any)}

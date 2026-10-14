@@ -248,9 +248,6 @@ export function SwipeCard({
             </View>
 
             <View style={styles.topRightBadges}>
-              {(job.id.startsWith('job-mum-') || (job as any).isSampleListing) && (
-                <Badge label="Sample Preview" variant="warning" size="sm" />
-              )}
               {isOrganizerVerified && (
                 <Badge label="Verified Host" variant="success" size="sm" />
               )}
