@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Card,
@@ -29,6 +30,7 @@ import { ClipboardList, Phone, MapPin, AlertTriangle } from 'lucide-react-native
 type FilterTab = 'all' | 'applied' | 'shortlisted' | 'confirmed' | 'rejected';
 
 export default function OrganizerRosterScreen() {
+  const router = useRouter();
   const { session } = useAuth();
   const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
 
@@ -219,16 +221,27 @@ export default function OrganizerRosterScreen() {
           },
         ]}
       >
-        <Text style={[typography.h2, { color: colors.textPrimary }]}>Applicant Review & Roster</Text>
-        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-          Review verified worker profiles and explicitly confirm hires
+        <Text
+          style={[
+            typography.h2,
+            {
+              color: colors.textPrimary,
+              fontWeight: '700',
+              letterSpacing: -0.5,
+            },
+          ]}
+        >
+          Applicant Review & Roster
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+          Review verified candidate profiles and explicitly confirm hires
         </Text>
 
         {/* Filter Tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, marginTop: spacing.md }}
+          contentContainerStyle={{ gap: 8, marginTop: 14, paddingRight: 20 }}
         >
           {(
             [
@@ -268,7 +281,6 @@ export default function OrganizerRosterScreen() {
         </ScrollView>
       </View>
 
-
       {/* Applications Feed */}
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
@@ -293,14 +305,86 @@ export default function OrganizerRosterScreen() {
             </View>
           </View>
         ) : filtered.length === 0 ? (
-          <View style={{ padding: 40, alignItems: 'center' }}>
-            <ClipboardList size={38} color={colors.textMuted} strokeWidth={1.8} />
-            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 12 }]}>
-              No Applicants Found
+          <View
+            style={[
+              styles.emptyCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: radii.xl,
+                padding: spacing.xl,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.emptyIconCircle,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderRadius: radii.full,
+                },
+              ]}
+            >
+              <ClipboardList size={28} color={colors.textPrimary} strokeWidth={1.8} />
+            </View>
+
+            <Text
+              style={[
+                typography.h3,
+                {
+                  color: colors.textPrimary,
+                  marginTop: spacing.md,
+                  textAlign: 'center',
+                  fontWeight: '700',
+                  letterSpacing: -0.3,
+                },
+              ]}
+            >
+              {activeTab === 'all'
+                ? 'No Candidate Applications Yet'
+                : `No ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Applicants`}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
-              No applications match the "{activeTab}" filter.
+
+            <Text
+              style={{
+                fontSize: 13,
+                color: colors.textSecondary,
+                textAlign: 'center',
+                marginTop: 6,
+                lineHeight: 20,
+                maxWidth: 290,
+              }}
+            >
+              {activeTab === 'all'
+                ? 'When verified workers discover and apply for your published shifts, their profiles, qualifications, and attendance records will appear here for review and confirmation.'
+                : `There are currently no worker applications under the "${activeTab}" status category.`}
             </Text>
+
+            <View style={{ marginTop: spacing.xl, width: '100%', gap: 10 }}>
+              {activeTab === 'all' ? (
+                <>
+                  <Button
+                    title="+ Post a New Shift"
+                    variant="primary"
+                    size="md"
+                    onPress={() => router.push('/(tabs)/create' as any)}
+                  />
+                  <Button
+                    title="View Published Shifts"
+                    variant="outline"
+                    size="md"
+                    onPress={() => router.push('/(tabs)' as any)}
+                  />
+                </>
+              ) : (
+                <Button
+                  title="View All Applications"
+                  variant="outline"
+                  size="md"
+                  onPress={() => setActiveTab('all')}
+                />
+              )}
+            </View>
           </View>
         ) : (
           filtered.map((app) => {
@@ -506,15 +590,26 @@ export default function OrganizerRosterScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   tabChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderWidth: 1,
+  },
+  emptyCard: {
+    borderWidth: 1,
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarCircle: {
     width: 44,
@@ -535,3 +630,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 });
+

@@ -16,7 +16,7 @@ export default function OrganizerTabsLayout() {
           borderTopWidth: 1,
           height: 62,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -27,7 +27,8 @@ export default function OrganizerTabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Live Shifts',
+          title: 'Shifts',
+          tabBarLabel: 'Shifts',
           tabBarIcon: ({ color }) => (
             <Calendar size={22} color={color} strokeWidth={2} />
           ),
@@ -36,7 +37,8 @@ export default function OrganizerTabsLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Post Shift',
+          title: 'Post',
+          tabBarLabel: 'Post',
           tabBarIcon: ({ color }) => (
             <Plus size={22} color={color} strokeWidth={2.5} />
           ),
@@ -45,7 +47,8 @@ export default function OrganizerTabsLayout() {
       <Tabs.Screen
         name="roster"
         options={{
-          title: 'Applicants',
+          title: 'Roster',
+          tabBarLabel: 'Roster',
           tabBarIcon: ({ color }) => (
             <Users size={22} color={color} strokeWidth={2} />
           ),
@@ -55,6 +58,7 @@ export default function OrganizerTabsLayout() {
         name="finances"
         options={{
           title: 'Finances',
+          tabBarLabel: 'Finances',
           tabBarIcon: ({ color }) => (
             <IndianRupee size={22} color={color} strokeWidth={2} />
           ),
@@ -63,7 +67,8 @@ export default function OrganizerTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Organization',
+          title: 'Profile',
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ color }) => (
             <Briefcase size={22} color={color} strokeWidth={2} />
           ),

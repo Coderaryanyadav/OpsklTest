@@ -220,14 +220,14 @@ export default function OrganizerDashboardScreen() {
 
             <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
               <Text style={styles.metricLabel}>Open Positions</Text>
-              <Text style={[styles.metricValue, { color: colors.primary }]}>
+              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.openPositions}
               </Text>
             </View>
 
             <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
               <Text style={styles.metricLabel}>New Applicants</Text>
-              <Text style={[styles.metricValue, { color: colors.warning }]}>
+              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.newApplications}
               </Text>
             </View>
@@ -237,14 +237,14 @@ export default function OrganizerDashboardScreen() {
           <View style={[styles.metricsRow, { marginTop: 6 }]}>
             <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
               <Text style={styles.metricLabel}>Shortlisted</Text>
-              <Text style={[styles.metricValue, { color: colors.info }]}>
+              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.shortlistedApplicants}
               </Text>
             </View>
 
             <View style={[styles.metricCard, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md }]}>
               <Text style={styles.metricLabel}>Confirmed Crew</Text>
-              <Text style={[styles.metricValue, { color: colors.success }]}>
+              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
                 {metrics.confirmedWorkers}
               </Text>
             </View>
