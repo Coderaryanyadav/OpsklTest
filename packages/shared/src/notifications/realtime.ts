@@ -3,6 +3,22 @@ import { Notification } from '../types';
 import { logger } from '../utils/logger';
 
 /**
+ * Helper to safely clean up any existing channel instance before recreating.
+ * Prevents "cannot add postgres_changes callbacks after subscribe()" when
+ * components re-render or hot-reload.
+ */
+function safelyCleanExistingChannel(channelName: string): void {
+  if (typeof (supabase as any).getChannels === 'function') {
+    const existing = (supabase as any).getChannels().find(
+      (c: any) => c.topic === `realtime:${channelName}` || c.topic === channelName
+    );
+    if (existing) {
+      (supabase as any).removeChannel(existing);
+    }
+  }
+}
+
+/**
  * Subscribes to Realtime in-app notifications for a user.
  * Returns a teardown function for useEffect cleanup.
  */
@@ -12,6 +28,8 @@ export function subscribeToUserNotifications(
 ): () => void {
   const channelName = `user-notifs-${userId}`;
   logger.info('Subscribing to Realtime notifications channel', { channelName });
+
+  safelyCleanExistingChannel(channelName);
 
   const channel = supabase
     .channel(channelName)
@@ -63,6 +81,8 @@ export function subscribeToShiftRoster(
 ): () => void {
   const channelName = `roster-${jobId}`;
   logger.info('Subscribing to Realtime shift roster channel', { channelName });
+
+  safelyCleanExistingChannel(channelName);
 
   const channel = supabase
     .channel(channelName)
