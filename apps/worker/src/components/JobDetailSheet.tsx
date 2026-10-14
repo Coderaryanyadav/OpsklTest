@@ -64,6 +64,9 @@ export function JobDetailSheet({
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Badge label={job.category.charAt(0).toUpperCase() + job.category.slice(1)} variant="primary" size="sm" />
+              {(job.id.startsWith('job-mum-') || (job as any).isSampleListing) && (
+                <Badge label="Sample Preview" variant="warning" size="sm" />
+              )}
               {job.organizer?.verificationStatus === 'verified' && (
                 <Badge label="Verified Host" variant="success" size="sm" />
               )}
@@ -72,7 +75,8 @@ export function JobDetailSheet({
               {job.title}
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-              {job.organizer?.businessName || 'Event Host'} • ★ {job.organizer?.rating?.toFixed(1) || '5.0'}
+              {job.organizer?.businessName || 'Organizer details unavailable'}
+              {job.organizer?.rating ? ` • ★ ${job.organizer.rating.toFixed(1)}` : ''}
             </Text>
           </View>
 
@@ -95,7 +99,19 @@ export function JobDetailSheet({
 
         {/* Scrollable Details */}
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-          {/* Guaranteed Payout Banner */}
+          {/* Sample Preview Banner if fixture */}
+          {(job.id.startsWith('job-mum-') || (job as any).isSampleListing) && (
+            <View style={{ backgroundColor: isDark ? '#78350F' : '#FEF3C7', padding: spacing.sm, borderRadius: radii.md, borderWidth: 1, borderColor: '#F59E0B' }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#FDE68A' : '#92400E' }}>
+                DEMONSTRATION SAMPLE LISTING
+              </Text>
+              <Text style={{ fontSize: 12, color: isDark ? '#FEF3C7' : '#B45309', marginTop: 2 }}>
+                This is preview sample data for design demonstration. Live applications and payments cannot be processed against sample listings.
+              </Text>
+            </View>
+          )}
+
+          {/* Shift Earnings Banner */}
           <View
             style={[
               styles.payoutCard,
@@ -109,20 +125,20 @@ export function JobDetailSheet({
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                  Guaranteed Shift Payout
+                  Estimated Shift Earnings
                 </Text>
                 <WageText style={{ marginTop: 2 }}>{formatINR(job.totalPay)}</WageText>
                 <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
                   {formatINR(job.hourlyRate)}/hr × {job.durationHours} hours
                 </Text>
               </View>
-              <Badge label="Direct UPI on Sign-off" variant="success" />
+              <Badge label="UPI on verified checkout" variant="success" />
             </View>
 
             <View style={[styles.escrowNotice, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 }]}>
               <Zap size={15} color={colors.primary} strokeWidth={2.2} />
               <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, flex: 1 }}>
-                Organizers approve direct UPI payout upon supervisor shift sign-off. Payouts transfer directly to your registered UPI handle.
+                Shift wages are calculated from verified attendance hours. Upon supervisor check-out and attendance sign-off, direct UPI transfer initiates to your registered bank account.
               </Text>
             </View>
           </View>

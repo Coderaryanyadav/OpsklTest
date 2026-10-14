@@ -233,6 +233,9 @@ export function SwipeCard({
             </View>
 
             <View style={styles.topRightBadges}>
+              {(job.id.startsWith('job-mum-') || (job as any).isSampleListing) && (
+                <Badge label="Sample Preview" variant="warning" size="sm" />
+              )}
               {isOrganizerVerified && (
                 <Badge label="Verified Host" variant="success" size="sm" />
               )}
@@ -248,7 +251,7 @@ export function SwipeCard({
           <View style={styles.wageSection}>
             <View>
               <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
-                Guaranteed Daily Payout
+                Estimated Shift Earnings
               </Text>
               <View style={styles.wageRow}>
                 <WageText style={styles.wageAmount}>{formatINR(job.totalPay)}</WageText>
@@ -260,7 +263,7 @@ export function SwipeCard({
             <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
               <Zap size={12} color={colors.success} strokeWidth={2.5} style={{ marginRight: 4 }} />
               <Text style={[styles.upiGuaranteeText, { color: colors.success }]}>
-                Direct UPI on Sign-off
+                UPI on verified checkout
               </Text>
             </View>
           </View>
@@ -272,7 +275,7 @@ export function SwipeCard({
             </Text>
             <View style={styles.organizerRow}>
               <Text style={[styles.organizerName, { color: colors.textSecondary }]}>
-                {job.organizer?.businessName || 'Apex Event Productions'}
+                {job.organizer?.businessName || 'Organizer details unavailable'}
               </Text>
               {job.organizer?.rating ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>

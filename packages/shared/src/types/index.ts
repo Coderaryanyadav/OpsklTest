@@ -220,6 +220,7 @@ export interface DiscoveryFeedResult {
   totalCount: number;
   page: number;
   hasMore: boolean;
+  error?: string;
 }
 
 export interface ApplicationResult {

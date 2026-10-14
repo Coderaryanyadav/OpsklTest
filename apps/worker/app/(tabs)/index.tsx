@@ -347,7 +347,7 @@ export default function WorkerDiscoverScreen() {
                       </Text>
                     </View>
                     <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700', marginTop: 2 }}>
-                      ✓ Guaranteed Direct UPI Settlement
+                      ✓ UPI payout on verified attendance sign-off
                     </Text>
                   </View>
                   <Badge label={shift.category.toUpperCase()} variant="primary" size="sm" />
@@ -357,7 +357,7 @@ export default function WorkerDiscoverScreen() {
                   {shift.title}
                 </Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {shift.organizer?.businessName || 'Event Host'}
+                  {shift.organizer?.businessName || 'Organizer details unavailable'}
                 </Text>
 
                 <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: spacing.sm, marginTop: spacing.md, gap: 4 }}>

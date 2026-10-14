@@ -86,7 +86,7 @@ const SEED_WORKER_BOOKINGS: Booking[] = [
       updatedAt: new Date().toISOString(),
       organizer: {
         id: 'org-apex-01',
-        businessName: 'Apex Event Productions Pvt Ltd',
+        businessName: '[Demo Host] Apex Event Productions',
         businessType: 'event_agency',
         verificationStatus: 'verified',
         profileCompletionStatus: 'completed',
@@ -158,6 +158,7 @@ export default function WorkerMyShiftsScreen() {
   const [activeTab, setActiveTab] = useState<TabState>('active');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Modals state
   const [disputeBookingId, setDisputeBookingId] = useState<string | null>(null);
@@ -186,8 +187,13 @@ export default function WorkerMyShiftsScreen() {
 
   const loadBookings = useCallback(async () => {
     if (!workerId) {
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setBookings(SEED_WORKER_BOOKINGS);
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
+        setBookings(
+          SEED_WORKER_BOOKINGS.map((b) => ({
+            ...b,
+            job: b.job ? { ...b.job, title: `[SAMPLE] ${b.job.title}` } : undefined,
+          }))
+        );
       } else {
         setBookings([]);
       }
@@ -196,21 +202,24 @@ export default function WorkerMyShiftsScreen() {
       return;
     }
     try {
+      setError(null);
       const data = await fetchWorkerBookings(workerId);
       if (data.length > 0) {
         setBookings(data);
-      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setBookings(SEED_WORKER_BOOKINGS);
+      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
+        setBookings(
+          SEED_WORKER_BOOKINGS.map((b) => ({
+            ...b,
+            job: b.job ? { ...b.job, title: `[SAMPLE] ${b.job.title}` } : undefined,
+          }))
+        );
       } else {
         setBookings([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load bookings', err);
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setBookings(SEED_WORKER_BOOKINGS);
-      } else {
-        setBookings([]);
-      }
+      setError(err?.message || 'Could not load your shift bookings.');
+      setBookings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -438,6 +447,19 @@ export default function WorkerMyShiftsScreen() {
           <View style={{ gap: spacing.md }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
+          </View>
+        ) : error ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ fontSize: 32 }}>⚠️</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
+              Could Not Load Bookings
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, marginHorizontal: 24 }}>
+              {error}
+            </Text>
+            <View style={{ marginTop: spacing.md }}>
+              <Button title="Retry" variant="primary" size="md" onPress={loadBookings} />
+            </View>
           </View>
         ) : currentList.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>

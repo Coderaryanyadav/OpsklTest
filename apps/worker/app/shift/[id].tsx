@@ -151,14 +151,14 @@ export default function WorkerShiftDetailScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
               <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }]}>
-                Guaranteed Shift Wage
+                Estimated Shift Earnings
               </Text>
               <WageText style={{ marginTop: 2 }}>{formatINR(totalPay)}</WageText>
               <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
                 {formatINR(shift.hourlyRate)}/hr • {shift.durationHours} scheduled hours
               </Text>
             </View>
-            <Badge label="Direct UPI Settlement" variant="success" size="sm" />
+            <Badge label="UPI on verified checkout" variant="success" size="sm" />
           </View>
 
           <View
@@ -170,7 +170,7 @@ export default function WorkerShiftDetailScreen() {
             }}
           >
             <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              ⚡ Wages are settled directly via UPI to your bank account upon shift completion and organizer sign-off.
+              ⚡ Shift wages are calculated from verified attendance hours. Upon supervisor check-out and sign-off, direct UPI transfer initiates to your registered bank account.
             </Text>
           </View>
         </Card>
@@ -183,7 +183,7 @@ export default function WorkerShiftDetailScreen() {
                 Event Host
               </Text>
               <Text style={[typography.subtitle, { color: colors.textPrimary, marginTop: 2 }]}>
-                {shift.organizer?.businessName || 'Verified Organizer'}
+                {shift.organizer?.businessName || 'Organizer details unavailable'}
               </Text>
               {shift.organizer?.businessType && (
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1, textTransform: 'capitalize' }}>

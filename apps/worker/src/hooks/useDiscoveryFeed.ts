@@ -41,7 +41,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
       'Issue delegate badge lanyards and conference kits',
       'Direct delegates toward Keynote Hall A and Executive Boardrooms',
     ],
-    perks: ['Catered lunch & refreshments provided', 'Air conditioned hall', 'Direct UPI payout within 2 hours'],
+    perks: ['Catered lunch & refreshments provided', 'Air conditioned hall', 'UPI transfer upon supervisor sign-off'],
     requiredSkills: ['Guest Relations', 'Fluent English', 'Basic Tech Navigation'],
     eligibilityCriteria: 'Minimum 18 years old, punctuality is mandatory.',
     applicationDeadline: '2026-10-13T22:00:00Z',
@@ -58,7 +58,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
     updatedAt: new Date().toISOString(),
     organizer: {
       id: 'org-apex-01',
-      businessName: 'Apex Event Productions Pvt Ltd',
+      businessName: '[Sample Host] Apex Event Productions',
       businessType: 'event_agency',
       verificationStatus: 'verified',
       profileCompletionStatus: 'completed',
@@ -93,7 +93,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
       'Log visitor visitor inquiry cards onto tablet form',
       'Keep booth demo counters organized and restocked',
     ],
-    perks: ['Packed lunch & high tea provided', 'Experience certificate', 'Direct UPI payout'],
+    perks: ['Packed lunch & high tea provided', 'Experience certificate', 'UPI transfer upon attendance sign-off'],
     requiredSkills: ['Customer Service', 'Hindi & English Fluency'],
     eligibilityCriteria: 'College students or freshers welcome. Energetic communication skills.',
     applicationDeadline: '2026-10-14T20:00:00Z',
@@ -110,7 +110,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
     updatedAt: new Date().toISOString(),
     organizer: {
       id: 'org-nesco-02',
-      businessName: 'Spectra Trade Shows India',
+      businessName: '[Sample Host] Spectra Trade Shows',
       businessType: 'corporate',
       verificationStatus: 'verified',
       profileCompletionStatus: 'completed',
@@ -145,7 +145,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
       'Guide attendees toward designated entrance gates',
       'Assist venue security with crowd flow control',
     ],
-    perks: ['Travel allowance (₹150 included)', 'Bottled water & snack pack', 'Same-day UPI settlement'],
+    perks: ['Travel allowance (₹150 included)', 'Bottled water & snack pack', 'UPI transfer upon attendance sign-off'],
     requiredSkills: ['Crowd Management', 'Physical Stamina', 'Hindi Speaking'],
     eligibilityCriteria: 'Must be comfortable standing on foot for shift periods.',
     applicationDeadline: '2026-10-15T18:00:00Z',
@@ -162,7 +162,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
     updatedAt: new Date().toISOString(),
     organizer: {
       id: 'org-cidco-03',
-      businessName: 'Vanguard Activation & Logistics',
+      businessName: '[Sample Host] Vanguard Activation',
       businessType: 'event_agency',
       verificationStatus: 'verified',
       profileCompletionStatus: 'completed',
@@ -197,7 +197,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
       'Deliver stage notes between show producer and stage manager',
       'Ensure microphones and clickers are placed on podium between sessions',
     ],
-    perks: ['Full five-star hotel buffet lunch', 'VIP industry access badge', 'Guaranteed UPI payout'],
+    perks: ['Full five-star hotel buffet lunch', 'VIP industry access badge', 'UPI transfer upon attendance sign-off'],
     requiredSkills: ['Backstage Etiquette', 'Prompt Communication', 'Discretion'],
     eligibilityCriteria: 'Previous event or theatre backstage experience preferred.',
     applicationDeadline: '2026-10-16T12:00:00Z',
@@ -214,7 +214,7 @@ const SEED_MUMBAI_JOBS: Job[] = [
     updatedAt: new Date().toISOString(),
     organizer: {
       id: 'org-nehru-04',
-      businessName: 'Elevate Summit Partners',
+      businessName: '[Sample Host] Elevate Summit Partners',
       businessType: 'corporate',
       verificationStatus: 'verified',
       profileCompletionStatus: 'completed',
@@ -275,11 +275,22 @@ export function useDiscoveryFeed(workerId: string | null) {
 
         if (!isMounted.current) return;
 
+        // If backend query encountered an error or RLS rejection, surface error state immediately — do NOT mask with demo fixtures
+        if (result.error) {
+          setError(result.error);
+          setCards([]);
+          return;
+        }
+
         let activeJobs = result.jobs;
         // Strict integrity: only use seed fixtures if explicitly configured for demo mode
         const allowDemoFixtures = process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true';
         if (activeJobs.length === 0 && allowDemoFixtures) {
-          activeJobs = SEED_MUMBAI_JOBS.filter((job) => {
+          activeJobs = SEED_MUMBAI_JOBS.map((j) => ({
+            ...j,
+            isSampleListing: true,
+            title: `[SAMPLE PREVIEW] ${j.title}`,
+          })).filter((job) => {
             if (filters.category && filters.category !== 'all' && job.category !== filters.category) {
               return false;
             }
@@ -324,13 +335,32 @@ export function useDiscoveryFeed(workerId: string | null) {
     async (job: Job) => {
       if (!job) return;
 
+      // Never substitute a fake 'demo-worker-id' when unauthenticated
+      if (!workerId) {
+        setFailedApplication({
+          job,
+          errorCode: 'AUTH_REQUIRED',
+          errorMessage: 'Sign-in required: Please sign in with an active worker account before applying for shifts.',
+        });
+        return;
+      }
+
+      // Sample demonstration listings cannot be applied for, booked, or paid against
+      if (job.id.startsWith('job-mum-') || (job as any).isSampleListing) {
+        setFailedApplication({
+          job,
+          errorCode: 'SAMPLE_LISTING_UNAVAILABLE',
+          errorMessage: 'This is a sample demonstration listing for market preview. Live applications cannot be submitted against sample data.',
+        });
+        return;
+      }
+
       // 1. Optimistic removal from deck
       setCards((prev) => prev.filter((c) => c.id !== job.id));
       setInFlightApplication(job);
 
       // 2. Execute safe server-side application
-      const targetWorkerId = workerId || 'demo-worker-id';
-      const result = await applyForJobSafe(job.id, targetWorkerId);
+      const result = await applyForJobSafe(job.id, workerId);
 
       setInFlightApplication(null);
 
@@ -361,8 +391,8 @@ export function useDiscoveryFeed(workerId: string | null) {
       setCards((prev) => prev.filter((c) => c.id !== job.id));
       setPassedHistory((prev) => [job, ...prev]);
 
-      // 2. Record pass event in background
-      if (workerId) {
+      // 2. Record pass event in background if authenticated and not a sample listing
+      if (workerId && !job.id.startsWith('job-mum-') && !(job as any).isSampleListing) {
         await recordSwipePass(job.id, workerId);
       }
     },
@@ -382,7 +412,7 @@ export function useDiscoveryFeed(workerId: string | null) {
     setCards((prev) => [lastPassed, ...prev]);
 
     // Delete left swipe event in backend
-    if (workerId) {
+    if (workerId && !lastPassed.id.startsWith('job-mum-') && !(lastPassed as any).isSampleListing) {
       await undoSwipePass(lastPassed.id, workerId);
     }
   }, [passedHistory, workerId]);

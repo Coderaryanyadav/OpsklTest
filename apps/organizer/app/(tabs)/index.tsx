@@ -21,20 +21,22 @@ import {
 import {
   Job,
   OrganizerMetrics,
+  OrganizerProfile,
   formatINR,
   formatISTDate,
   fetchOrganizerJobs,
   fetchOrganizerMetrics,
+  fetchOrganizerProfile,
   updateJobStatus,
 } from '@opskil/shared';
 import { Bell, MapPin } from 'lucide-react-native';
 
-// Initial fallback shifts for Mumbai event productions demo
+// Fallback preview shifts for Mumbai event productions demo
 const SEED_ORGANIZER_SHIFTS: Job[] = [
   {
     id: 'org-shift-1',
     organizerId: 'org-apex-01',
-    title: 'Registration Desk & VIP Usher',
+    title: '[SAMPLE] Registration Desk & VIP Usher',
     category: 'conference',
     venueName: 'Jio World Convention Centre',
     venueAddress: 'G Block BKC, Bandra East, Mumbai 400098',
@@ -58,7 +60,7 @@ const SEED_ORGANIZER_SHIFTS: Job[] = [
   {
     id: 'org-shift-2',
     organizerId: 'org-apex-01',
-    title: 'Exhibition Booth Assistants',
+    title: '[SAMPLE] Exhibition Booth Assistants',
     category: 'exhibition',
     venueName: 'Bombay Exhibition Centre (NESCO)',
     venueAddress: 'Western Express Highway, Goregaon East, Mumbai 400063',
@@ -82,7 +84,7 @@ const SEED_ORGANIZER_SHIFTS: Job[] = [
   {
     id: 'org-shift-3',
     organizerId: 'org-apex-01',
-    title: 'Crowd & Queue Marshalls',
+    title: '[SAMPLE] Crowd & Queue Marshalls',
     category: 'activation',
     venueName: 'CIDCO Exhibition Centre',
     venueAddress: 'Sector 30A, Vashi, Navi Mumbai',
@@ -112,6 +114,7 @@ export default function OrganizerDashboardScreen() {
 
   const organizerId = session?.user?.id;
 
+  const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [shifts, setShifts] = useState<Job[]>([]);
   const [metrics, setMetrics] = useState<OrganizerMetrics>({
     activeJobs: 0,
@@ -125,10 +128,12 @@ export default function OrganizerDashboardScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
+      setOrganizerProfile(null);
+      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true' && process.env.NODE_ENV !== 'production') {
         setShifts(SEED_ORGANIZER_SHIFTS);
         setMetrics({
           activeJobs: 3,
@@ -149,27 +154,21 @@ export default function OrganizerDashboardScreen() {
     }
 
     try {
-      const [jobsData, metricsData] = await Promise.all([
+      setError(null);
+      const [profileData, jobsData, metricsData] = await Promise.all([
+        fetchOrganizerProfile(organizerId),
         fetchOrganizerJobs(organizerId),
         fetchOrganizerMetrics(organizerId),
       ]);
 
-      if (jobsData.length > 0) {
-        setShifts(jobsData);
-      } else if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setShifts(SEED_ORGANIZER_SHIFTS);
-      } else {
-        setShifts([]);
-      }
-
+      setOrganizerProfile(profileData);
+      setShifts(jobsData);
       setMetrics(metricsData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load organizer data', err);
-      if (process.env.EXPO_PUBLIC_USE_DEMO_FIXTURES === 'true') {
-        setShifts(SEED_ORGANIZER_SHIFTS);
-      } else {
-        setShifts([]);
-      }
+      setError(err?.message || 'Could not load organizer dashboard data.');
+      // Never silently mask a production database/RLS failure into demo fixtures
+      setShifts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -219,15 +218,21 @@ export default function OrganizerDashboardScreen() {
         ]}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flex: 1, marginRight: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={[styles.brandTitle, { color: colors.primary }]}>
                 OPSKL ORGANIZER
               </Text>
-              <Badge label="VERIFIED ORG" variant="success" size="sm" />
+              {organizerProfile?.verificationStatus === 'verified' ? (
+                <Badge label="VERIFIED ORG" variant="success" size="sm" />
+              ) : organizerProfile?.verificationStatus === 'pending' ? (
+                <Badge label="VERIFICATION PENDING" variant="warning" size="sm" />
+              ) : organizerProfile?.verificationStatus === 'unverified' ? (
+                <Badge label="UNVERIFIED" variant="neutral" size="sm" />
+              ) : null}
             </View>
-            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: 2 }]}>
-              Apex Event Productions
+            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={1}>
+              {organizerProfile?.businessName || (organizerId ? 'My Organization' : 'Organizer details unavailable')}
             </Text>
           </View>
 
@@ -255,6 +260,27 @@ export default function OrganizerDashboardScreen() {
             />
           </View>
         </View>
+
+        {error && (
+          <View
+            style={{
+              marginTop: spacing.md,
+              padding: spacing.sm,
+              backgroundColor: colors.surfaceMuted,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: colors.danger,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text style={{ fontSize: 13, color: colors.danger, flex: 1, marginRight: spacing.sm }}>
+              ⚠️ {error}
+            </Text>
+            <Button title="Retry" variant="outline" size="sm" onPress={loadData} fullWidth={false} />
+          </View>
+        )}
 
         {/* Real Metrics Grid */}
         <View style={styles.metricsGrid}>

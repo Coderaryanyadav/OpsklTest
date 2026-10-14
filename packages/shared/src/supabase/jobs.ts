@@ -202,7 +202,7 @@ export async function fetchDiscoveryFeed(
 
     if (error) {
       logger.error('Failed to fetch discovery feed', error);
-      return { jobs: [], totalCount: 0, page, hasMore: false };
+      return { jobs: [], totalCount: 0, page, hasMore: false, error: error.message || 'Database error fetching shifts feed.' };
     }
 
     const jobs = await enrichJobsWithOrganizerCards(data || []);
@@ -217,7 +217,7 @@ export async function fetchDiscoveryFeed(
     };
   } catch (err: any) {
     logger.error('Unexpected error fetching discovery feed', err);
-    return { jobs: [], totalCount: 0, page, hasMore: false };
+    return { jobs: [], totalCount: 0, page, hasMore: false, error: err?.message || 'Network error fetching shifts feed.' };
   }
 }
 
