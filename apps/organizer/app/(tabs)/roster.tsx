@@ -396,6 +396,29 @@ export default function OrganizerRosterScreen() {
         </ScrollView>
       </View>
 
+      {/* Demo Fixtures Banner if rendering sample data */}
+      {applications.some((a) => a.id.startsWith('app-seed-') || (a as any).isSample) && (
+        <View
+          style={{
+            backgroundColor: isDark ? '#422006' : '#FEFCE8',
+            borderColor: '#FACC15',
+            borderWidth: 1,
+            borderRadius: radii.md,
+            marginHorizontal: spacing.lg,
+            marginTop: spacing.sm,
+            padding: spacing.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Text style={{ fontSize: 16 }}>⚠️</Text>
+          <Text style={{ fontSize: 12, color: isDark ? '#FEF08A' : '#854D0E', flex: 1, fontWeight: '500' }}>
+            DEMO MODE: Showing sample applicant previews. Real candidates will appear here as workers apply for your live events.
+          </Text>
+        </View>
+      )}
+
       {/* Applications Feed */}
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
@@ -435,6 +458,7 @@ export default function OrganizerRosterScreen() {
             const profile = worker?.profile;
             const job = app.job;
 
+            const isSampleApp = app.id.startsWith('app-seed-') || (app as any).isSample;
             const isVerified = worker?.verificationStatus === 'verified';
             const isConfirmed = app.status === 'confirmed';
             const isShortlisted = app.status === 'shortlisted';
@@ -469,11 +493,15 @@ export default function OrganizerRosterScreen() {
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <Text style={[typography.h3, { color: colors.textPrimary }]}>
                           {profile?.fullName || 'Opskl Candidate'}
                         </Text>
-                        {isVerified && <Badge label="ID VERIFIED" variant="success" size="sm" />}
+                        {isSampleApp ? (
+                          <Badge label="Sample Preview" variant="warning" size="sm" />
+                        ) : isVerified ? (
+                          <Badge label="ID VERIFIED" variant="success" size="sm" />
+                        ) : null}
                       </View>
 
                       <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>

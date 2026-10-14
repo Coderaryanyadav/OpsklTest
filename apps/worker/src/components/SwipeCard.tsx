@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -74,6 +74,13 @@ export function SwipeCard({
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const actionDispatched = useRef(false);
+
+  // If the component is reused across cards or when the card returns to deck, reset dispatch lock and offsets
+  useEffect(() => {
+    actionDispatched.current = false;
+    translateX.value = 0;
+    translateY.value = 0;
+  }, [job.id, translateX, translateY]);
 
   const handleApplyAction = () => {
     if (actionDispatched.current) return;

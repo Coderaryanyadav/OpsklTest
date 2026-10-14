@@ -28,8 +28,15 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If live credentials are not configured (e.g. static build or sandbox testing without keys), pass through
+  // If live credentials are not configured:
+  // In production, block access safely with a config error rather than allowing unauthenticated access.
+  // In development/test build steps, allow passthrough so static bundling succeeds.
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    if (process.env.NODE_ENV === 'production') {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('error', 'missing_configuration');
+      return NextResponse.redirect(loginUrl);
+    }
     return response;
   }
 

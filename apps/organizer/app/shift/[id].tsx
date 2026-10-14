@@ -193,12 +193,12 @@ export default function OrganizerShiftDetailScreen() {
   const handleApproveAttendance = async (booking: Booking) => {
     const workerName = booking.worker?.profile?.fullName || 'Worker';
     Alert.alert(
-      'Approve Attendance & Release Payout',
-      `Confirm full attendance sign-off for ${workerName}?\n\nThis will trigger direct UPI payout of ${formatINR(booking.agreedTotalPay)} from your escrow deposit.`,
+      'Approve Attendance & Authorize Payout',
+      `Confirm full attendance sign-off for ${workerName}?\n\nThis will record ${activeJob.durationHours} verified hours and authorize wage payout of ${formatINR(booking.agreedTotalPay)} to their verified UPI handle.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Approve & Release Payout',
+          text: 'Approve & Authorize',
           onPress: async () => {
             const res = await completeShiftAndApproveAttendance(booking.id, activeJob.durationHours);
             if (res.success) {
@@ -207,7 +207,7 @@ export default function OrganizerShiftDetailScreen() {
                   c.id === booking.id ? { ...c, status: 'completed', completedAt: new Date().toISOString() } : c
                 )
               );
-              Alert.alert('Payout Initiated', `Attendance confirmed. ${formatINR(booking.agreedTotalPay)} initiated to ${workerName}.`);
+              Alert.alert('Attendance Approved', `Shift attendance verified for ${workerName}. Wage payout processing initiated.`);
             } else {
               Alert.alert('Error', res.error || 'Failed to approve attendance.');
             }

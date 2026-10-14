@@ -86,8 +86,15 @@ const universalStorage = {
     (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   );
 
-  if(!isSupabaseConfigured) {
-    if (process.env.NODE_ENV !== 'test') {
+  if (!isSupabaseConfigured) {
+    // In production browser/server runtime, throw so an app doesn't silently connect to placeholder backend.
+    // In Next.js static build phase or tests, warn so static page compilation succeeds without live runtime secrets.
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || typeof window === 'undefined' && process.env.npm_lifecycle_event === 'build';
+    if (process.env.NODE_ENV === 'production' && !isBuildPhase && typeof window !== 'undefined') {
+      throw new Error(
+        '[OPSKL FATAL CONFIG ERROR] Live Supabase credentials (SUPABASE_URL and SUPABASE_ANON_KEY) must be configured in production environment. Refusing to start against placeholder backend.'
+      );
+    } else if (process.env.NODE_ENV !== 'test') {
       console.warn(
         '[OPSKL CONFIG WARNING] Live Supabase credentials are not set in environment. Running with placeholder sandbox configuration. Supply EXPO_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL for live database access.'
       );
