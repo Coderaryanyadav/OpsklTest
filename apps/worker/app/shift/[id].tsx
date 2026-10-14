@@ -140,11 +140,17 @@ export default function WorkerShiftDetailScreen() {
         subtitle={`${shift.category.toUpperCase()} • ${shift.zone}`}
         onBack={() => router.back()}
         rightAction={
-          <Badge
-            label={`${shift.durationHours}h Shift`}
-            variant="neutral"
-            size="sm"
-          />
+          isBooked ? (
+            <Badge label="CONFIRMED ON ROSTER" variant="success" size="sm" />
+          ) : applied ? (
+            <Badge label="APPLICATION SUBMITTED" variant="warning" size="sm" />
+          ) : (
+            <Badge
+              label={`${shift.durationHours}h Shift`}
+              variant="neutral"
+              size="sm"
+            />
+          )
         }
       />
 
