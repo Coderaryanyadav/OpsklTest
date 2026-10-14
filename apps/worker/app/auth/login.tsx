@@ -49,13 +49,15 @@ export default function WorkerLoginScreen() {
   };
 
   const handleVerify = async () => {
-    if (otp.trim().length !== 6) {
+    if (loading) return;
+    const cleanOtp = otp.replace(/\D/g, '').trim();
+    if (cleanOtp.length !== 6) {
       Alert.alert('Invalid Code', 'Please enter the complete 6-digit verification code.');
       return;
     }
     setLoading(true);
     try {
-      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'worker');
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), cleanOtp, 'worker');
       if (res?.session) {
         // Authoritative role check: verify worker account is active
         const profile = await fetchUserProfile(res.session.user.id);
@@ -71,14 +73,12 @@ export default function WorkerLoginScreen() {
           return;
         }
 
-        Alert.alert('Verified', 'Session authenticated successfully.', [
-          { text: 'Continue', onPress: () => router.replace('/(tabs)' as any) },
-        ]);
+        router.replace('/(tabs)' as any);
       } else {
         Alert.alert('Verification Pending', 'No active session was returned by the auth provider.');
       }
     } catch (err: any) {
-      Alert.alert('Verification Failed', err?.message || 'The OTP code is invalid or has expired.');
+      Alert.alert('Verification Failed', err?.message || 'The OTP code is invalid or has expired. Please request a new code.');
     } finally {
       setLoading(false);
     }
@@ -150,19 +150,29 @@ export default function WorkerLoginScreen() {
                 variant="primary"
                 size="lg"
                 loading={loading}
+                disabled={loading}
                 onPress={handleVerify}
                 style={{ marginTop: spacing.sm }}
               />
-              <Button
-                title="Change Email Address"
-                variant="ghost"
-                size="sm"
-                onPress={() => {
-                  setOtpSent(false);
-                  setOtp('');
-                }}
-                style={{ marginTop: spacing.xs }}
-              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs }}>
+                <Button
+                  title="Resend Code"
+                  variant="ghost"
+                  size="sm"
+                  disabled={loading}
+                  onPress={handleSendOtp}
+                />
+                <Button
+                  title="Change Email"
+                  variant="ghost"
+                  size="sm"
+                  disabled={loading}
+                  onPress={() => {
+                    setOtpSent(false);
+                    setOtp('');
+                  }}
+                />
+              </View>
             </>
           )}
         </Card>

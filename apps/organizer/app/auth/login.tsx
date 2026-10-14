@@ -49,13 +49,15 @@ export default function OrganizerLoginScreen() {
   };
 
   const handleVerify = async () => {
-    if (otp.trim().length !== 6) {
+    if (loading) return;
+    const cleanOtp = otp.replace(/\D/g, '').trim();
+    if (cleanOtp.length !== 6) {
       Alert.alert('Invalid Code', 'Please enter the complete 6-digit verification code.');
       return;
     }
     setLoading(true);
     try {
-      const res = await verifyEmailOtp(email.trim().toLowerCase(), otp, 'organizer');
+      const res = await verifyEmailOtp(email.trim().toLowerCase(), cleanOtp, 'organizer');
       if (res?.session) {
         // Authoritative role check: verify user profile exists, is active, and possesses organizer or admin role
         const profile = await fetchUserProfile(res.session.user.id);
@@ -71,14 +73,12 @@ export default function OrganizerLoginScreen() {
           return;
         }
 
-        Alert.alert('Verified', 'Organizer session authenticated successfully.', [
-          { text: 'Open Dashboard', onPress: () => router.replace('/(tabs)' as any) },
-        ]);
+        router.replace('/(tabs)' as any);
       } else {
         Alert.alert('Verification Pending', 'No session was returned by Supabase.');
       }
     } catch (err: any) {
-      Alert.alert('Verification Failed', err?.message || 'Invalid or expired OTP.');
+      Alert.alert('Verification Failed', err?.message || 'Invalid or expired OTP. Please request a new code.');
     } finally {
       setLoading(false);
     }
@@ -147,19 +147,29 @@ export default function OrganizerLoginScreen() {
                 variant="primary"
                 size="lg"
                 loading={loading}
+                disabled={loading}
                 onPress={handleVerify}
                 style={{ marginTop: spacing.sm }}
               />
-              <Button
-                title="Edit Email Address"
-                variant="ghost"
-                size="sm"
-                onPress={() => {
-                  setOtpSent(false);
-                  setOtp('');
-                }}
-                style={{ marginTop: spacing.xs }}
-              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs }}>
+                <Button
+                  title="Resend Code"
+                  variant="ghost"
+                  size="sm"
+                  disabled={loading}
+                  onPress={handleSendOtp}
+                />
+                <Button
+                  title="Change Email"
+                  variant="ghost"
+                  size="sm"
+                  disabled={loading}
+                  onPress={() => {
+                    setOtpSent(false);
+                    setOtp('');
+                  }}
+                />
+              </View>
             </>
           )}
         </Card>

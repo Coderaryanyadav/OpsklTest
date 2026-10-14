@@ -73,16 +73,33 @@ export async function signInWithEmailOtp({ email, role, fullName }: EmailOtpSign
 
 /**
  * Verify 6-digit OTP token for Email (Gmail) address.
+ * Sanitizes input and gracefully handles both 'email' (login) and 'signup' (first-time registration) GoTrue OTP types.
  */
 export async function verifyEmailOtp({ email, token }: VerifyEmailOtpParams) {
   const normalizedEmail = email.trim().toLowerCase();
+  const cleanToken = token.replace(/\D/g, '').trim();
   logger.info('Verifying Email/Gmail OTP token', { email: normalizedEmail });
 
-  const { data, error } = await supabase.auth.verifyOtp({
+  // 1. Attempt standard email sign-in OTP verification
+  let { data, error } = await supabase.auth.verifyOtp({
     email: normalizedEmail,
-    token: token.trim(),
+    token: cleanToken,
     type: 'email',
   });
+
+  // 2. If rejected, fallback to 'signup' OTP type for newly registered unconfirmed accounts
+  if (error) {
+    const signupAttempt = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: cleanToken,
+      type: 'signup',
+    });
+
+    if (!signupAttempt.error && signupAttempt.data) {
+      data = signupAttempt.data;
+      error = null;
+    }
+  }
 
   if (error) {
     logger.error('Email OTP verification failed', error, { email: normalizedEmail });
