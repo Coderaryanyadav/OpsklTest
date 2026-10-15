@@ -119,7 +119,7 @@ async function run() {
         'ensure_user_profile_provisioned_safe',
         'apply_for_job_safe',
         'confirm_worker_booking_safe',
-        'check_in_booking_safe',
+        'check_in_worker_safe',
         'complete_shift_and_approve_attendance',
         'generate_job_invoice_safe',
         'admin_resolve_dispute_safe',
@@ -160,7 +160,7 @@ async function run() {
     }
   }
 
-  console.log('\nStep 5: Provisioning Initial Admin User in PostgreSQL & Auth...');
+  console.log('\nStep 5: Provisioning Initial Admin User & Backfilling Auth Profiles...');
   const adminEmail = 'admin@opskil.com';
   const adminPassword = 'AdminOpskil2026!';
 
@@ -212,6 +212,36 @@ async function run() {
     await client.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
     console.log(`  \x1b[32m✓ Provisioned admin profile for ${adminEmail}\x1b[0m`);
   }
+
+  // Backfill existing auth.users into profiles so existing test users remain active
+  await client.query(`
+    INSERT INTO public.profiles (id, email, role, full_name, is_active)
+    SELECT
+      id,
+      email,
+      COALESCE((raw_user_meta_data->>'role')::user_role, 'worker'::user_role),
+      COALESCE(raw_user_meta_data->>'full_name', 'Member'),
+      true
+    FROM auth.users
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.worker_profiles (id, skills)
+    SELECT
+      p.id,
+      ARRAY['Event Support']::text[]
+    FROM public.profiles p
+    WHERE p.role = 'worker'
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.organizer_profiles (id, business_name)
+    SELECT
+      p.id,
+      p.full_name || ' Organization'
+    FROM public.profiles p
+    WHERE p.role = 'organizer'
+    ON CONFLICT (id) DO NOTHING;
+  `);
+  console.log(`  \x1b[32m✓ Synced auth.users into domain profiles table.\x1b[0m`);
 
   console.log('\n\x1b[32m====================================================\x1b[0m');
   console.log('\x1b[32m  ALL SQL MIGRATIONS DEPLOYED & VERIFIED WITH 0 ERRORS!  \x1b[0m');
