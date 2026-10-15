@@ -41,6 +41,8 @@ import {
   fetchShiftMessages,
   sendShiftMessage,
   ShiftMessage,
+  subscribeToShiftApplications,
+  subscribeToShiftRoster,
 } from '@opskil/shared';
 import { Star, CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react-native';
 
@@ -188,7 +190,22 @@ export default function OrganizerShiftDetailScreen() {
 
   useEffect(() => {
     loadShiftData();
-  }, [loadShiftData]);
+
+    if (!id) return;
+
+    const unsubApps = subscribeToShiftApplications(id, () => {
+      loadShiftData();
+    });
+
+    const unsubRoster = subscribeToShiftRoster(id, () => {
+      loadShiftData();
+    });
+
+    return () => {
+      unsubApps();
+      unsubRoster();
+    };
+  }, [loadShiftData, id]);
 
   if (loading) {
     return (

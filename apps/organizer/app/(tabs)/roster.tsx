@@ -24,6 +24,7 @@ import {
   fetchOrganizerApplications,
   confirmWorkerBookingSafe,
   updateApplicationStatusSafe,
+  subscribeToOrganizerRoster,
 } from '@opskil/shared';
 import { ClipboardList, Phone, MapPin, AlertTriangle } from 'lucide-react-native';
 
@@ -67,7 +68,17 @@ export default function OrganizerRosterScreen() {
 
   useEffect(() => {
     loadApplications();
-  }, [loadApplications]);
+
+    if (!organizerId) return;
+
+    const unsubscribe = subscribeToOrganizerRoster(organizerId, () => {
+      loadApplications();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [loadApplications, organizerId]);
 
   const onRefresh = () => {
     setRefreshing(true);

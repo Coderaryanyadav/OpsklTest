@@ -15,7 +15,7 @@ export interface FailedApplicationState {
   errorMessage: string;
 }
 
-export function useDiscoveryFeed(workerId: string | null) {
+export function useDiscoveryFeed(workerId: string | null, verificationStatus?: string) {
   const [cards, setCards] = useState<Job[]>([]);
   const [passedHistory, setPassedHistory] = useState<Job[]>([]);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
@@ -115,6 +115,18 @@ export function useDiscoveryFeed(workerId: string | null) {
         return;
       }
 
+      // Enforce KYC verification gate
+      if (verificationStatus !== 'verified') {
+        setFailedApplication({
+          job,
+          errorCode: 'KYC_REQUIRED',
+          errorMessage: verificationStatus === 'pending'
+            ? 'KYC Verification Pending: Your documents are currently under review by Admin. Applications will unlock as soon as your KYC is approved.'
+            : 'KYC Required: Please submit your Aadhaar/PAN verification documents under Profile to apply for shifts.',
+        });
+        return;
+      }
+
       // 1. Optimistic removal from deck
       setCards((prev) => prev.filter((c) => c.id !== job.id));
       setInFlightApplication(job);
@@ -137,7 +149,7 @@ export function useDiscoveryFeed(workerId: string | null) {
         });
       }
     },
-    [workerId]
+    [workerId, verificationStatus]
   );
 
   /**

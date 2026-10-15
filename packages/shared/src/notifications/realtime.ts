@@ -108,3 +108,79 @@ export function subscribeToShiftRoster(
     supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Subscribes to new worker applications for a specific shift in real time.
+ */
+export function subscribeToShiftApplications(
+  jobId: string,
+  onApplicationChange: (change: { event: string; record: any }) => void
+): () => void {
+  const channelName = `shift-apps-${jobId}`;
+  safelyCleanExistingChannel(channelName);
+
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'job_applications',
+        filter: `job_id=eq.${jobId}`,
+      },
+      (payload: any) => {
+        onApplicationChange({
+          event: payload.eventType,
+          record: payload.new || payload.old,
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Subscribes to live applicant and booking updates for an organizer dashboard.
+ */
+export function subscribeToOrganizerRoster(
+  organizerId: string,
+  onChange: () => void
+): () => void {
+  const channelName = `org-live-roster-${organizerId}`;
+  safelyCleanExistingChannel(channelName);
+
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'job_applications',
+      },
+      () => {
+        onChange();
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'bookings',
+      },
+      () => {
+        onChange();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+

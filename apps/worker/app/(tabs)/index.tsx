@@ -30,7 +30,7 @@ import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/lo
 
 export default function WorkerDiscoverScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, workerProfile } = useAuth();
   const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
 
   const [activeZone, setActiveZone] = useState<LocalityZone>(MUMBAI_ZONES[0]);
@@ -71,7 +71,7 @@ export default function WorkerDiscoverScreen() {
     onRestoreFailedCard,
     onRetryFailedApplication,
     onRefresh,
-  } = useDiscoveryFeed(session?.user?.id ?? null);
+  } = useDiscoveryFeed(session?.user?.id ?? null, workerProfile?.verificationStatus);
 
   const handleRefresh = async () => {
     setLastRefreshedAt(new Date());
@@ -193,6 +193,40 @@ export default function WorkerDiscoverScreen() {
         </View>
       </View>
 
+      {/* KYC Verification Status Banner */}
+      {session?.user?.id && workerProfile && workerProfile.verificationStatus !== 'verified' && (
+        <View
+          style={{
+            backgroundColor: colors.surfaceMuted,
+            paddingHorizontal: spacing.md,
+            paddingVertical: 9,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <Badge
+              label={workerProfile.verificationStatus === 'pending' ? 'KYC PENDING' : 'KYC REQUIRED'}
+              variant={workerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
+              size="sm"
+            />
+            <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
+              {workerProfile.verificationStatus === 'pending'
+                ? 'Admin approval in progress. Shift applications unlock once approved.'
+                : 'Submit KYC documents under Profile to unlock applications.'}
+            </Text>
+          </View>
+          <Pressable onPress={() => router.push('/(tabs)/profile' as any)} hitSlop={8}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textDecorationLine: 'underline' }}>
+              Profile
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* Failure Recovery Alert Banner (Protects against false-positive swipe success) */}
       {failedApplication && (
         <View style={[styles.failedBanner, { backgroundColor: isDark ? '#451A1A' : '#FEF2F2' }]}>
@@ -200,7 +234,11 @@ export default function WorkerDiscoverScreen() {
             <AlertTriangle size={18} color="#DC2626" strokeWidth={2.2} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.failedBannerTitle}>
-                {failedApplication.errorCode === 'AUTH_REQUIRED' ? 'Sign In Required' : 'Application Incomplete'}
+                {failedApplication.errorCode === 'AUTH_REQUIRED'
+                  ? 'Sign In Required'
+                  : failedApplication.errorCode === 'KYC_REQUIRED'
+                  ? 'KYC Approval Required'
+                  : 'Application Incomplete'}
               </Text>
               <Text style={styles.failedBannerText}>
                 {failedApplication.errorMessage}
@@ -228,6 +266,18 @@ export default function WorkerDiscoverScreen() {
                 accessibilityLabel="Sign in to apply"
               >
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>Sign In</Text>
+              </Pressable>
+            ) : failedApplication.errorCode === 'KYC_REQUIRED' ? (
+              <Pressable
+                onPress={() => {
+                  onRestoreFailedCard();
+                  router.push('/(tabs)/profile' as any);
+                }}
+                style={[styles.bannerBtn, { backgroundColor: colors.primary }]}
+                accessibilityRole="button"
+                accessibilityLabel="View KYC status"
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>View KYC</Text>
               </Pressable>
             ) : (
               <Pressable
