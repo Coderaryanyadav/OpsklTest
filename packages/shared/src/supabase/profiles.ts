@@ -53,6 +53,41 @@ export async function cancelAccountDeletionSafe(): Promise<{ success: boolean; e
   }
 }
 
+/**
+ * Submit user KYC or business verification document (Aadhaar, PAN, GSTIN)
+ */
+export async function submitVerificationCaseSafe(
+  documentType: 'aadhaar' | 'pan' | 'gstin',
+  maskedId: string,
+  storagePath: string
+): Promise<{ success: boolean; caseId?: string; status?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('submit_verification_case_safe', {
+      p_document_type: documentType,
+      p_masked_id: maskedId,
+      p_storage_path: storagePath,
+    });
+
+    if (error) {
+      logger.error('submit_verification_case_safe RPC error', error);
+      return { success: false, error: error.message };
+    }
+
+    if (data && data.success === false) {
+      return { success: false, error: data.error };
+    }
+
+    return {
+      success: true,
+      caseId: data?.case_id,
+      status: data?.status || 'pending',
+    };
+  } catch (err: any) {
+    logger.error('submitVerificationCaseSafe exception', err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function fetchWorkerProfile(userId: string): Promise<WorkerProfile | null> {
   const { data, error } = await supabase
     .from('worker_profiles')

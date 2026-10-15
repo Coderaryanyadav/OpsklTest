@@ -129,10 +129,10 @@ export default function WorkerWelcomeScreen() {
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-                  Escrow-Protected Payouts
+                  Direct UPI Payouts
                 </Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
-                  Shift wages are funded prior to call time and released upon attendance sign-off.
+                  Agreed daily shift wages are paid directly to your UPI ID upon supervisor attendance approval.
                 </Text>
               </View>
             </View>
@@ -162,7 +162,7 @@ export default function WorkerWelcomeScreen() {
 
           {/* Tertiary Action: New Crew Onboarding */}
           <Pressable
-            onPress={() => handleNavigate('/onboarding')}
+            onPress={() => handleNavigate('/auth/login?redirect=/onboarding')}
             style={({ pressed }) => [
               styles.onboardingLink,
               { opacity: pressed ? 0.7 : 1 },

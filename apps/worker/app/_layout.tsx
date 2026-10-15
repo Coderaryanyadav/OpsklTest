@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   OpsklThemeProvider,
@@ -10,6 +11,7 @@ import {
   useOpsklTheme,
   AuthProvider,
   useAuth,
+  EmptyState,
 } from '@opskil/design-system';
 import { universalStorage } from '@opskil/shared';
 
@@ -20,31 +22,106 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function RootNavigator() {
   const router = useRouter();
   const segments = useSegments();
-  const { isDark } = useOpsklTheme();
-  const { session, loading } = useAuth();
-  const [initialEvaluated, setInitialEvaluated] = useState(false);
+  const { colors, spacing, isDark } = useOpsklTheme();
+  const {
+    session,
+    loading,
+    authState,
+    roleMismatch,
+    isDeactivated,
+    cancelAccountDeletion,
+    refreshProfile,
+    logout,
+  } = useAuth();
 
   useEffect(() => {
-    if (loading || initialEvaluated) return;
+    if (loading) return;
 
-    async function evaluateFirstLaunch() {
+    // Splash screen hides once auth initialization finishes
+    SplashScreen.hideAsync().catch(() => {});
+
+    async function evaluateRouting() {
       try {
-        const inTabsGroup = (segments as any).length === 0 || (segments as any)[0] === '(tabs)';
-        if (!session && inTabsGroup) {
-          const welcomeSeen = await universalStorage.getItem('@opskil_worker_welcome_seen');
-          if (!welcomeSeen) {
-            router.replace('/welcome' as any);
+        const topSegment = (segments as any)[0] || '';
+        const subSegment = (segments as any)[1] || '';
+
+        // Case 1: Unauthenticated visitor accessing protected tabs or onboarding
+        if (!session) {
+          const protectedTab = topSegment === '(tabs)' && (subSegment === 'my-shifts' || subSegment === 'earnings' || subSegment === 'profile');
+          const protectedRoute = topSegment === 'onboarding';
+
+          if (protectedTab || protectedRoute) {
+            router.replace(`/auth/login?redirect=${encodeURIComponent(topSegment === '(tabs)' ? `/(tabs)/${subSegment}` : '/onboarding')}` as any);
+            return;
+          }
+
+          // Case 1b: Fresh install entering tabs directly without seeing welcome
+          if (topSegment === '(tabs)' || topSegment === '') {
+            const welcomeSeen = await universalStorage.getItem('@opskil_worker_welcome_seen');
+            if (!welcomeSeen) {
+              router.replace('/welcome' as any);
+              return;
+            }
           }
         }
+
+        // Case 2: Authenticated user with incomplete profile
+        if (session && authState === 'AUTHENTICATED_PROFILE_INCOMPLETE' && topSegment !== 'onboarding') {
+          router.replace('/onboarding' as any);
+          return;
+        }
+
+        // Case 3: Authenticated user with completed profile visiting welcome or login
+        if (session && authState === 'READY' && (topSegment === 'welcome' || topSegment === 'auth')) {
+          router.replace('/(tabs)' as any);
+          return;
+        }
       } catch {
-        // Fallback to tabs
-      } finally {
-        setInitialEvaluated(true);
+        // Fallback to current screen
       }
     }
 
-    evaluateFirstLaunch();
-  }, [loading, session, initialEvaluated, segments]);
+    evaluateRouting();
+  }, [loading, session, authState, segments]);
+
+  // Handle role mismatch (e.g. Organizer credentials in Worker app)
+  if (!loading && roleMismatch) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+        <EmptyState
+          title="Organizer Account Detected"
+          description="You are currently signed in with an Organizer account. Please use the Opskl Organizer app to manage shifts, or sign out to use this Worker app."
+          actionLabel="Sign Out of Organizer Account"
+          onAction={async () => {
+            await logout();
+            router.replace('/auth/login' as any);
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // Handle deactivated account
+  if (!loading && isDeactivated) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+        <EmptyState
+          title="Account Scheduled for Deletion"
+          description="Your account is currently deactivated and pending permanent deletion. Would you like to cancel deletion and restore your account?"
+          actionLabel="Restore My Account"
+          onAction={async () => {
+            const res = await cancelAccountDeletion();
+            if (res.success) {
+              await refreshProfile();
+              router.replace('/(tabs)' as any);
+            } else {
+              Alert.alert('Restoration Failed', res.error || 'Failed to cancel deletion.');
+            }
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <>
@@ -80,15 +157,11 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <OpsklThemeProvider>
-          <AuthProvider>
+          <AuthProvider expectedRole="worker">
             <OpsklErrorBoundary>
               <RootNavigator />
             </OpsklErrorBoundary>

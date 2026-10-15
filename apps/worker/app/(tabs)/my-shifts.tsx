@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import * as Location from 'expo-location';
 import {
   useOpsklTheme,
   Card,
@@ -67,6 +68,8 @@ export default function WorkerMyShiftsScreen() {
   const [cancelReason, setCancelReason] = useState('');
   const [submittingModal, setSubmittingModal] = useState(false);
   const [copiedBookingId, setCopiedBookingId] = useState<string | null>(null);
+
+  const [hasInitializedTab, setHasInitializedTab] = useState(false);
 
   const handleCopyCode = async (bookingId: string, code?: string) => {
     if (!code) return;
@@ -124,31 +127,67 @@ export default function WorkerMyShiftsScreen() {
       return;
     }
 
-    Alert.alert(
-      'On-Site Shift Check-In',
-      `Your official check-in code for this shift is:\n\nPass Code: ${booking.checkInCode}\n\nPresent this code to supervisor ${booking.job?.supervisorName || 'on-site'} to confirm your arrival.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm Check-In',
-          onPress: async () => {
-            const res = await checkInWorkerSafe(booking.id, booking.checkInCode!);
-            if (res.success) {
-              setBookings((prev) =>
-                prev.map((b) =>
-                  b.id === booking.id
-                    ? { ...b, status: 'checked_in', checkInTime: new Date().toISOString() }
-                    : b
-                )
-              );
-              Alert.alert('✓ Check-In Recorded', 'Your arrival has been recorded. Shift timer is now active.');
-            } else {
-              Alert.alert('Check-In Failed', res.error || 'Failed to record check-in.');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Required for Self Check-In',
+          `GPS coordinates are required to verify you are on-site at the shift venue.\n\nAlternatively, show your pass code to your on-site supervisor for manual check-in:\n\nPass Code: ${booking.checkInCode}`,
+          [
+            { text: 'Close', style: 'cancel' },
+            { text: 'Copy Pass Code', onPress: () => handleCopyCode(booking.id, booking.checkInCode) },
+          ]
+        );
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const { latitude, longitude } = loc.coords;
+
+      const res = await checkInWorkerSafe(booking.id, booking.checkInCode, latitude, longitude);
+      if (res.success) {
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.id === booking.id
+              ? { ...b, status: 'checked_in', checkInTime: new Date().toISOString() }
+              : b
+          )
+        );
+        Alert.alert('✓ Check-In Recorded', 'Your on-site arrival has been verified. Shift timer is now active.');
+      } else {
+        if (res.errorCode === 'VENUE_COORDINATES_MISSING') {
+          Alert.alert(
+            'Supervisor Verification Required',
+            `Venue GPS coordinates are not configured for automated geofencing.\n\nPlease show your pass code to the on-site supervisor (${booking.job?.supervisorName || 'supervisor'}) to confirm arrival:\n\nPass Code: ${booking.checkInCode}`,
+            [
+              { text: 'Done', style: 'default' },
+              { text: 'Copy Pass Code', onPress: () => handleCopyCode(booking.id, booking.checkInCode) },
+            ]
+          );
+        } else if (res.errorCode === 'OUTSIDE_CHECKIN_WINDOW') {
+          Alert.alert(
+            'Outside Check-In Window',
+            res.error || 'Self check-in is permitted between 60 minutes before and 120 minutes after shift call time.'
+          );
+        } else if (res.errorCode === 'OUT_OF_GEOFENCE_RANGE') {
+          Alert.alert(
+            'Outside Venue Geofence',
+            res.error || 'You are outside the venue check-in area. Please approach the venue entrance before checking in.'
+          );
+        } else {
+          Alert.alert('Check-In Failed', res.error || 'Failed to record check-in.');
+        }
+      }
+    } catch (err: any) {
+      Alert.alert(
+        'Check-In Error',
+        `Could not retrieve GPS coordinates. Please show your pass code to your supervisor on-site:\n\nPass Code: ${booking.checkInCode}`,
+        [
+          { text: 'Close', style: 'cancel' },
+          { text: 'Copy Pass Code', onPress: () => handleCopyCode(booking.id, booking.checkInCode) },
+        ]
+      );
+    }
   };
 
   /**
@@ -248,10 +287,23 @@ export default function WorkerMyShiftsScreen() {
   const activeBookings = bookings.filter(
     (b) =>
       ['checked_in', 'completed_awaiting_review'].includes(b.status) ||
-      (b.status === 'confirmed' && (b.job?.date || '') <= todayStr)
+      (b.status === 'confirmed' && (b.job?.date || '') === todayStr)
   );
   const completedBookings = bookings.filter((b) => ['completed', 'disputed'].includes(b.status));
-  const cancelledBookings = bookings.filter((b) => ['cancelled', 'no_show'].includes(b.status));
+  const cancelledBookings = bookings.filter(
+    (b) =>
+      ['cancelled', 'no_show'].includes(b.status) ||
+      (b.status === 'confirmed' && (b.job?.date || '') < todayStr)
+  );
+
+  useEffect(() => {
+    if (!hasInitializedTab && !loading && bookings.length > 0) {
+      if (activeBookings.length === 0 && upcomingBookings.length > 0) {
+        setActiveTab('upcoming');
+      }
+      setHasInitializedTab(true);
+    }
+  }, [loading, bookings, activeBookings.length, upcomingBookings.length, hasInitializedTab]);
 
   let currentList = activeBookings;
   if (activeTab === 'upcoming') currentList = upcomingBookings;
@@ -614,21 +666,31 @@ export default function WorkerMyShiftsScreen() {
                   {/* Active / Checked-in actions */}
                   {!isCheckedIn && !isAwaitingReview && !isCompleted && !isCancelled && !isNoShow && (
                     <>
-                      <View style={{ flex: 1.5 }}>
-                        <Button
-                          title="Enter Check-In Code"
-                          variant="primary"
-                          size="sm"
-                          onPress={() => handleCheckIn(booking)}
-                        />
-                      </View>
-                      <Button
-                        title="Cancel Shift"
-                        variant="ghost"
-                        size="sm"
-                        fullWidth={false}
-                        onPress={() => setCancelBookingId(booking.id)}
-                      />
+                      {booking.job?.date && booking.job.date < todayStr ? (
+                        <View style={{ flex: 1, paddingVertical: 4 }}>
+                          <Text style={{ fontSize: 12, color: colors.textMuted, fontStyle: 'italic' }}>
+                            Shift date has concluded. Check-in window closed.
+                          </Text>
+                        </View>
+                      ) : (
+                        <>
+                          <View style={{ flex: 1.5 }}>
+                            <Button
+                              title="Self Check-In (GPS)"
+                              variant="primary"
+                              size="sm"
+                              onPress={() => handleCheckIn(booking)}
+                            />
+                          </View>
+                          <Button
+                            title="Cancel Shift"
+                            variant="ghost"
+                            size="sm"
+                            fullWidth={false}
+                            onPress={() => setCancelBookingId(booking.id)}
+                          />
+                        </>
+                      )}
                     </>
                   )}
 

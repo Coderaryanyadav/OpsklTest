@@ -117,27 +117,29 @@ export default function WorkerLoginScreen() {
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Badge label="GMAIL / EMAIL OTP ENABLED" variant="primary" size="sm" />
+            <Badge label="INSTANT ACCESS" variant="primary" size="sm" />
           </View>
           <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            Fast, carrier-independent authentication via Gmail / Email OTP. Enter your email to receive a 6-digit verification code.
+            Enter your email to receive a 6-digit verification code. No password required.
           </Text>
         </View>
 
         <Card variant="outlined">
           <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: 4 }]}>
-            Enter Email Address
+            Sign In or Register
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: spacing.lg }}>
             We'll send a 6-digit one-time password to your email inbox
           </Text>
 
           <Input
-            label="Gmail / Email Address"
+            label="Email Address"
             value={email}
             onChangeText={setEmail}
             placeholder="you@gmail.com"
             keyboardType="email-address"
+            autoComplete="email"
+            textContentType="emailAddress"
             autoCapitalize="none"
             editable={!otpSent}
           />
@@ -154,11 +156,13 @@ export default function WorkerLoginScreen() {
           ) : (
             <>
               <Input
-                label="Enter 6-Digit Email OTP"
+                label="Enter 6-Digit Verification Code"
                 value={otp}
                 onChangeText={setOtp}
                 placeholder="123456"
                 keyboardType="number-pad"
+                autoComplete="one-time-code"
+                textContentType="oneTimeCode"
                 maxLength={6}
               />
               <Button

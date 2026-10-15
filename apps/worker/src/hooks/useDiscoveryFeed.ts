@@ -44,6 +44,11 @@ export function useDiscoveryFeed(workerId: string | null) {
     };
   }, []);
 
+  const appliedJobIdsRef = useRef<Set<string>>(appliedJobIds);
+  useEffect(() => {
+    appliedJobIdsRef.current = appliedJobIds;
+  }, [appliedJobIds]);
+
   const loadFeed = useCallback(
     async (isPullToRefresh = false) => {
       if (isPullToRefresh) {
@@ -73,7 +78,7 @@ export function useDiscoveryFeed(workerId: string | null) {
         let activeJobs = result.jobs;
 
         // Filter out any already applied job IDs in session
-        activeJobs = activeJobs.filter((j) => !appliedJobIds.has(j.id));
+        activeJobs = activeJobs.filter((j) => !appliedJobIdsRef.current.has(j.id));
 
         setCards(activeJobs);
       } catch (err: any) {
@@ -86,7 +91,7 @@ export function useDiscoveryFeed(workerId: string | null) {
         }
       }
     },
-    [workerId, filters, appliedJobIds]
+    [workerId, filters]
   );
 
   useEffect(() => {

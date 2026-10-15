@@ -90,7 +90,7 @@ export default function WorkerProfileScreen() {
   };
 
   const displayName = userProfile?.fullName || session?.user?.user_metadata?.full_name || 'Worker Member';
-  const displayPhone = userProfile?.phone || session?.user?.phone || 'Phone verified';
+  const displayPhone = userProfile?.phone || session?.user?.phone || userProfile?.email || session?.user?.email || 'Worker Member';
   const initials = displayName
     .split(' ')
     .map((n: string) => n[0])
@@ -200,8 +200,12 @@ export default function WorkerProfileScreen() {
                     </Text>
                     {workerData?.verificationStatus === 'verified' ? (
                       <Badge label="Verified Worker" variant="success" size="sm" />
-                    ) : (
+                    ) : workerData?.verificationStatus === 'pending' ? (
                       <Badge label="Pending Verification" variant="warning" size="sm" />
+                    ) : workerData?.verificationStatus === 'rejected' ? (
+                      <Badge label="Verification Rejected" variant="danger" size="sm" />
+                    ) : (
+                      <Badge label="Unverified" variant="neutral" size="sm" />
                     )}
                   </View>
                   <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
@@ -297,7 +301,12 @@ export default function WorkerProfileScreen() {
                 <View style={{ height: 1, backgroundColor: colors.border }} />
 
                 {/* 3. Government ID Verification */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+                <TouchableOpacity
+                  onPress={() => router.push('/onboarding' as any)}
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Manage identity verification"
+                >
                   <View style={{ flex: 1, marginRight: 8 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                       3. Identity Verification (Aadhaar / PAN)
@@ -305,15 +314,35 @@ export default function WorkerProfileScreen() {
                     <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
                       {workerData?.verificationStatus === 'verified'
                         ? 'Government KYC verified'
-                        : 'Identity review in progress'}
+                        : workerData?.verificationStatus === 'pending'
+                        ? 'Verification documents under review'
+                        : workerData?.verificationStatus === 'rejected'
+                        ? 'Verification rejected (tap to re-submit)'
+                        : 'No document submitted (tap to submit KYC)'}
                     </Text>
                   </View>
                   <Badge
-                    label={workerData?.verificationStatus === 'verified' ? 'VERIFIED' : 'IN REVIEW'}
-                    variant={workerData?.verificationStatus === 'verified' ? 'neutral' : 'neutral'}
+                    label={
+                      workerData?.verificationStatus === 'verified'
+                        ? 'VERIFIED'
+                        : workerData?.verificationStatus === 'pending'
+                        ? 'IN REVIEW'
+                        : workerData?.verificationStatus === 'rejected'
+                        ? 'REJECTED'
+                        : 'NOT SUBMITTED'
+                    }
+                    variant={
+                      workerData?.verificationStatus === 'verified'
+                        ? 'success'
+                        : workerData?.verificationStatus === 'rejected'
+                        ? 'danger'
+                        : workerData?.verificationStatus === 'pending'
+                        ? 'warning'
+                        : 'neutral'
+                    }
                     size="sm"
                   />
-                </View>
+                </TouchableOpacity>
 
                 <View style={{ height: 1, backgroundColor: colors.border }} />
 

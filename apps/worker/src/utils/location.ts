@@ -12,7 +12,14 @@ export interface LocalityZone {
   coords: GeoLocation;
 }
 
+export const ALL_MUMBAI_ZONE: LocalityZone = {
+  id: 'all',
+  label: 'All Mumbai Zones',
+  coords: { latitude: 19.076, longitude: 72.8777, name: 'All Mumbai' },
+};
+
 export const MUMBAI_ZONES: LocalityZone[] = [
+  ALL_MUMBAI_ZONE,
   {
     id: 'bkc',
     label: 'Bandra Kurla Complex (BKC)',

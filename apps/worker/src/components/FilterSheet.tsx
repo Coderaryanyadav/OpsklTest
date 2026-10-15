@@ -42,11 +42,12 @@ const WAGE_TIERS: { label: string; value: number }[] = [
 
 const SKILL_OPTIONS: string[] = [
   'All Skills',
-  'Guest Relations',
-  'Customer Service',
-  'Crowd Management',
-  'Backstage Etiquette',
-  'Fluent English',
+  'Registration Desk & Scanning',
+  'VIP Ushering & Concierge',
+  'Crowd Guidance & Queues',
+  'Booth Executive',
+  'Backstage & Runner',
+  'English & Hindi Fluent',
 ];
 
 export function FilterSheet({
@@ -57,7 +58,7 @@ export function FilterSheet({
   onApplyFilters,
   onResetFilters,
 }: FilterSheetProps) {
-  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [category, setCategory] = useState<ShiftCategory | 'all'>(
     currentFilters.category || 'all'
@@ -108,9 +109,11 @@ export function FilterSheet({
           <Text style={[typography.h3, { color: colors.textPrimary }]}>Filter Shifts</Text>
           <Pressable
             onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close filter sheet"
             style={({ pressed }) => [
               styles.closeBtn,
-              { backgroundColor: isDark ? '#1E293B' : '#F1F5F9', borderRadius: radii.full, opacity: pressed ? 0.7 : 1 },
+              { backgroundColor: colors.surfaceMuted, borderRadius: radii.full, opacity: pressed ? 0.7 : 1 },
             ]}
           >
             <X size={18} color={colors.textPrimary} strokeWidth={2.2} />

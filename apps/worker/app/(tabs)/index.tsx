@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import {
   WageText,
   ShiftCardSkeleton,
 } from '@opskil/design-system';
-import { Job, formatINR, formatISTDate, formatTimeRange, formatDistance } from '@opskil/shared';
+import { Job, formatINR, formatISTDate, formatTimeRange, formatDistance, fetchUnreadNotificationsCount } from '@opskil/shared';
 import { useAuth } from '@opskil/design-system';
 import { useDiscoveryFeed } from '../../src/hooks/useDiscoveryFeed';
 import { SwipeCard } from '../../src/components/SwipeCard';
@@ -38,6 +38,17 @@ export default function WorkerDiscoverScreen() {
   const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [viewMode, setViewMode] = useState<'swipe' | 'list'>('swipe');
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setUnreadCount(0);
+      return;
+    }
+    fetchUnreadNotificationsCount(session.user.id)
+      .then((c) => setUnreadCount(c))
+      .catch(() => {});
+  }, [session?.user?.id]);
 
   const {
     cards,
@@ -115,12 +126,25 @@ export default function WorkerDiscoverScreen() {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={[
               styles.iconBtn,
-              { backgroundColor: colors.surfaceMuted, borderRadius: radii.full },
+              { backgroundColor: colors.surfaceMuted, borderRadius: radii.full, position: 'relative' },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Open notifications"
+            accessibilityLabel={unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : 'Open notifications'}
           >
             <Bell size={18} color={colors.textPrimary} strokeWidth={2} />
+            {unreadCount > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: colors.primary,
+                }}
+              />
+            )}
           </Pressable>
 
           {/* View Mode Toggle (Swipe vs List for Accessibility) */}
@@ -162,7 +186,7 @@ export default function WorkerDiscoverScreen() {
           >
             <MapPin size={13} color={colors.primary} strokeWidth={2.2} />
             <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '600' }}>
-              {activeZone.coords.name || 'BKC'}
+              {activeZone.id === 'all' ? 'All Mumbai' : (activeZone.coords.name || activeZone.label)}
             </Text>
             <SlidersHorizontal size={13} color={colors.textSecondary} strokeWidth={2} />
           </Pressable>

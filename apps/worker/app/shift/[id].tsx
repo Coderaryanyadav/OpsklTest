@@ -21,6 +21,7 @@ import {
   applyForJobSafe,
   fetchWorkerJobStatus,
   Job,
+  supabase,
 } from '@opskil/shared';
 import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
 
@@ -47,10 +48,24 @@ export default function WorkerShiftDetailScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [data, statusData] = await Promise.all([
-          fetchJobById(id),
-          session?.user?.id ? fetchWorkerJobStatus(id, session.user.id) : Promise.resolve(null),
-        ]);
+        let resolvedJobId = id;
+        let data = await fetchJobById(resolvedJobId);
+        if (!data) {
+          const { data: bookingRow } = await supabase
+            .from('bookings')
+            .select('job_id')
+            .eq('id', id)
+            .maybeSingle();
+          if (bookingRow?.job_id) {
+            resolvedJobId = bookingRow.job_id;
+            data = await fetchJobById(resolvedJobId);
+          }
+        }
+
+        const statusData = session?.user?.id
+          ? await fetchWorkerJobStatus(resolvedJobId, session.user.id)
+          : null;
+
         if (data) {
           setShift(data);
         } else {

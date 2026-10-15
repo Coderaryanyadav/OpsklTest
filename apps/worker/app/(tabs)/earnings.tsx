@@ -372,39 +372,45 @@ export default function WorkerEarningsScreen() {
             </Card>
 
             {/* Failed or Delayed */}
-            <Card
-              variant="outlined"
-              style={{
-                flex: 1,
-                minWidth: '47%',
-                backgroundColor: colors.surface,
-                padding: spacing.md,
-                borderColor: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.border,
-              }}
+            <TouchableOpacity
+              onPress={() => setShowUpiModal(true)}
+              style={{ flex: 1, minWidth: '47%' }}
+              accessibilityRole="button"
+              accessibilityLabel="Update UPI handle for delayed payouts"
             >
-              <Text
+              <Card
+                variant="outlined"
                 style={{
-                  fontSize: 11,
-                  color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textMuted,
-                  fontWeight: '700',
+                  width: '100%',
+                  backgroundColor: colors.surface,
+                  padding: spacing.md,
+                  borderColor: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.border,
                 }}
               >
-                FAILED / DELAYED
-              </Text>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: '800',
-                  color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textPrimary,
-                  marginTop: 4,
-                }}
-              >
-                {formatINR(summary?.failedDelayedPayments || 0)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                {(summary?.failedDelayedPayments || 0) > 0 ? 'Tap to update UPI' : '0 delayed payouts'}
-              </Text>
-            </Card>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textMuted,
+                    fontWeight: '700',
+                  }}
+                >
+                  FAILED / DELAYED
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: '800',
+                    color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textPrimary,
+                    marginTop: 4,
+                  }}
+                >
+                  {formatINR(summary?.failedDelayedPayments || 0)}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                  {(summary?.failedDelayedPayments || 0) > 0 ? 'Tap to update UPI' : '0 delayed payouts'}
+                </Text>
+              </Card>
+            </TouchableOpacity>
 
             {/* Disputed Amounts */}
             {(summary?.disputedAmounts || 0) > 0 && (
