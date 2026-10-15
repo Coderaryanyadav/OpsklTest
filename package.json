@@ -9,6 +9,8 @@
   "scripts": {
     "start:worker": "npm --workspace=@opskil/worker run start",
     "start:organizer": "npm --workspace=@opskil/organizer run start",
+    "dev:worker": "npm --workspace=@opskil/worker run start",
+    "dev:organizer": "npm --workspace=@opskil/organizer run start",
     "android:worker": "npm --workspace=@opskil/worker run android",
     "ios:worker": "npm --workspace=@opskil/worker run ios",
     "android:organizer": "npm --workspace=@opskil/organizer run android",
