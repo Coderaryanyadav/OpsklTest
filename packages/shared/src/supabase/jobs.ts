@@ -309,15 +309,16 @@ export async function applyForJobSafe(
 
     if (rpcData) {
       if (rpcData.success) {
+        const appId = rpcData.application?.id || rpcData.application_id;
         return {
           success: true,
           application: {
-            id: rpcData.application.id,
-            jobId: rpcData.application.job_id,
-            workerId: rpcData.application.worker_id,
-            status: rpcData.application.status,
-            appliedAt: rpcData.application.applied_at,
-            notes: rpcData.application.notes,
+            id: appId,
+            jobId: rpcData.application?.job_id || jobId,
+            workerId: rpcData.application?.worker_id || workerId,
+            status: rpcData.application?.status || rpcData.status || 'applied',
+            appliedAt: rpcData.application?.applied_at || new Date().toISOString(),
+            notes: rpcData.application?.notes || notes,
           },
         };
       }
