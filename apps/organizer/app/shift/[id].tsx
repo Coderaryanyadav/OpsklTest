@@ -758,24 +758,28 @@ export default function OrganizerShiftDetailScreen() {
                 style={{
                   marginBottom: 8,
                   borderColor: colors.border,
+                  width: '100%',
                 }}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <View style={{ flex: 1, minWidth: 200 }}>
                     <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
                       {app.worker?.profile?.fullName || 'Standby Candidate'}
                     </Text>
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 }}>
                       Locality: {app.worker?.preferredLocality || 'Mumbai'} • Skills: {app.worker?.skills?.slice(0, 2).join(', ') || 'General'}
                     </Text>
                   </View>
-                  <Button
-                    title="Confirm Replacement"
-                    variant="primary"
-                    size="sm"
-                    loading={confirmingReplacementId === app.workerId}
-                    onPress={() => handleConfirmReplacement(app.workerId, app.worker?.profile?.fullName || 'Worker')}
-                  />
+                  <View style={{ flexShrink: 0 }}>
+                    <Button
+                      title="Confirm Replacement"
+                      variant="primary"
+                      size="sm"
+                      fullWidth={false}
+                      loading={confirmingReplacementId === app.workerId}
+                      onPress={() => handleConfirmReplacement(app.workerId, app.worker?.profile?.fullName || 'Worker')}
+                    />
+                  </View>
                 </View>
               </Card>
             ))

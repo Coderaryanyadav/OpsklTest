@@ -34,6 +34,7 @@ export const Card: React.FC<CardProps> = ({
     padding: cardPadding,
     borderWidth: 1,
     borderColor: colors.border,
+    width: '100%',
     ...(variant === 'elevated' ? (isDark ? shadows.sm : shadows.sm) : {}),
   };
 
