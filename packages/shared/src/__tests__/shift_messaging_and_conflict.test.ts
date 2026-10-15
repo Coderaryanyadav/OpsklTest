@@ -2,7 +2,6 @@ import {
   checkShiftConflicts,
   calculateWorkerTrustScore,
   sendShiftMessage,
-  reportWorkerDelaySafe,
 } from '../supabase/shift_messaging';
 import { Job, Booking, WorkerProfile } from '../types';
 
@@ -12,7 +11,9 @@ describe('Shift Messaging, Scheduling, and Worker Trust System', () => {
     organizerId: 'org-1',
     title: 'Hospitality Banquet Captain',
     category: 'hospitality',
-    description: 'Lead banquet crew for corporate gala in BKC.',
+    duties: ['Lead banquet crew for corporate gala in BKC.'],
+    supervisorName: 'Rohit Verma',
+    supervisorPhone: '+919820098200',
     date: '2026-10-25',
     startTime: '14:00',
     endTime: '22:00',
@@ -25,7 +26,7 @@ describe('Shift Messaging, Scheduling, and Worker Trust System', () => {
     venueAddress: 'G Block BKC, Bandra Kurla Complex',
     zone: 'Bandra / BKC',
     city: 'Mumbai',
-    status: 'published',
+    status: 'open',
     createdAt: '2026-10-15T00:00:00Z',
     updatedAt: '2026-10-15T00:00:00Z',
   };
@@ -152,6 +153,9 @@ describe('Shift Messaging, Scheduling, and Worker Trust System', () => {
         verificationStatus: 'verified',
         rating: 5.0,
         shiftsCompleted: 12,
+        totalReviews: 12,
+        createdAt: '2026-10-15T00:00:00Z',
+        updatedAt: '2026-10-15T00:00:00Z',
       };
 
       const score = calculateWorkerTrustScore(veteranWorker, 0);
@@ -172,6 +176,9 @@ describe('Shift Messaging, Scheduling, and Worker Trust System', () => {
         verificationStatus: 'verified',
         rating: 4.8,
         shiftsCompleted: 4,
+        totalReviews: 4,
+        createdAt: '2026-10-15T00:00:00Z',
+        updatedAt: '2026-10-15T00:00:00Z',
       };
 
       const score = calculateWorkerTrustScore(activeWorker, 1);
