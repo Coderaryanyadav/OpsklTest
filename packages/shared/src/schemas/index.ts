@@ -24,7 +24,7 @@ export const ShiftCreateSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be HH:MM'),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, 'End time must be HH:MM'),
-  durationHours: z.number().min(3, 'Minimum shift duration is 3 hours').max(14, 'Maximum shift duration is 14 hours'),
+  durationHours: z.number().min(1, 'Minimum shift duration is 1 hour').max(14, 'Maximum shift duration is 14 hours'),
   hourlyRate: z.number().min(100, 'Minimum wage is ₹100/hr').max(2000, 'Hourly rate exceeds maximum allowable limit'),
   slotsTotal: z.number().int().min(1, 'At least 1 worker required').max(50, 'Maximum 50 workers per single shift listing'),
   dressCode: z.string().optional(),

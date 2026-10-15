@@ -236,7 +236,7 @@ export default function OrganizerCreateShiftScreen() {
 
     const payload = {
       title,
-      category,
+      category: (category?.toLowerCase() || 'conference') as ShiftCategory,
       venueName,
       venueAddress,
       landmark: landmark.trim() || undefined,

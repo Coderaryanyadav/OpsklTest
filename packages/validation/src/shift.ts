@@ -47,7 +47,7 @@ export const ShiftCreateSchema = z.object({
   endTime: z.string().regex(/^\d{2}:\d{2}$/, 'End time must be HH:MM'),
   durationHours: z
     .number()
-    .min(3, 'Minimum shift duration is 3 hours')
+    .min(1, 'Minimum shift duration is 1 hour')
     .max(14, 'Maximum shift duration is 14 hours'),
   hourlyRate: z
     .number()
