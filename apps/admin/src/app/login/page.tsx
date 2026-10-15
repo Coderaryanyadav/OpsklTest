@@ -90,6 +90,7 @@ export default function AdminLoginPage() {
               height: '48px',
               borderRadius: '12px',
               backgroundColor: 'var(--primary-color)',
+              color: '#FFFFFF',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
