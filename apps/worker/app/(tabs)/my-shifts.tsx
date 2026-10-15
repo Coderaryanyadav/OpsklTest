@@ -874,8 +874,7 @@ export default function WorkerMyShiftsScreen() {
                 {/* Interactive Action Bar */}
                 <View
                   style={{
-                    flexDirection: 'row',
-                    gap: 8,
+                    gap: 10,
                     marginTop: spacing.md,
                     paddingTop: spacing.sm,
                     borderTopWidth: 1,
@@ -892,44 +891,54 @@ export default function WorkerMyShiftsScreen() {
                           </Text>
                         </View>
                       ) : (
-                        <>
-                          <View style={{ flex: 1.2 }}>
+                        <View style={{ gap: 8 }}>
+                          {/* Row 1: Primary Action & Quick Attendance QR */}
+                          <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <View style={{ flex: 1 }}>
+                              <Button
+                                title="Self Check-In (GPS)"
+                                variant="primary"
+                                size="sm"
+                                onPress={() => handleCheckIn(booking)}
+                              />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Button
+                                title="Attendance QR"
+                                variant="outline"
+                                size="sm"
+                                onPress={() => handleOpenQrModal(booking)}
+                              />
+                            </View>
+                          </View>
+
+                          {/* Row 2: Secondary Support & Status Actions */}
+                          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                              <Button
+                                title="Report Delay"
+                                variant="outline"
+                                size="sm"
+                                onPress={() => setDelayBooking(booking)}
+                              />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Button
+                                title="Chat"
+                                variant="outline"
+                                size="sm"
+                                onPress={() => handleOpenChat(booking)}
+                              />
+                            </View>
                             <Button
-                              title="Self Check-In (GPS)"
-                              variant="primary"
+                              title="Cancel"
+                              variant="ghost"
                               size="sm"
-                              onPress={() => handleCheckIn(booking)}
+                              fullWidth={false}
+                              onPress={() => setCancelBookingId(booking.id)}
                             />
                           </View>
-                          <Button
-                            title="Attendance QR (60s)"
-                            variant="outline"
-                            size="sm"
-                            fullWidth={false}
-                            onPress={() => handleOpenQrModal(booking)}
-                          />
-                          <Button
-                            title="Report Delay"
-                            variant="outline"
-                            size="sm"
-                            fullWidth={false}
-                            onPress={() => setDelayBooking(booking)}
-                          />
-                          <Button
-                            title="Chat"
-                            variant="outline"
-                            size="sm"
-                            fullWidth={false}
-                            onPress={() => handleOpenChat(booking)}
-                          />
-                          <Button
-                            title="Cancel"
-                            variant="ghost"
-                            size="sm"
-                            fullWidth={false}
-                            onPress={() => setCancelBookingId(booking.id)}
-                          />
-                        </>
+                        </View>
                       )}
                     </>
                   )}

@@ -423,7 +423,7 @@ export default function OrganizerCreateShiftScreen() {
                       <Text
                         style={[
                           styles.categoryPillText,
-                          { color: isSelected ? '#FFFFFF' : colors.textPrimary },
+                          { color: isSelected ? colors.textInverse : colors.textPrimary },
                         ]}
                       >
                         {cat.label}
@@ -532,7 +532,7 @@ export default function OrganizerCreateShiftScreen() {
                       <Text
                         style={[
                           styles.categoryPillText,
-                          { color: isSelected ? '#FFFFFF' : colors.textPrimary, fontSize: 12 },
+                          { color: isSelected ? colors.textInverse : colors.textPrimary, fontSize: 12 },
                         ]}
                       >
                         {z}

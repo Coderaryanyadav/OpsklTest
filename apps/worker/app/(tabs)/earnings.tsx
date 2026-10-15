@@ -519,7 +519,7 @@ export default function WorkerEarningsScreen() {
                       style={{
                         fontSize: 12,
                         fontWeight: '700',
-                        color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                        color: isSelected ? colors.textInverse : colors.textSecondary,
                       }}
                     >
                       {label}

@@ -51,6 +51,7 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
       const queryMock: any = {
         in: jest.fn().mockImplementation(() => queryMock),
         eq: jest.fn().mockImplementation(() => queryMock),
+        or: jest.fn().mockImplementation(() => queryMock),
         then: (resolve: any, reject: any) => Promise.resolve(resolvedResult).then(resolve, reject),
       };
 
