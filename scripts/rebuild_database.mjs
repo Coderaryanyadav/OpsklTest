@@ -61,6 +61,8 @@ async function run() {
       checksum TEXT NOT NULL,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+    ALTER TABLE _opskil_migrations ENABLE ROW LEVEL SECURITY;
+    REVOKE ALL ON TABLE _opskil_migrations FROM anon, authenticated;
   `);
   console.log('\x1b[32m✓ Migrations table initialized.\x1b[0m\n');
 

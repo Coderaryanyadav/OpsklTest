@@ -47,6 +47,8 @@ async function run() {
         checksum TEXT NOT NULL,
         applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
+      ALTER TABLE _opskil_migrations ENABLE ROW LEVEL SECURITY;
+      REVOKE ALL ON TABLE _opskil_migrations FROM anon, authenticated;
     `);
 
     const { rows: appliedRows } = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
