@@ -103,7 +103,7 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
 
   const { data, error } = await getClient()
     .from('verification_cases')
-    .select('*')
+    .select('*, profiles!verification_cases_profile_id_fkey(full_name, email, role, phone)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -122,6 +122,14 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
     reviewedBy: d.reviewed_by,
     reviewedAt: d.reviewed_at,
     createdAt: d.created_at,
+    applicantProfile: d.profiles
+      ? {
+          fullName: d.profiles.full_name,
+          email: d.profiles.email,
+          role: d.profiles.role,
+          phone: d.profiles.phone,
+        }
+      : undefined,
   }));
 }
 

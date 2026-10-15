@@ -470,6 +470,12 @@ export interface VerificationCase {
   reviewedBy?: string;
   reviewedAt?: string;
   createdAt: string;
+  applicantProfile?: {
+    fullName?: string;
+    email?: string;
+    role?: string;
+    phone?: string;
+  };
 }
 
 export interface AuditLog {

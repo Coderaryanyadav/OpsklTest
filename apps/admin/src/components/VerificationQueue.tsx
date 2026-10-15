@@ -152,9 +152,13 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 <tr key={c.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ fontWeight: 700, color: '#101D36' }}>
-                      Profile #{c.profileId.substring(0, 8)}
+                      {c.applicantProfile?.fullName || `Profile #${c.profileId.substring(0, 8)}`}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>Case #{c.id.substring(0, 8)}</div>
+                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                      {c.applicantProfile?.email ? `${c.applicantProfile.email} • ` : ''}
+                      {c.applicantProfile?.role ? `${c.applicantProfile.role.toUpperCase()} • ` : ''}
+                      Case #{c.id.substring(0, 8)}
+                    </div>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span
