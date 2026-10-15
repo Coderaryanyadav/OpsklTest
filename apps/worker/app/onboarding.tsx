@@ -337,7 +337,7 @@ export default function WorkerOnboardingScreen() {
       ) : (
         <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, gap: spacing.md }}>
           {/* Status Banners: Pending, Approved, or Rejected */}
-          {existingCase?.status === 'rejected' && (
+          {existingCase?.status === 'rejected' ? (
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -362,9 +362,9 @@ export default function WorkerOnboardingScreen() {
                 Please review your legal name, document number, and upload an updated document below.
               </Text>
             </View>
-          )}
+          ) : null}
 
-          {existingCase?.status === 'pending' && (
+          {existingCase?.status === 'pending' ? (
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -386,7 +386,7 @@ export default function WorkerOnboardingScreen() {
                 Your {existingCase.documentType.toUpperCase()} ({existingCase.documentMaskedId}) is under review by Opskl Trust & Safety.
               </Text>
             </View>
-          )}
+          ) : null}
 
           {/* Value Prop Banner */}
           <View
@@ -473,15 +473,17 @@ export default function WorkerOnboardingScreen() {
                   marginTop: 2,
                 }}
               >
-                {isAgeConfirmed && <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>}
+                {isAgeConfirmed ? (
+                  <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>
+                ) : null}
               </View>
               <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
                 I confirm that I am at least 18 years old and legally eligible to work event shifts in India.
               </Text>
             </Pressable>
-            {errors.age && (
+            {errors.age ? (
               <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>{errors.age}</Text>
-            )}
+            ) : null}
           </Card>
 
           {/* Section 2: Shift Preferences & Travel Radius */}
@@ -559,9 +561,9 @@ export default function WorkerOnboardingScreen() {
                 );
               })}
             </View>
-            {errors.localities && (
+            {errors.localities ? (
               <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8 }}>{errors.localities}</Text>
-            )}
+            ) : null}
           </Card>
 
           {/* Section 3: Skills & Languages */}
@@ -606,9 +608,9 @@ export default function WorkerOnboardingScreen() {
                 );
               })}
             </View>
-            {errors.skills && (
+            {errors.skills ? (
               <Text style={{ color: colors.danger, fontSize: 12, marginBottom: 8 }}>{errors.skills}</Text>
-            )}
+            ) : null}
 
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>
               Languages Spoken Fluently
@@ -769,15 +771,17 @@ export default function WorkerOnboardingScreen() {
                 marginTop: 2,
               }}
             >
-              {agreedToTerms && <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>}
+              {agreedToTerms ? (
+                <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>
+              ) : null}
             </View>
             <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
               I agree to the Opskl Independent Worker Terms of Service, Platform Safety Guidelines, and Privacy Policy.
             </Text>
           </Pressable>
-          {errors.terms && (
+          {errors.terms ? (
             <Text style={{ color: colors.danger, fontSize: 12, marginTop: -4 }}>{errors.terms}</Text>
-          )}
+          ) : null}
 
           {/* Save Action */}
           <View style={{ marginTop: spacing.md, paddingBottom: spacing.xxl }}>
