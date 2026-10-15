@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Modal,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -36,6 +37,11 @@ import {
   cancelBookingSafe,
   disputeBookingSafe,
   createSafetyReportSafe,
+  reportWorkerDelaySafe,
+  fetchShiftMessages,
+  sendShiftMessage,
+  reportShiftMessage,
+  ShiftMessage,
 } from '@opskil/shared';
 import {
   Ticket,
@@ -52,6 +58,9 @@ import {
   QrCode,
   PhoneCall,
   AlertOctagon,
+  MessageSquare,
+  Timer,
+  Flag,
 } from 'lucide-react-native';
 
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -83,6 +92,19 @@ export default function WorkerMyShiftsScreen() {
   // SOS Emergency Modal state
   const [sosBooking, setSosBooking] = useState<Booking | null>(null);
   const [sosTriggering, setSosTriggering] = useState<boolean>(false);
+
+  // Arrival / Delay Alert Modal state
+  const [delayBooking, setDelayBooking] = useState<Booking | null>(null);
+  const [delayMinutes, setDelayMinutes] = useState<number>(15);
+  const [delayReason, setDelayReason] = useState<string>('');
+  const [submittingDelay, setSubmittingDelay] = useState<boolean>(false);
+
+  // Shift-Specific Messaging Modal state
+  const [chatBooking, setChatBooking] = useState<Booking | null>(null);
+  const [chatMessages, setChatMessages] = useState<ShiftMessage[]>([]);
+  const [chatInput, setChatInput] = useState<string>('');
+  const [loadingChat, setLoadingChat] = useState<boolean>(false);
+  const [sendingChat, setSendingChat] = useState<boolean>(false);
 
   const [hasInitializedTab, setHasInitializedTab] = useState(false);
 
@@ -175,6 +197,72 @@ export default function WorkerMyShiftsScreen() {
       Alert.alert('Emergency Contact', 'Call 112 immediately for emergency services.');
     } finally {
       setSosTriggering(false);
+    }
+  };
+
+  const handleOpenChat = async (booking: Booking) => {
+    setChatBooking(booking);
+    setLoadingChat(true);
+    const msgs = await fetchShiftMessages(booking.jobId);
+    setChatMessages(msgs);
+    setLoadingChat(false);
+  };
+
+  const handleSendChatMessage = async () => {
+    if (!chatBooking || !chatInput.trim()) return;
+    setSendingChat(true);
+    const res = await sendShiftMessage(chatBooking.jobId, chatInput.trim());
+    setSendingChat(false);
+    if (res.success) {
+      setChatInput('');
+      const msgs = await fetchShiftMessages(chatBooking.jobId);
+      setChatMessages(msgs);
+    } else {
+      Alert.alert('Message Failed', res.error || 'Could not send message.');
+    }
+  };
+
+  const handleReportMessage = async (msgId: string) => {
+    Alert.alert(
+      'Report Inappropriate Message',
+      'Would you like to report this message to Opskl Trust & Safety? We uphold strict safety and harassment standards.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report Message',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await reportShiftMessage(msgId, 'Reported by worker in shift messaging');
+            if (res.success) {
+              Alert.alert('Report Received', 'Thank you. The reported content has been flagged for administrative review.');
+            } else {
+              Alert.alert('Error', res.error || 'Failed to submit report.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSubmitDelay = async () => {
+    if (!delayBooking) return;
+    setSubmittingDelay(true);
+    const res = await reportWorkerDelaySafe(
+      delayBooking.id,
+      delayMinutes,
+      delayReason.trim() || undefined
+    );
+    setSubmittingDelay(false);
+    if (res.success) {
+      Alert.alert(
+        'Arrival Alert Sent',
+        res.message || `The event organizer has been informed that you will arrive approximately ${delayMinutes} minutes late.`
+      );
+      setDelayBooking(null);
+      setDelayReason('');
+      loadBookings();
+    } else {
+      Alert.alert('Error', res.error || 'Failed to record delay.');
     }
   };
 
@@ -821,6 +909,20 @@ export default function WorkerMyShiftsScreen() {
                             onPress={() => handleOpenQrModal(booking)}
                           />
                           <Button
+                            title="Report Delay"
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            onPress={() => setDelayBooking(booking)}
+                          />
+                          <Button
+                            title="Chat"
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            onPress={() => handleOpenChat(booking)}
+                          />
+                          <Button
                             title="Cancel"
                             variant="ghost"
                             size="sm"
@@ -842,6 +944,13 @@ export default function WorkerMyShiftsScreen() {
                           onPress={() => handleCheckOut(booking)}
                         />
                       </View>
+                      <Button
+                        title="Chat"
+                        variant="outline"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={() => handleOpenChat(booking)}
+                      />
                       <Pressable
                         onPress={() => setSosBooking(booking)}
                         style={{
@@ -1123,6 +1232,215 @@ export default function WorkerMyShiftsScreen() {
                 variant="outline"
                 size="md"
                 onPress={() => setSosBooking(null)}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Arrival & Late-Alert System Modal */}
+      <Modal visible={Boolean(delayBooking)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 380, width: '100%' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <Timer size={18} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                Report Late Arrival
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 17 }}>
+              Notify the event host of your expected delay. Your live continuous location is never tracked or shared.
+            </Text>
+
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>
+              Estimated Transit Delay:
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: spacing.md }}>
+              {[15, 30, 45, 60].map((mins) => (
+                <Pressable
+                  key={mins}
+                  onPress={() => setDelayMinutes(mins)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 8,
+                    borderRadius: radii.sm,
+                    borderWidth: 1,
+                    borderColor: delayMinutes === mins ? colors.primary : colors.border,
+                    backgroundColor: delayMinutes === mins ? colors.primary : colors.surfaceMuted,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '700',
+                      color: delayMinutes === mins ? '#FFFFFF' : colors.textPrimary,
+                    }}
+                  >
+                    +{mins}m
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Input
+              label="Reason (Optional)"
+              value={delayReason}
+              onChangeText={setDelayReason}
+              placeholder="e.g. Western line train delay, traffic jam..."
+            />
+
+            <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+              <Button
+                title={`Send +${delayMinutes}m Late Alert`}
+                variant="primary"
+                size="md"
+                loading={submittingDelay}
+                onPress={handleSubmitDelay}
+              />
+              <Button
+                title="Cancel"
+                variant="outline"
+                size="md"
+                onPress={() => setDelayBooking(null)}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Shift-Specific Messaging Modal */}
+      <Modal visible={Boolean(chatBooking)} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                maxWidth: 420,
+                width: '100%',
+                maxHeight: '85%',
+                display: 'flex',
+              },
+            ]}
+          >
+            {/* Chat Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <MessageSquare size={16} color={colors.primary} />
+                  <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                    Shift Team Chat
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                  {chatBooking?.job?.title || 'Shift Coordination'}
+                </Text>
+              </View>
+              <Badge label="PRIVATE & ENCRYPTED" variant="neutral" size="sm" />
+            </View>
+
+            <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm, lineHeight: 15 }}>
+              Host reporting guidelines & uniform updates. Phone numbers remain confidential.
+            </Text>
+
+            {/* Messages Scroll Area */}
+            <ScrollView
+              style={{
+                flexGrow: 1,
+                minHeight: 180,
+                maxHeight: 300,
+                backgroundColor: colors.surfaceMuted,
+                borderRadius: radii.md,
+                padding: spacing.sm,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {loadingChat ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 6 }}>
+                    Loading shift channel…
+                  </Text>
+                </View>
+              ) : chatMessages.length === 0 ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>
+                    No messages yet in this shift channel. Use this channel to coordinate arrival gate, dress code, or shift updates.
+                  </Text>
+                </View>
+              ) : (
+                chatMessages.map((msg) => (
+                  <View
+                    key={msg.id}
+                    style={{
+                      padding: spacing.sm,
+                      borderRadius: radii.sm,
+                      backgroundColor: colors.surface,
+                      borderWidth: 1,
+                      borderColor: msg.isBroadcast ? colors.primary : colors.border,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                          {msg.senderName}
+                        </Text>
+                        <Badge
+                          label={msg.senderRole === 'organizer' ? 'HOST' : 'CREW'}
+                          variant="neutral"
+                          size="sm"
+                        />
+                        {msg.isBroadcast && (
+                          <Badge label="BROADCAST" variant="primary" size="sm" />
+                        )}
+                      </View>
+                      <Pressable
+                        onPress={() => handleReportMessage(msg.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Flag size={11} color={colors.textMuted} />
+                      </Pressable>
+                    </View>
+                    <Text style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 18 }}>
+                      {msg.content}
+                    </Text>
+                    <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 4, alignSelf: 'flex-end' }}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            {/* Input Bar */}
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.sm, alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  placeholder="Type reporting question or update..."
+                />
+              </View>
+              <Button
+                title="Send"
+                variant="primary"
+                size="md"
+                fullWidth={false}
+                loading={sendingChat}
+                onPress={handleSendChatMessage}
+              />
+            </View>
+
+            <View style={{ marginTop: spacing.sm }}>
+              <Button
+                title="Close Chat"
+                variant="outline"
+                size="sm"
+                onPress={() => setChatBooking(null)}
               />
             </View>
           </View>

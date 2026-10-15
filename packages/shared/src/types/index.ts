@@ -247,6 +247,7 @@ export interface Booking {
   disputeReason?: string;
   confirmedAt: string;
   completedAt?: string;
+  notes?: string;
   job?: Job;
   worker?: WorkerProfile;
   organizer?: OrganizerProfile;
@@ -576,4 +577,50 @@ export interface SystemOperationalStatus {
   p95DatabaseLatencyMs: number;
   reconciliationDiscrepancyCount: number;
 }
+
+export interface ShiftMessage {
+  id: string;
+  jobId: string;
+  senderId: string;
+  recipientId?: string;
+  content: string;
+  isBroadcast: boolean;
+  isReported: boolean;
+  reportReason?: string;
+  createdAt: string;
+  senderName?: string;
+  senderRole?: 'worker' | 'organizer' | 'admin';
+}
+
+export interface WorkerDelayReport {
+  bookingId: string;
+  minutes: number;
+  reason?: string;
+  reportedAt: string;
+}
+
+export interface WorkerTrustScore {
+  score: number; // 0 - 100
+  tier: 'Elite' | 'Established' | 'Rising' | 'New';
+  attendanceReliabilityPct: number;
+  completedShiftsCount: number;
+  punctualityRatePct: number;
+  ratingAverage: number;
+  unresolvedDisputesCount: number;
+  hasActiveAppeal: boolean;
+  breakdown: {
+    label: string;
+    value: string;
+    positive: boolean;
+  }[];
+}
+
+export interface ShiftConflictCheck {
+  hasConflict: boolean;
+  hasTravelWarning: boolean;
+  conflictingJob?: Job;
+  message?: string;
+  recommendedBufferMinutes?: number;
+}
+
 

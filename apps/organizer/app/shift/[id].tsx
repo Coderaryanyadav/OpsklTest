@@ -24,19 +24,25 @@ import {
 import {
   Booking,
   Job,
+  JobApplication,
   formatINR,
   formatISTDate,
   formatTimeRange,
   fetchJobById,
   fetchJobBookings,
+  fetchOrganizerApplications,
+  confirmWorkerBookingSafe,
   checkInWorkerSafe,
   checkOutWorkerSafe,
   completeShiftAndApproveAttendance,
   recordNoShowSafe,
   cancelBookingSafe,
   generateJobInvoiceSafe,
+  fetchShiftMessages,
+  sendShiftMessage,
+  ShiftMessage,
 } from '@opskil/shared';
-import { Star, CheckCircle2, Users } from 'lucide-react-native';
+import { Star, CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react-native';
 
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
@@ -48,6 +54,15 @@ export default function OrganizerShiftDetailScreen() {
   const [crew, setCrew] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Standby & Chat states
+  const [standbyApplications, setStandbyApplications] = useState<JobApplication[]>([]);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ShiftMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [sendingChat, setSendingChat] = useState(false);
+  const [confirmingReplacementId, setConfirmingReplacementId] = useState<string | null>(null);
 
   // Modal actions
   const [checkInBooking, setCheckInBooking] = useState<Booking | null>(null);
@@ -96,9 +111,10 @@ export default function OrganizerShiftDetailScreen() {
     try {
       setLoading(true);
       setError(null);
-      const [jobData, crewData] = await Promise.all([
+      const [jobData, crewData, appsData] = await Promise.all([
         fetchJobById(id),
         fetchJobBookings(id),
+        session?.user?.id ? fetchOrganizerApplications(session.user.id) : Promise.resolve([]),
       ]);
 
       if (jobData) {
@@ -107,14 +123,68 @@ export default function OrganizerShiftDetailScreen() {
         setError('Shift not found or access denied.');
       }
       setCrew(crewData || []);
+
+      const shiftStandby = (appsData || []).filter(
+        (a: any) => a.jobId === id && ['applied', 'shortlisted'].includes(a.status)
+      );
+      setStandbyApplications(shiftStandby);
     } catch (err: any) {
       console.error('Failed to load shift details', err);
       setError(err?.message || 'Failed to load shift details.');
       setCrew([]);
+      setStandbyApplications([]);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, session?.user?.id]);
+
+  const handleConfirmReplacement = async (workerId: string, workerName: string) => {
+    if (!session?.user?.id || !id) return;
+    Alert.alert(
+      'Confirm Standby Replacement',
+      `Confirm ${workerName} for this shift? This will reserve their spot and provision an on-site attendance pass.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Worker',
+          onPress: async () => {
+            setConfirmingReplacementId(workerId);
+            const res = await confirmWorkerBookingSafe(id, workerId, session.user.id);
+            setConfirmingReplacementId(null);
+            if (res.success) {
+              Alert.alert('Worker Confirmed', `${workerName} has been booked and notified.`);
+              loadShiftData();
+            } else {
+              Alert.alert('Booking Error', res.error || 'Failed to confirm standby replacement.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleOpenTeamChat = async () => {
+    if (!id) return;
+    setShowChatModal(true);
+    setLoadingChat(true);
+    const msgs = await fetchShiftMessages(id);
+    setChatMessages(msgs);
+    setLoadingChat(false);
+  };
+
+  const handleSendTeamBroadcast = async () => {
+    if (!id || !chatInput.trim()) return;
+    setSendingChat(true);
+    const res = await sendShiftMessage(id, chatInput.trim(), undefined, true);
+    setSendingChat(false);
+    if (res.success) {
+      setChatInput('');
+      const msgs = await fetchShiftMessages(id);
+      setChatMessages(msgs);
+    } else {
+      Alert.alert('Broadcast Error', res.error || 'Could not send broadcast message.');
+    }
+  };
 
   useEffect(() => {
     loadShiftData();
@@ -417,13 +487,25 @@ export default function OrganizerShiftDetailScreen() {
 
           {session?.user?.id && (
             <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
-              <Button
-                title={generatingInvoice ? 'Generating GST Invoice...' : 'Generate / Refresh Shift Invoice'}
-                variant="outline"
-                size="sm"
-                disabled={generatingInvoice}
-                onPress={handleGenerateInvoice}
-              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1.2 }}>
+                  <Button
+                    title="Shift Team Broadcast"
+                    variant="primary"
+                    size="sm"
+                    onPress={handleOpenTeamChat}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title={generatingInvoice ? 'Generating...' : 'GST Invoice'}
+                    variant="outline"
+                    size="sm"
+                    disabled={generatingInvoice}
+                    onPress={handleGenerateInvoice}
+                  />
+                </View>
+              </View>
             </View>
           )}
         </Card>
@@ -524,6 +606,26 @@ export default function OrganizerShiftDetailScreen() {
                     <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
                       Token: {member.checkInCode || 'Not Provisioned'}
                     </Text>
+                    {member.notes && member.notes.includes('[DELAY ALERT]') ? (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          backgroundColor: colors.surfaceMuted,
+                          padding: 6,
+                          borderRadius: radii.sm,
+                          marginTop: 6,
+                          borderWidth: 1,
+                          borderColor: colors.warning,
+                        }}
+                      >
+                        <Clock size={12} color={colors.warning} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.warning, flex: 1 }}>
+                          {member.notes}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
 
                   <Badge label={badgeLabel} variant={badgeVariant} size="sm" />
@@ -608,6 +710,60 @@ export default function OrganizerShiftDetailScreen() {
             );
           })
         )}
+
+        {/* Standby & Replacement Pool */}
+        <View style={{ marginTop: spacing.md }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <UserCheck size={16} color={colors.primary} />
+              <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                Standby & Replacement List
+              </Text>
+            </View>
+            <Badge
+              label={`${standbyApplications.length} STANDBY`}
+              variant="neutral"
+              size="sm"
+            />
+          </View>
+
+          {standbyApplications.length === 0 ? (
+            <Card variant="outlined" style={{ padding: spacing.md, backgroundColor: colors.surfaceMuted }}>
+              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                No waitlisted or standby applicants currently in queue for this shift. If a confirmed worker cancels or fails to arrive, eligible workers from the Mumbai talent pool will appear here for 1-tap vacancy fill.
+              </Text>
+            </Card>
+          ) : (
+            standbyApplications.map((app) => (
+              <Card
+                key={app.id}
+                variant="outlined"
+                style={{
+                  marginBottom: 8,
+                  borderColor: colors.border,
+                }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                      {app.worker?.profile?.fullName || 'Standby Candidate'}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                      Locality: {app.worker?.preferredLocality || 'Mumbai'} • Skills: {app.worker?.skills?.slice(0, 2).join(', ') || 'General'}
+                    </Text>
+                  </View>
+                  <Button
+                    title="Confirm Replacement"
+                    variant="primary"
+                    size="sm"
+                    loading={confirmingReplacementId === app.workerId}
+                    onPress={() => handleConfirmReplacement(app.workerId, app.worker?.profile?.fullName || 'Worker')}
+                  />
+                </View>
+              </Card>
+            ))
+          )}
+        </View>
       </ScrollView>
 
       {/* Manual Check-In Verification Modal */}
@@ -752,6 +908,115 @@ export default function OrganizerShiftDetailScreen() {
                   onPress={submitCancellation}
                 />
               </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Shift Broadcast & Team Chat Modal */}
+      <Modal visible={showChatModal} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                maxWidth: 440,
+                width: '100%',
+                maxHeight: '85%',
+              },
+            ]}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Radio size={16} color={colors.primary} />
+                <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                  Shift Team Broadcast
+                </Text>
+              </View>
+              <Badge label="ORGANIZER DESK" variant="neutral" size="sm" />
+            </View>
+
+            <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm }}>
+              Broadcast venue entry instructions, gate number, or dress code updates to all confirmed crew.
+            </Text>
+
+            <ScrollView
+              style={{
+                minHeight: 180,
+                maxHeight: 280,
+                backgroundColor: colors.surfaceMuted,
+                borderRadius: radii.md,
+                padding: spacing.sm,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {loadingChat ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : chatMessages.length === 0 ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>
+                    No announcements posted yet. Broadcast messages are highlighted directly for all checked-in and confirmed workers.
+                  </Text>
+                </View>
+              ) : (
+                chatMessages.map((msg) => (
+                  <View
+                    key={msg.id}
+                    style={{
+                      padding: spacing.sm,
+                      borderRadius: radii.sm,
+                      backgroundColor: colors.surface,
+                      borderWidth: 1,
+                      borderColor: msg.isBroadcast ? colors.primary : colors.border,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                        {msg.senderName} {msg.senderRole === 'organizer' ? '(Host)' : ''}
+                      </Text>
+                      {msg.isBroadcast && (
+                        <Badge label="BROADCAST" variant="primary" size="sm" />
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 13, color: colors.textPrimary }}>
+                      {msg.content}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.sm, alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  placeholder="Post broadcast announcement to crew..."
+                />
+              </View>
+              <Button
+                title="Broadcast"
+                variant="primary"
+                size="md"
+                fullWidth={false}
+                loading={sendingChat}
+                onPress={handleSendTeamBroadcast}
+              />
+            </View>
+
+            <View style={{ marginTop: spacing.sm }}>
+              <Button
+                title="Close Channel"
+                variant="outline"
+                size="sm"
+                onPress={() => setShowChatModal(false)}
+              />
             </View>
           </View>
         </View>

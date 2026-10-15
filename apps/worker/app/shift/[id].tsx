@@ -20,10 +20,13 @@ import {
   fetchJobById,
   applyForJobSafe,
   fetchWorkerJobStatus,
+  fetchWorkerBookings,
+  checkShiftConflicts,
+  ShiftConflictCheck,
   Job,
   supabase,
 } from '@opskil/shared';
-import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
+import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock, AlertTriangle, AlertCircle } from 'lucide-react-native';
 
 export default function WorkerShiftDetailScreen() {
   const router = useRouter();
@@ -37,6 +40,7 @@ export default function WorkerShiftDetailScreen() {
   const [applied, setApplied] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [conflictCheck, setConflictCheck] = useState<ShiftConflictCheck | null>(null);
 
   useEffect(() => {
     async function loadShift() {
@@ -62,12 +66,17 @@ export default function WorkerShiftDetailScreen() {
           }
         }
 
-        const statusData = session?.user?.id
-          ? await fetchWorkerJobStatus(resolvedJobId, session.user.id)
-          : null;
+        const [statusData, userBookings] = await Promise.all([
+          session?.user?.id ? fetchWorkerJobStatus(resolvedJobId, session.user.id) : null,
+          session?.user?.id ? fetchWorkerBookings(session.user.id) : Promise.resolve([]),
+        ]);
 
         if (data) {
           setShift(data);
+          if (userBookings && userBookings.length > 0) {
+            const conflict = checkShiftConflicts(data, userBookings);
+            setConflictCheck(conflict);
+          }
         } else {
           setError('Shift not found or has been concluded.');
         }
@@ -103,24 +112,50 @@ export default function WorkerShiftDetailScreen() {
       return;
     }
 
-    setSubmitting(true);
-    const result = await applyForJobSafe(shift.id, session.user.id);
-    setSubmitting(false);
+    const executeApplication = async () => {
+      setSubmitting(true);
+      const result = await applyForJobSafe(shift.id, session.user.id);
+      setSubmitting(false);
 
-    if (result.success) {
-      setApplied(true);
+      if (result.success) {
+        setApplied(true);
+        Alert.alert(
+          'Interest Expressed',
+          `Your profile has been submitted to ${shift.organizer?.businessName || 'the organizer'}. You will receive a notification once the organizer reviews the applicants and confirms the roster.`,
+          [{ text: 'View My Applications', onPress: () => router.push('/(tabs)/my-shifts') }, { text: 'Done' }]
+        );
+      } else {
+        Alert.alert(
+          'Application Failed',
+          result.errorMessage || 'Unable to apply for this shift at this time.',
+          [{ text: 'OK' }]
+        );
+      }
+    };
+
+    if (conflictCheck?.hasConflict) {
       Alert.alert(
-        'Interest Expressed',
-        `Your profile has been submitted to ${shift.organizer?.businessName || 'the organizer'}. You will receive a notification once the organizer reviews the applicants and confirms the roster.`,
-        [{ text: 'View My Applications', onPress: () => router.push('/(tabs)/my-shifts') }, { text: 'Done' }]
+        'Schedule Overlap Conflict',
+        conflictCheck.message ||
+          'You already have another confirmed shift scheduled during this time window. Opskl prevents double-booking to protect your reliability score.',
+        [{ text: 'Understood', style: 'cancel' }]
       );
-    } else {
-      Alert.alert(
-        'Application Failed',
-        result.errorMessage || 'Unable to apply for this shift at this time.',
-        [{ text: 'OK' }]
-      );
+      return;
     }
+
+    if (conflictCheck?.hasTravelWarning) {
+      Alert.alert(
+        'Transit Commute Warning',
+        `${conflictCheck.message}\n\nDo you want to submit your application anyway?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Yes, Apply Anyway', onPress: () => executeApplication() },
+        ]
+      );
+      return;
+    }
+
+    await executeApplication();
   };
 
   if (loading) {
@@ -379,6 +414,51 @@ export default function WorkerShiftDetailScreen() {
           </Text>
         </View>
 
+        {/* Conflict / Travel Warnings */}
+        {conflictCheck?.hasConflict && (
+          <View
+            style={{
+              padding: spacing.md,
+              backgroundColor: colors.surfaceMuted,
+              borderRadius: radii.lg,
+              borderLeftWidth: 3,
+              borderLeftColor: colors.danger,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <AlertCircle size={15} color={colors.danger} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.danger }}>
+                Schedule Overlap Conflict
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
+              {conflictCheck.message}
+            </Text>
+          </View>
+        )}
+
+        {conflictCheck?.hasTravelWarning && (
+          <View
+            style={{
+              padding: spacing.md,
+              backgroundColor: colors.surfaceMuted,
+              borderRadius: radii.lg,
+              borderLeftWidth: 3,
+              borderLeftColor: colors.warning,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <AlertTriangle size={15} color={colors.warning} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.warning }}>
+                Transit Commute Alert
+              </Text>
+            </View>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
+              {conflictCheck.message}
+            </Text>
+          </View>
+        )}
+
         {/* Primary Action Button */}
         <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.xs }}>
           {isBooked ? (
@@ -394,6 +474,14 @@ export default function WorkerShiftDetailScreen() {
               variant="secondary"
               size="lg"
               onPress={() => router.push('/(tabs)/my-shifts')}
+            />
+          ) : conflictCheck?.hasConflict ? (
+            <Button
+              title="Cannot Apply • Schedule Overlap Conflict"
+              variant="outline"
+              size="lg"
+              disabled={true}
+              onPress={handleApply}
             />
           ) : (
             <Button
