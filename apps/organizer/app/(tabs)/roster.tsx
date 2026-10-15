@@ -5,7 +5,6 @@ import {
   ScrollView,
   RefreshControl,
   Pressable,
-  Alert,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,7 @@ import {
   Button,
   ShiftCardSkeleton,
   useAuth,
+  OpsklAlert as Alert,
 } from '@opskil/design-system';
 import {
   JobApplication,
@@ -178,12 +178,12 @@ export default function OrganizerRosterScreen() {
                 prev.map((a) =>
                   a.id === app.id
                     ? {
-                        ...a,
-                        status: 'confirmed',
-                        job: a.job
-                          ? { ...a.job, slotsFilled: (a.job.slotsFilled || 0) + 1 }
-                          : a.job,
-                      }
+                      ...a,
+                      status: 'confirmed',
+                      job: a.job
+                        ? { ...a.job, slotsFilled: (a.job.slotsFilled || 0) + 1 }
+                        : a.job,
+                    }
                     : a
                 )
               );
@@ -596,7 +596,7 @@ export default function OrganizerRosterScreen() {
                           variant="secondary"
                           size="sm"
                           disabled={true}
-                          onPress={() => {}}
+                          onPress={() => { }}
                         />
                       </View>
                       <Button

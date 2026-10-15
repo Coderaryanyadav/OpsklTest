@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  Alert,
   StyleSheet,
   ActivityIndicator,
   Modal,
@@ -20,6 +19,7 @@ import {
   Input,
   EmptyState,
   useAuth,
+  OpsklAlert as Alert,
 } from '@opskil/design-system';
 import {
   Booking,
