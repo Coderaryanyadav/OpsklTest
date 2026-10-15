@@ -20,6 +20,7 @@
     "test:brutal": "npm --workspace=@opskil/shared test -- packages/shared/src/__tests__/brutal_platform_verification.test.ts",
     "test:sql": "node scripts/test_sql_integration.mjs",
     "test:e2e:admin": "npm --workspace=@opskil/admin run test:e2e",
+    "check:all": "node scripts/check_all_features.mjs",
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {

@@ -89,15 +89,37 @@ export async function verifyEmailOtp({ email, token }: VerifyEmailOtpParams) {
 
   // 2. If rejected, fallback to 'signup' OTP type for newly registered unconfirmed accounts
   if (error) {
-    const signupAttempt = await supabase.auth.verifyOtp({
-      email: normalizedEmail,
-      token: cleanToken,
-      type: 'signup',
-    });
+    try {
+      const signupAttempt = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: cleanToken,
+        type: 'signup',
+      });
 
-    if (!signupAttempt.error && signupAttempt.data) {
-      data = signupAttempt.data;
-      error = null;
+      if (signupAttempt && !signupAttempt.error && signupAttempt.data) {
+        data = signupAttempt.data;
+        error = null;
+      }
+    } catch {
+      // Keep original error
+    }
+  }
+
+  // 3. If still rejected, fallback to 'magiclink' OTP type for email-based magic link/OTP templates
+  if (error) {
+    try {
+      const magicLinkAttempt = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: cleanToken,
+        type: 'magiclink',
+      });
+
+      if (magicLinkAttempt && !magicLinkAttempt.error && magicLinkAttempt.data) {
+        data = magicLinkAttempt.data;
+        error = null;
+      }
+    } catch {
+      // Keep original error
     }
   }
 
