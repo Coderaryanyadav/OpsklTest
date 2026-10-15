@@ -205,14 +205,16 @@ export async function fetchOrganizerFinancesSummary(
       const gst = Number(inv.gst_amount) || 0;
       const total = Number(inv.total_payable) || 0;
 
-      workerWageTotals += wages;
-      opskilServiceFees += fee;
-      applicableTaxes += gst;
+      if (inv.status !== 'cancelled') {
+        workerWageTotals += wages;
+        opskilServiceFees += fee;
+        applicableTaxes += gst;
 
-      if (inv.status === 'settled' || inv.status === 'escrow_funded') {
-        settledAmount += total;
-      } else if (inv.status === 'pending' || inv.status === 'overdue') {
-        outstandingEscrowDue += total;
+        if (inv.status === 'settled' || inv.status === 'escrow_funded') {
+          settledAmount += total;
+        } else if (inv.status === 'pending' || inv.status === 'overdue') {
+          outstandingEscrowDue += total;
+        }
       }
 
       invoices.push({

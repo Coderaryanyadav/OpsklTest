@@ -55,6 +55,16 @@ const MUMBAI_ZONES = [
   'Thane & Suburbs',
 ];
 
+const ZONE_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  'Bandra Kurla Complex (BKC)': { lat: 19.066, lng: 72.868 },
+  'Goregaon & NESCO': { lat: 19.1482, lng: 72.853 },
+  'Worli & South Mumbai': { lat: 19.0178, lng: 72.818 },
+  'Andheri & Western Suburbs': { lat: 19.1136, lng: 72.8697 },
+  'Powai & Central Mumbai': { lat: 19.1176, lng: 72.906 },
+  'Navi Mumbai (Vashi / CIDCO)': { lat: 19.076, lng: 72.998 },
+  'Thane & Suburbs': { lat: 19.2183, lng: 72.9781 },
+};
+
 const WIZARD_STEPS = [
   { step: 1, title: 'Role & Category', subtitle: 'Define shift title, category and headcount' },
   { step: 2, title: 'Schedule & Venue', subtitle: 'Date, timings, venue address and reporting' },
@@ -164,6 +174,10 @@ export default function OrganizerCreateShiftScreen() {
         return false;
       }
     } else if (currentStep === 2) {
+      if (date < todayStr) {
+        Alert.alert('Validation Error', 'Shift date cannot be in the past. Please select today or a future date in IST.');
+        return false;
+      }
       if (!venueName.trim() || !venueAddress.trim()) {
         Alert.alert('Validation Error', 'Please specify both venue name and full address.');
         return false;
@@ -217,6 +231,9 @@ export default function OrganizerCreateShiftScreen() {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
+    const coords = ZONE_COORDINATES[zone] || { lat: 19.066, lng: 72.868 };
+    const crossesMidnight = endTime && startTime ? endTime <= startTime : false;
+
     const payload = {
       title,
       category,
@@ -225,9 +242,12 @@ export default function OrganizerCreateShiftScreen() {
       landmark: landmark.trim() || undefined,
       city: 'Mumbai',
       zone,
+      latitude: coords.lat,
+      longitude: coords.lng,
       date,
       startTime,
       endTime,
+      crossesMidnight,
       durationHours: parsedHours,
       hourlyRate: parsedRate,
       slotsTotal: parsedSlots,
@@ -314,7 +334,18 @@ export default function OrganizerCreateShiftScreen() {
         ]
       );
     } else {
-      Alert.alert('Submission Error', result.error || 'Failed to create shift.');
+      if (result.errorCode === 'ORGANIZER_NOT_VERIFIED') {
+        Alert.alert(
+          'Verification Required',
+          'Only verified business hosts can post live shifts. Please visit Profile > Billing & Tax Compliance to submit your GSTIN or business ID for verification.',
+          [
+            { text: 'Later', style: 'cancel' },
+            { text: 'Go to Profile', onPress: () => router.push('/(tabs)/profile' as any) },
+          ]
+        );
+      } else {
+        Alert.alert('Submission Error', result.error || 'Failed to create shift.');
+      }
     }
   };
 

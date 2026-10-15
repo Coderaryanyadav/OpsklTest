@@ -560,7 +560,7 @@ export async function confirmWorkerBooking(
 export async function createJobSafe(
   job: Partial<Job>,
   organizerId: string
-): Promise<{ success: boolean; jobId?: string; error?: string }> {
+): Promise<{ success: boolean; jobId?: string; error?: string; errorCode?: string }> {
   logger.info('Organizer creating new shift listing', { organizerId, title: job.title });
 
   try {
@@ -574,6 +574,9 @@ export async function createJobSafe(
         landmark: job.landmark ?? null,
         city: job.city ?? 'Mumbai',
         zone: job.zone,
+        latitude: job.latitude ?? null,
+        longitude: job.longitude ?? null,
+        crosses_midnight: (job as any).crossesMidnight ?? false,
         date: job.date,
         start_time: job.startTime,
         end_time: job.endTime,
@@ -608,7 +611,11 @@ export async function createJobSafe(
       if (rpcData.success) {
         return { success: true, jobId: rpcData.job_id };
       }
-      return { success: false, error: rpcData.message || rpcData.error_code };
+      return {
+        success: false,
+        errorCode: rpcData.error_code,
+        error: rpcData.message || rpcData.error_code,
+      };
     }
 
     return { success: false, error: 'Unexpected empty response from create_job_safe.' };

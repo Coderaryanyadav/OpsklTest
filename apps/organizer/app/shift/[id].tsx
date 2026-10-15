@@ -292,8 +292,9 @@ export default function OrganizerShiftDetailScreen() {
     }
   };
 
-  const checkedInCount = crew.filter((c) => ['checked_in', 'completed_awaiting_review', 'completed'].includes(c.status)).length;
-  const totalEscrow = crew.reduce((acc, c) => acc + c.agreedTotalPay, 0);
+  const activeCrew = crew.filter((c) => !['cancelled', 'no_show'].includes(c.status));
+  const checkedInCount = activeCrew.filter((c) => ['checked_in', 'completed_awaiting_review', 'completed'].includes(c.status)).length;
+  const totalEscrow = activeCrew.reduce((acc, c) => acc + c.agreedTotalPay, 0);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
@@ -342,11 +343,11 @@ export default function OrganizerShiftDetailScreen() {
                 On-Site Headcount Arrival
               </Text>
               <Text style={[typography.h1, { color: colors.textPrimary, marginTop: 2 }]}>
-                {checkedInCount} / {crew.length} Checked In
+                {checkedInCount} / {activeCrew.length} Checked In
               </Text>
             </View>
             <Badge
-              label={checkedInCount === crew.length ? 'ALL PRESENT' : `${crew.length - checkedInCount} PENDING`}
+              label={activeCrew.length > 0 && checkedInCount === activeCrew.length ? 'ALL PRESENT' : `${activeCrew.length - checkedInCount} PENDING`}
               variant="neutral"
             />
           </View>

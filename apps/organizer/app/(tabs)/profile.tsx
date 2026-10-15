@@ -3,7 +3,13 @@ import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, Activ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Card, Badge, Button, Input, useAuth } from '@opskil/design-system';
-import { fetchOrganizerProfile, updateOrganizerProfile, OrganizerProfile, requestAccountDeletionSafe } from '@opskil/shared';
+import {
+  fetchOrganizerProfile,
+  updateOrganizerProfile,
+  OrganizerProfile,
+  requestAccountDeletionSafe,
+  submitVerificationCaseSafe,
+} from '@opskil/shared';
 import { GstinSchema } from '@opskil/validation';
 
 export default function OrganizerProfileScreen() {
@@ -76,10 +82,24 @@ export default function OrganizerProfileScreen() {
         contactPhone: formContactPhone.trim() || undefined,
         profileCompletionStatus: 'completed',
       });
+
+      if (trimmedGstin) {
+        await submitVerificationCaseSafe(
+          'gstin',
+          trimmedGstin,
+          `verification/gstin/${userId}.pdf`
+        );
+      }
+
       const updated = await fetchOrganizerProfile(userId);
       setOrganizerData(updated);
       setEditModalVisible(false);
-      Alert.alert('Profile Updated', 'Organization profile details have been saved.');
+      Alert.alert(
+        'Profile Updated',
+        trimmedGstin
+          ? 'Organization details saved and GSTIN verification case submitted for admin review.'
+          : 'Organization profile details have been saved.'
+      );
     } catch (err: any) {
       setEditError(err.message || 'Failed to update organization profile.');
     } finally {
@@ -248,9 +268,13 @@ export default function OrganizerProfileScreen() {
                       {businessName}
                     </Text>
                     {organizerData?.verificationStatus === 'verified' ? (
-                      <Badge label="Verified Business" variant="success" size="sm" />
+                      <Badge label="Verified Business Host" variant="success" size="sm" />
+                    ) : organizerData?.verificationStatus === 'pending' ? (
+                      <Badge label="Verification Under Review" variant="warning" size="sm" />
+                    ) : organizerData?.verificationStatus === 'rejected' ? (
+                      <Badge label="Verification Rejected" variant="danger" size="sm" />
                     ) : (
-                      <Badge label="Pending Verification" variant="warning" size="sm" />
+                      <Badge label="Unverified Host" variant="neutral" size="sm" />
                     )}
                   </View>
                   <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
@@ -275,8 +299,12 @@ export default function OrganizerProfileScreen() {
               <View style={{ gap: spacing.sm }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, color: colors.textSecondary }}>GSTIN Status:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: organizerData?.gstin ? colors.success : colors.warning }}>
-                    {organizerData?.gstin ? 'Verified GST Registered' : 'Not Provided'}
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: organizerData?.verificationStatus === 'verified' && organizerData?.gstin ? colors.success : organizerData?.gstin ? colors.warning : colors.textMuted }}>
+                    {organizerData?.verificationStatus === 'verified' && organizerData?.gstin
+                      ? 'Verified GST Registered'
+                      : organizerData?.gstin
+                      ? 'Submitted (Under Review)'
+                      : 'Not Provided'}
                   </Text>
                 </View>
 
