@@ -25,6 +25,7 @@ import {
   PaymentRecord,
   isValidIndianUpiId,
   updateWorkerProfile,
+  initiateWorkerPayoutSafe,
 } from '@opskil/shared';
 import { useAuth } from '@opskil/design-system';
 import {
@@ -54,8 +55,42 @@ export default function WorkerEarningsScreen() {
   const [upiError, setUpiError] = useState('');
   const [upiSuccess, setUpiSuccess] = useState(false);
   const [savingUpi, setSavingUpi] = useState(false);
+  const [initiatingPayout, setInitiatingPayout] = useState(false);
 
   const workerId = session?.user?.id;
+
+  const handleInitiatePayout = async (record: PaymentRecord) => {
+    if (!record.bookingId) {
+      alert('Missing booking reference for this payout record.');
+      return;
+    }
+    const targetUpi = record.upiId || summary?.defaultUpiId;
+    if (!targetUpi || !isValidIndianUpiId(targetUpi)) {
+      setShowUpiModal(true);
+      return;
+    }
+
+    setInitiatingPayout(true);
+    try {
+      const res = await initiateWorkerPayoutSafe(
+        record.bookingId,
+        targetUpi,
+        `payout_${record.id}_${Date.now()}`
+      );
+
+      if (res.success) {
+        alert('Payout initiated! Funds are being processed via UPI IMPS to ' + targetUpi);
+        await loadData();
+        setSelectedRecord(null);
+      } else {
+        alert(res.error || 'Failed to initiate payout. Please ensure shift attendance has been completed and signed off.');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Network error initiating payout.');
+    } finally {
+      setInitiatingPayout(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     if (!workerId) {
@@ -678,11 +713,35 @@ export default function WorkerEarningsScreen() {
                   )}
                 </View>
 
+                {/* Pilot Escrow Settlement Notice */}
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceMuted,
+                    padding: spacing.sm,
+                    borderRadius: radii.md,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
+                    Opskl Pilot Settlement: Wages are safeguarded in escrow. Disbursed directly to your verified UPI VPA via IMPS once attendance is completed.
+                  </Text>
+                </View>
+
+                {(selectedRecord.status === 'pending' || selectedRecord.status === 'escrow_locked') && (
+                  <Button
+                    title={initiatingPayout ? 'Initiating Payout...' : 'Initiate UPI IMPS Payout'}
+                    variant="primary"
+                    loading={initiatingPayout}
+                    onPress={() => handleInitiatePayout(selectedRecord)}
+                  />
+                )}
+
                 <Button
                   title="Close Receipt"
-                  variant="primary"
+                  variant="outline"
                   onPress={() => setSelectedRecord(null)}
-                  style={{ marginTop: spacing.sm }}
+                  style={{ marginTop: spacing.xs }}
                 />
               </View>
             )}

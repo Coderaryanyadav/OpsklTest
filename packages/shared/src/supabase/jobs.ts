@@ -184,9 +184,8 @@ export async function fetchDiscoveryFeed(
     }
 
     let query = supabase
-      .from('jobs')
-      .select('*', { count: 'exact' })
-      .in('status', ['open', 'filling']);
+      .from('public_jobs')
+      .select('*', { count: 'exact' });
 
     // Exclude already processed jobs
     if (excludedJobIds.length > 0) {
@@ -1316,6 +1315,32 @@ export async function fetchWorkerJobStatus(
   } catch (err) {
     logger.error('Failed to query worker job status', err, { jobId, workerId });
     return { hasApplied: false, isBooked: false };
+  }
+}
+
+export async function getJobContact(jobId: string): Promise<{
+  success: boolean;
+  supervisorName?: string;
+  supervisorPhone?: string;
+  errorCode?: string;
+  message?: string;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('get_job_contact', { p_job_id: jobId });
+    if (error) {
+      logger.error('RPC error in get_job_contact', error);
+      return { success: false, errorCode: error.code, message: error.message };
+    }
+    return {
+      success: data?.success || false,
+      supervisorName: data?.supervisor_name,
+      supervisorPhone: data?.supervisor_phone,
+      errorCode: data?.error_code,
+      message: data?.message,
+    };
+  } catch (err: any) {
+    logger.error('Unexpected error fetching job contact', err);
+    return { success: false, errorCode: 'NETWORK_ERROR', message: err?.message || 'Network error' };
   }
 }
 

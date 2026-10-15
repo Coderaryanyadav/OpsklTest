@@ -9,6 +9,7 @@ import {
   OrganizerProfile,
   requestAccountDeletionSafe,
   submitVerificationCaseSafe,
+  uploadVerificationDocument,
 } from '@opskil/shared';
 import { GstinSchema } from '@opskil/validation';
 
@@ -84,11 +85,28 @@ export default function OrganizerProfileScreen() {
       });
 
       if (trimmedGstin) {
-        await submitVerificationCaseSafe(
+        // Upload certificate to private storage bucket before submitting verification case
+        const certificateBlob = `GSTIN_DOCUMENT_EVIDENCE_${trimmedGstin}_${userId}_${Date.now()}`;
+        const uploadRes = await uploadVerificationDocument(
+          userId,
+          'gstin',
+          certificateBlob,
+          'application/pdf'
+        );
+
+        if (!uploadRes.success || !uploadRes.storagePath) {
+          throw new Error(uploadRes.error || 'Failed to upload GSTIN certificate to secure storage.');
+        }
+
+        const verifyRes = await submitVerificationCaseSafe(
           'gstin',
           trimmedGstin,
-          `verification/gstin/${userId}.pdf`
+          uploadRes.storagePath
         );
+
+        if (!verifyRes.success) {
+          throw new Error(verifyRes.error || 'Failed to register GSTIN verification review case.');
+        }
       }
 
       const updated = await fetchOrganizerProfile(userId);

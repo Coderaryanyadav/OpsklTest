@@ -411,3 +411,66 @@ export async function fetchPlatformSettings(): Promise<PlatformSetting[]> {
     updatedAt: s.updated_at,
   }));
 }
+
+/**
+ * Securely fetch admin overview metrics using the server-side authorized RPC
+ */
+export async function fetchAdminOverviewMetricsSafe(): Promise<AdminOverviewMetrics | null> {
+  try {
+    const client = getClient();
+    const { data, error } = await client.rpc('get_admin_overview_metrics');
+    if (error || !data || data.length === 0) {
+      if (error) logger.warn('Failed to call get_admin_overview_metrics RPC', error);
+      return null;
+    }
+    const row = data[0];
+    return {
+      totalEscrowHeld: Number(row.escrow_held_inr || 0),
+      settledPayouts: Number(row.gmv_inr || 0),
+      platformFeesCollected: Number(row.platform_fees_inr || 0),
+      activeShiftsCount: Number(row.active_shifts || 0),
+      verifiedWorkersCount: Number(row.total_workers || 0),
+      activeOrganizersCount: 0,
+      pendingVerificationsCount: Number(row.pending_verifications || 0),
+      openDisputesCount: Number(row.open_disputes || 0),
+      openSafetyReportsCount: Number(row.open_safety_reports || 0),
+    };
+  } catch (err) {
+    logger.error('Exception calling get_admin_overview_metrics RPC', err);
+    return null;
+  }
+}
+
+/**
+ * Securely fetch audit logs using server-side authorized RPC with pagination
+ */
+export async function fetchAdminAuditLogsSafe(
+  limit: number = 50,
+  offset: number = 0
+): Promise<AuditLog[]> {
+  try {
+    const client = getClient();
+    const { data, error } = await client.rpc('get_admin_audit_logs', {
+      p_limit: limit,
+      p_offset: offset,
+    });
+    if (error) {
+      logger.error('Failed to call get_admin_audit_logs RPC', error);
+      return [];
+    }
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      actorId: row.actor_id,
+      action: row.action,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      oldState: row.old_state,
+      newState: row.payload,
+      createdAt: row.created_at,
+    }));
+  } catch (err) {
+    logger.error('Exception calling get_admin_audit_logs RPC', err);
+    return [];
+  }
+}
+

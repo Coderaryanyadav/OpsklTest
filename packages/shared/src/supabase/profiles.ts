@@ -88,6 +88,43 @@ export async function submitVerificationCaseSafe(
   }
 }
 
+/**
+ * Uploads a verification document (PDF/Image) to the private verification-documents bucket.
+ * The storage path is strictly user-scoped to `${userId}/kyc_${documentType}_${Date.now()}.${extension}`.
+ */
+export async function uploadVerificationDocument(
+  userId: string,
+  documentType: 'aadhaar' | 'pan' | 'gstin',
+  fileData: any,
+  contentType: string = 'application/pdf'
+): Promise<{ success: boolean; storagePath?: string; error?: string }> {
+  try {
+    const extension = contentType.includes('png')
+      ? 'png'
+      : contentType.includes('jpeg') || contentType.includes('jpg')
+      ? 'jpg'
+      : 'pdf';
+    const storagePath = `${userId}/kyc_${documentType}_${Date.now()}.${extension}`;
+
+    const { error } = await supabase.storage
+      .from('verification-documents')
+      .upload(storagePath, fileData, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      logger.error('Failed to upload KYC document to storage', error);
+      return { success: false, error: `Document upload failed: ${error.message}` };
+    }
+
+    return { success: true, storagePath };
+  } catch (err: any) {
+    logger.error('Unexpected exception during document upload', err);
+    return { success: false, error: err?.message || 'Storage upload error' };
+  }
+}
+
 export async function fetchWorkerProfile(userId: string): Promise<WorkerProfile | null> {
   const { data, error } = await supabase
     .from('worker_profiles')

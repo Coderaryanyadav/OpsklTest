@@ -22,9 +22,12 @@ import {
   formatINR,
   fetchOrganizerFinancesSummary,
   fetchOrganizerProfile,
+  fetchOrganizerJobs,
+  generateJobInvoiceSafe,
   OrganizerFinancesSummary,
   OrganizerInvoice,
   OrganizerProfile,
+  Job,
 } from '@opskil/shared';
 
 import { useAuth } from '@opskil/design-system';
@@ -38,11 +41,14 @@ export default function OrganizerFinancesScreen() {
 
   const [finances, setFinances] = useState<OrganizerFinancesSummary | null>(null);
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
+  const [organizerJobs, setOrganizerJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeView, setActiveView] = useState<ActiveView>('invoices');
 
   const [selectedInvoice, setSelectedInvoice] = useState<OrganizerInvoice | null>(null);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [generatingForJobId, setGeneratingForJobId] = useState<string | null>(null);
 
   const organizerId = session?.user?.id;
 
@@ -53,12 +59,14 @@ export default function OrganizerFinancesScreen() {
       return;
     }
     try {
-      const [data, profile] = await Promise.all([
+      const [data, profile, jobs] = await Promise.all([
         fetchOrganizerFinancesSummary(organizerId),
         fetchOrganizerProfile(organizerId),
+        fetchOrganizerJobs(organizerId),
       ]);
       setFinances(data);
       setOrganizerProfile(profile);
+      setOrganizerJobs(jobs || []);
     } catch {
       // Fallback in service
     } finally {
@@ -74,6 +82,25 @@ export default function OrganizerFinancesScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  const handleGenerateInvoice = async (jobId: string) => {
+    if (!organizerId) return;
+    setGeneratingForJobId(jobId);
+    try {
+      const res = await generateJobInvoiceSafe(jobId, organizerId);
+      if (res.success) {
+        alert(`Invoice #${res.invoiceNumber || ''} generated successfully! Amount: ${formatINR(res.totalPayable || 0)}`);
+        await loadData();
+        setShowGenerateModal(false);
+      } else {
+        alert(res.error || 'Failed to generate shift invoice.');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error generating invoice.');
+    } finally {
+      setGeneratingForJobId(null);
+    }
   };
 
   return (
@@ -418,9 +445,46 @@ export default function OrganizerFinancesScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Pilot Transparency Notice */}
+          <View
+            style={{
+              backgroundColor: colors.surfaceMuted,
+              borderRadius: radii.md,
+              padding: spacing.md,
+              borderLeftWidth: 3,
+              borderLeftColor: colors.primary,
+              marginVertical: spacing.xs,
+            }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 }}>
+              Pilot Settlement Notice
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
+              Shift invoices are generated on-demand based on confirmed crew shifts (wages + 10% platform fee + 18% GST). In this launch phase, payout disbursements are settled directly to verified UPI IMPS accounts upon completed supervisor sign-off.
+            </Text>
+          </View>
+
           {/* Section 1: Invoices */}
           {activeView === 'invoices' ? (
             <View style={{ gap: spacing.sm }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Billing Statements ({finances?.invoices.length || 0})
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowGenerateModal(true)}
+                  style={{
+                    backgroundColor: colors.primary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: radii.full,
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.background }}>
+                    + Generate Shift Invoice
+                  </Text>
+                </TouchableOpacity>
+              </View>
               {(finances?.invoices || []).length === 0 ? (
                 <Card
                   variant="outlined"
@@ -728,6 +792,82 @@ export default function OrganizerFinancesScreen() {
                 />
               </ScrollView>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Generate Shift Invoice Modal */}
+      <Modal visible={showGenerateModal} transparent animationType="slide">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: radii.xl,
+              borderTopRightRadius: radii.xl,
+              padding: spacing.xl,
+              maxHeight: '85%',
+              gap: spacing.md,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={[typography.h3, { color: colors.textPrimary }]}>Generate Shift Invoice</Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                  Select a shift to compute official GST billing statement
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowGenerateModal(false)}>
+                <Text style={{ fontSize: 20, color: colors.textMuted }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={{ gap: spacing.sm, paddingBottom: 20 }}>
+              {organizerJobs.length === 0 ? (
+                <Text style={{ fontSize: 13, color: colors.textMuted, textAlign: 'center', padding: 20 }}>
+                  No shifts found in your organization yet. Post a shift to generate invoices.
+                </Text>
+              ) : (
+                organizerJobs.map((j) => (
+                  <View
+                    key={j.id}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: radii.md,
+                      padding: spacing.md,
+                      gap: 6,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                          {j.title}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                          {j.date} • {j.slotsCount} workers • {formatINR(j.wagePerHour)}/hr
+                        </Text>
+                      </View>
+                      <Badge label={j.status.toUpperCase()} variant="neutral" size="sm" />
+                    </View>
+
+                    <Button
+                      title={generatingForJobId === j.id ? 'Computing Invoice...' : 'Generate Invoice'}
+                      variant="primary"
+                      size="sm"
+                      disabled={generatingForJobId === j.id}
+                      onPress={() => handleGenerateInvoice(j.id)}
+                      style={{ marginTop: 6 }}
+                    />
+                  </View>
+                ))
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>

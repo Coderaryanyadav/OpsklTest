@@ -34,6 +34,7 @@ import {
   completeShiftAndApproveAttendance,
   recordNoShowSafe,
   cancelBookingSafe,
+  generateJobInvoiceSafe,
 } from '@opskil/shared';
 import { Star, CheckCircle2, Users } from 'lucide-react-native';
 
@@ -57,6 +58,34 @@ export default function OrganizerShiftDetailScreen() {
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [actionBusy, setActionBusy] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+
+  const handleGenerateInvoice = async () => {
+    if (!session?.user?.id || !id) {
+      Alert.alert('Sign In Required', 'Please sign in with your organizer account to generate shift invoices.');
+      return;
+    }
+    setGeneratingInvoice(true);
+    try {
+      const res = await generateJobInvoiceSafe(id, session.user.id);
+      if (res.success) {
+        Alert.alert(
+          'Invoice Generated',
+          `Invoice #${res.invoiceNumber || ''} generated.\nTotal Payable: ${formatINR(res.totalPayable || 0)}\n\nYou can review this statement under Finances.`,
+          [
+            { text: 'View in Finances', onPress: () => router.push('/(tabs)/finances' as any) },
+            { text: 'OK', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert('Invoice Generation Failed', res.error || 'Could not generate invoice.');
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Unexpected invoice generation error.');
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
 
   const loadShiftData = useCallback(async () => {
     if (!id) {
@@ -366,6 +395,18 @@ export default function OrganizerShiftDetailScreen() {
               <WageText style={{ fontSize: 15 }}>{formatINR(totalEscrow)}</WageText>
             </View>
           </View>
+
+          {session?.user?.id && (
+            <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+              <Button
+                title={generatingInvoice ? 'Generating GST Invoice...' : 'Generate / Refresh Shift Invoice'}
+                variant="outline"
+                size="sm"
+                disabled={generatingInvoice}
+                onPress={handleGenerateInvoice}
+              />
+            </View>
+          )}
         </Card>
 
         {/* Live Crew Roster */}

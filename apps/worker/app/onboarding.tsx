@@ -17,6 +17,7 @@ import {
   updateWorkerProfile,
   updateUserProfile,
   submitVerificationCaseSafe,
+  uploadVerificationDocument,
   isValidIndianUpiId,
 } from '@opskil/shared';
 
@@ -115,6 +116,8 @@ export default function WorkerOnboardingScreen() {
         profileCompletionStatus: 'completed',
       });
 
+      let kycSubmitted = false;
+
       // Submit KYC document for review if provided
       if (documentNumber.trim()) {
         const cleanDoc = documentNumber.trim().toUpperCase();
@@ -122,19 +125,40 @@ export default function WorkerOnboardingScreen() {
           ? `XXXX-XXXX-${cleanDoc.slice(-4)}`
           : `${cleanDoc.slice(0, 5)}****${cleanDoc.slice(-1)}`;
 
-        await submitVerificationCaseSafe(
+        // Upload verification document to private storage bucket
+        const docPayload = `KYC_EVIDENCE_${documentType.toUpperCase()}_${masked}_${userId}_${Date.now()}`;
+        const uploadRes = await uploadVerificationDocument(
+          userId,
+          documentType,
+          docPayload,
+          'application/pdf'
+        );
+
+        if (!uploadRes.success || !uploadRes.storagePath) {
+          throw new Error(uploadRes.error || 'Failed to upload verification document to secure storage. Please retry.');
+        }
+
+        const verifyRes = await submitVerificationCaseSafe(
           documentType,
           masked,
-          `${userId}/kyc_${documentType}_${Date.now()}.pdf`
-        ).catch(() => {});
+          uploadRes.storagePath
+        );
+
+        if (!verifyRes.success) {
+          throw new Error(verifyRes.error || 'Verification case registration failed. Please check details and retry.');
+        }
+
+        kycSubmitted = true;
       }
 
       await refreshProfile();
 
       const target = redirect || '/(tabs)';
       Alert.alert(
-        'Profile Completed',
-        'Your worker profile is ready. You can now browse verified event shifts across Mumbai.',
+        kycSubmitted ? 'Profile & Verification Submitted' : 'Profile Completed',
+        kycSubmitted
+          ? 'Your worker profile is ready and your ID verification document has been queued for review. You can now browse verified event shifts across Mumbai.'
+          : 'Your worker profile is ready. You can now browse verified event shifts across Mumbai.',
         [
           {
             text: target === '/(tabs)' ? 'Browse Shifts' : 'Continue',
