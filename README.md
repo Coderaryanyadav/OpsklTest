@@ -7,6 +7,7 @@ The product architecture comprises three client applications and shared packages
 2. **Opskl Organizer (`apps/organizer`)** — Native iOS and Android mobile app built for event managers (shift posting, explicit crew vetting, real-time on-site attendance).
 3. **Opskl Admin (`apps/admin`)** — Next.js 15+ web dashboard for platform governance, KYC review, audit trails, and escrow settlement monitoring.
 4. **Shared Packages (`packages/`)** — `@opskil/shared` (domain types, Zod validation schemas, INR/IST formatters) and `@opskil/design-system` (theme tokens, mobile UI components).
+Aryan add
 
 ---
 
