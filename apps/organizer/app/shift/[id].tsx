@@ -116,7 +116,7 @@ export default function OrganizerShiftDetailScreen() {
       const [jobData, crewData, appsData] = await Promise.all([
         fetchJobById(id),
         fetchJobBookings(id),
-        session?.user?.id ? fetchOrganizerApplications(session.user.id) : Promise.resolve([]),
+        session?.user?.id ? fetchOrganizerApplications(session.user.id, id) : Promise.resolve([]),
       ]);
 
       if (jobData) {
@@ -141,7 +141,10 @@ export default function OrganizerShiftDetailScreen() {
   }, [id, session?.user?.id]);
 
   const handleConfirmReplacement = async (workerId: string, workerName: string) => {
-    if (!session?.user?.id || !id) return;
+    if (!session?.user?.id || !id) {
+      Alert.alert('Sign In Required', 'Please sign in with your organizer account to confirm candidate bookings.');
+      return;
+    }
     Alert.alert(
       'Confirm Standby Replacement',
       `Confirm ${workerName} for this shift? This will reserve their spot and provision an on-site attendance pass.`,
@@ -157,7 +160,7 @@ export default function OrganizerShiftDetailScreen() {
               Alert.alert('Worker Confirmed', `${workerName} has been booked and notified.`);
               loadShiftData();
             } else {
-              Alert.alert('Booking Error', res.error || 'Failed to confirm standby replacement.');
+              Alert.alert('Booking Error', res.error || 'Failed to confirm standby replacement. Please ensure the candidate has an active application and you are authorized for this shift.');
             }
           },
         },

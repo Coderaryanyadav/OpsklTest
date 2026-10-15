@@ -711,22 +711,61 @@ export async function fetchOrganizerApplications(
         avatar_url
       )
     `)
-    .eq('jobs.organizer_id', organizerId)
     .order('applied_at', { ascending: false });
 
   if (jobId) {
     query = query.eq('job_id', jobId);
+  } else {
+    query = query.eq('jobs.organizer_id', organizerId);
   }
 
   const { data, error } = await query;
 
-  if (error) {
+  let rawList: any[] = data || [];
+
+  // Fallback to RPC if direct query returns empty (e.g. co-host organizer or team member)
+  if (rawList.length === 0) {
+    const { data: rpcRows, error: rpcErr } = await supabase.rpc('get_organizer_applications_safe', {
+      p_organizer_id: organizerId || null,
+      p_job_id: jobId || null,
+    });
+    if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length > 0) {
+      rawList = rpcRows.map((r: any) => ({
+        id: r.id,
+        job_id: r.job_id,
+        worker_id: r.worker_id,
+        status: r.status,
+        applied_at: r.applied_at,
+        notes: r.notes,
+        jobs: {
+          id: r.job_id,
+          title: r.job_title,
+          organizer_id: r.job_organizer_id,
+          date: r.job_date,
+          start_time: r.job_start_time,
+          end_time: r.job_end_time,
+          hourly_rate: r.job_hourly_rate,
+          total_pay: r.job_total_pay,
+          slots_total: r.job_slots_total,
+          slots_filled: r.job_slots_filled,
+        },
+        profiles: {
+          id: r.worker_id,
+          full_name: r.worker_full_name,
+          phone: r.worker_phone,
+          avatar_url: r.worker_avatar_url,
+        },
+      }));
+    }
+  }
+
+  if (error && rawList.length === 0) {
     logger.error('Failed to fetch organizer applications', error);
     return [];
   }
 
   const workerIds = Array.from(
-    new Set((data || []).map((row: any) => row.worker_id).filter(Boolean))
+    new Set((rawList || []).map((row: any) => row.worker_id).filter(Boolean))
   );
   const workerProfilesMap = new Map<string, any>();
   if (workerIds.length > 0) {
@@ -741,7 +780,7 @@ export async function fetchOrganizerApplications(
     }
   }
 
-  return (data || []).map((row: any) => {
+  return (rawList || []).map((row: any) => {
     const wap = workerProfilesMap.get(row.worker_id) || {};
     const prof = row.profiles;
     return {

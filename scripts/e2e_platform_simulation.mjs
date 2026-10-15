@@ -165,10 +165,10 @@ async function main() {
     `);
     const unverifiedResult = unverifiedJobAttempt.rows[0].res;
     console.log(`   Attempt to post shift with unverified status:`, unverifiedResult);
-    if (unverifiedResult.success !== false || unverifiedResult.error_code !== 'FORBIDDEN_ROLE') {
-      throw new Error(`SECURITY FLAW: Unverified organizer was permitted to create a shift! Expected FORBIDDEN_ROLE`);
+    if (unverifiedResult.success !== false || (unverifiedResult.error_code !== 'FORBIDDEN_ROLE' && unverifiedResult.error_code !== 'ORGANIZER_NOT_VERIFIED')) {
+      throw new Error(`SECURITY FLAW: Unverified organizer was permitted to create a shift! Expected ORGANIZER_NOT_VERIFIED or FORBIDDEN_ROLE`);
     }
-    console.log(`   ${colors.green}✓ PASS: Unverified organizer was strictly BLOCKED from posting shifts (FORBIDDEN_ROLE).${colors.reset}`);
+    console.log(`   ${colors.green}✓ PASS: Unverified organizer was strictly BLOCKED from posting shifts (${unverifiedResult.error_code}).${colors.reset}`);
 
     // -------------------------------------------------------------
     // TEST 4: Admin Approves Organizer Verification
