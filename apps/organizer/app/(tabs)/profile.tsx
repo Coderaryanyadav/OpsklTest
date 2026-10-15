@@ -344,18 +344,22 @@ export default function OrganizerProfileScreen() {
               </View>
 
               <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', gap: spacing.sm }}>
-                <Button
-                  title="Edit Profile"
-                  variant="primary"
-                  size="sm"
-                  onPress={handleOpenEdit}
-                />
-                <Button
-                  title="View Invoices"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => router.push('/(tabs)/finances')}
-                />
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="Edit Profile"
+                    variant="primary"
+                    size="sm"
+                    onPress={handleOpenEdit}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="View Invoices"
+                    variant="outline"
+                    size="sm"
+                    onPress={() => router.push('/(tabs)/finances')}
+                  />
+                </View>
               </View>
             </Card>
 

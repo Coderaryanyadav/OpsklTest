@@ -533,7 +533,7 @@ export default function WorkerDiscoverScreen() {
                         ({formatINR(shift.hourlyRate)}/hr • {shift.durationHours}h)
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700', marginTop: 2 }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600', marginTop: 2 }}>
                       ✓ UPI payout on verified attendance sign-off
                     </Text>
                   </View>

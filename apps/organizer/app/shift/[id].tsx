@@ -49,7 +49,7 @@ import { Star, CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -415,7 +415,7 @@ export default function OrganizerShiftDetailScreen() {
     }
 
     setActionBusy(true);
-    const res = await cancelBookingSafe(cancelBooking.id, cancelReason.trim());
+    const res = await cancelBookingSafe(cancelBooking.id, cancelReason.trim(), session?.user?.id || user?.id);
     setActionBusy(false);
 
     if (res.success) {

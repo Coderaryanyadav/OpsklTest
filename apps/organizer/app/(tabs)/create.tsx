@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Pressable,
-  Alert,
   StyleSheet,
   Switch,
 } from 'react-native';
@@ -18,6 +17,7 @@ import {
   WageText,
   KeyboardAwareContainer,
   useAuth,
+  OpsklAlert as Alert,
 } from '@opskil/design-system';
 import {
   ShiftCategory,
@@ -26,6 +26,7 @@ import {
   createJobSafe,
   calculateJobFinancials,
   universalStorage,
+  supabase,
 } from '@opskil/shared';
 import { ShiftCreateSchema } from '@opskil/validation';
 import {
@@ -75,11 +76,12 @@ const WIZARD_STEPS = [
 
 export default function OrganizerCreateShiftScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { colors, spacing, typography } = useOpsklTheme();
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Step 1: Role & Category
   const [title, setTitle] = useState('');
@@ -164,40 +166,57 @@ export default function OrganizerCreateShiftScreen() {
   }, []);
 
   const validateStep = (currentStep: number): boolean => {
+    setSubmitError(null);
     if (currentStep === 1) {
-      if (title.trim().length < 5) {
-        Alert.alert('Validation Error', 'Shift title must be at least 5 characters long.');
+      if (title.trim().length < 3) {
+        const msg = 'Shift title must be at least 3 characters long.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
       if (parsedSlots < 1) {
-        Alert.alert('Validation Error', 'Headcount must be at least 1 worker.');
+        const msg = 'Headcount must be at least 1 worker.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 2) {
       if (date < todayStr) {
-        Alert.alert('Validation Error', 'Shift date cannot be in the past. Please select today or a future date in IST.');
+        const msg = 'Shift date cannot be in the past. Please select today or a future date in IST.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
       if (!venueName.trim() || !venueAddress.trim()) {
-        Alert.alert('Validation Error', 'Please specify both venue name and full address.');
+        const msg = 'Please specify both venue name and full address.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
       if (parsedHours <= 0) {
-        Alert.alert('Validation Error', 'Duration hours must be greater than 0.');
+        const msg = 'Duration hours must be greater than 0.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
       if (!supervisorName.trim() || !supervisorPhone.trim()) {
-        Alert.alert('Validation Error', 'On-site supervisor contact information is required.');
+        const msg = 'On-site supervisor contact information is required.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 3) {
-      if (duties.trim().length < 10) {
-        Alert.alert('Validation Error', 'Please list shift duties with at least 10 characters.');
+      if (duties.trim().length < 3) {
+        const msg = 'Please list shift duties with at least 3 characters.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 4) {
       if (parsedRate < 100) {
-        Alert.alert('Validation Error', 'Minimum wage is ₹100 per hour.');
+        const msg = 'Minimum wage is ₹100 per hour.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
         return false;
       }
     }
@@ -215,6 +234,7 @@ export default function OrganizerCreateShiftScreen() {
   };
 
   const handleSubmit = async (status: 'open' | 'draft') => {
+    setSubmitError(null);
     if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
       return;
     }
@@ -252,7 +272,7 @@ export default function OrganizerCreateShiftScreen() {
       hourlyRate: parsedRate,
       slotsTotal: parsedSlots,
       dressCode,
-      duties: dutiesArray,
+      duties: dutiesArray.length > 0 ? dutiesArray : [duties.trim()],
       requiredSkills: skillsArray,
       eligibilityCriteria,
       breaksMinutes: parseInt(breaksMinutes, 10) || 30,
@@ -270,38 +290,23 @@ export default function OrganizerCreateShiftScreen() {
     if (!validationResult.success) {
       setSubmitting(false);
       const issue = validationResult.error.issues[0]?.message || 'Validation failed';
+      setSubmitError(issue);
       Alert.alert('Validation Error', issue);
       return;
     }
 
-    const organizerId = session?.user?.id;
+    let organizerId = session?.user?.id || user?.id;
     if (!organizerId) {
-      setSubmitting(false);
       try {
-        await universalStorage.setItem(
-          '@opskil_organizer_shift_draft',
-          JSON.stringify({
-            title, category, slotsTotal, date, startTime, endTime, durationHours,
-            venueName, venueAddress, landmark, zone, reportingInstructions,
-            supervisorName, supervisorPhone, duties, requiredSkills,
-            eligibilityCriteria, dressCode, hourlyRate, breaksMinutes,
-            mealProvided, transportProvided, overtimePolicy, cancellationPolicy,
-          })
-        );
+        const { data: sessData } = await supabase.auth.getSession();
+        organizerId = sessData?.session?.user?.id;
       } catch {
-        // Non-critical
+        // Fallback
       }
-      Alert.alert(
-        'Sign In Required',
-        'You must be signed in with an active organizer account to create or publish a shift. Your shift draft has been saved and will be restored when you sign in.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Sign In',
-            onPress: () => router.push('/auth/login?redirect=/(tabs)/create' as any),
-          },
-        ]
-      );
+    }
+    if (!organizerId) {
+      setSubmitError('Please sign in with a verified organizer account before publishing shifts.');
+      setSubmitting(false);
       return;
     }
 
@@ -333,18 +338,26 @@ export default function OrganizerCreateShiftScreen() {
           },
         ]
       );
+      // Fallback redirect after 1.5s
+      setTimeout(() => {
+        router.replace('/(tabs)' as any);
+      }, 1500);
     } else {
       if (result.errorCode === 'ORGANIZER_NOT_VERIFIED') {
+        const msg = 'Only verified business hosts can post live shifts. Please visit Profile > Billing & Tax Compliance to submit your GSTIN or business ID for verification.';
+        setSubmitError(msg);
         Alert.alert(
           'Verification Required',
-          'Only verified business hosts can post live shifts. Please visit Profile > Billing & Tax Compliance to submit your GSTIN or business ID for verification.',
+          msg,
           [
             { text: 'Later', style: 'cancel' },
             { text: 'Go to Profile', onPress: () => router.push('/(tabs)/profile' as any) },
           ]
         );
       } else {
-        Alert.alert('Submission Error', result.error || 'Failed to create shift.');
+        const msg = result.error || 'Failed to create shift.';
+        setSubmitError(msg);
+        Alert.alert('Submission Error', msg);
       }
     }
   };
@@ -856,6 +869,22 @@ export default function OrganizerCreateShiftScreen() {
                 👔 Dress Code: {dressCode}
               </Text>
             </Card>
+
+            {submitError ? (
+              <Card
+                variant="outlined"
+                style={{
+                  backgroundColor: '#111111',
+                  borderColor: '#FFFFFF',
+                  padding: 14,
+                  marginTop: spacing.sm,
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                  ⚠️ {submitError}
+                </Text>
+              </Card>
+            ) : null}
           </View>
         )}
       </KeyboardAwareContainer>

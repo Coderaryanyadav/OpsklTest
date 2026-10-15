@@ -5,7 +5,6 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
-  Alert,
   StyleSheet,
   Modal,
   Linking,
@@ -24,6 +23,7 @@ import {
   Input,
   ShiftCardSkeleton,
   useAuth,
+  OpsklAlert as Alert,
 } from '@opskil/design-system';
 import {
   Booking,
@@ -67,7 +67,7 @@ type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
 export default function WorkerMyShiftsScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -430,7 +430,7 @@ export default function WorkerMyShiftsScreen() {
     }
 
     setSubmittingModal(true);
-    const res = await cancelBookingSafe(cancelBookingId, cancelReason.trim());
+    const res = await cancelBookingSafe(cancelBookingId, cancelReason.trim(), user?.id);
     setSubmittingModal(false);
 
     if (res.success) {

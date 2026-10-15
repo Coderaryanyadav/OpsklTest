@@ -31,7 +31,7 @@ export function CardActionControls({
           styles.actionButton,
           styles.smallButton,
           {
-            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+            backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF',
             borderColor: colors.border,
             opacity: !canUndo || disabled ? 0.35 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
@@ -41,7 +41,7 @@ export function CardActionControls({
         accessibilityLabel="Undo last skipped shift"
         accessibilityState={{ disabled: !canUndo || disabled }}
       >
-        <RotateCcw size={18} color={colors.textSecondary} strokeWidth={2.2} />
+        <RotateCcw size={18} color={colors.textPrimary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Pass Button (Swipe Left equivalent) */}
@@ -53,8 +53,8 @@ export function CardActionControls({
           styles.mainButton,
           styles.passButton,
           {
-            backgroundColor: isDark ? '#2D1B1B' : '#FEF2F2',
-            borderColor: '#EF4444',
+            backgroundColor: isDark ? '#141414' : '#FFFFFF',
+            borderColor: isDark ? '#333333' : '#000000',
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
           },
@@ -62,8 +62,8 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="Pass on this shift (Skip left)"
       >
-        <X size={18} color="#EF4444" strokeWidth={2.6} />
-        <Text style={styles.passLabelText}>Pass</Text>
+        <X size={18} color={colors.textPrimary} strokeWidth={2.4} />
+        <Text style={[styles.passLabelText, { color: colors.textPrimary }]}>Pass</Text>
       </Pressable>
 
       {/* Details Button */}
@@ -74,7 +74,7 @@ export function CardActionControls({
           styles.actionButton,
           styles.smallButton,
           {
-            backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+            backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF',
             borderColor: colors.border,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
@@ -83,7 +83,7 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="View full shift details"
       >
-        <Info size={18} color={colors.textSecondary} strokeWidth={2.2} />
+        <Info size={18} color={colors.textPrimary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Apply Button (Swipe Right equivalent) */}
@@ -104,8 +104,8 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="Apply for this shift (Express interest)"
       >
-        <Check size={18} color="#FFFFFF" strokeWidth={2.6} />
-        <Text style={styles.applyLabelText}>Apply</Text>
+        <Check size={18} color={colors.textInverse} strokeWidth={2.6} />
+        <Text style={[styles.applyLabelText, { color: colors.textInverse }]}>Apply</Text>
       </Pressable>
     </View>
   );
@@ -145,12 +145,10 @@ const styles = StyleSheet.create({
   },
   passButton: {},
   passIconText: {
-    color: '#EF4444',
     fontSize: 20,
     fontWeight: '900',
   },
   passLabelText: {
-    color: '#EF4444',
     fontSize: 15,
     fontWeight: '800',
   },
@@ -161,7 +159,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   applyLabelText: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
   },

@@ -564,9 +564,19 @@ export async function createJobSafe(
   logger.info('Organizer creating new shift listing', { organizerId, title: job.title });
 
   try {
+    const resolvedOrganizerId = organizerId || (await supabase.auth.getSession()).data.session?.user?.id;
+    if (!resolvedOrganizerId) {
+      return {
+        success: false,
+        error: 'Please sign in to publish shifts.',
+        errorCode: 'UNAUTHENTICATED',
+      };
+    }
+
     // 1. Invoke atomic RPC function if available
     const { data: rpcData, error: rpcError } = await supabase.rpc('create_job_safe', {
       p_job: {
+        organizer_id: resolvedOrganizerId,
         title: job.title,
         category: job.category,
         venue_name: job.venueName,
@@ -1238,12 +1248,14 @@ export async function completeShiftAndApproveAttendance(
  */
 export async function cancelBookingSafe(
   bookingId: string,
-  reason: string
+  reason: string,
+  userId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('cancel_booking_safe', {
       p_booking_id: bookingId,
       p_reason: reason,
+      p_user_id: userId ?? null,
     });
 
     if (!rpcError && rpcData) {

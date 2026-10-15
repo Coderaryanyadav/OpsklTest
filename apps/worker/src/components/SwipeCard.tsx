@@ -272,9 +272,9 @@ export function SwipeCard({
                 </Text>
               </View>
             </View>
-            <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5' }]}>
-              <Zap size={12} color={colors.success} strokeWidth={2.5} style={{ marginRight: 4 }} />
-              <Text style={[styles.upiGuaranteeText, { color: colors.success }]}>
+            <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#141414' : '#F5F5F5', borderColor: colors.border, borderWidth: 1 }]}>
+              <Zap size={12} color={colors.textPrimary} strokeWidth={2.2} style={{ marginRight: 4 }} />
+              <Text style={[styles.upiGuaranteeText, { color: colors.textPrimary }]}>
                 UPI on verified checkout
               </Text>
             </View>
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '14deg' }],
   },
   badgePillSuccess: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#000000',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
   badgePillPass: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#000000',
     elevation: 6,
     shadowColor: '#000',
     shadowOpacity: 0.25,
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   badgePillTextPass: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontWeight: '900',
     fontSize: 16,
     letterSpacing: 1.2,
