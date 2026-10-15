@@ -18,6 +18,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm --workspace=@opskil/shared test && npm --workspace=@opskil/validation test && npm --workspace=@opskil/worker test && npm --workspace=@opskil/organizer test",
     "test:brutal": "npm --workspace=@opskil/shared test -- packages/shared/src/__tests__/brutal_platform_verification.test.ts",
+    "test:sql": "node scripts/test_sql_integration.mjs",
     "test:e2e:admin": "npm --workspace=@opskil/admin run test:e2e",
     "lint": "npm run lint --workspaces --if-present"
   },
