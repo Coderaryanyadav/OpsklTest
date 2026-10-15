@@ -425,15 +425,15 @@ export async function fetchAdminOverviewMetricsSafe(): Promise<AdminOverviewMetr
     }
     const row = data[0];
     return {
+      activeShifts: Number(row.active_shifts || 0),
       totalEscrowHeld: Number(row.escrow_held_inr || 0),
-      settledPayouts: Number(row.gmv_inr || 0),
+      settledPayoutsTotal: Number(row.gmv_inr || 0),
       platformFeesCollected: Number(row.platform_fees_inr || 0),
-      activeShiftsCount: Number(row.active_shifts || 0),
       verifiedWorkersCount: Number(row.total_workers || 0),
       activeOrganizersCount: 0,
       pendingVerificationsCount: Number(row.pending_verifications || 0),
       openDisputesCount: Number(row.open_disputes || 0),
-      openSafetyReportsCount: Number(row.open_safety_reports || 0),
+      criticalSafetyReportsCount: Number(row.open_safety_reports || 0),
     };
   } catch (err) {
     logger.error('Exception calling get_admin_overview_metrics RPC', err);

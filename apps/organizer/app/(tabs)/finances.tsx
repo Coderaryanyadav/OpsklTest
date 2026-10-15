@@ -850,7 +850,7 @@ export default function OrganizerFinancesScreen() {
                           {j.title}
                         </Text>
                         <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                          {j.date} • {j.slotsCount} workers • {formatINR(j.wagePerHour)}/hr
+                          {j.date} • {j.slotsTotal} workers • {formatINR(j.hourlyRate)}/hr
                         </Text>
                       </View>
                       <Badge label={j.status.toUpperCase()} variant="neutral" size="sm" />
