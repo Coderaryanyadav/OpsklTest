@@ -71,8 +71,9 @@ function RootNavigator() {
           return;
         }
 
-        // Case 3: Authenticated user with completed profile visiting welcome or login
-        if (session && authState === 'READY' && (topSegment === 'welcome' || topSegment === 'auth')) {
+        // Case 3: Authenticated user with completed profile (or under review) visiting welcome or login
+        const isAccessReady = authState === 'READY' || authState === 'VERIFICATION_PENDING' || authState === 'VERIFICATION_ACTION_REQUIRED';
+        if (session && isAccessReady && (topSegment === 'welcome' || topSegment === 'auth')) {
           router.replace('/(tabs)' as any);
           return;
         }

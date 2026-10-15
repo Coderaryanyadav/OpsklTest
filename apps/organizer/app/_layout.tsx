@@ -62,7 +62,8 @@ function RootNavigator() {
         }
 
         // Case 2: Authenticated organizer on welcome or login screen
-        if (session && authState === 'READY' && (topSegment === 'welcome' || topSegment === 'auth')) {
+        const isAccessReady = authState === 'READY' || authState === 'VERIFICATION_PENDING' || authState === 'VERIFICATION_ACTION_REQUIRED';
+        if (session && isAccessReady && (topSegment === 'welcome' || topSegment === 'auth')) {
           router.replace('/(tabs)' as any);
           return;
         }
