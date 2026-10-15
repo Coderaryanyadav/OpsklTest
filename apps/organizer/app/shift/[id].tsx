@@ -19,6 +19,7 @@ import {
   WageText,
   Input,
   EmptyState,
+  useAuth,
 } from '@opskil/design-system';
 import {
   Booking,
@@ -39,6 +40,7 @@ import { Star, CheckCircle2, Users } from 'lucide-react-native';
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useAuth();
   const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -122,6 +124,13 @@ export default function OrganizerShiftDetailScreen() {
    * Supervisor Check-In Verification
    */
   const handleVerifyCheckIn = (booking: Booking) => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign In Required', 'Please sign in with your organizer account to manage crew attendance.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any) },
+      ]);
+      return;
+    }
     setCheckInBooking(booking);
     setManualCode(booking.checkInCode || '');
     setCheckInError(null);
@@ -159,6 +168,13 @@ export default function OrganizerShiftDetailScreen() {
    * Supervisor Record Check-Out
    */
   const handleRecordCheckOut = async (booking: Booking) => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign In Required', 'Please sign in with your organizer account to manage crew attendance.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any) },
+      ]);
+      return;
+    }
     const workerName = booking.worker?.profile?.fullName || 'Worker';
     Alert.alert(
       'Record Shift Check-Out',
@@ -191,6 +207,13 @@ export default function OrganizerShiftDetailScreen() {
    * Supervisor Approve Attendance & Payout Sign-Off
    */
   const handleApproveAttendance = async (booking: Booking) => {
+    if (!session?.user?.id) {
+      Alert.alert('Sign In Required', 'Please sign in with your organizer account to authorize wage payouts.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any) },
+      ]);
+      return;
+    }
     const workerName = booking.worker?.profile?.fullName || 'Worker';
     Alert.alert(
       'Approve Attendance & Authorize Payout',
@@ -282,6 +305,35 @@ export default function OrganizerShiftDetailScreen() {
       />
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        {!session?.user?.id && (
+          <Card
+            variant="outlined"
+            style={{
+              padding: spacing.md,
+              borderColor: colors.borderFocus,
+              backgroundColor: colors.surfaceMuted,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flex: 1, marginRight: spacing.md }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  Guest Console Preview
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  Sign in with your organizer account to verify crew arrivals, record departures, and approve attendance payouts.
+                </Text>
+              </View>
+              <Button
+                title="Sign In"
+                variant="primary"
+                size="sm"
+                fullWidth={false}
+                onPress={() => router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any)}
+              />
+            </View>
+          </Card>
+        )}
+
         {/* Attendance Summary Banner */}
         <Card variant="elevated">
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

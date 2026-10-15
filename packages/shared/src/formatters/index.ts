@@ -11,6 +11,12 @@ export function formatINR(amount: number | null | undefined): string {
     return '₹0';
   }
   const rounded = Math.round(amount);
+  if (rounded < 0) {
+    const formatted = new Intl.NumberFormat('en-IN', {
+      maximumFractionDigits: 0,
+    }).format(Math.abs(rounded));
+    return `-₹${formatted}`;
+  }
   const formatted = new Intl.NumberFormat('en-IN', {
     maximumFractionDigits: 0,
   }).format(rounded);
@@ -127,9 +133,9 @@ export function calculateDistanceKm(
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
   return Math.round(distance * 10) / 10;

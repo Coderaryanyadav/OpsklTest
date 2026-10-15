@@ -54,7 +54,6 @@ export default function WorkerProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/auth/login');
         },
       },
     ]);
@@ -84,7 +83,6 @@ export default function WorkerProfileScreen() {
               'Account Deactivated',
               'Your account has been deactivated and queued for permanent data purge in 30 days.'
             );
-            router.replace('/auth/login');
           },
         },
       ]

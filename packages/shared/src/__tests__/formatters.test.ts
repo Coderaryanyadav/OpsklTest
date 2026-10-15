@@ -12,6 +12,7 @@ describe('Opskl Shared Formatters & Validators', () => {
     expect(formatINR(1500)).toBe('₹1,500');
     expect(formatINR(125000)).toBe('₹1,25,000');
     expect(formatINR(0)).toBe('₹0');
+    expect(formatINR(-500)).toBe('-₹500');
   });
 
   test('formats wage breakdown correctly', () => {

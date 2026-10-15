@@ -222,7 +222,7 @@ export default function OrganizerNotificationsScreen() {
             title="Sign In Required"
             description="Please sign in to view your organizer crew alerts and shift notifications."
             actionLabel="Sign In"
-            onAction={() => router.push('/auth/login')}
+            onAction={() => router.push('/auth/login?redirect=/notifications' as any)}
           />
         </View>
       ) : loading ? (

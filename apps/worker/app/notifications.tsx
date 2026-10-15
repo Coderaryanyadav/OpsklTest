@@ -222,7 +222,7 @@ export default function WorkerNotificationsScreen() {
             title="Sign In Required"
             description="Please sign in to view your shift notifications and updates."
             actionLabel="Sign In"
-            onAction={() => router.push('/auth/login')}
+            onAction={() => router.push('/auth/login?redirect=/notifications' as any)}
           />
         </View>
       ) : loading ? (

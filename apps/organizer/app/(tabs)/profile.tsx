@@ -108,7 +108,6 @@ export default function OrganizerProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/auth/login');
         },
       },
     ]);
@@ -138,7 +137,6 @@ export default function OrganizerProfileScreen() {
               'Account Deactivated',
               'Your organization account has been deactivated and queued for permanent data purge in 30 days.'
             );
-            router.replace('/auth/login');
           },
         },
       ]

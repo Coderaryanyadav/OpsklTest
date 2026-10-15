@@ -19,6 +19,16 @@ export interface RazorpayConfig {
   accountNumber?: string; // RazorpayX virtual account for payouts
 }
 
+function safeBase64Encode(value: string): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(value).toString('base64');
+  }
+  if (typeof btoa === 'function') {
+    return btoa(value);
+  }
+  return '';
+}
+
 /**
  * Production-ready Razorpay Route / RazorpayX Payouts Provider Adapter
  * 
@@ -68,7 +78,7 @@ export class RazorpayPaymentProvider implements PaymentProvider {
       // Authorization: Basic base64(keyId:keySecret)
       // Body: { amount: amountInPaise, currency: "INR", receipt: params.receiptInvoiceNumber }
       const amountInPaise = Math.round(params.amountInr * 100);
-      const authHeader = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+      const authHeader = safeBase64Encode(`${this.keyId}:${this.keySecret}`);
 
       const response = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',
@@ -146,7 +156,7 @@ export class RazorpayPaymentProvider implements PaymentProvider {
     try {
       // POST https://api.razorpay.com/v1/payouts
       const amountInPaise = Math.round(params.amountInr * 100);
-      const authHeader = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+      const authHeader = safeBase64Encode(`${this.keyId}:${this.keySecret}`);
 
       const response = await fetch('https://api.razorpay.com/v1/payouts', {
         method: 'POST',
@@ -202,7 +212,7 @@ export class RazorpayPaymentProvider implements PaymentProvider {
   }
 
   public async getPayoutStatus(payoutId: string): Promise<PayoutStatusResult> {
-    const authHeader = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    const authHeader = safeBase64Encode(`${this.keyId}:${this.keySecret}`);
     const response = await fetch(`https://api.razorpay.com/v1/payouts/${payoutId}`, {
       headers: {
         Authorization: `Basic ${authHeader}`,
@@ -227,7 +237,7 @@ export class RazorpayPaymentProvider implements PaymentProvider {
   }
 
   public async refundEscrow(params: RefundParams): Promise<RefundResult> {
-    const authHeader = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+    const authHeader = safeBase64Encode(`${this.keyId}:${this.keySecret}`);
     const response = await fetch(`https://api.razorpay.com/v1/payments/${params.paymentId}/refund`, {
       method: 'POST',
       headers: {

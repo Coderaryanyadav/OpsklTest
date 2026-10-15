@@ -86,6 +86,7 @@ export const Input: React.FC<InputProps> = ({
               color: colors.textPrimary,
               fontSize: typography.body.fontSize,
               paddingVertical: spacing.sm,
+              textAlignVertical: rest.multiline ? 'top' : 'center',
             },
             style,
           ]}

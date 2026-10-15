@@ -175,7 +175,9 @@ export default function WorkerDiscoverScreen() {
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
             <AlertTriangle size={18} color="#DC2626" strokeWidth={2.2} style={{ marginTop: 2 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.failedBannerTitle}>Application Incomplete</Text>
+              <Text style={styles.failedBannerTitle}>
+                {failedApplication.errorCode === 'AUTH_REQUIRED' ? 'Sign In Required' : 'Application Incomplete'}
+              </Text>
               <Text style={styles.failedBannerText}>
                 {failedApplication.errorMessage}
               </Text>
@@ -188,16 +190,31 @@ export default function WorkerDiscoverScreen() {
               accessibilityRole="button"
               accessibilityLabel="Restore card to deck"
             >
-              <Text style={styles.restoreBtnText}>Restore Card</Text>
+              <Text style={styles.restoreBtnText}>Restore</Text>
             </Pressable>
-            <Pressable
-              onPress={onRetryFailedApplication}
-              style={[styles.bannerBtn, styles.retryBtn]}
-              accessibilityRole="button"
-              accessibilityLabel="Retry application submission"
-            >
-              <Text style={styles.retryBtnText}>Retry</Text>
-            </Pressable>
+            {failedApplication.errorCode === 'AUTH_REQUIRED' ? (
+              <Pressable
+                onPress={() => {
+                  const targetJobId = failedApplication.job.id;
+                  onRestoreFailedCard();
+                  router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${targetJobId}`)}` as any);
+                }}
+                style={[styles.bannerBtn, { backgroundColor: colors.primary }]}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in to apply"
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>Sign In</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={onRetryFailedApplication}
+                style={[styles.bannerBtn, styles.retryBtn]}
+                accessibilityRole="button"
+                accessibilityLabel="Retry application submission"
+              >
+                <Text style={styles.retryBtnText}>Retry</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       )}
