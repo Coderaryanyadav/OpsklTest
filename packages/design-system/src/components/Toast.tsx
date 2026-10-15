@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, StyleProp, ViewStyle, Platform } from 'react-native';
 import { spacing } from '../tokens/spacing';
 import { useOpsklTheme } from '../context/ThemeContext';
 
@@ -39,12 +39,12 @@ export const Toast: React.FC<ToastProps> = ({
         Animated.timing(opacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(translateY, {
           toValue: 0,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start();
 
@@ -58,12 +58,12 @@ export const Toast: React.FC<ToastProps> = ({
         Animated.timing(opacity, {
           toValue: 0,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(translateY, {
           toValue: -20,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start();
     }
@@ -78,12 +78,12 @@ export const Toast: React.FC<ToastProps> = ({
       Animated.timing(opacity, {
         toValue: 0,
         duration: 150,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(translateY, {
         toValue: -20,
         duration: 150,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start(() => {
       onDismiss();

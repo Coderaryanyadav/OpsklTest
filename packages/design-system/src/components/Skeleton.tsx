@@ -5,6 +5,7 @@ import {
   StyleProp,
   StyleSheet,
   AccessibilityInfo,
+  Platform,
 } from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
@@ -46,12 +47,12 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           Animated.timing(opacityAnim, {
             toValue: 0.85,
             duration: 800,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
           Animated.timing(opacityAnim, {
             toValue: 0.35,
             duration: 800,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
         ])
       );

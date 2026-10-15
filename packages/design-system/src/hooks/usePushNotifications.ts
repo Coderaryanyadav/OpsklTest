@@ -6,31 +6,33 @@ let Notifications: any = null;
 let Device: any = null;
 let Constants: any = null;
 
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Notifications = require('expo-notifications');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Device = require('expo-device');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Constants = require('expo-constants').default || require('expo-constants');
+if (Platform.OS !== 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Notifications = require('expo-notifications');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Device = require('expo-device');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Constants = require('expo-constants').default || require('expo-constants');
 
-  // Configure foreground notification presentation handler
-  if (Notifications && typeof Notifications.setNotificationHandler === 'function') {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
+    // Configure foreground notification presentation handler on native platforms
+    if (Notifications && typeof Notifications.setNotificationHandler === 'function') {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        }),
+      });
+    }
+  } catch {
+    // Gracefully handle test environments where native expo modules are not loaded
+    Notifications = null;
+    Device = null;
+    Constants = null;
   }
-} catch {
-  // Gracefully handle web or test environments where native expo modules are not loaded
-  Notifications = null;
-  Device = null;
-  Constants = null;
 }
 
 export interface UsePushNotificationsResult {
