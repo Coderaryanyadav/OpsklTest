@@ -172,9 +172,28 @@ export default function OrganizerShiftDetailScreen() {
       setCheckInError('Please enter the verification pass code presented by the worker.');
       return;
     }
+    let finalCode = codeToVerify;
+    if (codeToVerify.startsWith('OP-ATT:')) {
+      const parts = codeToVerify.split(':');
+      if (parts.length >= 4) {
+        const tokenBookingId = parts[1];
+        const tokenCode = parts[2];
+        const expirySec = parseInt(parts[3], 10);
+        if (tokenBookingId !== checkInBooking.id) {
+          setCheckInError('This attendance QR pass belongs to a different worker or booking.');
+          return;
+        }
+        if (Date.now() / 1000 > expirySec) {
+          setCheckInError('This attendance QR pass has expired (>60s). Please ask worker to refresh their token.');
+          return;
+        }
+        finalCode = tokenCode;
+      }
+    }
+
     setActionBusy(true);
     setCheckInError(null);
-    const res = await checkInWorkerSafe(checkInBooking.id, codeToVerify);
+    const res = await checkInWorkerSafe(checkInBooking.id, finalCode);
     setActionBusy(false);
     if (res.success) {
       setCrew((prev) =>

@@ -159,6 +159,31 @@ export async function resolveVerificationCaseSafe(
 }
 
 /**
+ * Generates an expiring signed URL to securely inspect verification evidence documents.
+ */
+export async function getVerificationDocumentSignedUrl(
+  storagePath: string,
+  expiresInSeconds: number = 300
+): Promise<{ signedUrl: string | null; error?: string }> {
+  try {
+    if (!storagePath) return { signedUrl: null, error: 'No storage path provided' };
+    const { data, error } = await getClient().storage
+      .from('verification-documents')
+      .createSignedUrl(storagePath, expiresInSeconds);
+
+    if (error) {
+      logger.error('Failed to generate signed document URL', error, { storagePath });
+      return { signedUrl: null, error: error.message };
+    }
+
+    return { signedUrl: data?.signedUrl || null };
+  } catch (err: any) {
+    logger.error('Exception in getVerificationDocumentSignedUrl', err);
+    return { signedUrl: null, error: err.message };
+  }
+}
+
+/**
  * Fetch disputes queue
  */
 export async function fetchDisputesQueue(): Promise<Dispute[]> {
@@ -220,6 +245,48 @@ export async function resolveDisputeSafe(
 
     return { success: Boolean(data?.success ?? true) };
   } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Submit an authenticated safety or SOS incident report
+ */
+export async function createSafetyReportSafe(report: {
+  reporterId: string;
+  reportedId?: string;
+  jobId?: string;
+  category: 'safety' | 'harassment' | 'wage_theft' | 'unsafe_conditions' | 'fraud' | 'other';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  evidenceUrls?: string[];
+}): Promise<{ success: boolean; reportId?: string; error?: string }> {
+  logger.warn('Submitting safety report incident', { reporterId: report.reporterId, category: report.category, severity: report.severity });
+
+  try {
+    const { data, error } = await getClient()
+      .from('safety_reports')
+      .insert({
+        reporter_id: report.reporterId,
+        reported_id: report.reportedId || null,
+        job_id: report.jobId || null,
+        category: report.category,
+        severity: report.severity,
+        description: report.description,
+        evidence_urls: report.evidenceUrls || [],
+        status: 'open',
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      logger.error('Failed to insert safety report', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, reportId: data?.id };
+  } catch (err: any) {
+    logger.error('Exception in createSafetyReportSafe', err);
     return { success: false, error: err.message };
   }
 }

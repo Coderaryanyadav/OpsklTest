@@ -121,7 +121,7 @@ const SUPABASE_URL =
       storage: universalStorage,
       autoRefreshToken: typeof window !== 'undefined' || (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative'),
       persistSession: true,
-      detectSessionInUrl: false,
+      detectSessionInUrl: typeof window !== 'undefined',
     },
   });
 

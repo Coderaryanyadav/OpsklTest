@@ -1,6 +1,37 @@
 import { supabase } from './client';
 import { logger } from '../utils/logger';
-import { Profile, WorkerProfile, OrganizerProfile } from '../types';
+import { Profile, WorkerProfile, OrganizerProfile, VerificationCase } from '../types';
+
+export async function fetchLatestVerificationCase(userId: string): Promise<VerificationCase | null> {
+  const { data, error } = await supabase
+    .from('verification_cases')
+    .select('*')
+    .eq('profile_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    logger.warn('Failed to fetch verification case', { userId, error });
+    return null;
+  }
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    profileId: data.profile_id,
+    documentType: data.document_type,
+    documentMaskedId: data.document_masked_id,
+    documentStoragePath: data.document_storage_path,
+    status: data.status,
+    rejectionReason: data.rejection_reason,
+    reviewedBy: data.reviewed_by,
+    reviewedAt: data.reviewed_at,
+    createdAt: data.created_at,
+  };
+}
+
 
 export async function fetchUserProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
@@ -190,6 +221,8 @@ export async function updateWorkerProfile(
   updates: Partial<{
     skills: string[];
     serviceAreas: string[];
+    preferredLocality: string;
+    experienceYears: number;
     bio: string;
     upiId: string;
     availabilityStatus: 'available' | 'busy' | 'paused';
@@ -201,6 +234,8 @@ export async function updateWorkerProfile(
   const payload: Record<string, any> = {};
   if (updates.skills !== undefined) payload.skills = updates.skills;
   if (updates.serviceAreas !== undefined) payload.service_areas = updates.serviceAreas;
+  if (updates.preferredLocality !== undefined) payload.preferred_locality = updates.preferredLocality;
+  if (updates.experienceYears !== undefined) payload.experience_years = updates.experienceYears;
   if (updates.bio !== undefined) payload.bio = updates.bio;
   if (updates.upiId !== undefined) payload.upi_id = updates.upiId;
   if (updates.availabilityStatus !== undefined) payload.availability_status = updates.availabilityStatus;

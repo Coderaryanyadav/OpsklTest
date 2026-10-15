@@ -3,7 +3,13 @@ import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, Activ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Card, Badge, Button, useAuth } from '@opskil/design-system';
-import { fetchWorkerProfile, WorkerProfile, requestAccountDeletionSafe } from '@opskil/shared';
+import {
+  fetchWorkerProfile,
+  WorkerProfile,
+  requestAccountDeletionSafe,
+  fetchLatestVerificationCase,
+  VerificationCase,
+} from '@opskil/shared';
 
 export default function WorkerProfileScreen() {
   const router = useRouter();
@@ -11,6 +17,7 @@ export default function WorkerProfileScreen() {
   const { colors, spacing, radii, typography, isDark, toggleTheme } = useOpsklTheme();
 
   const [workerData, setWorkerData] = useState<WorkerProfile | null>(null);
+  const [verificationCase, setVerificationCase] = useState<VerificationCase | null>(null);
   const [loading, setLoading] = useState(true);
 
   const userId = session?.user?.id;
@@ -22,8 +29,12 @@ export default function WorkerProfileScreen() {
         return;
       }
       try {
-        const data = await fetchWorkerProfile(userId);
-        setWorkerData(data);
+        const [wData, vCase] = await Promise.all([
+          fetchWorkerProfile(userId),
+          fetchLatestVerificationCase(userId),
+        ]);
+        setWorkerData(wData);
+        setVerificationCase(vCase);
       } catch (err) {
         console.error('Failed to load worker profile', err);
       } finally {
@@ -239,6 +250,35 @@ export default function WorkerProfileScreen() {
                 </View>
               </View>
             </Card>
+
+            {/* Rejection Alert Card */}
+            {workerData?.verificationStatus === 'rejected' && (
+              <Card
+                variant="outlined"
+                style={{
+                  borderColor: colors.border,
+                  borderLeftWidth: 4,
+                  borderLeftColor: colors.primary,
+                  backgroundColor: colors.surface,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Badge label="ACTION REQUIRED: RE-SUBMISSION" variant="danger" size="sm" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 }}>
+                  Identity Verification Needs Correction
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginBottom: spacing.sm }}>
+                  Reason: {verificationCase?.rejectionReason || 'The uploaded document did not match your legal name or was illegible.'}
+                </Text>
+                <Button
+                  title="Resubmit Verification Documents"
+                  variant="primary"
+                  size="sm"
+                  onPress={() => router.push('/onboarding' as any)}
+                />
+              </Card>
+            )}
 
             {/* Guided Account Completion Checklist */}
             <Card variant="outlined">

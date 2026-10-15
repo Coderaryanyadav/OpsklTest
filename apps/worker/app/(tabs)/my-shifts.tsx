@@ -8,6 +8,7 @@ import {
   Alert,
   StyleSheet,
   Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -34,6 +35,7 @@ import {
   checkOutWorkerSafe,
   cancelBookingSafe,
   disputeBookingSafe,
+  createSafetyReportSafe,
 } from '@opskil/shared';
 import {
   Ticket,
@@ -46,6 +48,10 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
+  Navigation,
+  QrCode,
+  PhoneCall,
+  AlertOctagon,
 } from 'lucide-react-native';
 
 type TabState = 'upcoming' | 'active' | 'completed' | 'cancelled';
@@ -69,7 +75,108 @@ export default function WorkerMyShiftsScreen() {
   const [submittingModal, setSubmittingModal] = useState(false);
   const [copiedBookingId, setCopiedBookingId] = useState<string | null>(null);
 
+  // 60-Second Dynamic Attendance QR Modal state
+  const [qrBooking, setQrBooking] = useState<Booking | null>(null);
+  const [qrToken, setQrToken] = useState<string>('');
+  const [qrSecondsLeft, setQrSecondsLeft] = useState<number>(60);
+
+  // SOS Emergency Modal state
+  const [sosBooking, setSosBooking] = useState<Booking | null>(null);
+  const [sosTriggering, setSosTriggering] = useState<boolean>(false);
+
   const [hasInitializedTab, setHasInitializedTab] = useState(false);
+
+  // 60-Second countdown timer effect for QR token
+  useEffect(() => {
+    if (!qrBooking) return;
+    const interval = setInterval(() => {
+      setQrSecondsLeft((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [qrBooking, qrToken]);
+
+  const generateAttendanceToken = (booking: Booking) => {
+    const expiry = Math.floor(Date.now() / 1000) + 60;
+    const token = `OP-ATT:${booking.id}:${booking.checkInCode || 'CHECKIN'}:${expiry}`;
+    setQrToken(token);
+    setQrSecondsLeft(60);
+  };
+
+  const handleOpenQrModal = (booking: Booking) => {
+    setQrBooking(booking);
+    generateAttendanceToken(booking);
+  };
+
+  const handleNavigateToVenue = (job?: any) => {
+    if (!job) return;
+    const destination = job.latitude && job.longitude
+      ? `${job.latitude},${job.longitude}`
+      : encodeURIComponent(`${job.venueName || ''}, ${job.venueAddress || ''}, Mumbai`);
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Venue Address', `${job.venueName}\n${job.venueAddress}`);
+    });
+  };
+
+  const handleTriggerSos = async () => {
+    if (!sosBooking || !workerId) return;
+    setSosTriggering(true);
+    try {
+      let lat: number | undefined;
+      let lng: number | undefined;
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          lat = loc.coords.latitude;
+          lng = loc.coords.longitude;
+        }
+      } catch {
+        // Location optional for emergency trigger
+      }
+
+      const res = await createSafetyReportSafe({
+        reporterId: workerId,
+        jobId: sosBooking.jobId,
+        category: 'safety',
+        severity: 'critical',
+        description: `[SOS EMERGENCY TRIGGERED] Worker requested emergency assistance at venue "${sosBooking.job?.venueName || 'shift'}". GPS Fix: ${lat ? `${lat}, ${lng}` : 'Unavailable'}. Supervisor: ${sosBooking.job?.supervisorName} (${sosBooking.job?.supervisorPhone}).`,
+      });
+
+      if (res.success) {
+        Alert.alert(
+          '🚨 Emergency SOS Dispatched',
+          'A high-priority safety alert with your location has been logged with the Opskl Safety Queue.\n\nIf you are in immediate personal danger, call National Emergency helpline 112 immediately.',
+          [
+            {
+              text: 'Call Police / Medical (112)',
+              style: 'destructive',
+              onPress: () => Linking.openURL('tel:112'),
+            },
+            {
+              text: 'Call On-Site Supervisor',
+              onPress: () => {
+                if (sosBooking.job?.supervisorPhone) {
+                  Linking.openURL(`tel:${sosBooking.job.supervisorPhone}`);
+                }
+              },
+            },
+            { text: 'Close', style: 'cancel' },
+          ]
+        );
+        setSosBooking(null);
+      } else {
+        Alert.alert('SOS Trigger Failed', res.error || 'Failed to dispatch alert. Call 112 directly for emergency help.');
+      }
+    } catch (err: any) {
+      Alert.alert('Emergency Contact', 'Call 112 immediately for emergency services.');
+    } finally {
+      setSosTriggering(false);
+    }
+  };
 
   const handleCopyCode = async (bookingId: string, code?: string) => {
     if (!code) return;
@@ -638,6 +745,30 @@ export default function WorkerMyShiftsScreen() {
                       </Text>
                     </View>
                   )}
+
+                  {/* Phase H: Google Maps Directions Navigation Button */}
+                  <Pressable
+                    onPress={() => handleNavigateToVenue(job)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: colors.surface,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: radii.sm,
+                      paddingVertical: 7,
+                      marginTop: 4,
+                      gap: 6,
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Navigate to venue in Google Maps"
+                  >
+                    <Navigation size={13} color={colors.primary} strokeWidth={2.2} />
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                      Navigate to Venue (Google Maps) ↗
+                    </Text>
+                  </Pressable>
                 </View>
 
                 {/* Reasons / Disputes callouts */}
@@ -674,7 +805,7 @@ export default function WorkerMyShiftsScreen() {
                         </View>
                       ) : (
                         <>
-                          <View style={{ flex: 1.5 }}>
+                          <View style={{ flex: 1.2 }}>
                             <Button
                               title="Self Check-In (GPS)"
                               variant="primary"
@@ -683,7 +814,14 @@ export default function WorkerMyShiftsScreen() {
                             />
                           </View>
                           <Button
-                            title="Cancel Shift"
+                            title="Attendance QR (60s)"
+                            variant="outline"
+                            size="sm"
+                            fullWidth={false}
+                            onPress={() => handleOpenQrModal(booking)}
+                          />
+                          <Button
+                            title="Cancel"
                             variant="ghost"
                             size="sm"
                             fullWidth={false}
@@ -695,13 +833,36 @@ export default function WorkerMyShiftsScreen() {
                   )}
 
                   {isCheckedIn && (
-                    <View style={{ flex: 1 }}>
-                      <Button
-                        title="Check Out of Shift"
-                        variant="primary"
-                        size="sm"
-                        onPress={() => handleCheckOut(booking)}
-                      />
+                    <View style={{ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title="Check Out of Shift"
+                          variant="primary"
+                          size="sm"
+                          onPress={() => handleCheckOut(booking)}
+                        />
+                      </View>
+                      <Pressable
+                        onPress={() => setSosBooking(booking)}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          paddingVertical: 7,
+                          paddingHorizontal: 10,
+                          borderRadius: radii.sm,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          backgroundColor: colors.surfaceMuted,
+                          gap: 4,
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Trigger Emergency SOS"
+                      >
+                        <AlertOctagon size={13} color={colors.primary} strokeWidth={2.2} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                          SOS
+                        </Text>
+                      </Pressable>
                     </View>
                   )}
 
@@ -837,6 +998,132 @@ export default function WorkerMyShiftsScreen() {
                   onPress={submitDispute}
                 />
               </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Phase G: 60-Second Dynamic Attendance QR Modal */}
+      <Modal visible={Boolean(qrBooking)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 360, width: '100%', alignItems: 'center' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: spacing.sm }}>
+              <Badge label="SINGLE-USE 60S PASS" variant="primary" size="sm" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Clock size={13} color={qrSecondsLeft <= 10 ? colors.danger : colors.textPrimary} />
+                <Text style={{ fontSize: 13, fontWeight: '800', fontFamily: 'monospace', color: qrSecondsLeft <= 10 ? colors.danger : colors.textPrimary }}>
+                  00:{String(qrSecondsLeft).padStart(2, '0')}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
+              Check-In Attendance QR
+            </Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 2, marginBottom: spacing.md }}>
+              Present this code to the on-site organizer check-in desk.
+            </Text>
+
+            {/* High-Contrast Monochrome QR Simulation / Payload Block */}
+            <View
+              style={{
+                width: 220,
+                height: 220,
+                backgroundColor: '#000000',
+                borderRadius: radii.md,
+                padding: 12,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderWidth: 2,
+                borderColor: colors.border,
+              }}
+            >
+              <View style={{ backgroundColor: '#FFFFFF', padding: 12, borderRadius: 8, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                <QrCode size={110} color="#000000" strokeWidth={2.5} />
+                <Text style={{ fontSize: 9, fontFamily: 'monospace', color: '#000000', marginTop: 8, textAlign: 'center', fontWeight: '700' }} numberOfLines={1}>
+                  {qrToken.substring(0, 24)}…
+                </Text>
+              </View>
+            </View>
+
+            {qrSecondsLeft === 0 ? (
+              <View style={{ marginTop: spacing.md, width: '100%', alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, color: colors.danger, fontWeight: '700', marginBottom: 8 }}>
+                  ⚠️ QR Token Expired (60s limit reached)
+                </Text>
+                <Button
+                  title="Generate Fresh Token"
+                  variant="primary"
+                  size="md"
+                  onPress={() => qrBooking && generateAttendanceToken(qrBooking)}
+                />
+              </View>
+            ) : (
+              <View style={{ marginTop: spacing.md, width: '100%', gap: 8 }}>
+                <Button
+                  title="Copy Token String"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => qrBooking && handleCopyCode(qrBooking.id, qrToken)}
+                />
+                <Button
+                  title="Close Pass"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setQrBooking(null)}
+                />
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Phase J: Worker Emergency SOS Confirmation Modal */}
+      <Modal visible={Boolean(sosBooking)} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 360, width: '100%' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <AlertOctagon size={20} color={colors.primary} strokeWidth={2.5} />
+              <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                Worker Emergency SOS
+              </Text>
+            </View>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginBottom: spacing.md }}>
+              Triggering this alert sends an urgent safety incident report with your current GPS location to the Opskl Trust & Safety Operations team and logs an emergency notification.
+            </Text>
+
+            <View style={{ backgroundColor: colors.surfaceMuted, padding: spacing.sm, borderRadius: radii.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                CRITICAL LIFE SAFETY EMERGENCIES:
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                For immediate police, medical, or fire danger in India, dial 112 directly.
+              </Text>
+              <Pressable
+                onPress={() => Linking.openURL('tel:112')}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}
+              >
+                <PhoneCall size={14} color={colors.primary} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
+                  Call Emergency Services (112) ↗
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={{ gap: spacing.sm }}>
+              <Button
+                title="Trigger Safety Alert to Opskl"
+                variant="primary"
+                size="md"
+                loading={sosTriggering}
+                onPress={handleTriggerSos}
+              />
+              <Button
+                title="Cancel / False Alarm"
+                variant="outline"
+                size="md"
+                onPress={() => setSosBooking(null)}
+              />
             </View>
           </View>
         </View>

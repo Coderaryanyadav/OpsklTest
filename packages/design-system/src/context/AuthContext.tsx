@@ -7,6 +7,12 @@ import {
   verifyEmailOtp,
   signInWithPhoneOtp,
   verifyPhoneOtp,
+  signInWithEmailPassword,
+  signUpWithEmailPassword,
+  signInWithGoogleOAuth,
+  sendPasswordResetEmail,
+  resendVerificationEmail,
+  exchangeCodeForSession,
   fetchUserProfile,
   fetchWorkerProfile,
   fetchOrganizerProfile,
@@ -15,6 +21,7 @@ import {
   WorkerProfile,
   OrganizerProfile,
   UserRole,
+  SignUpParams,
   logger,
   isSupabaseConfigured,
 } from '@opskil/shared';
@@ -54,6 +61,12 @@ export interface AuthContextValue {
   verifyEmailOtp: (email: string, token: string, expectedRole?: UserRole) => Promise<any>;
   sendPhoneOtp: (phone: string) => Promise<any>;
   verifyOtp: (identifier: string, token: string, expectedRole?: UserRole) => Promise<any>;
+  signInWithPassword: (email: string, password: string, expectedRole?: UserRole) => Promise<any>;
+  signUpWithPassword: (params: { email: string; password: string; role: UserRole; fullName: string; phone: string }) => Promise<any>;
+  signInWithGoogle: (role?: UserRole, redirectTo?: string) => Promise<any>;
+  sendPasswordReset: (email: string, redirectTo?: string) => Promise<any>;
+  resendVerification: (email: string) => Promise<any>;
+  handleAuthUrl: (url: string) => Promise<any>;
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -261,6 +274,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, expectedRo
     return res;
   };
 
+  const signInWithPassword = async (email: string, password: string, expectedRole?: UserRole) => {
+    const res = await signInWithEmailPassword({ email: email.trim().toLowerCase(), password });
+    if (res?.session) {
+      setSession(res.session);
+      await loadUserData(res.session, expectedRole);
+    }
+    return res;
+  };
+
+  const signUpWithPassword = async (params: SignUpParams) => {
+    const res = await signUpWithEmailPassword({
+      ...params,
+      email: params.email.trim().toLowerCase(),
+    });
+    if (res?.session) {
+      setSession(res.session);
+      await loadUserData(res.session, params.role);
+    }
+    return res;
+  };
+
+  const signInWithGoogle = async (role?: UserRole, redirectTo?: string) => {
+    return signInWithGoogleOAuth(role, redirectTo);
+  };
+
+  const sendPasswordReset = async (email: string, redirectTo?: string) => {
+    return sendPasswordResetEmail(email, redirectTo);
+  };
+
+  const resendVerification = async (email: string) => {
+    return resendVerificationEmail(email);
+  };
+
+  const handleAuthUrl = async (url: string) => {
+    const res = await exchangeCodeForSession(url);
+    if (res?.session) {
+      setSession(res.session);
+      await loadUserData(res.session);
+    }
+    return res;
+  };
+
   const logout = async () => {
     try {
       await authSignOut();
@@ -347,6 +402,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, expectedRo
       verifyEmailOtp: verifyEmailOtpMethod,
       sendPhoneOtp,
       verifyOtp,
+      signInWithPassword,
+      signUpWithPassword,
+      signInWithGoogle,
+      sendPasswordReset,
+      resendVerification,
+      handleAuthUrl,
       logout,
       signOut: logout,
       refreshProfile,

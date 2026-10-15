@@ -247,3 +247,127 @@ export function onAuthStateChange(
   });
   return data.subscription;
 }
+
+/**
+ * Sign in / Register with Google OAuth
+ */
+export async function signInWithGoogleOAuth(role?: UserRole, redirectTo?: string) {
+  logger.info('Initiating Google OAuth sign-in', { role, redirectTo });
+  
+  const options: Record<string, any> = {};
+  if (redirectTo) {
+    options.redirectTo = redirectTo;
+  }
+  if (role) {
+    options.queryParams = { role };
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options,
+  });
+
+  if (error) {
+    logger.error('Google OAuth initialization failed', error);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Send password reset email
+ */
+export async function sendPasswordResetEmail(email: string, redirectTo?: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  logger.info('Sending password reset email', { email: normalizedEmail });
+
+  const { data, error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo,
+  });
+
+  if (error) {
+    logger.error('Password reset email failed', error, { email: normalizedEmail });
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Update user password (used after reset)
+ */
+export async function updateUserPassword(newPassword: string) {
+  logger.info('Updating user password');
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    logger.error('Password update failed', error);
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Resend sign-up verification email
+ */
+export async function resendVerificationEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  logger.info('Resending signup verification email', { email: normalizedEmail });
+
+  const { data, error } = await supabase.auth.resend({
+    type: 'signup',
+    email: normalizedEmail,
+  });
+
+  if (error) {
+    logger.error('Resending verification email failed', error, { email: normalizedEmail });
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Parse and exchange deep-link or redirect code for active session
+ */
+export async function exchangeCodeForSession(url: string) {
+  logger.info('Exchanging OAuth/Auth code for session', { url: url.split('?')[0] });
+
+  // If URL has authorization code parameter
+  if (url.includes('code=')) {
+    const codeMatch = url.match(/[?&]code=([^&#]+)/);
+    if (codeMatch && codeMatch[1]) {
+      const code = decodeURIComponent(codeMatch[1]);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        logger.error('Failed to exchange code for session', error);
+        throw error;
+      }
+      return data;
+    }
+  }
+
+  // If URL has hash parameters (#access_token=...&refresh_token=...)
+  if (url.includes('access_token=')) {
+    const accessMatch = url.match(/[#&]access_token=([^&#]+)/);
+    const refreshMatch = url.match(/[#&]refresh_token=([^&#]+)/);
+    if (accessMatch && refreshMatch) {
+      const { data, error } = await supabase.auth.setSession({
+        access_token: decodeURIComponent(accessMatch[1]),
+        refresh_token: decodeURIComponent(refreshMatch[1]),
+      });
+      if (error) {
+        logger.error('Failed to set session from URL hash tokens', error);
+        throw error;
+      }
+      return data;
+    }
+  }
+
+  return null;
+}

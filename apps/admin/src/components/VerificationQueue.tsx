@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VerificationCase } from '@opskil/shared';
+import { VerificationCase, getVerificationDocumentSignedUrl } from '@opskil/shared';
 
 interface VerificationQueueProps {
   verifications: VerificationCase[];
@@ -18,6 +18,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
   const [rejectReason, setRejectReason] = useState('');
   const [modalError, setModalError] = useState('');
   const [resolving, setResolving] = useState(false);
+  const [fetchingDoc, setFetchingDoc] = useState(false);
 
   const filteredCases = verifications.filter((c) => {
     if (filter !== 'all' && c.status !== filter) return false;
@@ -281,10 +282,50 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 <span style={{ color: '#64748B' }}>Document Submitted:</span>
                 <span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{selectedCase.documentType} ({selectedCase.documentMaskedId})</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: '#64748B' }}>Storage Reference:</span>
                 <span style={{ fontSize: 12, color: '#737373', fontFamily: 'monospace' }}>{selectedCase.documentStoragePath || 'Secured Private Vault'}</span>
               </div>
+              {selectedCase.documentStoragePath && (
+                <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    disabled={fetchingDoc}
+                    onClick={async () => {
+                      if (!selectedCase.documentStoragePath) return;
+                      setFetchingDoc(true);
+                      setModalError('');
+                      try {
+                        const res = await getVerificationDocumentSignedUrl(selectedCase.documentStoragePath, 300);
+                        if (res.signedUrl) {
+                          window.open(res.signedUrl, '_blank', 'noopener,noreferrer');
+                        } else {
+                          setModalError(res.error || 'Unable to generate secure signed link for this document.');
+                        }
+                      } catch (err: any) {
+                        setModalError(err?.message || 'Error fetching secure document');
+                      } finally {
+                        setFetchingDoc(false);
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      border: '1px solid #000000',
+                      backgroundColor: '#000000',
+                      color: '#FFFFFF',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {fetchingDoc ? 'Generating Secure Link…' : 'Inspect Uploaded Evidence ↗'}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
