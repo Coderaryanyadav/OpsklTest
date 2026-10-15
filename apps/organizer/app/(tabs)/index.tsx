@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -474,11 +475,14 @@ export default function OrganizerDashboardScreen() {
               <Card
                 key={shift.id}
                 variant="elevated"
-                onPress={() => router.push(`/shift/${shift.id}` as any)}
                 style={{ borderRadius: radii.xl, padding: spacing.lg }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <View style={{ flex: 1, marginRight: spacing.sm }}>
+                  <Pressable
+                    style={{ flex: 1, marginRight: spacing.sm }}
+                    onPress={() => router.push(`/shift/${shift.id}` as any)}
+                    accessibilityRole="link"
+                  >
                     <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={1}>
                       {shift.title}
                     </Text>
@@ -491,7 +495,7 @@ export default function OrganizerDashboardScreen() {
                         {shift.venueName} • {formatISTDate(shift.date)}
                       </Text>
                     </View>
-                  </View>
+                  </Pressable>
 
                   <Badge
                     label={isPaused ? 'PAUSED' : `${shift.slotsFilled}/${shift.slotsTotal} FILLED`}
