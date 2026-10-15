@@ -16,6 +16,19 @@ const SENSITIVE_KEYS = new Set([
   'otp',
   'pin',
   'cvv',
+  'code',
+  'lat',
+  'lng',
+  'latitude',
+  'longitude',
+  'email',
+  'phone',
+  'upi',
+  'upi_id',
+  'upiid',
+  'aadhaar',
+  'pan',
+  'gstin',
 ]);
 
 export function redactSensitiveData(obj: any): any {
@@ -55,9 +68,22 @@ export const logger = {
     console.log(`[OPSKL INFO] ${message}`, sanitized ? JSON.stringify(sanitized) : '');
   },
 
-  warn(message: string, context?: Record<string, any>): void {
-    const sanitized = context ? redactSensitiveData(context) : undefined;
-    console.warn(`[OPSKL WARN] ${message}`, sanitized ? JSON.stringify(sanitized) : '');
+  warn(message: string, errorOrContext?: any, context?: Record<string, any>): void {
+    let sanitizedContext: any = undefined;
+    let extra = '';
+    if (context) {
+      sanitizedContext = redactSensitiveData(context);
+      extra = errorOrContext instanceof Error ? ` — ${errorOrContext.message}` : ` — ${String(errorOrContext)}`;
+    } else if (errorOrContext) {
+      if (errorOrContext instanceof Error) {
+        extra = ` — ${errorOrContext.message}`;
+      } else if (typeof errorOrContext === 'object') {
+        sanitizedContext = redactSensitiveData(errorOrContext);
+      } else {
+        extra = ` — ${String(errorOrContext)}`;
+      }
+    }
+    console.warn(`[OPSKL WARN] ${message}${extra}`, sanitizedContext ? JSON.stringify(sanitizedContext) : '');
   },
 
   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {

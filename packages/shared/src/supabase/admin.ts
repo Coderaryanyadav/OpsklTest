@@ -148,7 +148,11 @@ export async function resolveVerificationCaseSafe(
       return { success: false, error: error.message };
     }
 
-    return { success: data?.success ?? true };
+    if (data && data.success === false) {
+      return { success: false, error: data.error || 'Verification resolution failed' };
+    }
+
+    return { success: Boolean(data?.success ?? true) };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -210,7 +214,11 @@ export async function resolveDisputeSafe(
       return { success: false, error: error.message };
     }
 
-    return { success: data?.success ?? true };
+    if (data && data.success === false) {
+      return { success: false, error: data.error || 'Dispute resolution failed' };
+    }
+
+    return { success: Boolean(data?.success ?? true) };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -273,7 +281,11 @@ export async function resolveSafetyReportSafe(
       return { success: false, error: error.message };
     }
 
-    return { success: data?.success ?? true };
+    if (data && data.success === false) {
+      return { success: false, error: data.error || 'Safety report resolution failed' };
+    }
+
+    return { success: Boolean(data?.success ?? true) };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -299,22 +311,22 @@ export async function fetchModerationJobs(): Promise<Job[]> {
     organizerId: j.organizer_id,
     title: j.title,
     category: j.category,
-    venueName: j.venue_name || 'Exhibition Venue',
-    venueAddress: j.venue_address || 'Mumbai, Maharashtra',
-    city: j.city || 'Mumbai',
-    zone: j.zone || j.locality || 'BKC',
-    date: j.event_date || j.date || new Date().toISOString().split('T')[0],
-    startTime: j.shift_start_time || j.start_time || '09:00',
-    endTime: j.shift_end_time || j.end_time || '18:00',
-    durationHours: Number(j.duration_hours) || 8,
-    hourlyRate: Number(j.hourly_rate) || 150,
-    totalPay: Number(j.wage_per_worker || j.total_pay) || 1200,
-    slotsTotal: j.slots_total,
-    slotsFilled: j.slots_filled,
+    venueName: j.venue_name || '',
+    venueAddress: j.venue_address || '',
+    city: j.city || '',
+    zone: j.zone || j.locality || '',
+    date: j.event_date || j.date || '',
+    startTime: j.shift_start_time || j.start_time || '',
+    endTime: j.shift_end_time || j.end_time || '',
+    durationHours: Number(j.duration_hours) || 0,
+    hourlyRate: Number(j.hourly_rate) || 0,
+    totalPay: Number(j.wage_per_worker || j.total_pay) || 0,
+    slotsTotal: j.slots_total || 0,
+    slotsFilled: j.slots_filled || 0,
     status: j.status,
     duties: j.duties || [],
-    supervisorName: j.supervisor_name || 'Ops Supervisor',
-    supervisorPhone: j.supervisor_phone || '+91 98201 98201',
+    supervisorName: j.supervisor_name || '',
+    supervisorPhone: j.supervisor_phone || '',
     createdAt: j.created_at,
     updatedAt: j.updated_at || j.created_at,
   }));
@@ -341,7 +353,11 @@ export async function moderateJobSafe(
       return { success: false, error: error.message };
     }
 
-    return { success: data?.success ?? true };
+    if (data && data.success === false) {
+      return { success: false, error: data.error || 'Job moderation failed' };
+    }
+
+    return { success: Boolean(data?.success ?? true) };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

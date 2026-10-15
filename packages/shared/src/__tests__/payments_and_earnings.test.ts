@@ -2,15 +2,17 @@ import {
   calculateJobFinancials,
   calculateHoursAdjustment,
   isValidIndianUpiId,
-  generateHmacSha256,
-  verifyHmacSha256,
-  generateIdempotencyKey,
   SandboxPaymentProvider,
   processPaymentWebhookSafe,
   fetchWorkerEarningsSummary,
   fetchOrganizerFinancesSummary,
   generateJobInvoiceSafe,
 } from '../index';
+import {
+  generateHmacSha256,
+  verifyHmacSha256,
+  generateIdempotencyKey,
+} from '../payments/crypto-utils';
 
 // Mock Supabase client
 jest.mock('../supabase/client', () => {

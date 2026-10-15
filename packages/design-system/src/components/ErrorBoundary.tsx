@@ -57,10 +57,10 @@ export class OpsklErrorBoundary extends Component<ErrorBoundaryProps, ErrorBound
               Opskl encountered an unexpected problem rendering this screen. Your data is safe.
             </Text>
 
-            {this.state.error && (
+            {Boolean(__DEV__ && this.state.error) && (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText}>
-                  {this.state.error.name}: {this.state.error.message}
+                  {this.state.error?.name}: {this.state.error?.message}
                 </Text>
               </View>
             )}
@@ -83,7 +83,7 @@ export class OpsklErrorBoundary extends Component<ErrorBoundaryProps, ErrorBound
 const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flexGrow: 1,
@@ -95,7 +95,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -106,29 +108,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#000000',
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   description: {
     fontSize: 15,
-    color: '#475569',
+    color: '#737373',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: spacing.lg,
+    maxWidth: 320,
   },
   errorBox: {
     width: '100%',
     padding: spacing.md,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F5F5F5',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E5E5',
     marginBottom: spacing.xl,
   },
   errorText: {
     fontSize: 13,
-    color: '#DC2626',
+    color: '#000000',
     fontFamily: 'monospace',
   },
   retryButton: {

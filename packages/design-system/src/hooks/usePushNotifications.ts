@@ -4,18 +4,23 @@ import { logger, registerPushTokenSafe, revokePushTokenSafe } from '@opskil/shar
 
 let Notifications: any = null;
 let Device: any = null;
+let Constants: any = null;
 
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Device = require('expo-device');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Constants = require('expo-constants').default || require('expo-constants');
 
   // Configure foreground notification presentation handler
   if (Notifications && typeof Notifications.setNotificationHandler === 'function') {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
       }),
@@ -25,6 +30,7 @@ try {
   // Gracefully handle web or test environments where native expo modules are not loaded
   Notifications = null;
   Device = null;
+  Constants = null;
 }
 
 export interface UsePushNotificationsResult {
@@ -70,7 +76,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
           name: 'Opskl Shift Alerts',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#0052FF',
+          lightColor: '#000000',
         });
       }
 
@@ -91,8 +97,18 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
       setPermissionGranted(true);
 
-      // Fetch Expo Push Token
-      const tokenResult = await Notifications.getExpoPushTokenAsync().catch(() => null);
+      // Fetch Expo Push Token with EAS projectId support
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ||
+        Constants?.easConfig?.projectId;
+
+      const tokenResult = await Notifications.getExpoPushTokenAsync(
+        projectId ? { projectId } : undefined
+      ).catch((err: any) => {
+        logger.warn('Failed to get Expo push token', { err });
+        return null;
+      });
+
       if (tokenResult?.data) {
         const token = tokenResult.data;
         setExpoPushToken(token);

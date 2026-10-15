@@ -10,6 +10,7 @@ import {
   fetchUserProfile,
   fetchWorkerProfile,
   fetchOrganizerProfile,
+  cancelAccountDeletionSafe,
   Profile,
   WorkerProfile,
   OrganizerProfile,
@@ -27,7 +28,14 @@ export type AuthState =
   | 'AUTHENTICATED_PROFILE_COMPLETE'
   | 'VERIFICATION_PENDING'
   | 'VERIFICATION_ACTION_REQUIRED'
+  | 'DEACTIVATED'
+  | 'ROLE_MISMATCH'
   | 'READY';
+
+export interface RoleMismatchInfo {
+  currentRole: UserRole;
+  expectedRole: UserRole;
+}
 
 export interface AuthContextValue {
   authState: AuthState;
@@ -39,6 +47,9 @@ export interface AuthContextValue {
   organizerProfile: OrganizerProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isDeactivated?: boolean;
+  networkError?: boolean;
+  roleMismatch?: RoleMismatchInfo | null;
   sendEmailOtp: (email: string, role?: UserRole, fullName?: string) => Promise<any>;
   verifyEmailOtp: (email: string, token: string, expectedRole?: UserRole) => Promise<any>;
   sendPhoneOtp: (phone: string) => Promise<any>;
@@ -46,35 +57,49 @@ export interface AuthContextValue {
   logout: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  cancelAccountDeletion: () => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export interface AuthProviderProps {
+  children: ReactNode;
+  expectedRole?: UserRole;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, expectedRole: defaultExpectedRole }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [networkError, setNetworkError] = useState<boolean>(false);
+  const [isDeactivated, setIsDeactivated] = useState<boolean>(false);
+  const [roleMismatch, setRoleMismatch] = useState<RoleMismatchInfo | null>(null);
+
   const loadingLockRef = React.useRef(false);
   const requestIdRef = React.useRef(0);
   const pendingRequestRef = React.useRef<{ session: Session | null; expectedRole?: UserRole } | null>(null);
 
-  const loadUserData = async (currentSession: Session | null, expectedRole?: UserRole) => {
+  const loadUserData = async (currentSession: Session | null, expectedRoleOverride?: UserRole) => {
+    const activeExpectedRole = expectedRoleOverride || defaultExpectedRole;
+
     if (!currentSession?.user) {
       requestIdRef.current += 1;
       setUser(null);
       setProfile(null);
       setWorkerProfile(null);
       setOrganizerProfile(null);
+      setIsDeactivated(false);
+      setRoleMismatch(null);
+      setNetworkError(false);
       setLoading(false);
       return;
     }
 
     if (loadingLockRef.current) {
-      // Queue the newest request so session transitions arriving during an active load are never dropped
-      pendingRequestRef.current = { session: currentSession, expectedRole };
+      pendingRequestRef.current = { session: currentSession, expectedRole: activeExpectedRole };
       return;
     }
 
@@ -83,80 +108,81 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       const u = currentSession.user;
+      setUser(u);
 
-      let p = await fetchUserProfile(u.id);
+      let p: Profile | null = null;
+      let networkErrOccurred = false;
+
+      try {
+        p = await fetchUserProfile(u.id);
+      } catch (err: any) {
+        logger.warn('Network error loading profile, retaining session without logout', err, { userId: u.id });
+        networkErrOccurred = true;
+      }
+
+      if (networkErrOccurred) {
+        if (thisRequestId === requestIdRef.current) {
+          setNetworkError(true);
+          setLoading(false);
+        }
+        return;
+      }
+      setNetworkError(false);
+
       if (!p && u.id) {
         const email = u.email || '';
-        const defaultRole = (expectedRole || (u.user_metadata?.role as any)) || 'worker';
+        const targetRole = (activeExpectedRole || (u.user_metadata?.role as any)) || 'worker';
         const defaultName = u.user_metadata?.full_name || (email ? email.split('@')[0] : 'Member');
         const phone = u.phone || u.user_metadata?.phone || '';
 
-        // Authoritative server-side profile provisioning
         try {
           const { data: rpcRes, error: rpcErr } = await supabase.rpc('ensure_user_profile_provisioned_safe', {
-            p_role: defaultRole,
+            p_role: targetRole,
             p_full_name: defaultName,
             p_phone: phone,
             p_email: email,
           });
 
           if (rpcErr || (rpcRes && rpcRes.success === false)) {
-            logger.error('Authoritative profile provisioning RPC rejected — failing closed', rpcErr || rpcRes, { userId: u.id });
-            await supabase.auth.signOut();
-            if (thisRequestId === requestIdRef.current) {
-              setUser(null);
-              setProfile(null);
-              setWorkerProfile(null);
-              setOrganizerProfile(null);
-            }
-            return;
+            logger.error('Authoritative profile provisioning RPC rejected', rpcErr || rpcRes, { userId: u.id });
+          } else {
+            p = await fetchUserProfile(u.id).catch(() => null);
           }
         } catch (rpcErr) {
-          logger.error('Authoritative profile provisioning RPC network/database exception — failing closed', rpcErr, { userId: u.id });
-          await supabase.auth.signOut();
-          if (thisRequestId === requestIdRef.current) {
-            setUser(null);
-            setProfile(null);
-            setWorkerProfile(null);
-            setOrganizerProfile(null);
-          }
-          return;
+          logger.error('Authoritative profile provisioning RPC network exception', rpcErr, { userId: u.id });
         }
-
-        p = await fetchUserProfile(u.id);
       }
 
-      // If a newer session request was initiated while fetching, drop this stale completion
       if (thisRequestId !== requestIdRef.current) {
         return;
       }
 
-      // Fail-closed security rule:
-      // An authenticated session MUST have a verified, active database profile record.
       if (!p) {
-        logger.error('Authenticated session lacks verified database profile — failing closed', { userId: u.id });
-        await supabase.auth.signOut();
-        setUser(null);
+        // Authenticated user exists in auth.users but has no profiles row yet
         setProfile(null);
         setWorkerProfile(null);
         setOrganizerProfile(null);
+        setIsDeactivated(false);
+        setRoleMismatch(null);
         return;
       }
 
-      // Deactivated / Purged account enforcement:
-      // If user profile is marked inactive (e.g. account deletion requested/completed), reject active session
       if (p.isActive === false) {
-        logger.warn('Deactivated account attempted session access — logging out', { userId: u.id });
-        await supabase.auth.signOut();
-        setUser(null);
-        setProfile(null);
-        setWorkerProfile(null);
-        setOrganizerProfile(null);
+        logger.warn('Deactivated account detected', { userId: u.id });
+        setProfile(p);
+        setIsDeactivated(true);
+        setRoleMismatch(null);
         return;
       }
+      setIsDeactivated(false);
 
-      // Atomically publish validated session and role profiles
-      setUser(u);
+      // Check role mismatch against app container expectations
+      if (activeExpectedRole && p.role !== activeExpectedRole && p.role !== 'admin') {
+        setRoleMismatch({ currentRole: p.role, expectedRole: activeExpectedRole });
+      } else {
+        setRoleMismatch(null);
+      }
+
       setProfile(p);
 
       if (p.role === 'worker') {
@@ -173,19 +199,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (err) {
-      logger.error('Error loading user profile data in AuthProvider — failing closed', err);
-      await supabase.auth.signOut().catch(() => {});
-      if (thisRequestId === requestIdRef.current) {
-        setUser(null);
-        setProfile(null);
-        setWorkerProfile(null);
-        setOrganizerProfile(null);
-      }
+      logger.error('Unexpected error loading user profile in AuthProvider', err);
     } finally {
       loadingLockRef.current = false;
       setLoading(false);
 
-      // If a subsequent session was queued while this load was executing, process it immediately
       if (pendingRequestRef.current) {
         const next = pendingRequestRef.current;
         pendingRequestRef.current = null;
@@ -195,13 +213,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    // 1. Initial Session Restoration
     getCurrentSession().then((sess) => {
       setSession(sess);
       loadUserData(sess);
     });
 
-    // 2. Auth State Transition Listener
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, currentSession) => {
         setSession(currentSession);
@@ -212,7 +228,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [defaultExpectedRole]);
 
   const sendEmailOtp = async (email: string, role?: UserRole, fullName?: string) => {
     return signInWithEmailOtp({ email, role, fullName });
@@ -246,12 +262,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    await authSignOut();
+    try {
+      await authSignOut();
+    } catch (e: any) {
+      logger.warn('signOut threw error during logout', { error: e?.message || String(e) });
+    }
     setSession(null);
     setUser(null);
     setProfile(null);
     setWorkerProfile(null);
     setOrganizerProfile(null);
+    setIsDeactivated(false);
+    setRoleMismatch(null);
+    setNetworkError(false);
   };
 
   const refreshProfile = async () => {
@@ -260,10 +283,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const cancelAccountDeletion = async () => {
+    const res = await cancelAccountDeletionSafe();
+    if (res.success) {
+      setIsDeactivated(false);
+      await refreshProfile();
+    }
+    return res;
+  };
+
   const authState = useMemo<AuthState>(() => {
     if (loading) return 'INITIALIZING';
     if (!isSupabaseConfigured) return 'CONFIGURATION_ERROR';
     if (!session || !user) return 'SIGNED_OUT';
+    if (isDeactivated) return 'DEACTIVATED';
+    if (roleMismatch) return 'ROLE_MISMATCH';
     if (!profile) return 'AUTHENTICATED_PROFILE_INCOMPLETE';
 
     if (profile.role === 'worker') {
@@ -293,7 +327,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     return 'READY';
-  }, [loading, session, user, profile, workerProfile, organizerProfile]);
+  }, [loading, session, user, profile, workerProfile, organizerProfile, isDeactivated, roleMismatch]);
 
   const value = useMemo(
     () => ({
@@ -306,6 +340,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       organizerProfile,
       loading,
       isAuthenticated: !!user,
+      isDeactivated,
+      networkError,
+      roleMismatch,
       sendEmailOtp,
       verifyEmailOtp: verifyEmailOtpMethod,
       sendPhoneOtp,
@@ -313,8 +350,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       signOut: logout,
       refreshProfile,
+      cancelAccountDeletion,
     }),
-    [authState, user, session, profile, workerProfile, organizerProfile, loading]
+    [authState, user, session, profile, workerProfile, organizerProfile, loading, isDeactivated, networkError, roleMismatch]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

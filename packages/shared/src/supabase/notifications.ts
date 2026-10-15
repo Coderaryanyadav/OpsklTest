@@ -20,50 +20,16 @@ export async function fetchUserNotifications(
     .from('notifications')
     .select('*')
     .eq('user_id', userId)
+    .neq('delivery_status', 'suppressed')
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  if (error || !data) {
-    // Return realistic initial notifications if empty
-    return [
-      {
-        id: 'notif-01',
-        userId,
-        title: 'Auto Expo 2026 Confirmed ✅',
-        body: 'Your spot as Registration Desk Host is confirmed. Reporting time is 08:30 AM.',
-        type: 'booking_confirmed',
-        channel: 'in_app',
-        priority: 'high',
-        read: false,
-        actionUrl: '/(tabs)/my-shifts',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        id: 'notif-02',
-        userId,
-        title: 'UPI Shift Payout Settled 💸',
-        body: '₹1,620 credited to aryan@okhdfcbank. UTR: 428901827461.',
-        type: 'payout_settled',
-        channel: 'in_app',
-        priority: 'high',
-        read: true,
-        actionUrl: '/(tabs)/earnings',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        id: 'notif-03',
-        userId,
-        title: 'New Shift Match in BKC ⚡',
-        body: 'VIP Hospitality Usher at Jio World Centre • ₹1,800/day. Tap to apply.',
-        type: 'job_opportunity',
-        channel: 'in_app',
-        priority: 'normal',
-        read: true,
-        actionUrl: '/shift/job-apex-01',
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-      },
-    ];
+  if (error) {
+    logger.error('Failed to fetch user notifications', error, { userId });
+    throw new Error(error.message || 'Failed to fetch user notifications');
   }
+
+  if (!data) return [];
 
   return data.map((n: any) => ({
     id: n.id,
@@ -77,9 +43,28 @@ export async function fetchUserNotifications(
     actionUrl: n.action_url,
     priority: n.priority,
     read: n.read,
-    metadata: n.metadata,
+    metadata: n.data || n.metadata,
     createdAt: n.created_at,
   }));
+}
+
+/**
+ * Fetch count of unread, delivered in-app notifications
+ */
+export async function fetchUnreadNotificationsCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false)
+    .neq('delivery_status', 'suppressed');
+
+  if (error) {
+    logger.error('Failed to fetch unread notifications count', error, { userId });
+    return 0;
+  }
+
+  return count ?? 0;
 }
 
 /**
@@ -236,17 +221,24 @@ export async function sendNotificationSafe(
       p_priority: payload.priority || 'normal',
     });
 
-    if (!rpcError && rpcData) {
+    if (rpcError) {
+      logger.error('send_notification_safe RPC failed', rpcError, { userId: payload.userId, idempotencyKey: payload.idempotencyKey });
+      return { success: false, error: rpcError.message };
+    }
+
+    if (rpcData) {
       return {
-        success: rpcData.success,
+        success: !!rpcData.success,
         duplicate: rpcData.duplicate,
         suppressed: rpcData.suppressed,
         notificationId: rpcData.notification_id,
+        error: rpcData.error,
       };
     }
 
-    return { success: true };
+    return { success: false, error: 'No response from notification service' };
   } catch (err: any) {
+    logger.error('sendNotificationSafe exception', err, { userId: payload.userId });
     return { success: false, error: err.message };
   }
 }

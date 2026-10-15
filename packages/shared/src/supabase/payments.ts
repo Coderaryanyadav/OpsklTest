@@ -83,7 +83,7 @@ export async function fetchWorkerEarningsSummary(
 
       if (b.status === 'confirmed') {
         confirmedUpcomingWages += pay;
-      } else if (b.status === 'checked_in' || b.status === 'checked_out' || b.status === 'completed_awaiting_review') {
+      } else if (b.status === 'checked_in' || b.status === 'checked_out' || b.status === 'completed_awaiting_review' || b.status === 'completed_pending_approval') {
         completedAwaitingApproval += pay;
       } else if (b.status === 'disputed') {
         disputedAmounts += pay;
@@ -120,14 +120,13 @@ export async function fetchWorkerEarningsSummary(
         retryCount: p.retry_count || 0,
         idempotencyKey: p.idempotency_key || undefined,
         providerPayoutId: p.provider_payout_id || undefined,
-        isSandbox: p.is_sandbox ?? true,
+        isSandbox: p.is_sandbox ?? false,
         escrowLockedAt: p.escrow_locked_at || p.created_at,
         settledAt: p.settled_at || undefined,
         createdAt: p.created_at,
       });
     }
   }
-
 
   const totalEarnedAllTime = paidEarnings + approvedAwaitingPayment;
 
@@ -233,7 +232,7 @@ export async function fetchOrganizerFinancesSummary(
         providerPaymentId: inv.provider_payment_id || undefined,
         dueDate: inv.due_date,
         paidAt: inv.paid_at || undefined,
-        isSandbox: inv.is_sandbox ?? true,
+        isSandbox: inv.is_sandbox ?? false,
         createdAt: inv.created_at,
         updatedAt: inv.updated_at,
         jobTitle: inv.jobs?.title || 'Event Shift',
@@ -253,7 +252,7 @@ export async function fetchOrganizerFinancesSummary(
     discrepancyAmount: Number(l.discrepancy_amount) || 0,
     notes: l.notes || undefined,
     actorId: l.actor_id || undefined,
-    isSandbox: l.is_sandbox ?? true,
+    isSandbox: l.is_sandbox ?? false,
     createdAt: l.created_at,
   }));
 

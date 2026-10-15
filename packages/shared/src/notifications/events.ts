@@ -143,7 +143,7 @@ export function buildStandbyCalloutNotification(
     body: `A confirmed spot opened up for "${jobTitle}". Immediate confirmation available.`,
     type: 'standby_callout',
     priority: 'urgent',
-    idempotencyKey: buildNotificationIdempotencyKey('standby_callout', jobId, `${userId}_${Date.now()}`),
+    idempotencyKey: buildNotificationIdempotencyKey('standby_callout', jobId, userId),
     actionUrl: `/shift/${jobId}`,
     metadata: { jobId },
   };

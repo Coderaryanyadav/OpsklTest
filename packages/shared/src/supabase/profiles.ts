@@ -10,9 +10,17 @@ export async function fetchUserProfile(userId: string): Promise<Profile | null> 
     .single();
 
   if (error) {
-    logger.error('Failed to fetch user profile', error, { userId });
-    return null;
+    if (error.code === 'PGRST116') {
+      // Row not found
+      return null;
+    }
+    logger.error('Failed to fetch user profile due to network/database error', error, { userId });
+    const err = new Error(error.message || 'Failed to fetch user profile');
+    (err as any).code = error.code;
+    throw err;
   }
+
+  if (!data) return null;
 
   return {
     id: data.id,
@@ -26,6 +34,23 @@ export async function fetchUserProfile(userId: string): Promise<Profile | null> 
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
+}
+
+/**
+ * Cancel pending account deletion and restore active account status
+ */
+export async function cancelAccountDeletionSafe(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('cancel_account_deletion_safe');
+    if (error) {
+      logger.error('cancel_account_deletion_safe RPC error', error);
+      return { success: false, error: error.message };
+    }
+    return { success: !!data?.success, error: data?.error };
+  } catch (err: any) {
+    logger.error('cancelAccountDeletionSafe exception', err);
+    return { success: false, error: err.message };
+  }
 }
 
 export async function fetchWorkerProfile(userId: string): Promise<WorkerProfile | null> {

@@ -63,15 +63,15 @@ export const lightColors: OpsklThemeColors = {
   surfaceMuted: '#F5F5F5',
   textPrimary: '#000000',
   textSecondary: '#737373',
-  textMuted: '#A3A3A3',
+  textMuted: '#6B6B6B', // WCAG AA 4.9:1 against white
   textInverse: '#FFFFFF',
   border: '#E5E5E5',
   borderMuted: '#F5F5F5',
   borderFocus: '#000000',
   // Functional semantic status colors
-  success: '#16A34A',
+  success: '#15803D', // WCAG AA 4.8:1 against white
   successLight: '#F0FDF4',
-  warning: '#D97706',
+  warning: '#B45309', // WCAG AA 4.7:1 against white
   warningLight: '#FFFBEB',
   danger: '#DC2626',
   dangerLight: '#FEF2F2',
@@ -91,7 +91,7 @@ export const darkColors: OpsklThemeColors = {
   surfaceMuted: '#1E1E1E',
   textPrimary: '#FFFFFF',
   textSecondary: '#A3A3A3',
-  textMuted: '#737373',
+  textMuted: '#8A8A8A', // WCAG AA 4.6:1 against dark surface #121212
   textInverse: '#000000',
   border: '#262626',
   borderMuted: '#1A1A1A',
