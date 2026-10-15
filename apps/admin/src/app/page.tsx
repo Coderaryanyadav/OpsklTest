@@ -21,8 +21,6 @@ import {
   moderateJobSafe,
   fetchAuditLogs,
   fetchPlatformSettings,
-  calculatePilotMetricsSummary,
-  PilotMetricsSummary,
   setBookingPauseStatusSafe,
   getSystemOperationalStatus,
   syncKillswitchFromDatabase,
@@ -39,7 +37,6 @@ import { SafetyQueue } from '../components/SafetyQueue';
 import { JobModerationTable } from '../components/JobModerationTable';
 import { AuditLogsTable } from '../components/AuditLogsTable';
 import { PlatformSettingsPanel } from '../components/PlatformSettingsPanel';
-import { MumbaiPilotDashboard } from '../components/MumbaiPilotDashboard';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -56,7 +53,6 @@ export default function AdminDashboardPage() {
   // Status and feedback
   const [adminUser, setAdminUser] = useState<{ email?: string; fullName?: string } | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemOperationalStatus>(getSystemOperationalStatus());
-  const [pilotMetrics] = useState<PilotMetricsSummary>(calculatePilotMetricsSummary());
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
@@ -246,8 +242,6 @@ export default function AdminDashboardPage() {
     switch (mod) {
       case 'overview':
         return { title: 'Platform Operations Overview', subtitle: 'Live marketplace KPIs, workforce metrics, and liquidity volume' };
-      case 'pilot':
-        return { title: 'Mumbai Live Pilot', subtitle: 'Regional execution tracking across BKC, NESCO and South Mumbai' };
       case 'verifications':
         return { title: 'Identity & Business Verification Queue', subtitle: 'KYC review for worker Aadhaar and organizer GSTIN credentials' };
       case 'disputes':
@@ -341,10 +335,6 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                 </div>
-              )}
-
-              {activeModule === 'pilot' && (
-                <MumbaiPilotDashboard pilotMetrics={pilotMetrics} />
               )}
 
               {activeModule === 'verifications' && (

@@ -3,7 +3,6 @@
 import React from 'react';
 import {
   BarChart3,
-  MapPin,
   ShieldCheck,
   Scale,
   AlertTriangle,
@@ -16,7 +15,6 @@ import { SystemOperationalStatus } from '@opskil/shared';
 
 export type AdminModule =
   | 'overview'
-  | 'pilot'
   | 'verifications'
   | 'disputes'
   | 'safety'
@@ -55,7 +53,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       group: 'OPERATIONS',
       items: [
         { id: 'overview' as AdminModule, label: 'Platform Overview', icon: <BarChart3 size={16} /> },
-        { id: 'pilot' as AdminModule, label: 'Mumbai Live Pilot', icon: <MapPin size={16} /> },
         {
           id: 'verifications' as AdminModule,
           label: 'Verification Queue',
