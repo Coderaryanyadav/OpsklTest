@@ -308,7 +308,16 @@ export default function WorkerOnboardingScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader title="Worker Profile & Onboarding" onBack={() => router.back()} />
+      <ScreenHeader
+        title="Worker Profile & Onboarding"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)' as any);
+          }
+        }}
+      />
 
       {!userId ? (
         <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>

@@ -79,14 +79,29 @@ export default function OrganizerLoginScreen() {
   }, []);
 
   const handlePostAuthRoute = async (userId: string) => {
-    const profile = await fetchUserProfile(userId);
+    let profile = await fetchUserProfile(userId);
+
+    // If profile is worker, offer or automatically enable Organizer role
+    if (profile && profile.role === 'worker') {
+      try {
+        const { data: switchRes } = await supabase.rpc('switch_user_role_safe', {
+          p_target_role: 'organizer',
+          p_business_name: profile.fullName || 'Independent Organizer',
+          p_business_phone: profile.phone || '',
+        });
+        if (switchRes && switchRes.success) {
+          profile = await fetchUserProfile(userId);
+        }
+      } catch (e) {
+        // Continue to check
+      }
+    }
+
     if (!profile || profile.isActive === false || (profile.role !== 'organizer' && profile.role !== 'admin')) {
       await supabase.auth.signOut().catch(() => {});
       Alert.alert(
-        'Unauthorized Account',
-        profile && profile.role === 'worker'
-          ? 'This account is registered with a Worker profile. Please sign in via the Opskl Worker app.'
-          : 'Unable to verify an active Organizer account for this identity.'
+        'Account Setup Required',
+        'Unable to verify an active Organizer account for this identity. Please register your organization below.'
       );
       return;
     }
@@ -187,11 +202,22 @@ export default function OrganizerLoginScreen() {
 
       if (res?.session) {
         await handlePostAuthRoute(res.session.user.id);
-      } else if (res?.user && !res.session) {
+      } else {
+        // Attempt immediate login if auto-confirmed by backend
+        try {
+          const loginRes = await signInWithPassword(trimmedEmail, password, 'organizer');
+          if (loginRes?.session) {
+            await handlePostAuthRoute(loginRes.session.user.id);
+            return;
+          }
+        } catch {
+          // If unconfirmed, show info
+        }
+
         Alert.alert(
-          'Verification Email Sent',
-          `An activation link has been sent to ${trimmedEmail}. Please verify before logging in.`,
-          [{ text: 'OK', onPress: () => setMode('signin') }]
+          'Registration Received',
+          `Your organization profile for "${trimmedOrg}" has been created. Please sign in with your credentials.`,
+          [{ text: 'Sign In Now', onPress: () => setMode('signin') }]
         );
       }
     } catch (err: any) {

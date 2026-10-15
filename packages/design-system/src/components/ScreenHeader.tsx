@@ -33,7 +33,13 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
         {onBack ? (
           <Pressable
-            onPress={onBack}
+            onPress={() => {
+              try {
+                onBack();
+              } catch {
+                // Ignore navigation boundary warnings
+              }
+            }}
             style={({ pressed }) => ({
               width: 44,
               height: 44,

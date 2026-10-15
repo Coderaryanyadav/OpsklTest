@@ -201,9 +201,47 @@ export async function signUpWithEmailPassword({
   phone,
 }: SignUpParams) {
   logger.info('Initiating Sign-up', { email, role });
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // For organizer role: use registration endpoint when available to guarantee instant activation
+  if (role === 'organizer') {
+    const apiBase =
+      typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://admin-blue-beta-41.vercel.app';
+
+    try {
+      const resp = await fetch(`${apiBase}/api/auth/register-organizer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+          businessName: fullName,
+          phone,
+        }),
+      });
+
+      if (resp.ok) {
+        const body = await resp.json();
+        if (body.success) {
+          // Immediately sign in so user gets active session
+          const signInRes = await supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
+          if (signInRes.data?.session) {
+            return signInRes.data;
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('Direct organizer registration endpoint unavailable, falling back to standard auth', { error: String(e) });
+    }
+  }
 
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: normalizedEmail,
     password,
     options: {
       data: {
@@ -215,7 +253,7 @@ export async function signUpWithEmailPassword({
   });
 
   if (error) {
-    logger.error('Sign-up failed', error, { email });
+    logger.error('Sign-up failed', error, { email: normalizedEmail });
     throw error;
   }
 
@@ -275,7 +313,7 @@ export function onAuthStateChange(
  */
 export async function signInWithGoogleOAuth(role?: UserRole, redirectTo?: string) {
   logger.info('Initiating Google OAuth sign-in', { role, redirectTo });
-  
+
   const options: Record<string, any> = {};
   if (redirectTo) {
     options.redirectTo = redirectTo;

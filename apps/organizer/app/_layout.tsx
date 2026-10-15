@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,7 +13,7 @@ import {
   useAuth,
   EmptyState,
 } from '@opskil/design-system';
-import { universalStorage } from '@opskil/shared';
+import { universalStorage, supabase } from '@opskil/shared';
 
 export { OpsklErrorBoundary as ErrorBoundary } from '@opskil/design-system';
 
@@ -28,6 +28,7 @@ function RootNavigator() {
     loading,
     authState,
     roleMismatch,
+    profile,
     isDeactivated,
     cancelAccountDeletion,
     refreshProfile,
@@ -81,13 +82,39 @@ function RootNavigator() {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
         <EmptyState
           title="Worker Account Detected"
-          description="You are currently signed in with a Worker account. The Organizer Portal requires an Organizer business profile. Please sign out or open Opskl Worker."
-          actionLabel="Sign Out of Worker Account"
+          description="You are currently signed in with a Worker account. You can enable your Organizer business workspace with one tap, or switch back to the Opskl Worker app."
+          actionLabel="Switch to Organizer Workspace"
           onAction={async () => {
-            await logout();
-            router.replace('/auth/login' as any);
+            try {
+              const { data: res } = await supabase.rpc('switch_user_role_safe', {
+                p_target_role: 'organizer',
+                p_business_name: profile?.fullName || 'My Agency',
+                p_business_phone: profile?.phone || '',
+              });
+              if (res?.success) {
+                await refreshProfile();
+                router.replace('/(tabs)' as any);
+              } else {
+                Alert.alert('Role Switch Failed', res?.error || 'Could not switch to organizer profile.');
+              }
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Role transition failed.');
+            }
           }}
         />
+        <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={async () => {
+              await logout();
+              router.replace('/auth/login' as any);
+            }}
+            style={{ padding: spacing.sm }}
+          >
+            <Text style={{ color: colors.textMuted, fontSize: 13, textDecorationLine: 'underline' }}>
+              Sign Out & Use Different Account
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
