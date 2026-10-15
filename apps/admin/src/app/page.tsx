@@ -37,6 +37,7 @@ import { SafetyQueue } from '../components/SafetyQueue';
 import { JobModerationTable } from '../components/JobModerationTable';
 import { AuditLogsTable } from '../components/AuditLogsTable';
 import { PlatformSettingsPanel } from '../components/PlatformSettingsPanel';
+import { DirectoryTable, DirectoryUser } from '../components/DirectoryTable';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -48,6 +49,8 @@ export default function AdminDashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [settings, setSettings] = useState<PlatformSetting[]>([]);
+  const [directoryWorkers, setDirectoryWorkers] = useState<DirectoryUser[]>([]);
+  const [directoryOrganizers, setDirectoryOrganizers] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Status and feedback
@@ -83,11 +86,92 @@ export default function AdminDashboardPage() {
       } else {
         setDashboardError(null);
       }
+      // Load worker and organizer directory records
+      const [workersQuery, orgsQuery] = await Promise.all([
+        adminSupabase
+          .from('profiles')
+          .select('id, full_name, email, phone, is_active, created_at, worker_profiles(verification_status, is_aadhaar_verified, is_pan_verified, skills, preferred_locality, shifts_completed, upi_id)')
+          .eq('role', 'worker'),
+        adminSupabase
+          .from('profiles')
+          .select('id, full_name, email, phone, is_active, created_at, organizer_profiles(business_name, business_type, verification_status, is_gstin_verified, gstin, total_events_hosted)')
+          .eq('role', 'organizer'),
+      ]);
+
+      if (workersQuery.data) {
+        setDirectoryWorkers(
+          workersQuery.data.map((row: any) => {
+            const wp = Array.isArray(row.worker_profiles) ? row.worker_profiles[0] : row.worker_profiles;
+            return {
+              id: row.id,
+              fullName: row.full_name || 'Worker',
+              email: row.email || '',
+              phone: row.phone,
+              role: 'worker',
+              isActive: row.is_active ?? true,
+              createdAt: row.created_at,
+              verificationStatus: wp?.verification_status || 'unverified',
+              isAadhaarVerified: wp?.is_aadhaar_verified || false,
+              isPanVerified: wp?.is_pan_verified || false,
+              skills: wp?.skills || [],
+              preferredLocality: wp?.preferred_locality || 'Mumbai',
+              shiftsCompleted: wp?.shifts_completed || 0,
+              upiId: wp?.upi_id,
+            };
+          })
+        );
+      }
+
+      if (orgsQuery.data) {
+        setDirectoryOrganizers(
+          orgsQuery.data.map((row: any) => {
+            const op = Array.isArray(row.organizer_profiles) ? row.organizer_profiles[0] : row.organizer_profiles;
+            return {
+              id: row.id,
+              fullName: row.full_name || 'Organizer',
+              email: row.email || '',
+              phone: row.phone,
+              role: 'organizer',
+              isActive: row.is_active ?? true,
+              createdAt: row.created_at,
+              businessName: op?.business_name || row.full_name || 'Event Agency',
+              businessType: op?.business_type || 'event_agency',
+              verificationStatus: op?.verification_status || 'unverified',
+              isGstinVerified: op?.is_gstin_verified || false,
+              gstin: op?.gstin,
+              totalEventsHosted: op?.total_events_hosted || 0,
+            };
+          })
+        );
+      }
     } catch (err: any) {
       console.error('Failed to load admin data', err);
       setDashboardError(err.message || 'Failed to connect to database operations services.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleActiveStatus = async (userId: string, currentActive: boolean) => {
+    try {
+      const { error } = await adminSupabase
+        .from('profiles')
+        .update({ is_active: !currentActive, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setDirectoryWorkers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isActive: !currentActive } : u))
+      );
+      setDirectoryOrganizers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isActive: !currentActive } : u))
+      );
+      setActionSuccessMessage(
+        !currentActive ? 'Account reactivated successfully.' : 'Account suspended successfully.'
+      );
+    } catch (err: any) {
+      alert(`Failed to update account status: ${err.message}`);
     }
   };
 
@@ -250,6 +334,10 @@ export default function AdminDashboardPage() {
         return { title: 'Safety Reports & Grievances', subtitle: 'Critical workplace complaints and SOS incident management' };
       case 'jobs':
         return { title: 'Shift Moderation & Minimum Wage Floor', subtitle: 'Quality assurance, living wage floor enforcement, and cancellation desk' };
+      case 'workers':
+        return { title: 'Verified Worker Talent Pool', subtitle: 'Browse, filter, and manage registered event workforce profiles and KYC records' };
+      case 'organizers':
+        return { title: 'Event Agencies & Organizers Directory', subtitle: 'Verified event agencies, production houses, and company organizers' };
       case 'audit':
         return { title: 'Immutable Administrative Audit Trail', subtitle: 'Cryptographically sealed audit logs of administrative actions' };
       case 'settings':
@@ -322,15 +410,16 @@ export default function AdminDashboardPage() {
           ) : (
             <>
               {activeModule === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                   <MetricCards metrics={metrics} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: 20 }}>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                     <VerificationQueue
-                      verifications={verifications.slice(0, 5)}
+                      verifications={verifications}
                       onResolveCase={handleResolveCase}
                     />
                     <DisputesQueue
-                      disputes={disputes.slice(0, 5)}
+                      disputes={disputes}
                       onResolveDispute={handleResolveDispute}
                     />
                   </div>
@@ -362,6 +451,24 @@ export default function AdminDashboardPage() {
                 <JobModerationTable
                   jobs={jobs}
                   onModerateJob={handleModerateJob}
+                />
+              )}
+
+              {activeModule === 'workers' && (
+                <DirectoryTable
+                  type="worker"
+                  users={directoryWorkers}
+                  onToggleActiveStatus={handleToggleActiveStatus}
+                  onRefresh={loadAdminData}
+                />
+              )}
+
+              {activeModule === 'organizers' && (
+                <DirectoryTable
+                  type="organizer"
+                  users={directoryOrganizers}
+                  onToggleActiveStatus={handleToggleActiveStatus}
+                  onRefresh={loadAdminData}
                 />
               )}
 

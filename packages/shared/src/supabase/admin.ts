@@ -31,8 +31,8 @@ export async function fetchAdminDashboardMetrics(): Promise<AdminOverviewMetrics
       paymentsRes,
     ] = await Promise.all([
       client.from('jobs').select('*', { count: 'exact', head: true }).in('status', ['open', 'filling']),
-      client.from('worker_profiles').select('*', { count: 'exact', head: true }).eq('is_aadhaar_verified', true),
-      client.from('organizer_profiles').select('*', { count: 'exact', head: true }).eq('is_gstin_verified', true),
+      client.from('worker_profiles').select('*', { count: 'exact', head: true }).or('verification_status.eq.verified,is_aadhaar_verified.eq.true'),
+      client.from('organizer_profiles').select('*', { count: 'exact', head: true }).or('verification_status.eq.verified,is_gstin_verified.eq.true'),
       client.from('verification_cases').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       client.from('disputes').select('*', { count: 'exact', head: true }).in('status', ['open', 'under_review']),
       client.from('safety_reports').select('*', { count: 'exact', head: true }).in('severity', ['high', 'critical']).eq('status', 'open'),

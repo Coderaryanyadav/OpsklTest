@@ -77,6 +77,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       ],
     },
     {
+      group: 'DIRECTORIES & USERS',
+      items: [
+        { id: 'workers' as AdminModule, label: 'Worker Talent Pool', icon: <Briefcase size={16} /> },
+        { id: 'organizers' as AdminModule, label: 'Agencies & Organizers', icon: <Briefcase size={16} /> },
+      ],
+    },
+    {
       group: 'MARKETPLACE MODERATION',
       items: [
         { id: 'jobs' as AdminModule, label: 'Shift Moderation', icon: <Briefcase size={16} /> },

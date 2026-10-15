@@ -12,6 +12,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
   verifications,
   onResolveCase,
 }) => {
+  const [entityType, setEntityType] = useState<'all' | 'worker' | 'organizer'>('all');
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [search, setSearch] = useState('');
   const [selectedCase, setSelectedCase] = useState<VerificationCase | null>(null);
@@ -21,16 +22,25 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
   const [fetchingDoc, setFetchingDoc] = useState(false);
 
   const filteredCases = verifications.filter((c) => {
+    // Entity type filtering: worker (Aadhaar/PAN or role worker) vs organizer (GSTIN or role organizer)
+    const isOrg = c.documentType === 'gstin' || c.applicantProfile?.role === 'organizer';
+    if (entityType === 'worker' && isOrg) return false;
+    if (entityType === 'organizer' && !isOrg) return false;
+
     if (filter !== 'all' && c.status !== filter) return false;
     if (search) {
       const q = search.toLowerCase();
-      const profile = c.profileId.toLowerCase();
+      const profile = (c.applicantProfile?.fullName || c.profileId).toLowerCase();
+      const email = (c.applicantProfile?.email || '').toLowerCase();
       const doc = c.documentType.toLowerCase();
       const mask = c.documentMaskedId.toLowerCase();
-      return profile.includes(q) || doc.includes(q) || mask.includes(q);
+      return profile.includes(q) || email.includes(q) || doc.includes(q) || mask.includes(q);
     }
     return true;
   });
+
+  const workerCasesCount = verifications.filter((c) => c.documentType !== 'gstin' && c.applicantProfile?.role !== 'organizer').length;
+  const orgCasesCount = verifications.filter((c) => c.documentType === 'gstin' || c.applicantProfile?.role === 'organizer').length;
 
   const handleApprove = async () => {
     if (!selectedCase) return;
@@ -78,29 +88,96 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Entity Segment: Worker vs Organization */}
+          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 3, border: '1px solid #E2E8F0' }}>
+            <button
+              onClick={() => setEntityType('all')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                backgroundColor: entityType === 'all' ? '#101D36' : 'transparent',
+                color: entityType === 'all' ? '#FFFFFF' : '#64748B',
+                fontWeight: entityType === 'all' ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>All Submissions</span>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'all' ? '#334155' : '#E2E8F0', color: entityType === 'all' ? '#FFFFFF' : '#475569' }}>
+                {verifications.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setEntityType('worker')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                backgroundColor: entityType === 'worker' ? '#101D36' : 'transparent',
+                color: entityType === 'worker' ? '#FFFFFF' : '#64748B',
+                fontWeight: entityType === 'worker' ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>Workers KYC</span>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'worker' ? '#334155' : '#E2E8F0', color: entityType === 'worker' ? '#FFFFFF' : '#475569' }}>
+                {workerCasesCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setEntityType('organizer')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                backgroundColor: entityType === 'organizer' ? '#101D36' : 'transparent',
+                color: entityType === 'organizer' ? '#FFFFFF' : '#64748B',
+                fontWeight: entityType === 'organizer' ? 700 : 500,
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span>Agencies & Organizers</span>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'organizer' ? '#334155' : '#E2E8F0', color: entityType === 'organizer' ? '#FFFFFF' : '#475569' }}>
+                {orgCasesCount}
+              </span>
+            </button>
+          </div>
+
           <input
             type="text"
-            placeholder="Search by profile, doc, or ID..."
+            placeholder="Search name, doc, or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              padding: '8px 14px',
+              padding: '7px 12px',
               borderRadius: 8,
               border: '1px solid #CBD5E1',
               fontSize: 13,
-              width: 260,
+              width: 200,
               outline: 'none',
             }}
           />
 
-          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2 }}>
+          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2, border: '1px solid #E2E8F0' }}>
             {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
                 style={{
-                  padding: '6px 12px',
+                  padding: '6px 10px',
                   borderRadius: 6,
                   border: 'none',
                   backgroundColor: filter === tab ? '#FFFFFF' : 'transparent',
@@ -188,10 +265,13 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   <td style={{ padding: '12px 16px' }}>
                     <span
                       style={{
-                        padding: '2px 8px',
+                        display: 'inline-block',
+                        padding: '3px 10px',
                         borderRadius: 12,
                         fontSize: 11,
                         fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        letterSpacing: 0.5,
                         backgroundColor:
                           c.status === 'approved'
                             ? '#DCFCE7'
