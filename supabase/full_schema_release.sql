@@ -4581,6 +4581,7 @@ GRANT EXECUTE ON FUNCTION get_job_contact(UUID) TO authenticated;
 -- Reviews RLS & RPC
 DROP POLICY IF EXISTS "Users view reviews" ON reviews;
 DROP POLICY IF EXISTS "Participants create reviews" ON reviews;
+DROP POLICY IF EXISTS "Participants and admins view reviews" ON reviews;
 
 CREATE POLICY "Participants and admins view reviews"
   ON reviews FOR SELECT TO authenticated
