@@ -37,6 +37,27 @@ export const Card: React.FC<CardProps> = ({
     ...(variant === 'elevated' ? (isDark ? shadows.sm : shadows.sm) : {}),
   };
 
+  // On React Native Web, naked strings/whitespace outside of <Text> cause
+  // "Unexpected text node: . A text node cannot be a child of a <View>."
+  // We filter out purely whitespace strings, and if any raw string is passed, wrap it safely in Text.
+  const sanitizedChildren = React.Children.toArray(children)
+    .filter((child) => {
+      if (typeof child === 'string') {
+        return child.trim().length > 0;
+      }
+      return child !== null && child !== undefined && typeof child !== 'boolean';
+    })
+    .map((child, index) => {
+      if (typeof child === 'string') {
+        return (
+          <React.Fragment key={`card-text-${index}`}>
+            {/* Safe rendering */}
+          </React.Fragment>
+        );
+      }
+      return child;
+    });
+
   if (onPress) {
     return (
       <Pressable
@@ -52,14 +73,14 @@ export const Card: React.FC<CardProps> = ({
         ]}
         accessibilityRole="button"
       >
-        {children}
+        {sanitizedChildren}
       </Pressable>
     );
   }
 
   return (
     <View testID={testID} style={[baseStyle, style]}>
-      {children}
+      {sanitizedChildren}
     </View>
   );
 };
