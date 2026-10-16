@@ -101,10 +101,10 @@ async function run() {
     process.exit(1);
   }
 
-  // If a live database connection string is provided, run live transactional queries
-  const liveDbUrl = connectionString || 'postgresql://postgres.lericvniqdbvacgegrbp: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@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
+  // Live database connection requires explicit opt-in via DATABASE_URL
+  const liveDbUrl = connectionString;
   if (liveDbUrl) {
-    console.log(`\nConnecting to live database at ${liveDbUrl.split('@')[1] || 'remote'}...`);
+    console.log(`\nConnecting to test database at ${liveDbUrl.split('@')[1] || 'database'}...`);
     const client = new pg.Client({
       connectionString: liveDbUrl,
       ssl: { rejectUnauthorized: false },

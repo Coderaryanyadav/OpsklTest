@@ -1,12 +1,23 @@
 import pg from 'pg';
 import { createClient } from '@supabase/supabase-js';
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres.lericvniqdbvacgegrbp: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@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lericvniqdbvacgegrbp.supabase.co';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxlcmljdm5pcWRidmFjZ2VncmJwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTg5ODIxMCwiZXhwIjoyMTA3NDc0MjEwfQ.4abiWP6a-Q3N1EP704hewgn-OD2s9rgyib1Aa881QSM';
+const connectionString = process.env.DATABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const adminEmail = process.argv[2] || 'admin@opskil.com';
-const adminPassword = process.argv[3] || 'AdminOpskil2026!';
+if (!connectionString || !supabaseUrl || !serviceRoleKey) {
+  console.error('\x1b[31m[ERROR] Missing required environment variables:\x1b[0m');
+  console.error('Please ensure DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, and SUPABASE_SERVICE_ROLE_KEY are set.');
+  process.exit(1);
+}
+
+const adminEmail = process.argv[2] || process.env.ADMIN_EMAIL || 'admin@opskil.com';
+const adminPassword = process.argv[3] || process.env.ADMIN_PASSWORD;
+
+if (!adminPassword) {
+  console.error('\x1b[31m[ERROR] Admin password must be provided via argument or ADMIN_PASSWORD environment variable.\x1b[0m');
+  process.exit(1);
+}
 
 const adminClient = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },

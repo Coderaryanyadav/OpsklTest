@@ -203,7 +203,7 @@ export async function fetchDiscoveryFeed(
       query = query.eq('category', filters.category);
     }
     if (filters?.minWage && filters.minWage > 0) {
-      query = query.gte('total_pay', filters.minWage);
+      query = query.gte('hourly_rate', filters.minWage);
     }
     if (filters?.date) {
       query = query.eq('date', filters.date);
@@ -265,19 +265,32 @@ export async function fetchJobs(filters?: {
  * Fetch a single job by ID with full details
  */
 export async function fetchJobById(jobId: string): Promise<Job | null> {
+  // 1. Try fetching full job (accessible to organizers and confirmed crew)
   const { data, error } = await supabase
     .from('jobs')
     .select('*')
     .eq('id', jobId)
     .single();
 
-  if (error || !data) {
-    logger.error('Failed to fetch job by ID', error, { jobId });
+  if (data) {
+    const [enriched] = await enrichJobsWithOrganizerCards([data]);
+    return enriched || mapJobRow(data);
+  }
+
+  // 2. Fallback to public_jobs view for unconfirmed applicants and discovery visitors
+  const { data: publicData, error: publicError } = await supabase
+    .from('public_jobs')
+    .select('*')
+    .eq('id', jobId)
+    .single();
+
+  if (publicError || !publicData) {
+    logger.error('Failed to fetch job by ID from public_jobs view', publicError || error, { jobId });
     return null;
   }
 
-  const [enriched] = await enrichJobsWithOrganizerCards([data]);
-  return enriched || mapJobRow(data);
+  const [enriched] = await enrichJobsWithOrganizerCards([publicData]);
+  return enriched || mapJobRow(publicData);
 }
 
 /**
@@ -417,16 +430,16 @@ export async function undoSwipePass(
 export async function fetchWorkerApplications(workerId: string): Promise<JobApplication[]> {
   const { data, error } = await supabase
     .from('job_applications')
-    .select('*, jobs(*)')
+    .select('*, public_jobs(*)')
     .eq('worker_id', workerId)
     .order('applied_at', { ascending: false });
 
   if (error) {
     logger.error('Failed to fetch worker applications', error);
-    return [];
+    throw new Error(`Failed to load worker applications: ${error.message}`);
   }
 
-  const rawJobs = (data || []).map((r: any) => r.jobs).filter(Boolean);
+  const rawJobs = (data || []).map((r: any) => r.public_jobs).filter(Boolean);
   const enrichedJobs = await enrichJobsWithOrganizerCards(rawJobs);
   const jobsById = new Map<string, Job>();
   enrichedJobs.forEach((j) => jobsById.set(j.id, j));
@@ -438,7 +451,7 @@ export async function fetchWorkerApplications(workerId: string): Promise<JobAppl
     status: row.status,
     appliedAt: row.applied_at,
     notes: row.notes,
-    job: row.jobs ? jobsById.get(row.jobs.id) || mapJobRow(row.jobs) : undefined,
+    job: row.public_jobs ? jobsById.get(row.public_jobs.id) || mapJobRow(row.public_jobs) : undefined,
   }));
 }
 

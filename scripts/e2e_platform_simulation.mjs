@@ -127,12 +127,12 @@ async function main() {
 
       INSERT INTO profiles (id, role, phone, full_name, city, is_active)
       VALUES 
-        ('${testOrgId}', 'organizer', '+919820000001', 'Apex Events Mumbai', 'Mumbai', true),
-        ('${testWorkerId}', 'worker', '+919820000002', 'Rahul Sharma', 'Mumbai', true)
+        ('${testOrgId}', 'organizer', '+919800${testSuffix}', 'Apex Events Mumbai', 'Mumbai', true),
+        ('${testWorkerId}', 'worker', '+919811${testSuffix}', 'Rahul Sharma', 'Mumbai', true)
       ON CONFLICT (id) DO UPDATE SET is_active = true;
 
       INSERT INTO organizer_profiles (id, business_name, business_contact_phone, verification_status, profile_completion_status)
-      VALUES ('${testOrgId}', 'Apex Events Mumbai', '+919820000001', 'pending', 'completed')
+      VALUES ('${testOrgId}', 'Apex Events Mumbai', '+919800${testSuffix}', 'pending', 'completed')
       ON CONFLICT (id) DO UPDATE SET verification_status = 'pending', profile_completion_status = 'completed';
 
       INSERT INTO worker_profiles (id, preferred_locality, skills, experience_years, verification_status, profile_completion_status)
