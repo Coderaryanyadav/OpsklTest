@@ -27,53 +27,18 @@ export async function POST(req: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // 1. Check if user already exists
+    // 1. Check if user already exists — NEVER overwrite existing accounts or reset passwords
     const { data: userList } = await adminClient.auth.admin.listUsers();
     const existing = userList?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
 
     if (existing) {
-      // User exists: update password, role and confirm email
-      const { error: updateErr } = await adminClient.auth.admin.updateUserById(existing.id, {
-        password,
-        email_confirm: true,
-        user_metadata: {
-          ...existing.user_metadata,
-          role: 'organizer',
-          full_name: cleanName,
-          phone: cleanPhone,
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'An account with this email address already exists. Please sign in or use the password reset flow.',
         },
-      });
-
-      if (updateErr) {
-        return NextResponse.json({ success: false, error: updateErr.message }, { status: 400 });
-      }
-
-      // Update profiles and organizer_profiles
-      await adminClient.from('profiles').upsert({
-        id: existing.id,
-        role: 'organizer',
-        full_name: cleanName,
-        phone: cleanPhone,
-        email: cleanEmail,
-        city: 'Mumbai',
-        is_active: true,
-      });
-
-      await adminClient.from('organizer_profiles').upsert({
-        id: existing.id,
-        business_name: cleanName,
-        business_contact_phone: cleanPhone,
-        business_contact_email: cleanEmail,
-        business_type: 'event_agency',
-        profile_completion_status: 'incomplete',
-        verification_status: 'unverified',
-      });
-
-      return NextResponse.json({
-        success: true,
-        userId: existing.id,
-        message: 'Existing account upgraded to Organizer profile.',
-      });
+        { status: 409 }
+      );
     }
 
     // 2. Create brand-new user with pre-confirmed email (bypassing Resend test-mode restrictions)
@@ -97,8 +62,8 @@ export async function POST(req: NextRequest) {
 
     const userId = newUser.user.id;
 
-    // Explicitly guarantee profiles and organizer_profiles exist
-    await adminClient.from('profiles').upsert({
+    // Explicitly guarantee profiles and organizer_profiles exist — handle errors and rollback
+    const { error: profileErr } = await adminClient.from('profiles').upsert({
       id: userId,
       role: 'organizer',
       full_name: cleanName,
@@ -108,7 +73,16 @@ export async function POST(req: NextRequest) {
       is_active: true,
     });
 
-    await adminClient.from('organizer_profiles').upsert({
+    if (profileErr) {
+      // Roll back created auth identity if profile insertion fails
+      await adminClient.auth.admin.deleteUser(userId);
+      return NextResponse.json(
+        { success: false, error: `Failed to initialize organizer profile: ${profileErr.message}` },
+        { status: 500 }
+      );
+    }
+
+    const { error: orgProfileErr } = await adminClient.from('organizer_profiles').upsert({
       id: userId,
       business_name: cleanName,
       business_contact_phone: cleanPhone,
@@ -117,6 +91,16 @@ export async function POST(req: NextRequest) {
       profile_completion_status: 'incomplete',
       verification_status: 'unverified',
     });
+
+    if (orgProfileErr) {
+      // Roll back profile and auth user if organizer profile insertion fails
+      await adminClient.from('profiles').delete().eq('id', userId);
+      await adminClient.auth.admin.deleteUser(userId);
+      return NextResponse.json(
+        { success: false, error: `Failed to initialize organizer business profile: ${orgProfileErr.message}` },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

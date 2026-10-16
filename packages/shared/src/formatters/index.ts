@@ -101,6 +101,22 @@ export function formatPhoneIN(phone: string): string {
 }
 
 /**
+ * Normalizes Indian mobile number to clean 10-digit format: "9876543210"
+ * Strips "+91", leading zeros, dashes, and whitespace.
+ */
+export function normalizePhoneIN(phone: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits.slice(2);
+  }
+  if (digits.length === 11 && digits.startsWith('0')) {
+    return digits.slice(1);
+  }
+  return digits.slice(-10);
+}
+
+/**
  * Validates 10-digit Indian mobile number
  */
 export function isValidIndianPhone(phone: string): boolean {

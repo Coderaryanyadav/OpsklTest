@@ -19,7 +19,7 @@ type SignInMethod = 'otp' | 'password';
 
 export default function OrganizerLoginScreen() {
   const router = useRouter();
-  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const { redirect, mode: initialMode } = useLocalSearchParams<{ redirect?: string; mode?: AuthMode }>();
   const { colors, spacing, radii, typography } = useOpsklTheme();
   const {
     sendEmailOtp,
@@ -32,7 +32,7 @@ export default function OrganizerLoginScreen() {
     handleAuthUrl,
   } = useAuth();
 
-  const [mode, setMode] = useState<AuthMode>('signin');
+  const [mode, setMode] = useState<AuthMode>(initialMode === 'signup' ? 'signup' : 'signin');
   const [signInMethod, setSignInMethod] = useState<SignInMethod>('otp');
 
   // Form State

@@ -68,7 +68,7 @@ export function SwipeCard({
   isTopCard,
   disabled = false,
 }: SwipeCardProps) {
-  const { colors, radii, typography, isDark } = useOpsklTheme();
+  const { colors, radii, typography } = useOpsklTheme();
   const reducedMotion = useReducedMotion();
 
   const translateX = useSharedValue(0);
@@ -272,9 +272,9 @@ export function SwipeCard({
                 </Text>
               </View>
             </View>
-            <View style={[styles.upiGuaranteePill, { backgroundColor: isDark ? '#141414' : '#F5F5F5', borderColor: colors.border, borderWidth: 1 }]}>
-              <Zap size={12} color={colors.textPrimary} strokeWidth={2.2} style={{ marginRight: 4 }} />
-              <Text style={[styles.upiGuaranteeText, { color: colors.textPrimary }]}>
+            <View style={[styles.upiGuaranteePill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1 }]}>
+              <Zap size={12} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 4 }} />
+              <Text style={[styles.upiGuaranteeText, { color: colors.textSecondary }]}>
                 UPI on verified checkout
               </Text>
             </View>
@@ -348,25 +348,25 @@ export function SwipeCard({
           {/* Amenities & Conditions Pills */}
           <View style={styles.amenitiesRow}>
             {job.mealProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Utensils size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Meals</Text>
               </View>
             )}
             {job.transportProvided && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Car size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>Travel Allowance</Text>
               </View>
             )}
             {job.breaksMinutes ? (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Coffee size={12} color={colors.textSecondary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textSecondary }]}>{job.breaksMinutes}m Break</Text>
               </View>
             ) : null}
             {job.applicationDeadline && (
-              <View style={[styles.amenityPill, { backgroundColor: isDark ? '#262626' : '#F5F5F5', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <View style={[styles.amenityPill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                 <Clock size={12} color={colors.textPrimary} strokeWidth={2} />
                 <Text style={[styles.amenityText, { color: colors.textPrimary }]}>
                   {formatDeadline(job.applicationDeadline)}
@@ -379,8 +379,8 @@ export function SwipeCard({
           {job.requiredSkills && job.requiredSkills.length > 0 && (
             <View style={styles.skillsRow}>
               {job.requiredSkills.slice(0, 3).map((skill, idx) => (
-                <View key={idx} style={[styles.skillChip, { borderColor: colors.border }]}>
-                  <Text style={[styles.skillText, { color: colors.textMuted }]}>{skill}</Text>
+                <View key={idx} style={[styles.skillChip, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1 }]}>
+                  <Text style={[styles.skillText, { color: colors.textSecondary }]}>{skill}</Text>
                 </View>
               ))}
             </View>

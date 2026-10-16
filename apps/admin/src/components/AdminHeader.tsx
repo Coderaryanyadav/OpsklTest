@@ -25,7 +25,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header
       style={{
         backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #E5E5E5',
+        borderBottom: '1px solid #E2E8F0',
         padding: '16px 28px',
         display: 'flex',
         flexDirection: 'column',
@@ -37,15 +37,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#737373' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B' }}>
             <span>Console</span>
             <span>/</span>
-            <span style={{ fontWeight: 600, color: '#000000' }}>{title}</span>
+            <span style={{ fontWeight: 600, color: '#0F172A' }}>{title}</span>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#000000', marginTop: 2, letterSpacing: '-0.3px' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginTop: 2, letterSpacing: '-0.3px' }}>
             {title}
           </h1>
-          {subtitle && <p style={{ fontSize: 13, color: '#737373', marginTop: 1 }}>{subtitle}</p>}
+          {subtitle && <p style={{ fontSize: 13, color: '#64748B', marginTop: 1 }}>{subtitle}</p>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

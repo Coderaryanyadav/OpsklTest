@@ -1,28 +1,28 @@
 /**
- * OPSKL DESIGN SYSTEM — STRICT MONOCHROME PALETTE
- * Apple-Level Polish · High Contrast · Strict Restraint
+ * OPSKL DESIGN SYSTEM — ENTERPRISE SAAS & APPLE-QUALITY COLOR TOKENS
+ * Unified across Worker App, Organizer App, and Admin Web Console.
  *
- * Core Tokens:
- * - Primary Black: #000000
- * - Primary White: #FFFFFF
- * - Soft White: #F5F5F5
- * - Light Neutral: #E5E5E5
- * - Mid Gray: #737373
- * - Dark Neutral: #262626
+ * Core Palette:
+ * - Brand Primary: #2563EB (Cool Royal Blue)
+ * - Brand Hover/Pressed: #1D4ED8
+ * - Brand Subtle Surface: #EFF6FF
+ * - Page Background: #FFFFFF
+ * - Secondary Surface: #F8FAFC
+ * - Tertiary Surface: #F1F5F9
+ * - Border: #E2E8F0
+ * - Strong Border: #CBD5E1
+ * - Primary Text: #0F172A (Deep Slate)
+ * - Body Text: #334155 (Slate 700)
+ * - Secondary Text: #64748B (Slate 500)
+ * - Muted Text: #94A3B8 (Slate 400)
+ *
+ * Semantic Statuses:
+ * - Approved / Success: #DCFCE7 / #15803D
+ * - Pending / Warning: #FEF3C7 / #B45309
+ * - Rejected / Danger: #FEE2E2 / #B91C1C
+ * - Info / Navigation: #DBEAFE / #1D4ED8
+ * - Neutral / Inactive: #F1F5F9 / #475569
  */
-
-export const monochrome = {
-  black: '#000000',
-  white: '#FFFFFF',
-  softWhite: '#F5F5F5',
-  lightNeutral: '#E5E5E5',
-  borderLight: '#E5E5E5',
-  midGray: '#737373',
-  darkNeutral: '#262626',
-  surfaceDark: '#121212',
-  cardDark: '#1A1A1A',
-  borderDark: '#262626',
-} as const;
 
 export interface OpsklThemeColors {
   primary: string;
@@ -33,14 +33,18 @@ export interface OpsklThemeColors {
   surface: string;
   surfaceElevated: string;
   surfaceMuted: string;
+  surfaceSecondary: string;
+  surfaceTertiary: string;
   textPrimary: string;
+  textBody: string;
   textSecondary: string;
   textMuted: string;
   textInverse: string;
   border: string;
+  borderStrong: string;
   borderMuted: string;
   borderFocus: string;
-  // Semantic indicators strictly reserved for functional status/safety/error handling
+  // Semantic status colors
   success: string;
   successLight: string;
   warning: string;
@@ -49,61 +53,75 @@ export interface OpsklThemeColors {
   dangerLight: string;
   info: string;
   infoLight: string;
+  neutralStatus: string;
+  neutralStatusLight: string;
   cardShadow: string;
 }
 
 export const lightColors: OpsklThemeColors = {
-  primary: '#000000',
-  primaryHover: '#262626',
-  primaryLight: '#F5F5F5',
-  accent: '#000000',
+  primary: '#2563EB',
+  primaryHover: '#1D4ED8',
+  primaryLight: '#EFF6FF',
+  accent: '#2563EB',
   background: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  surfaceMuted: '#F5F5F5',
-  textPrimary: '#000000',
-  textSecondary: '#737373',
-  textMuted: '#6B6B6B', // WCAG AA 4.9:1 against white
+  surfaceMuted: '#F8FAFC',
+  surfaceSecondary: '#F8FAFC',
+  surfaceTertiary: '#F1F5F9',
+  textPrimary: '#0F172A',
+  textBody: '#334155',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
   textInverse: '#FFFFFF',
-  border: '#E5E5E5',
-  borderMuted: '#F5F5F5',
-  borderFocus: '#000000',
-  // Functional semantic status colors
-  success: '#15803D', // WCAG AA 4.8:1 against white
-  successLight: '#F0FDF4',
-  warning: '#B45309', // WCAG AA 4.7:1 against white
-  warningLight: '#FFFBEB',
-  danger: '#DC2626',
-  dangerLight: '#FEF2F2',
-  info: '#262626',
-  infoLight: '#F5F5F5',
-  cardShadow: 'rgba(0, 0, 0, 0.04)',
+  border: '#E2E8F0',
+  borderStrong: '#CBD5E1',
+  borderMuted: '#F1F5F9',
+  borderFocus: '#2563EB',
+  // Semantic Statuses (WCAG AA Compliant)
+  success: '#15803D',
+  successLight: '#DCFCE7',
+  warning: '#B45309',
+  warningLight: '#FEF3C7',
+  danger: '#B91C1C',
+  dangerLight: '#FEE2E2',
+  info: '#1D4ED8',
+  infoLight: '#DBEAFE',
+  neutralStatus: '#475569',
+  neutralStatusLight: '#F1F5F9',
+  cardShadow: 'rgba(15, 23, 42, 0.04)',
 };
 
 export const darkColors: OpsklThemeColors = {
-  primary: '#FFFFFF',
-  primaryHover: '#E5E5E5',
-  primaryLight: '#1A1A1A',
-  accent: '#FFFFFF',
-  background: '#000000',
-  surface: '#121212',
-  surfaceElevated: '#1A1A1A',
-  surfaceMuted: '#1E1E1E',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A3A3A3',
-  textMuted: '#8A8A8A', // WCAG AA 4.6:1 against dark surface #121212
-  textInverse: '#000000',
-  border: '#262626',
-  borderMuted: '#1A1A1A',
-  borderFocus: '#FFFFFF',
-  // Functional semantic status colors
+  primary: '#3B82F6',
+  primaryHover: '#60A5FA',
+  primaryLight: '#1E293B',
+  accent: '#3B82F6',
+  background: '#0F172A',
+  surface: '#1E293B',
+  surfaceElevated: '#334155',
+  surfaceMuted: '#1E293B',
+  surfaceSecondary: '#1E293B',
+  surfaceTertiary: '#0F172A',
+  textPrimary: '#F8FAFC',
+  textBody: '#E2E8F0',
+  textSecondary: '#94A3B8',
+  textMuted: '#64748B',
+  textInverse: '#0F172A',
+  border: '#334155',
+  borderStrong: '#475569',
+  borderMuted: '#1E293B',
+  borderFocus: '#3B82F6',
+  // Dark Semantic Statuses
   success: '#22C55E',
-  successLight: '#14532D',
+  successLight: '#052E16',
   warning: '#F59E0B',
-  warningLight: '#78350F',
+  warningLight: '#451A03',
   danger: '#EF4444',
-  dangerLight: '#7F1D1D',
-  info: '#E5E5E5',
-  infoLight: '#262626',
-  cardShadow: 'rgba(0, 0, 0, 0.6)',
+  dangerLight: '#450A0A',
+  info: '#60A5FA',
+  infoLight: '#172554',
+  neutralStatus: '#94A3B8',
+  neutralStatusLight: '#1E293B',
+  cardShadow: 'rgba(0, 0, 0, 0.4)',
 };

@@ -82,10 +82,10 @@ export default function OrganizerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
                 ]}
               >
-                <Users size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                <Users size={16} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
@@ -113,10 +113,10 @@ export default function OrganizerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
                 ]}
               >
-                <ShieldCheck size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                <ShieldCheck size={16} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
@@ -130,35 +130,35 @@ export default function OrganizerWelcomeScreen() {
           </View>
         </View>
 
-        {/* Clear Actions */}
+        {/* Clear Actions: Sign In & Sign Up First */}
         <View style={{ gap: spacing.sm }}>
           <View style={styles.dualActionContainer}>
             <Button
-              title="Open Operations Dashboard"
+              title="Sign In to Organizer Account"
               variant="primary"
               size="lg"
-              onPress={() => handleNavigate('/(tabs)', true)}
+              onPress={() => handleNavigate('/auth/login')}
             />
 
             <Button
-              title="Organizer Sign In"
-              variant="outline"
+              title="Register New Organization"
+              variant="secondary"
               size="md"
-              onPress={() => handleNavigate('/auth/login')}
+              onPress={() => handleNavigate('/auth/login?mode=signup')}
             />
           </View>
 
           <Pressable
-            onPress={() => handleNavigate('/(tabs)/create')}
+            onPress={() => handleNavigate('/(tabs)', true)}
             style={({ pressed }) => [
               styles.createLink,
               { opacity: pressed ? 0.7 : 1 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Create a new shift"
+            accessibilityLabel="Explore operations dashboard as guest"
           >
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-              Have an upcoming event? Create and publish a shift
+              Explore operations dashboard as guest
             </Text>
             <ArrowRight size={14} color={colors.textSecondary} strokeWidth={2} style={{ marginLeft: 4 }} />
           </Pressable>

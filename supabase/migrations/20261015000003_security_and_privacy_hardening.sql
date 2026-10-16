@@ -289,6 +289,7 @@ GRANT EXECUTE ON FUNCTION get_admin_audit_logs(INT, INT) TO authenticated;
 -- 4. PUBLIC_JOBS VIEW: FILTER OUT DRAFT, CANCELLED, AND PAST-DATED SHIFTS
 -- ------------------------------------------------------------------------------
 
+DROP VIEW IF EXISTS public.public_jobs CASCADE;
 CREATE OR REPLACE VIEW public.public_jobs WITH (security_invoker = true) AS
   SELECT
     id,

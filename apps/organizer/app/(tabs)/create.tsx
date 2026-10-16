@@ -168,14 +168,14 @@ export default function OrganizerCreateShiftScreen() {
   const validateStep = (currentStep: number): boolean => {
     setSubmitError(null);
     if (currentStep === 1) {
-      if (title.trim().length < 3) {
-        const msg = 'Shift title must be at least 3 characters long.';
+      if (title.trim().length < 5 || title.trim().length > 80) {
+        const msg = 'Shift title must be between 5 and 80 characters long.';
         setSubmitError(msg);
         Alert.alert('Validation Error', msg);
         return false;
       }
-      if (parsedSlots < 1) {
-        const msg = 'Headcount must be at least 1 worker.';
+      if (parsedSlots < 1 || parsedSlots > 50) {
+        const msg = 'Headcount must be between 1 and 50 workers.';
         setSubmitError(msg);
         Alert.alert('Validation Error', msg);
         return false;
@@ -193,8 +193,8 @@ export default function OrganizerCreateShiftScreen() {
         Alert.alert('Validation Error', msg);
         return false;
       }
-      if (parsedHours <= 0) {
-        const msg = 'Duration hours must be greater than 0.';
+      if (parsedHours < 1 || parsedHours > 14) {
+        const msg = 'Shift duration must be between 1 and 14 hours.';
         setSubmitError(msg);
         Alert.alert('Validation Error', msg);
         return false;
@@ -206,8 +206,8 @@ export default function OrganizerCreateShiftScreen() {
         return false;
       }
     } else if (currentStep === 3) {
-      if (duties.trim().length < 3) {
-        const msg = 'Please list shift duties with at least 3 characters.';
+      if (duties.trim().length < 5) {
+        const msg = 'Please list shift duties with at least 5 characters.';
         setSubmitError(msg);
         Alert.alert('Validation Error', msg);
         return false;
@@ -692,7 +692,7 @@ export default function OrganizerCreateShiftScreen() {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                <ShieldCheck size={13} color={colors.textPrimary} strokeWidth={2.4} />
+                <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
                 <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500', flex: 1 }}>
                   Wages are held in escrow and disbursed directly to workers upon attendance sign-off.
                 </Text>

@@ -108,7 +108,7 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
 
   if (error) {
     logger.error('Failed to fetch verification queue', error);
-    return [];
+    throw new Error(`Failed to fetch verification queue: ${error.message}`);
   }
 
   return (data || []).map((d: any) => ({
@@ -204,7 +204,7 @@ export async function fetchDisputesQueue(): Promise<Dispute[]> {
 
   if (error) {
     logger.error('Failed to fetch disputes queue', error);
-    return [];
+    throw new Error(`Failed to fetch disputes queue: ${error.message}`);
   }
 
   return (data || []).map((d: any) => ({
@@ -312,7 +312,7 @@ export async function fetchSafetyReportsQueue(): Promise<SafetyReport[]> {
 
   if (error) {
     logger.error('Failed to fetch safety reports queue', error);
-    return [];
+    throw new Error(`Failed to fetch safety reports queue: ${error.message}`);
   }
 
   return (data || []).map((r: any) => ({
@@ -378,7 +378,7 @@ export async function fetchModerationJobs(): Promise<Job[]> {
 
   if (error) {
     logger.error('Failed to fetch moderation jobs', error);
-    return [];
+    throw new Error(`Failed to fetch moderation jobs: ${error.message}`);
   }
 
   return (data || []).map((j: any) => ({
@@ -450,7 +450,7 @@ export async function fetchAuditLogs(limit: number = 50): Promise<AuditLog[]> {
 
   if (error) {
     logger.error('Failed to fetch audit logs', error);
-    return [];
+    throw new Error(`Failed to fetch audit logs: ${error.message}`);
   }
 
   return (data || []).map((a: any) => ({
@@ -475,7 +475,7 @@ export async function fetchPlatformSettings(): Promise<PlatformSetting[]> {
 
   if (error) {
     logger.error('Failed to fetch platform settings', error);
-    return [];
+    throw new Error(`Failed to fetch platform settings: ${error.message}`);
   }
 
   return (data || []).map((s: any) => ({

@@ -33,7 +33,7 @@ type FilterTab = 'all' | 'applied' | 'shortlisted' | 'confirmed' | 'rejected';
 export default function OrganizerRosterScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
@@ -484,10 +484,10 @@ export default function OrganizerRosterScreen() {
                     <View
                       style={[
                         styles.avatarCircle,
-                        { backgroundColor: isDark ? '#262626' : '#F5F5F5', borderRadius: radii.full },
+                        { backgroundColor: colors.surfaceTertiary, borderRadius: radii.full, borderWidth: 1, borderColor: colors.border },
                       ]}
                     >
-                      <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
+                      <Text style={[styles.avatarText, { color: colors.primary, fontWeight: '700' }]}>
                         {profile?.fullName ? profile.fullName.slice(0, 2).toUpperCase() : 'WK'}
                       </Text>
                     </View>
@@ -565,7 +565,7 @@ export default function OrganizerRosterScreen() {
                         style={[
                           styles.skillPill,
                           {
-                            backgroundColor: isDark ? '#262626' : '#F5F5F5',
+                            backgroundColor: colors.surfaceTertiary,
                             borderColor: colors.border,
                             borderRadius: radii.full,
                           },

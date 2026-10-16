@@ -54,18 +54,20 @@ export const Button: React.FC<ButtonProps> = ({
         bg = pressed ? colors.primaryHover : colors.primary;
         break;
       case 'secondary':
-        bg = pressed ? colors.border : colors.surfaceMuted;
+        bg = pressed ? colors.surfaceTertiary : colors.surface;
+        border = colors.border;
+        borderWidth = 1;
         break;
       case 'outline':
-        bg = pressed ? colors.surfaceMuted : 'transparent';
+        bg = pressed ? colors.primaryLight : 'transparent';
         border = colors.border;
-        borderWidth = 1.5;
+        borderWidth = 1;
         break;
       case 'danger':
-        bg = pressed ? colors.danger : colors.danger;
+        bg = pressed ? '#991B1B' : colors.danger;
         break;
       case 'ghost':
-        bg = pressed ? colors.surfaceMuted : 'transparent';
+        bg = pressed ? colors.primaryLight : 'transparent';
         break;
     }
 

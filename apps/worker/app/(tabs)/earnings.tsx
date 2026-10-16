@@ -272,12 +272,12 @@ export default function WorkerEarningsScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Main Balance Hero Card with Apple-Level Restraint */}
+          {/* Main Balance Hero Card with Enterprise SaaS Blue/White Restraint */}
           <Card
             variant="elevated"
             style={{
-              backgroundColor: '#000000',
-              borderColor: '#262626',
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
               borderWidth: 1,
               borderRadius: radii.xl,
               padding: spacing.lg,
@@ -285,17 +285,17 @@ export default function WorkerEarningsScreen() {
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View>
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Total Settled Wages
                 </Text>
-                <WageText style={{ color: '#FFFFFF', fontSize: 34, lineHeight: 40, marginTop: 4 }}>
+                <WageText style={{ color: colors.textPrimary, fontSize: 34, lineHeight: 40, marginTop: 4 }}>
                   {formatINR(summary?.paidEarnings || 0)}
                 </WageText>
               </View>
-              <Badge label="SETTLED" variant="neutral" size="sm" />
+              <Badge label="SETTLED" variant="success" size="sm" />
             </View>
 
-            <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: spacing.xs }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
               Direct transfer to linked UPI handle upon supervisor attendance verification
             </Text>
 
@@ -303,7 +303,7 @@ export default function WorkerEarningsScreen() {
             <TouchableOpacity
               onPress={() => setShowUpiModal(true)}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: colors.surfaceSecondary,
                 borderRadius: radii.md,
                 padding: spacing.sm + 4,
                 marginTop: spacing.md,
@@ -311,25 +311,25 @@ export default function WorkerEarningsScreen() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.12)',
+                borderColor: colors.border,
               }}
               accessibilityRole="button"
               accessibilityLabel="Change receiving bank UPI handle"
             >
               <View>
-                <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ fontSize: 10, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '600' }}>
                   Receiving Bank UPI Handle
                 </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                  <ShieldCheck size={14} color="#FFFFFF" strokeWidth={2.4} />
-                  <Text style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700', fontFamily: 'monospace' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  <ShieldCheck size={14} color={colors.primary} strokeWidth={2.4} />
+                  <Text style={{ fontSize: 14, color: colors.textPrimary, fontWeight: '700', fontFamily: 'monospace' }}>
                     {summary?.defaultUpiId || 'Not linked yet'}
                   </Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                <Text style={{ fontSize: 12, color: '#FFFFFF', fontWeight: '600' }}>Change</Text>
-                <ChevronRight size={14} color="#FFFFFF" strokeWidth={2.2} />
+                <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>Change</Text>
+                <ChevronRight size={14} color={colors.primary} strokeWidth={2.2} />
               </View>
             </TouchableOpacity>
           </Card>

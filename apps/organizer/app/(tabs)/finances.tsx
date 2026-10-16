@@ -220,21 +220,21 @@ export default function OrganizerFinancesScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Executive Overview Grid — Strict Monochrome */}
+          {/* Executive Overview Grid — Enterprise SaaS White & Slate Hierarchy */}
           <Card
             variant="elevated"
             style={{
-              backgroundColor: '#000000',
-              borderColor: '#262626',
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
               borderWidth: 1,
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase' }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                   Total Staffing Spend (All-time)
                 </Text>
-                <WageText style={{ color: '#FFFFFF', fontSize: 32, lineHeight: 38, marginTop: 4 }}>
+                <WageText style={{ color: colors.textPrimary, fontSize: 32, lineHeight: 38, marginTop: 4 }}>
                   {formatINR(finances?.totalPayableAllTime || 0)}
                 </WageText>
               </View>
@@ -247,43 +247,43 @@ export default function OrganizerFinancesScreen() {
                   return <Badge label="NO INVOICES" variant="neutral" size="sm" />;
                 }
                 if (hasDiscrepancy) {
-                  return <Badge label="DISCREPANCY" variant="neutral" size="sm" />;
+                  return <Badge label="DISCREPANCY" variant="danger" size="sm" />;
                 }
                 if (hasEscrowDue) {
-                  return <Badge label="ESCROW PENDING" variant="neutral" size="sm" />;
+                  return <Badge label="ESCROW PENDING" variant="warning" size="sm" />;
                 }
-                return <Badge label="RECONCILED" variant="neutral" size="sm" />;
+                return <Badge label="RECONCILED" variant="success" size="sm" />;
               })()}
             </View>
 
             <View
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: colors.surfaceSecondary,
                 borderRadius: radii.md,
                 padding: spacing.md,
                 marginTop: spacing.md,
                 gap: spacing.xs,
                 borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.12)',
+                borderColor: colors.border,
               }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                   Total Settled in Escrow:
                 </Text>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                   {formatINR(finances?.settledAmount || 0)}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                   Outstanding Escrow Due:
                 </Text>
                 <Text
                   style={{
                     fontSize: 13,
                     fontWeight: '700',
-                    color: '#FFFFFF',
+                    color: (finances?.outstandingEscrowDue || 0) > 0 ? colors.warning : colors.textPrimary,
                   }}
                 >
                   {formatINR(finances?.outstandingEscrowDue || 0)}

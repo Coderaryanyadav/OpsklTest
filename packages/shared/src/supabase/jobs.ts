@@ -681,7 +681,7 @@ export async function fetchOrganizerJobs(organizerId: string): Promise<Job[]> {
 
   if (error) {
     logger.error('Failed to fetch organizer jobs', error, { organizerId });
-    return [];
+    throw new Error(`Failed to fetch organizer jobs: ${error.message}`);
   }
 
   return (data || []).map(mapJobRow);
@@ -772,7 +772,7 @@ export async function fetchOrganizerApplications(
 
   if (error && rawList.length === 0) {
     logger.error('Failed to fetch organizer applications', error);
-    return [];
+    throw new Error(`Failed to fetch organizer applications: ${error.message}`);
   }
 
   const workerIds = Array.from(
@@ -1038,7 +1038,7 @@ export async function fetchWorkerBookings(workerId: string): Promise<Booking[]> 
 
   if (error) {
     logger.error('Failed to fetch worker bookings', error, { workerId });
-    return [];
+    throw new Error(`Failed to fetch worker bookings: ${error.message}`);
   }
 
   const rawJobs = (data || []).map((r: any) => r.jobs).filter(Boolean);

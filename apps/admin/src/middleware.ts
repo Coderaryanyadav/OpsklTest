@@ -28,13 +28,6 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-  // In development/test environments, allow authenticated test sessions for E2E validation
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    request.cookies.get('opskil_test_session')?.value === 'admin'
-  ) {
-    return response;
-  }
 
   // If live credentials are not configured:
   // In production, block access safely with a config error rather than allowing unauthenticated access.

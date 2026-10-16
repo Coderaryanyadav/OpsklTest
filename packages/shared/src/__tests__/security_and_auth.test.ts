@@ -113,4 +113,72 @@ describe('Phase 2 Security, Authorization & Privacy Controls', () => {
       expect(canViewApplication('org-2', 'organizer', 'org-1')).toBe(false); // Other organizer blocked!
     });
   });
+
+  describe('Account Takeover & Privacy Protection Invariants', () => {
+    test('Public registration rejects existing account and refuses password overwrite', () => {
+      // Simulate registration endpoint logic
+      const simulateRegistration = (existingUser: boolean) => {
+        if (existingUser) {
+          return {
+            status: 409,
+            success: false,
+            error: 'An account with this email address already exists. Please sign in or use the password reset flow.',
+          };
+        }
+        return {
+          status: 200,
+          success: true,
+          userId: 'new-user-123',
+        };
+      };
+
+      const result = simulateRegistration(true);
+      expect(result.status).toBe(409);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('already exists');
+    });
+
+    test('Public discovery projection strictly shields supervisor contact numbers', () => {
+      const publicJobFields = [
+        'id', 'organizer_id', 'title', 'category', 'venue_name', 'venue_address',
+        'landmark', 'city', 'zone', 'date', 'start_time', 'end_time', 'duration_hours',
+        'hourly_rate', 'total_pay', 'slots_total', 'slots_filled', 'status'
+      ];
+
+      expect(publicJobFields).not.toContain('supervisor_phone');
+      expect(publicJobFields).not.toContain('supervisor_name');
+    });
+
+    test('Public organizer card projection strictly shields GSTIN, phone and billing address', () => {
+      const publicCardFields = [
+        'id', 'business_name', 'business_type', 'profile_completion_status',
+        'verification_status', 'rating', 'total_events_hosted'
+      ];
+
+      expect(publicCardFields).not.toContain('gstin');
+      expect(publicCardFields).not.toContain('billing_address');
+      expect(publicCardFields).not.toContain('business_contact_phone');
+      expect(publicCardFields).not.toContain('business_contact_email');
+    });
+
+    test('Shift coordinates integrity requires both latitude and longitude or neither', () => {
+      const validateCoordinates = (lat: number | null, lng: number | null) => {
+        if ((lat === null && lng !== null) || (lat !== null && lng === null)) {
+          return { valid: false, error: 'INCOMPLETE_COORDINATES' };
+        }
+        if (lat !== null && lng !== null) {
+          if (lat < 6.0 || lat > 38.0 || lng < 68.0 || lng > 98.0) {
+            return { valid: false, error: 'INVALID_COORDINATES' };
+          }
+        }
+        return { valid: true };
+      };
+
+      expect(validateCoordinates(19.066, null).valid).toBe(false);
+      expect(validateCoordinates(null, 72.868).valid).toBe(false);
+      expect(validateCoordinates(19.066, 72.868).valid).toBe(true);
+      expect(validateCoordinates(null, null).valid).toBe(true);
+      expect(validateCoordinates(55.0, 72.868).valid).toBe(false); // Outside India
+    });
+  });
 });

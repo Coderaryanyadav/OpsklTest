@@ -97,12 +97,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside
       style={{
         width: 260,
-        backgroundColor: '#000000',
+        backgroundColor: '#0F172A',
         color: '#FFFFFF',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRight: '1px solid #262626',
+        borderRight: '1px solid #1E293B',
         height: '100vh',
         position: 'sticky',
         top: 0,
@@ -114,14 +114,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div
           style={{
             padding: '20px 20px 16px 20px',
-            borderBottom: '1px solid #262626',
+            borderBottom: '1px solid #1E293B',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
-                backgroundColor: '#FFFFFF',
-                color: '#000000',
+                backgroundColor: '#2563EB',
+                color: '#FFFFFF',
                 fontWeight: 900,
                 fontSize: 13,
                 padding: '4px 8px',
@@ -135,7 +135,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: '#737373',
+                color: '#94A3B8',
                 letterSpacing: 1,
               }}
             >
@@ -184,7 +184,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: '#737373',
+                  color: '#64748B',
                   letterSpacing: 1,
                   padding: '4px 8px',
                   marginBottom: 4,
@@ -207,8 +207,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         padding: '9px 12px',
                         borderRadius: 6,
                         border: 'none',
-                        backgroundColor: isActive ? '#262626' : 'transparent',
-                        color: isActive ? '#FFFFFF' : '#A3A3A3',
+                        backgroundColor: isActive ? '#1E293B' : 'transparent',
+                        color: isActive ? '#FFFFFF' : '#94A3B8',
                         cursor: 'pointer',
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 500,
@@ -217,7 +217,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ display: 'flex', alignItems: 'center' }}>{item.icon}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#3B82F6' : '#94A3B8' }}>{item.icon}</span>
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
@@ -227,8 +227,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             fontWeight: 700,
                             padding: '1px 6px',
                             borderRadius: 10,
-                            backgroundColor: isActive ? '#FFFFFF' : item.badgeColor,
-                            color: isActive ? '#000000' : '#FFFFFF',
+                            backgroundColor: isActive ? '#2563EB' : item.badgeColor,
+                            color: '#FFFFFF',
                           }}
                         >
                           {item.badge}

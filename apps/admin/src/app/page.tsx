@@ -180,18 +180,6 @@ export default function AdminDashboardPage() {
       try {
         const { data: { session } } = await adminSupabase.auth.getSession();
         if (!session) {
-          if (
-            process.env.NEXT_PUBLIC_APP_ENV === 'development' &&
-            typeof document !== 'undefined' &&
-            document.cookie.includes('opskil_test_session=admin')
-          ) {
-            setAdminUser({
-              email: 'admin@opskil.com',
-              fullName: 'Opskl Administrator',
-            });
-            await loadAdminData();
-            return;
-          }
           router.push('/login');
           return;
         }

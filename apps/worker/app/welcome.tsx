@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOpsklTheme, Button, Badge } from '@opskil/design-system';
-import { Briefcase, ShieldCheck, ArrowRight, Clock } from 'lucide-react-native';
+import { ShieldCheck, ArrowRight, Clock } from 'lucide-react-native';
 import { universalStorage } from '@opskil/shared';
 
 export default function WorkerWelcomeScreen() {
@@ -91,10 +91,10 @@ export default function WorkerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
                 ]}
               >
-                <Clock size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                <Clock size={16} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
@@ -122,10 +122,10 @@ export default function WorkerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
                 ]}
               >
-                <ShieldCheck size={16} color={colors.textPrimary} strokeWidth={2.2} />
+                <ShieldCheck size={16} color={colors.primary} strokeWidth={2.2} />
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
@@ -142,36 +142,35 @@ export default function WorkerWelcomeScreen() {
         {/* Clear Dual Pathways */}
         <View style={{ gap: spacing.sm }}>
           <View style={styles.dualActionContainer}>
-            {/* Primary Path: Find Work */}
+            {/* Primary Path: Sign In */}
             <Button
-              title="Find Work as Crew"
+              title="Sign In to Opskl Account"
               variant="primary"
               size="lg"
-              icon={<Briefcase size={18} color={colors.textInverse} strokeWidth={2} />}
-              onPress={() => handleNavigate('/(tabs)', true)}
+              onPress={() => handleNavigate('/auth/login')}
             />
 
-            {/* Secondary Path: Sign In */}
+            {/* Secondary Path: Sign Up */}
             <Button
-              title="Sign In to Existing Account"
-              variant="outline"
+              title="Register as New Worker"
+              variant="secondary"
               size="md"
-              onPress={() => handleNavigate('/auth/login')}
+              onPress={() => handleNavigate('/auth/login?mode=signup')}
             />
           </View>
 
-          {/* Tertiary Action: New Crew Onboarding */}
+          {/* Tertiary Action: Browse Shifts as Guest */}
           <Pressable
-            onPress={() => handleNavigate('/auth/login?redirect=/onboarding')}
+            onPress={() => handleNavigate('/(tabs)', true)}
             style={({ pressed }) => [
               styles.onboardingLink,
               { opacity: pressed ? 0.7 : 1 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="New worker registration"
+            accessibilityLabel="Explore open shifts as guest"
           >
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-              First time working with Opskl? Complete Worker Registration
+              Explore available shifts as guest
             </Text>
             <ArrowRight size={14} color={colors.textSecondary} strokeWidth={2} style={{ marginLeft: 4 }} />
           </Pressable>

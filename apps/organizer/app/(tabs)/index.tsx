@@ -149,9 +149,9 @@ export default function OrganizerDashboardScreen() {
                 OPSKL ORGANIZER
               </Text>
               {organizerProfile?.verificationStatus === 'verified' ? (
-                <Badge label="VERIFIED ORG" variant="neutral" size="sm" />
+                <Badge label="VERIFIED ORG" variant="success" size="sm" />
               ) : organizerProfile?.verificationStatus === 'pending' ? (
-                <Badge label="VERIFICATION PENDING" variant="neutral" size="sm" />
+                <Badge label="VERIFICATION PENDING" variant="warning" size="sm" />
               ) : organizerProfile?.verificationStatus === 'unverified' ? (
                 <Badge label="UNVERIFIED" variant="neutral" size="sm" />
               ) : null}
@@ -230,6 +230,47 @@ export default function OrganizerDashboardScreen() {
           </Card>
         )}
 
+        {/* Organizer Verification Status Banner */}
+        {organizerId && organizerProfile && organizerProfile.verificationStatus !== 'verified' && (
+          <View
+            style={{
+              marginTop: spacing.md,
+              backgroundColor: colors.surfaceMuted,
+              paddingHorizontal: spacing.md,
+              paddingVertical: 10,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: organizerProfile.verificationStatus === 'pending' ? colors.border : '#FED7AA',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <Badge
+                  label={organizerProfile.verificationStatus === 'pending' ? 'KYC PENDING APPROVAL' : 'VERIFICATION REQUIRED'}
+                  variant={organizerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
+                  size="sm"
+                />
+              </View>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
+                {organizerProfile.verificationStatus === 'pending'
+                  ? 'Your business verification is currently under review by Admin. Shift publishing will unlock once approved.'
+                  : 'Submit your business GSTIN and registration documents under Profile to unlock live shift publishing.'}
+              </Text>
+            </View>
+            <Button
+              title="Profile"
+              variant="outline"
+              size="sm"
+              fullWidth={false}
+              onPress={() => router.push('/(tabs)/profile' as any)}
+            />
+          </View>
+        )}
+
         {error && (
           <View
             style={{
@@ -287,89 +328,87 @@ export default function OrganizerDashboardScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Operational Overview KPI Row (Links to corresponding screens) */}
+        {/* Operational Overview 2-Column Responsive KPI Grid */}
         <View style={styles.metricsGrid}>
-          <View style={styles.metricsRow}>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/roster' as any)}
-              style={[
-                styles.metricCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                  borderRadius: radii.md,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="View applicant roster"
-            >
-              <Text style={styles.metricLabel}>New Applicants</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.newApplications}
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/roster' as any)}
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: colors.surfaceTertiary,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: radii.md,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="View applicant roster"
+          >
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>New Applicants</Text>
+            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+              {metrics.newApplications}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/roster' as any)}
-              style={[
-                styles.metricCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                  borderRadius: radii.md,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="View confirmed crew"
-            >
-              <Text style={styles.metricLabel}>Confirmed Crew</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.confirmedWorkers}
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/roster' as any)}
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: colors.surfaceTertiary,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: radii.md,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="View confirmed crew"
+          >
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Confirmed Crew</Text>
+            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+              {metrics.confirmedWorkers}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {}}
-              style={[
-                styles.metricCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                  borderRadius: radii.md,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="View open positions"
-            >
-              <Text style={styles.metricLabel}>Open Positions</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-                {metrics.openPositions}
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {}}
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: colors.surfaceTertiary,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: radii.md,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="View open positions"
+          >
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Open Positions</Text>
+            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+              {metrics.openPositions}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/finances' as any)}
-              style={[
-                styles.metricCard,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                  borderRadius: radii.md,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="View staffing spend and finances"
-            >
-              <Text style={styles.metricLabel}>Spend (All-Time)</Text>
-              <Text style={[styles.metricValue, { color: colors.textPrimary, fontSize: 13 }]}>
-                {formatINR(metrics.totalStaffingSpend)}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/finances' as any)}
+            style={[
+              styles.metricCard,
+              {
+                backgroundColor: colors.surfaceTertiary,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: radii.md,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="View staffing spend and finances"
+          >
+            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Staffing Spend</Text>
+            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
+              {formatINR(metrics.totalStaffingSpend)}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -586,28 +625,27 @@ const styles = StyleSheet.create({
   },
   metricsGrid: {
     marginTop: 12,
-  },
-  metricsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   metricCard: {
-    flex: 1,
-    padding: 8,
-    alignItems: 'center',
+    width: '48%',
+    flexGrow: 1,
+    padding: 10,
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   metricLabel: {
-    fontSize: 9,
-    color: '#737373',
+    fontSize: 10,
     textTransform: 'uppercase',
     fontWeight: '700',
-    textAlign: 'center',
+    letterSpacing: 0.4,
   },
   metricValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: 3,
   },
   onboardingCard: {
     borderWidth: 1,

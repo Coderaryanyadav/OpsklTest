@@ -206,12 +206,12 @@ export async function signUpWithEmailPassword({
   // For organizer role: use registration endpoint when available to guarantee instant activation
   if (role === 'organizer') {
     const apiBase =
-      typeof window !== 'undefined' && window.location?.origin
-        ? window.location.origin
-        : 'https://admin-blue-beta-41.vercel.app';
+      (typeof process !== 'undefined' && (process.env.EXPO_PUBLIC_ADMIN_URL || process.env.NEXT_PUBLIC_ADMIN_URL)) ||
+      (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '');
 
-    try {
-      const resp = await fetch(`${apiBase}/api/auth/register-organizer`, {
+    if (apiBase) {
+      try {
+        const resp = await fetch(`${apiBase}/api/auth/register-organizer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -239,6 +239,7 @@ export async function signUpWithEmailPassword({
       logger.warn('Direct organizer registration endpoint unavailable, falling back to standard auth', { error: String(e) });
     }
   }
+}
 
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,

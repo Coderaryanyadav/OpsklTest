@@ -30,7 +30,7 @@ export const Card: React.FC<CardProps> = ({
 
   const baseStyle: ViewStyle = {
     backgroundColor: variant === 'flat' ? colors.surfaceMuted : colors.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     padding: cardPadding,
     borderWidth: 1,
     borderColor: colors.border,

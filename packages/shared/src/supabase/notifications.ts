@@ -61,7 +61,7 @@ export async function fetchUnreadNotificationsCount(userId: string): Promise<num
 
   if (error) {
     logger.error('Failed to fetch unread notifications count', error, { userId });
-    return 0;
+    throw new Error(`Failed to fetch unread notifications count: ${error.message}`);
   }
 
   return count ?? 0;

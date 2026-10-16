@@ -41,7 +41,7 @@ export function CardActionControls({
         accessibilityLabel="Undo last skipped shift"
         accessibilityState={{ disabled: !canUndo || disabled }}
       >
-        <RotateCcw size={18} color={colors.textPrimary} strokeWidth={2.2} />
+        <RotateCcw size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Pass Button (Swipe Left equivalent) */}
@@ -53,8 +53,8 @@ export function CardActionControls({
           styles.mainButton,
           styles.passButton,
           {
-            backgroundColor: isDark ? '#141414' : '#FFFFFF',
-            borderColor: isDark ? '#333333' : '#000000',
+            backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+            borderColor: colors.border,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
           },
@@ -62,8 +62,8 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="Pass on this shift (Skip left)"
       >
-        <X size={18} color={colors.textPrimary} strokeWidth={2.4} />
-        <Text style={[styles.passLabelText, { color: colors.textPrimary }]}>Pass</Text>
+        <X size={18} color={colors.textSecondary} strokeWidth={2.4} />
+        <Text style={[styles.passLabelText, { color: colors.textSecondary }]}>Pass</Text>
       </Pressable>
 
       {/* Details Button */}
@@ -83,7 +83,7 @@ export function CardActionControls({
         accessibilityRole="button"
         accessibilityLabel="View full shift details"
       >
-        <Info size={18} color={colors.textPrimary} strokeWidth={2.2} />
+        <Info size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </Pressable>
 
       {/* Apply Button (Swipe Right equivalent) */}

@@ -58,10 +58,27 @@ export const Badge: React.FC<BadgeProps> = ({
       case 'neutral':
       default:
         return {
-          bg: colors.surfaceMuted,
-          text: colors.textSecondary,
-          dot: colors.textMuted,
+          bg: colors.neutralStatusLight,
+          text: colors.neutralStatus,
+          dot: colors.neutralStatus,
         };
+    }
+  };
+
+  const getBorderColor = (): string => {
+    switch (variant) {
+      case 'success':
+        return '#BBF7D0';
+      case 'warning':
+        return '#FDE68A';
+      case 'danger':
+        return '#FECACA';
+      case 'info':
+      case 'primary':
+        return '#BFDBFE';
+      case 'neutral':
+      default:
+        return colors.border;
     }
   };
 
@@ -80,7 +97,7 @@ export const Badge: React.FC<BadgeProps> = ({
           paddingHorizontal: isSm ? spacing.xs + 4 : spacing.sm + 4,
           borderRadius: radii.full,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: getBorderColor(),
         },
         style,
       ]}
