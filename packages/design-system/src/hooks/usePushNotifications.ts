@@ -100,12 +100,16 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setPermissionGranted(true);
 
       // Fetch Expo Push Token with EAS projectId support
-      const projectId =
+      const rawProjectId =
         Constants?.expoConfig?.extra?.eas?.projectId ||
         Constants?.easConfig?.projectId;
+      const validProjectId =
+        rawProjectId && !rawProjectId.startsWith('placeholder-') && rawProjectId.trim() !== ''
+          ? rawProjectId.trim()
+          : undefined;
 
       const tokenResult = await Notifications.getExpoPushTokenAsync(
-        projectId ? { projectId } : undefined
+        validProjectId ? { projectId: validProjectId } : undefined
       ).catch((err: any) => {
         logger.warn('Failed to get Expo push token', { err });
         return null;

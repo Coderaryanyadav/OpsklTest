@@ -95,7 +95,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "placeholder-worker-project-id"
+        "projectId": ""
       }
     }
   }

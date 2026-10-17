@@ -1,4 +1,17 @@
 -- ==============================================================================
+-- OPSKL CONSOLIDATED MASTER SCHEMA RELEASE
+-- Market: India (Single-Day Event Shift Marketplace)
+-- Initial Launch: Mumbai Metropolitan Region
+-- Contains All 22 Sequential Migrations (20261012000000 through 20261016000000)
+-- Generated automatically for reproducible full schema deployment
+-- ==============================================================================
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000000_initial_schema.sql
+-- ##############################################################################
+
+-- ==============================================================================
 -- OPSKL MASTER DATABASE SCHEMA & MIGRATION
 -- Market: India (Single-Day Event Shift Marketplace)
 -- Initial Launch: Mumbai Metropolitan Region
@@ -884,7 +897,14 @@ CREATE TRIGGER trg_protect_organizer_profile
   EXECUTE FUNCTION check_organizer_profile_update();
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000000_initial_schema.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000001_marketplace_discovery.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL MARKETPLACE DISCOVERY & SWIPE TRANSACTIONS (PHASE 3)
@@ -1131,7 +1151,14 @@ REVOKE EXECUTE ON FUNCTION undo_swipe_event(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION undo_swipe_event(UUID) TO authenticated;
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000001_marketplace_discovery.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000002_organizer_management.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL ORGANIZER JOB MANAGEMENT & HIRING ENGINE (PHASE 4)
@@ -1621,7 +1648,14 @@ REVOKE EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) FROM PUBLI
 GRANT EXECUTE ON FUNCTION update_application_status_safe(UUID, TEXT) TO authenticated;
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000002_organizer_management.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000003_booking_attendance_engine.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL BOOKING & ATTENDANCE ENGINE (PHASE 5)
@@ -2329,7 +2363,14 @@ GRANT EXECUTE ON FUNCTION dispute_booking_safe(UUID, TEXT, TEXT) TO authenticate
 
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000003_booking_attendance_engine.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000004_payments_and_earnings.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL PAYMENTS & EARNINGS ENGINE (PHASE 6)
@@ -3074,7 +3115,14 @@ GRANT EXECUTE ON FUNCTION initiate_worker_payout_safe(UUID, TEXT, TEXT) TO authe
 
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000004_payments_and_earnings.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000005_notifications_and_realtime.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL NOTIFICATIONS & REAL-TIME ENGINE (PHASE 7)
@@ -3414,7 +3462,14 @@ REVOKE EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION revoke_push_token_safe(UUID, TEXT) TO authenticated;
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000005_notifications_and_realtime.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261012000006_admin_and_trust_operations.sql
+-- ##############################################################################
 
 -- ============================================================================
 -- OPSKL ADMIN & TRUST OPERATIONS ENGINE (PHASE 8)
@@ -4123,7 +4178,14 @@ GRANT EXECUTE ON FUNCTION process_account_deletion_purge_safe(INT) TO service_ro
 
 
 
--- --- END OF 
+-- ##############################################################################
+-- END MIGRATION: 20261012000006_admin_and_trust_operations.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000000_launch_fixes.sql
+-- ##############################################################################
 
 -- ==============================================================================
 -- OPSKL LAUNCH FIXES & PRODUCTION MARKETPLACE ENGINE (PHASE 1)
@@ -7099,10 +7161,24 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000000_launch_fixes.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000001_security_definer_views_and_rls.sql
+-- ##############################################################################
+
 -- ==============================================================================
--- LINTER FIXES: security_definer_view (0010) & rls_disabled_in_public (0013)
+-- OPSKIL DATABASE MIGRATION: 20261015000001_security_definer_views_and_rls.sql
+-- Remediation for Supabase Database Linter errors:
+--   - 0010_security_definer_view: Views defined without security_invoker = true
+--   - 0013_rls_disabled_in_public: _opskil_migrations table missing RLS
 -- ==============================================================================
 
+-- 1. Enable RLS on _opskil_migrations and revoke public access
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '_opskil_migrations') THEN
@@ -7111,6 +7187,7 @@ BEGIN
   END IF;
 END $$;
 
+-- 2. Add RLS policy on organizer_profiles so security_invoker = true views allow authenticated workers to read organizer cards
 DROP POLICY IF EXISTS "Public organizer card read access" ON public.organizer_profiles;
 CREATE POLICY "Public organizer card read access"
   ON public.organizer_profiles FOR SELECT TO authenticated
@@ -7124,6 +7201,7 @@ CREATE POLICY "Public organizer card read access"
     )
   );
 
+-- 3. Add RLS policy on worker_profiles so security_invoker = true views allow organizers to view applicants & bookings
 DROP POLICY IF EXISTS "Organizers view applicant worker profiles" ON public.worker_profiles;
 CREATE POLICY "Organizers view applicant worker profiles"
   ON public.worker_profiles FOR SELECT TO authenticated
@@ -7139,6 +7217,7 @@ CREATE POLICY "Organizers view applicant worker profiles"
     )
   );
 
+-- 4. Set security_invoker = true on all 6 public views to satisfy 0010_security_definer_view
 ALTER VIEW public.public_organizer_cards SET (security_invoker = true);
 ALTER VIEW public.worker_applicant_profiles SET (security_invoker = true);
 ALTER VIEW public.shifts SET (security_invoker = true);
@@ -7146,22 +7225,40 @@ ALTER VIEW public.public_jobs SET (security_invoker = true);
 ALTER VIEW public.admin_overview_metrics SET (security_invoker = true);
 ALTER VIEW public.admin_audit_logs_view SET (security_invoker = true);
 
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000001_security_definer_views_and_rls.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000002_function_security_and_search_paths.sql
+-- ##############################################################################
+
 -- ==============================================================================
--- LINTER FIXES: function_search_path_mutable (0011), anon_security_definer (0028),
--- & authenticated_security_definer_function_executable (0029)
+-- OPSKIL DATABASE MIGRATION: 20261015000002_function_security_and_search_paths.sql
+-- Remediation for Supabase Database Linter Warnings:
+--   - 0011_function_search_path_mutable: Pin search_path on functions
+--   - 0028_anon_security_definer_function_executable: Revoke anon/PUBLIC execute
+--   - 0029_authenticated_security_definer_function_executable: Revoke execute on
+--     triggers, internal helpers, and batch cron functions
 -- ==============================================================================
 
+-- 1. Pin search_path on functions flagged with mutable search_path (0011)
 ALTER FUNCTION public.validate_job_transition(text, text) SET search_path = public, pg_temp;
 ALTER FUNCTION public.update_timestamp() SET search_path = public, pg_temp;
 ALTER FUNCTION public.validate_booking_transition(text, text) SET search_path = public, pg_temp;
 ALTER FUNCTION public.generate_invoice_number() SET search_path = public, pg_temp;
 
+-- 2. Drop obsolete legacy overload signatures
 DROP FUNCTION IF EXISTS public.complete_shift_and_approve_attendance(uuid, numeric);
 DROP FUNCTION IF EXISTS public.admin_resolve_dispute_safe(uuid, text, text, numeric, uuid);
 
+-- 3. Revoke EXECUTE from PUBLIC and anon across all public schema functions (0028)
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon;
 
+-- 4. Revoke EXECUTE from authenticated on trigger functions (0029)
 REVOKE EXECUTE ON FUNCTION public.check_organizer_profile_update() FROM authenticated, anon, PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.check_worker_profile_update() FROM authenticated, anon, PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.prevent_role_escalation() FROM authenticated, anon, PUBLIC;
@@ -7171,6 +7268,7 @@ REVOKE EXECUTE ON FUNCTION public.update_timestamp() FROM authenticated, anon, P
 REVOKE EXECUTE ON FUNCTION public.validate_booking_transition(text, text) FROM authenticated, anon, PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.generate_invoice_number() FROM authenticated, anon, PUBLIC;
 
+-- 5. Internal notification helper & cron batch functions: restrict strictly to service_role (0029)
 REVOKE EXECUTE ON FUNCTION public._notify(uuid, text, text, text, text, jsonb, text) FROM authenticated, anon, PUBLIC;
 GRANT EXECUTE ON FUNCTION public._notify(uuid, text, text, text, text, jsonb, text) TO service_role;
 
@@ -7179,6 +7277,16 @@ GRANT EXECUTE ON FUNCTION public.close_expired_jobs() TO service_role;
 
 REVOKE EXECUTE ON FUNCTION public.process_account_deletion_purge_safe(integer) FROM authenticated, anon, PUBLIC;
 GRANT EXECUTE ON FUNCTION public.process_account_deletion_purge_safe(integer) TO service_role;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000002_function_security_and_search_paths.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000003_security_and_privacy_hardening.sql
+-- ##############################################################################
 
 -- ==============================================================================
 -- OPSKIL DATABASE MIGRATION: 20261015000003_security_and_privacy_hardening.sql
@@ -7471,6 +7579,7 @@ GRANT EXECUTE ON FUNCTION get_admin_audit_logs(INT, INT) TO authenticated;
 -- 4. PUBLIC_JOBS VIEW: FILTER OUT DRAFT, CANCELLED, AND PAST-DATED SHIFTS
 -- ------------------------------------------------------------------------------
 
+DROP VIEW IF EXISTS public.public_jobs CASCADE;
 CREATE OR REPLACE VIEW public.public_jobs WITH (security_invoker = true) AS
   SELECT
     id,
@@ -7638,4 +7747,1654 @@ $$;
 REVOKE EXECUTE ON FUNCTION submit_verification_case_safe(TEXT, TEXT, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION submit_verification_case_safe(TEXT, TEXT, TEXT) TO authenticated;
 
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000003_security_and_privacy_hardening.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000004_shift_messaging_and_standby.sql
+-- ##############################################################################
+
+-- ============================================================================
+-- OPSKL MIGRATION: 20261015000004_shift_messaging_and_standby.sql
+-- Shift-Specific Messaging, Standby Replacement, and Arrival Delay Alerts
+-- ============================================================================
+
+-- 1. SHIFT MESSAGES TABLE
+CREATE TABLE IF NOT EXISTS public.shift_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  recipient_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  content TEXT NOT NULL CHECK (char_length(trim(content)) > 0 AND char_length(content) <= 2000),
+  is_broadcast BOOLEAN NOT NULL DEFAULT false,
+  is_reported BOOLEAN NOT NULL DEFAULT false,
+  report_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shift_messages_job_id ON public.shift_messages(job_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_shift_messages_sender ON public.shift_messages(sender_id);
+
+ALTER TABLE public.shift_messages ENABLE ROW LEVEL SECURITY;
+
+-- Helper to check if caller is confirmed worker or supervisor on the job
+CREATE OR REPLACE FUNCTION public.can_access_shift_messages(p_job_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.jobs j WHERE j.id = p_job_id AND j.organizer_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.bookings b WHERE b.job_id = p_job_id AND b.worker_id = auth.uid() AND b.status IN ('confirmed', 'checked_in', 'checked_out', 'completed', 'completed_awaiting_review')
+  ) OR is_current_admin();
+$$;
+
+DROP POLICY IF EXISTS "Participants can view shift messages" ON public.shift_messages;
+CREATE POLICY "Participants can view shift messages"
+ON public.shift_messages FOR SELECT TO authenticated
+USING (public.can_access_shift_messages(job_id));
+
+DROP POLICY IF EXISTS "Participants can post shift messages" ON public.shift_messages;
+CREATE POLICY "Participants can post shift messages"
+ON public.shift_messages FOR INSERT TO authenticated
+WITH CHECK (
+  auth.uid() = sender_id AND public.can_access_shift_messages(job_id)
+);
+
+-- 2. REPORT WORKER DELAY RPC
+CREATE OR REPLACE FUNCTION public.report_worker_delay_safe(
+  p_booking_id UUID,
+  p_minutes INTEGER,
+  p_reason TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_booking RECORD;
+  v_job RECORD;
+  v_worker_name TEXT;
+  v_notif_title TEXT;
+  v_notif_body TEXT;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  SELECT * INTO v_booking FROM public.bookings WHERE id = p_booking_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
+  END IF;
+
+  IF v_booking.worker_id != v_user_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
+  END IF;
+
+  IF v_booking.status != 'confirmed' THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_STATUS', 'message', 'Delay alerts can only be logged for upcoming confirmed shifts.');
+  END IF;
+
+  SELECT * INTO v_job FROM public.jobs WHERE id = v_booking.job_id;
+  SELECT full_name INTO v_worker_name FROM public.profiles WHERE id = v_booking.worker_id;
+
+  -- Create late notice shift message broadcast
+  INSERT INTO public.shift_messages (
+    job_id,
+    sender_id,
+    content,
+    is_broadcast
+  ) VALUES (
+    v_booking.job_id,
+    v_user_id,
+    '[DELAY ALERT] ' || COALESCE(v_worker_name, 'Worker') || ' reported expected delay of ' || p_minutes || ' minutes. Reason: ' || COALESCE(p_reason, 'Traffic/Transport delay'),
+    true
+  );
+
+  -- Send high-priority notification to Organizer
+  v_notif_title := 'Worker Running Late: ' || COALESCE(v_worker_name, 'Crew Member');
+  v_notif_body := COALESCE(v_worker_name, 'Crew Member') || ' reported a ' || p_minutes || ' min delay for "' || v_job.title || '". Reason: ' || COALESCE(p_reason, 'Traffic/Transit');
+
+  PERFORM public.send_notification_safe(
+    v_job.organizer_id,
+    v_notif_title,
+    v_notif_body,
+    'shift_reminder',
+    'in_app',
+    'delay_' || p_booking_id || '_' || (extract(epoch from now())::BIGINT / 300),
+    jsonb_build_object(
+      'booking_id', p_booking_id,
+      'job_id', v_booking.job_id,
+      'delay_minutes', p_minutes,
+      'reason', p_reason
+    ),
+    '/shift/' || v_booking.job_id,
+    'high'
+  );
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'booking_id', p_booking_id,
+    'delay_minutes', p_minutes,
+    'message', 'Delay alert recorded and organizer notified.'
+  );
+END;
+$$;
+
+-- Explicit permissions
+REVOKE ALL ON FUNCTION public.can_access_shift_messages(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.can_access_shift_messages(UUID) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.report_worker_delay_safe(UUID, INTEGER, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.report_worker_delay_safe(UUID, INTEGER, TEXT) TO authenticated;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000004_shift_messaging_and_standby.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000005_enforce_kyc_on_application.sql
+-- ##############################################################################
+
+-- ==============================================================================
+-- OPSKL MIGRATION: 20261015000005_enforce_kyc_on_application.sql
+-- Enforces mandatory admin-approved KYC verification before applying for shifts.
+-- ==============================================================================
+
+CREATE OR REPLACE FUNCTION apply_for_job_safe(
+  p_job_id UUID,
+  p_notes TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_worker_id UUID := auth.uid();
+  v_job RECORD;
+  v_worker RECORD;
+  v_existing_app RECORD;
+  v_app_id UUID;
+BEGIN
+  IF v_worker_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  -- Require worker profile completed and KYC approved
+  SELECT p.is_active, wp.profile_completion_status, wp.verification_status INTO v_worker
+  FROM profiles p
+  JOIN worker_profiles wp ON wp.id = p.id
+  WHERE p.id = v_worker_id;
+
+  IF NOT FOUND OR v_worker.is_active = false THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INELIGIBLE_WORKER', 'message', 'Active worker account required.');
+  END IF;
+
+  IF v_worker.profile_completion_status != 'completed' THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'PROFILE_INCOMPLETE', 'message', 'Please complete your onboarding profile before applying.');
+  END IF;
+
+  IF v_worker.verification_status != 'verified' AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'KYC_NOT_VERIFIED', 'message', 'KYC identity verification must be approved by an administrator before applying for shifts.');
+  END IF;
+
+  SELECT * INTO v_job FROM jobs WHERE id = p_job_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'JOB_NOT_FOUND');
+  END IF;
+
+  IF v_job.status NOT IN ('open', 'filling') THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'JOB_CLOSED', 'message', 'This shift is no longer open for applications.');
+  END IF;
+
+  IF v_job.date < (now() AT TIME ZONE 'Asia/Kolkata')::date THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date has already passed.');
+  END IF;
+
+  IF v_job.application_deadline IS NOT NULL AND v_job.application_deadline < now() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'DEADLINE_PASSED');
+  END IF;
+
+  IF v_job.slots_filled >= v_job.slots_total THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'SLOTS_FULL');
+  END IF;
+
+  SELECT id, status INTO v_existing_app
+  FROM job_applications
+  WHERE job_id = p_job_id AND worker_id = v_worker_id;
+
+  IF FOUND THEN
+    IF v_existing_app.status = 'withdrawn' THEN
+      UPDATE job_applications
+      SET status = 'applied', updated_at = now()
+      WHERE id = v_existing_app.id;
+
+      RETURN jsonb_build_object('success', true, 'application_id', v_existing_app.id, 'status', 'applied', 'reapplied', true);
+    ELSE
+      RETURN jsonb_build_object('success', false, 'error_code', 'ALREADY_APPLIED', 'message', 'You have already applied for this shift.');
+    END IF;
+  END IF;
+
+  INSERT INTO job_applications (
+    job_id, worker_id, status
+  ) VALUES (
+    p_job_id, v_worker_id, 'applied'
+  ) RETURNING id INTO v_app_id;
+
+  INSERT INTO audit_logs (
+    actor_id, action, entity_type, entity_id, new_state
+  ) VALUES (
+    v_worker_id, 'APPLY_FOR_JOB', 'application', v_app_id::TEXT,
+    jsonb_build_object('job_id', p_job_id, 'status', 'applied')
+  );
+
+  -- Send real-time notification to organizer
+  PERFORM _notify(v_job.organizer_id, 'New Applicant for Shift', 'A verified worker has applied for ' || v_job.title, 'new_applicant');
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'application_id', v_app_id,
+    'status', 'applied'
+  );
+END;
+$$;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000005_enforce_kyc_on_application.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000006_fix_job_applications_updated_at.sql
+-- ##############################################################################
+
+-- ==============================================================================
+-- OPSKL MIGRATION: 20261015000006_fix_job_applications_updated_at.sql
+-- Adds updated_at column to job_applications to support status tracking and confirm_worker_booking_safe
+-- ==============================================================================
+
+ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+-- Ensure trigger or timestamp auto-updates
+CREATE OR REPLACE FUNCTION set_job_applications_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_job_applications_updated_at ON job_applications;
+CREATE TRIGGER trg_job_applications_updated_at
+BEFORE UPDATE ON job_applications
+FOR EACH ROW
+EXECUTE FUNCTION set_job_applications_updated_at();
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000006_fix_job_applications_updated_at.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000007_fix_invoice_platform_settings_keys.sql
+-- ##############################################################################
+
+-- Migration: 20261015000007_fix_invoice_platform_settings_keys.sql
+-- Description: Expand organizer_invoices constraints, standardize platform_settings aliases, and fix generate_job_invoice_safe calculation & return payload
+
+-- 1. Expand organizer_invoices check constraints to safely support 'issued' status and 'bank_transfer' method
+ALTER TABLE organizer_invoices DROP CONSTRAINT IF EXISTS organizer_invoices_status_check;
+ALTER TABLE organizer_invoices ADD CONSTRAINT organizer_invoices_status_check 
+  CHECK (status = ANY (ARRAY['draft'::text, 'pending'::text, 'issued'::text, 'escrow_funded'::text, 'settled'::text, 'overdue'::text, 'cancelled'::text]));
+
+ALTER TABLE organizer_invoices DROP CONSTRAINT IF EXISTS organizer_invoices_payment_method_check;
+ALTER TABLE organizer_invoices ADD CONSTRAINT organizer_invoices_payment_method_check 
+  CHECK (payment_method = ANY (ARRAY['upi'::text, 'netbanking'::text, 'neft_rtgs'::text, 'corporate_card'::text, 'sandbox_mock'::text, 'bank_transfer'::text]));
+
+-- 2. Ensure platform_settings has both legacy and percent-suffixed keys with robust scalar numeric values
+INSERT INTO platform_settings (key, value, description)
+VALUES 
+  ('platform_fee_percent', '10.0'::jsonb, 'Standard Opskl marketplace service fee percentage charged to organizers'),
+  ('gst_rate_percent', '18.0'::jsonb, 'Indian GST rate applied strictly to the platform service fee (SAC 998519)'),
+  ('min_hourly_wage_inr', '100.0'::jsonb, 'Enforced minimum hourly wage floor in INR to protect workers from sub-minimum wages'),
+  ('platform_fee', '10.0'::jsonb, 'Legacy alias for platform fee percentage'),
+  ('gst_rate', '18.0'::jsonb, 'Legacy alias for GST rate percentage'),
+  ('min_wage', '100.0'::jsonb, 'Legacy alias for min hourly wage INR'),
+  ('checkin_radius_m', '300.0'::jsonb, 'Checkin radius tolerance in meters')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- 3. Update generate_job_invoice_safe to be fully resilient and return invoice_number on update
+CREATE OR REPLACE FUNCTION generate_job_invoice_safe(
+  p_job_id UUID,
+  p_organizer_id UUID DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_job RECORD;
+  v_existing RECORD;
+  v_wage_total NUMERIC(10, 2);
+  v_fee_pct NUMERIC(5, 2);
+  v_gst_pct NUMERIC(5, 2);
+  v_platform_fee NUMERIC(10, 2);
+  v_gst_amount NUMERIC(10, 2);
+  v_total_payable NUMERIC(10, 2);
+  v_invoice_number TEXT;
+  v_invoice_id UUID;
+  v_due_date TIMESTAMPTZ;
+BEGIN
+  SELECT id, organizer_id, total_pay, slots_total, date INTO v_job FROM jobs WHERE id = p_job_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Job not found.');
+  END IF;
+
+  -- Idempotency check: refuse to alter totals if already funded or settled
+  SELECT * INTO v_existing FROM organizer_invoices WHERE job_id = p_job_id;
+  IF FOUND THEN
+    IF v_existing.status IN ('escrow_funded', 'settled') THEN
+      RETURN jsonb_build_object(
+        'success', true,
+        'invoice_id', v_existing.id,
+        'invoice_number', v_existing.invoice_number,
+        'status', v_existing.status,
+        'total_payable', v_existing.total_payable,
+        'immutable', true
+      );
+    END IF;
+  END IF;
+
+  -- Fetch dynamic fee and GST percentages from platform settings with robust fallbacks
+  SELECT COALESCE(
+    CASE 
+      WHEN jsonb_typeof(value) = 'number' THEN (value)::text::numeric
+      WHEN jsonb_typeof(value) = 'string' THEN (value#>>'{}')::numeric
+      ELSE (value->>'platform_fee_percent')::numeric
+    END, 
+    10.00
+  ) INTO v_fee_pct
+  FROM platform_settings WHERE key IN ('platform_fee_percent', 'platform_fee')
+  LIMIT 1;
+
+  IF v_fee_pct IS NULL THEN v_fee_pct := 10.00; END IF;
+
+  SELECT COALESCE(
+    CASE 
+      WHEN jsonb_typeof(value) = 'number' THEN (value)::text::numeric
+      WHEN jsonb_typeof(value) = 'string' THEN (value#>>'{}')::numeric
+      ELSE (value->>'gst_rate_percent')::numeric
+    END, 
+    18.00
+  ) INTO v_gst_pct
+  FROM platform_settings WHERE key IN ('gst_rate_percent', 'gst_rate')
+  LIMIT 1;
+
+  IF v_gst_pct IS NULL THEN v_gst_pct := 18.00; END IF;
+
+  v_wage_total := round(v_job.total_pay * v_job.slots_total, 2);
+  v_platform_fee := round(v_wage_total * (v_fee_pct / 100.0), 2);
+  v_gst_amount := round(v_platform_fee * (v_gst_pct / 100.0), 2);
+  v_total_payable := v_wage_total + v_platform_fee + v_gst_amount;
+
+  -- Due date: least(now() + 3 days, job.date - 1 day)
+  v_due_date := LEAST(
+    now() + interval '3 days',
+    (v_job.date - 1)::timestamp AT TIME ZONE 'Asia/Kolkata'
+  );
+
+  IF v_existing.id IS NOT NULL THEN
+    UPDATE organizer_invoices
+    SET
+      wage_total = v_wage_total,
+      platform_fee = v_platform_fee,
+      gst_rate = v_gst_pct,
+      gst_amount = v_gst_amount,
+      total_payable = v_total_payable,
+      due_date = v_due_date,
+      updated_at = now()
+    WHERE id = v_existing.id
+    RETURNING id INTO v_invoice_id;
+
+    RETURN jsonb_build_object(
+      'success', true, 
+      'invoice_id', v_invoice_id, 
+      'invoice_number', v_existing.invoice_number,
+      'status', 'updated', 
+      'total_payable', v_total_payable
+    );
+  END IF;
+
+  v_invoice_number := generate_invoice_number();
+
+  INSERT INTO organizer_invoices (
+    invoice_number, job_id, organizer_id,
+    wage_total, platform_fee, gst_rate, gst_amount, total_payable,
+    status, payment_method, payment_provider, due_date, is_sandbox
+  ) VALUES (
+    v_invoice_number, p_job_id, v_job.organizer_id,
+    v_wage_total, v_platform_fee, v_gst_pct, v_gst_amount, v_total_payable,
+    'issued', 'bank_transfer', 'razorpay', v_due_date, true
+  )
+  RETURNING id INTO v_invoice_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'invoice_id', v_invoice_id,
+    'invoice_number', v_invoice_number,
+    'status', 'issued',
+    'total_payable', v_total_payable
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION generate_job_invoice_safe(UUID, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION generate_job_invoice_safe(UUID, UUID) TO authenticated;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000007_fix_invoice_platform_settings_keys.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000008_fix_check_in_timezone_window.sql
+-- ##############################################################################
+
+-- Migration: 20261015000008_fix_check_in_timezone_window.sql
+-- Description: Fix check_in_worker_safe now() comparison to avoid double-offsetting TIMESTAMPTZ
+
+CREATE OR REPLACE FUNCTION check_in_worker_safe(
+  p_booking_id UUID,
+  p_code TEXT,
+  p_lat NUMERIC DEFAULT NULL,
+  p_lng NUMERIC DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_booking RECORD;
+  v_job RECORD;
+  v_is_supervisor BOOLEAN := false;
+  v_distance NUMERIC;
+  v_radius_m NUMERIC := 300.0;
+  v_shift_start TIMESTAMPTZ;
+  v_shift_end TIMESTAMPTZ;
+  v_now TIMESTAMPTZ := now();
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  SELECT * INTO v_booking FROM bookings WHERE id = p_booking_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BOOKING_NOT_FOUND');
+  END IF;
+
+  SELECT * INTO v_job FROM jobs WHERE id = v_booking.job_id;
+
+  v_is_supervisor := (v_user_id = v_booking.organizer_id OR is_current_admin());
+
+  IF NOT v_is_supervisor AND v_user_id != v_booking.worker_id THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED');
+  END IF;
+
+  IF NOT validate_booking_transition(v_booking.status, 'checked_in') THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TRANSITION', 'message', 'Cannot check in from status ' || v_booking.status);
+  END IF;
+
+  -- Time window calculations in IST timezone converted to TIMESTAMPTZ
+  v_shift_start := (v_job.date + v_job.start_time) AT TIME ZONE 'Asia/Kolkata';
+  v_shift_end := (v_job.date + v_job.end_time + CASE WHEN v_job.end_time <= v_job.start_time THEN interval '1 day' ELSE interval '0' END) AT TIME ZONE 'Asia/Kolkata';
+
+  IF NOT v_is_supervisor THEN
+    -- Worker self check-in window: [start - 60 min, start + 120 min]
+    IF v_now < (v_shift_start - interval '60 minutes') OR v_now > (v_shift_start + interval '120 minutes') THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'OUTSIDE_CHECKIN_WINDOW',
+        'message', 'Self check-in is permitted between 60 minutes before and 120 minutes after shift call time.'
+      );
+    END IF;
+  ELSE
+    -- Supervisor check-in window: [start - 4 hours, end]
+    IF v_now < (v_shift_start - interval '4 hours') OR v_now > v_shift_end THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'OUTSIDE_CHECKIN_WINDOW',
+        'message', 'Supervisor check-in permitted only on shift day within operational window.'
+      );
+    END IF;
+  END IF;
+
+  -- Verification credential check
+  IF trim(COALESCE(p_code, '')) != trim(COALESCE(v_booking.check_in_code, '')) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CHECK_IN_CODE', 'message', 'Verification code does not match shift booking.');
+  END IF;
+
+  -- GPS and Geofence enforcement
+  IF NOT v_is_supervisor THEN
+    IF p_lat IS NULL OR p_lng IS NULL THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'LOCATION_REQUIRED', 'message', 'GPS coordinates are required for worker self check-in.');
+    END IF;
+
+    IF v_job.latitude IS NULL OR v_job.longitude IS NULL THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'VENUE_COORDINATES_MISSING', 'message', 'Venue coordinates not configured. Supervisor check-in required.');
+    END IF;
+
+    -- Haversine calculation in km
+    v_distance := round(
+      (6371 * acos(
+        least(1.0, greatest(-1.0,
+          cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+          cos(radians(v_job.longitude) - radians(p_lng)) +
+          sin(radians(p_lat)) * sin(radians(v_job.latitude))
+        ))
+      ))::numeric, 3
+    );
+
+    SELECT COALESCE((value->>'checkin_radius_m')::numeric, 300.0) INTO v_radius_m
+    FROM platform_settings WHERE key = 'checkin_radius_m';
+
+    IF (v_distance * 1000.0) > v_radius_m THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'OUT_OF_GEOFENCE_RANGE',
+        'message', 'You are outside the venue check-in area (' || round(v_distance * 1000.0) || 'm away, max ' || v_radius_m || 'm allowed).'
+      );
+    END IF;
+  ELSE
+    IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
+      v_distance := round(
+        (6371 * acos(
+          least(1.0, greatest(-1.0,
+            cos(radians(p_lat)) * cos(radians(v_job.latitude)) *
+            cos(radians(v_job.longitude) - radians(p_lng)) +
+            sin(radians(p_lat)) * sin(radians(v_job.latitude))
+          ))
+        ))::numeric, 3
+      );
+    END IF;
+  END IF;
+
+  UPDATE bookings
+  SET status = 'checked_in', check_in_time = now()
+  WHERE id = p_booking_id;
+
+  INSERT INTO attendance_records (
+    booking_id, job_id, worker_id, supervisor_id,
+    check_in_time, check_in_code, verified_by_supervisor,
+    latitude, longitude, distance_to_venue_km
+  ) VALUES (
+    p_booking_id, v_booking.job_id, v_booking.worker_id, v_booking.organizer_id,
+    now(), p_code, v_is_supervisor,
+    p_lat, p_lng, LEAST(v_distance, 999.99)
+  );
+
+  PERFORM _notify(
+    v_booking.organizer_id,
+    'Worker Checked In',
+    'Worker has checked in on-site for ' || v_job.title,
+    'check_in',
+    '/shift/' || v_job.id,
+    jsonb_build_object('booking_id', p_booking_id, 'job_id', v_job.id)
+  );
+
+  INSERT INTO audit_logs (
+    actor_id, action, entity_type, entity_id, new_state
+  ) VALUES (
+    v_user_id, 'CHECK_IN_WORKER', 'booking', p_booking_id::TEXT,
+    jsonb_build_object('distance_km', v_distance, 'supervisor_verified', v_is_supervisor)
+  );
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'status', 'checked_in',
+    'check_in_time', now(),
+    'distance_km', v_distance
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION check_in_worker_safe(UUID, TEXT, NUMERIC, NUMERIC) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION check_in_worker_safe(UUID, TEXT, NUMERIC, NUMERIC) TO authenticated;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000008_fix_check_in_timezone_window.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000009_grant_is_current_admin_to_anon.sql
+-- ##############################################################################
+
+-- Migration: 20261015000009_grant_is_current_admin_to_anon.sql
+-- Description: Grant EXECUTE on is_current_admin to anon so public discovery feed RLS policies evaluate cleanly without permission denied
+
+GRANT EXECUTE ON FUNCTION is_current_admin() TO anon, authenticated, service_role;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000009_grant_is_current_admin_to_anon.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000010_fix_organizer_registration_and_role_switching.sql
+-- ##############################################################################
+
+-- Migration 20261015000010: Fix Organizer Registration & Profile Switching
+-- 1. Updates handle_new_user_provisioning trigger to auto-confirm new users and create organizer profile when role='organizer'
+-- 2. Adds register_organizer_direct_safe RPC for direct atomic registration without failing on SMTP/Resend rate limits
+-- 3. Updates ensure_user_profile_provisioned_safe to allow switching role to 'organizer' if requested by authenticated user
+-- 4. Adds switch_user_role_safe RPC for existing accounts (e.g. Google auth) to switch between worker and organizer seamlessly
+
+-- 1. Update handle_new_user_provisioning trigger
+CREATE OR REPLACE FUNCTION public.handle_new_user_provisioning()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'extensions'
+AS $function$
+DECLARE
+  v_role user_role;
+  v_phone TEXT;
+  v_name TEXT;
+  v_email TEXT;
+BEGIN
+  v_role := CASE
+    WHEN (NEW.raw_user_meta_data->>'role') = 'organizer' THEN 'organizer'::user_role
+    WHEN (NEW.raw_user_meta_data->>'role') = 'admin' THEN 'admin'::user_role
+    ELSE 'worker'::user_role
+  END;
+
+  v_email := NEW.email;
+  v_phone := COALESCE(NEW.phone, NEW.raw_user_meta_data->>'phone');
+  v_name := COALESCE(
+    NEW.raw_user_meta_data->>'full_name', 
+    NEW.raw_user_meta_data->>'name', 
+    CASE WHEN v_email IS NOT NULL THEN split_part(v_email, '@', 1) ELSE 'User ' || substr(NEW.id::text, 1, 6) END
+  );
+
+  INSERT INTO public.profiles (
+    id, role, phone, full_name, email, city, is_active
+  ) VALUES (
+    NEW.id, v_role, v_phone, v_name, v_email, 'Mumbai', true
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    role = CASE WHEN EXCLUDED.role = 'organizer' THEN 'organizer'::user_role ELSE profiles.role END,
+    email = COALESCE(EXCLUDED.email, profiles.email);
+
+  IF v_role = 'worker' THEN
+    INSERT INTO public.worker_profiles (
+      id, preferred_locality, skills, availability_status, profile_completion_status, verification_status
+    ) VALUES (
+      NEW.id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  ELSIF v_role = 'organizer' THEN
+    INSERT INTO public.organizer_profiles (
+      id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status
+    ) VALUES (
+      NEW.id, v_name, COALESCE(v_phone, ''), v_email, 'event_agency', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+
+-- 2. Update ensure_user_profile_provisioned_safe to support role switching when explicitly requested
+CREATE OR REPLACE FUNCTION public.ensure_user_profile_provisioned_safe(
+  p_role user_role DEFAULT 'worker',
+  p_full_name TEXT DEFAULT NULL,
+  p_phone TEXT DEFAULT NULL,
+  p_email TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_existing_profile RECORD;
+  v_target_role user_role := COALESCE(p_role, 'worker');
+  v_name TEXT;
+  v_phone TEXT;
+  v_email TEXT;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  -- Admin cannot be assigned via client RPC
+  IF v_target_role = 'admin' THEN
+    v_target_role := 'worker';
+  END IF;
+
+  SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+  v_email := COALESCE(p_email, v_email);
+
+  SELECT * INTO v_existing_profile FROM profiles WHERE id = v_user_id;
+
+  IF FOUND THEN
+    -- If user is already admin, keep admin
+    IF v_existing_profile.role = 'admin' THEN
+      v_target_role := 'admin';
+    ELSIF p_role IS NOT NULL AND (p_role = 'organizer' OR p_role = 'worker') THEN
+      -- Allow explicit role switch
+      v_target_role := p_role;
+      UPDATE profiles 
+      SET 
+        role = v_target_role,
+        full_name = COALESCE(p_full_name, profiles.full_name),
+        phone = COALESCE(p_phone, profiles.phone),
+        email = COALESCE(v_email, profiles.email),
+        updated_at = now()
+      WHERE id = v_user_id;
+    ELSE
+      v_target_role := v_existing_profile.role;
+      IF v_existing_profile.email IS NULL AND v_email IS NOT NULL THEN
+        UPDATE profiles SET email = v_email WHERE id = v_user_id;
+      END IF;
+    END IF;
+  ELSE
+    v_name := COALESCE(
+      p_full_name, 
+      CASE WHEN v_email IS NOT NULL THEN split_part(v_email, '@', 1) ELSE 'User ' || substr(v_user_id::text, 1, 6) END
+    );
+    v_phone := p_phone;
+
+    INSERT INTO profiles (id, role, phone, full_name, email, city, is_active)
+    VALUES (v_user_id, v_target_role, v_phone, v_name, v_email, 'Mumbai', true)
+    ON CONFLICT (id) DO UPDATE SET
+      email = COALESCE(EXCLUDED.email, profiles.email);
+  END IF;
+
+  -- Provision profile extensions if missing
+  IF v_target_role = 'worker' OR v_target_role = 'admin' THEN
+    INSERT INTO worker_profiles (id, preferred_locality, skills, availability_status, profile_completion_status, verification_status)
+    VALUES (v_user_id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified')
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  IF v_target_role = 'organizer' OR v_target_role = 'admin' THEN
+    INSERT INTO organizer_profiles (id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status)
+    VALUES (v_user_id, COALESCE(p_full_name, 'Independent Organizer'), COALESCE(p_phone, ''), v_email, 'event_agency', 'incomplete', 'unverified')
+    ON CONFLICT (id) DO UPDATE SET
+      business_name = CASE WHEN organizer_profiles.business_name = 'Independent Organizer' THEN COALESCE(EXCLUDED.business_name, organizer_profiles.business_name) ELSE organizer_profiles.business_name END,
+      business_contact_email = COALESCE(organizer_profiles.business_contact_email, EXCLUDED.business_contact_email);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'user_id', v_user_id,
+    'role', v_target_role,
+    'email', v_email
+  );
+END;
+$$;
+
+-- 3. Dedicated switch_user_role_safe RPC
+CREATE OR REPLACE FUNCTION public.switch_user_role_safe(
+  p_target_role user_role,
+  p_business_name TEXT DEFAULT NULL,
+  p_business_phone TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_profile RECORD;
+  v_email TEXT;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  IF p_target_role NOT IN ('worker', 'organizer') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Target role must be worker or organizer.');
+  END IF;
+
+  SELECT * INTO v_profile FROM profiles WHERE id = v_user_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'User profile not found.');
+  END IF;
+
+  IF v_profile.role = 'admin' THEN
+    RETURN jsonb_build_object('success', true, 'message', 'Admin has universal access.', 'role', 'admin');
+  END IF;
+
+  SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+
+  -- Update role on profiles table
+  UPDATE profiles
+  SET role = p_target_role, updated_at = now()
+  WHERE id = v_user_id;
+
+  -- Ensure target role subprofile exists
+  IF p_target_role = 'organizer' THEN
+    INSERT INTO organizer_profiles (
+      id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status
+    ) VALUES (
+      v_user_id,
+      COALESCE(p_business_name, v_profile.full_name, 'Independent Organizer'),
+      COALESCE(p_business_phone, v_profile.phone, ''),
+      COALESCE(v_profile.email, v_email),
+      'event_agency',
+      'incomplete',
+      'unverified'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      business_name = COALESCE(EXCLUDED.business_name, organizer_profiles.business_name),
+      business_contact_phone = COALESCE(EXCLUDED.business_contact_phone, organizer_profiles.business_contact_phone);
+  ELSIF p_target_role = 'worker' THEN
+    INSERT INTO worker_profiles (
+      id, preferred_locality, skills, availability_status, profile_completion_status, verification_status
+    ) VALUES (
+      v_user_id, 'Mumbai', '{}', 'available', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'user_id', v_user_id,
+    'role', p_target_role
+  );
+END;
+$$;
+
+-- 4. Direct Organizer Registration RPC (bypasses Resend/SMTP email failures in development/pilot)
+CREATE OR REPLACE FUNCTION public.register_organizer_direct_safe(
+  p_email TEXT,
+  p_password TEXT,
+  p_business_name TEXT,
+  p_phone TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_norm_email TEXT := lower(trim(p_email));
+  v_norm_phone TEXT := trim(p_phone);
+  v_norm_name TEXT := trim(p_business_name);
+  v_existing_user_id UUID;
+  v_new_user_id UUID;
+  v_encrypted_pw TEXT;
+BEGIN
+  IF v_norm_email IS NULL OR v_norm_email NOT LIKE '%@%.%' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Invalid email address provided.');
+  END IF;
+
+  IF length(p_password) < 6 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Password must be at least 6 characters.');
+  END IF;
+
+  IF length(v_norm_name) < 2 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Organization name is required.');
+  END IF;
+
+  -- Check if user already exists in auth.users
+  SELECT id INTO v_existing_user_id FROM auth.users WHERE lower(email) = v_norm_email;
+
+  IF v_existing_user_id IS NOT NULL THEN
+    -- User already exists: update role to organizer and ensure organizer_profiles entry
+    v_encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf'));
+
+    UPDATE auth.users
+    SET 
+      encrypted_password = v_encrypted_pw,
+      email_confirmed_at = COALESCE(email_confirmed_at, now()),
+      raw_user_meta_data = raw_user_meta_data || jsonb_build_object('role', 'organizer', 'full_name', v_norm_name, 'phone', v_norm_phone),
+      updated_at = now()
+    WHERE id = v_existing_user_id;
+
+    UPDATE profiles
+    SET 
+      role = 'organizer',
+      full_name = v_norm_name,
+      phone = v_norm_phone,
+      updated_at = now()
+    WHERE id = v_existing_user_id;
+
+    INSERT INTO organizer_profiles (
+      id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status
+    ) VALUES (
+      v_existing_user_id, v_norm_name, v_norm_phone, v_norm_email, 'event_agency', 'incomplete', 'unverified'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      business_name = EXCLUDED.business_name,
+      business_contact_phone = EXCLUDED.business_contact_phone;
+
+    RETURN jsonb_build_object(
+      'success', true,
+      'user_id', v_existing_user_id,
+      'is_existing_account', true,
+      'message', 'Existing account upgraded to Organizer profile.'
+    );
+  END IF;
+
+  -- Create brand new user in auth.users
+  v_new_user_id := gen_random_uuid();
+  v_encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf'));
+
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    v_new_user_id,
+    'authenticated',
+    'authenticated',
+    v_norm_email,
+    v_encrypted_pw,
+    now(),
+    jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+    jsonb_build_object('role', 'organizer', 'full_name', v_norm_name, 'phone', v_norm_phone),
+    now(),
+    now()
+  );
+
+  INSERT INTO auth.identities (
+    id,
+    user_id,
+    identity_data,
+    provider,
+    provider_id,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    gen_random_uuid(),
+    v_new_user_id,
+    jsonb_build_object('sub', v_new_user_id::text, 'email', v_norm_email),
+    'email',
+    v_new_user_id::text,
+    now(),
+    now(),
+    now()
+  );
+
+  -- Profiles and organizer_profiles are created via trg_on_auth_user_created,
+  -- but ensure them explicitly here for guaranteed idempotency:
+  INSERT INTO profiles (
+    id, role, phone, full_name, email, city, is_active
+  ) VALUES (
+    v_new_user_id, 'organizer', v_norm_phone, v_norm_name, v_norm_email, 'Mumbai', true
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    role = 'organizer',
+    full_name = EXCLUDED.full_name,
+    phone = EXCLUDED.phone;
+
+  INSERT INTO organizer_profiles (
+    id, business_name, business_contact_phone, business_contact_email, business_type, profile_completion_status, verification_status
+  ) VALUES (
+    v_new_user_id, v_norm_name, v_norm_phone, v_norm_email, 'event_agency', 'incomplete', 'unverified'
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    business_name = EXCLUDED.business_name,
+    business_contact_phone = EXCLUDED.business_contact_phone;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'user_id', v_new_user_id,
+    'is_existing_account', false,
+    'message', 'Organizer account registered and verified.'
+  );
+END;
+$$;
+
+-- Grant EXECUTE permissions
+GRANT EXECUTE ON FUNCTION public.ensure_user_profile_provisioned_safe(user_role, TEXT, TEXT, TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.switch_user_role_safe(user_role, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.register_organizer_direct_safe(TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000010_fix_organizer_registration_and_role_switching.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000011_fix_upi_regex_bound.sql
+-- ##############################################################################
+
+-- Migration 20261015000011: Fix UPI Regex in check_worker_profile_update
+-- Fixes PostgreSQL regex error: invalid regular expression: invalid repetition count(s)
+-- PostgreSQL REG_UBOUND limits repetition counts in {m,n} to 255.
+-- Changes {2,256} to {2,255} to adhere to POSIX bounds.
+
+CREATE OR REPLACE FUNCTION public.check_worker_profile_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- 1. Allow trusted internal updates via transaction-local setting
+  IF current_setting('opskl.trusted', true) = '1' THEN
+    RETURN NEW;
+  END IF;
+
+  -- 2. Allow administrative role
+  IF is_current_admin() THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.id IS DISTINCT FROM OLD.id THEN
+    RAISE EXCEPTION 'Unauthorized: Profile ID cannot be modified.';
+  END IF;
+
+  IF NEW.verification_status IS DISTINCT FROM OLD.verification_status OR
+     NEW.rating IS DISTINCT FROM OLD.rating OR
+     NEW.total_reviews IS DISTINCT FROM OLD.total_reviews OR
+     NEW.shifts_completed IS DISTINCT FROM OLD.shifts_completed OR
+     NEW.is_aadhaar_verified IS DISTINCT FROM OLD.is_aadhaar_verified OR
+     NEW.is_pan_verified IS DISTINCT FROM OLD.is_pan_verified THEN
+    RAISE EXCEPTION 'Unauthorized: Administrative and verification fields cannot be modified directly by workers.';
+  END IF;
+
+  IF NEW.upi_id IS DISTINCT FROM OLD.upi_id AND NEW.upi_id IS NOT NULL AND trim(NEW.upi_id) != '' THEN
+    IF NEW.upi_id !~* '^[a-zA-Z0-9._-]{2,255}@[a-zA-Z]{2,64}$' THEN
+      RAISE EXCEPTION 'Invalid UPI ID format. Payout destination handle must be valid (e.g. name@bank).';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000011_fix_upi_regex_bound.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000012_robust_create_job_safe.sql
+-- ##############################################################################
+
+-- Migration 20261015000012: Robust category and bounds handling in create_job_safe
+-- 1. Normalizes category to lowercase trim before casting to shift_category
+-- 2. Aligns duration checks to allow micro-shifts (min 0.5h up to 24h)
+-- 3. Ensures clear descriptive errors for organizers
+
+CREATE OR REPLACE FUNCTION public.create_job_safe(p_job JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_organizer_id UUID := auth.uid();
+  v_title TEXT := trim(p_job->>'title');
+  v_raw_cat TEXT := lower(trim(p_job->>'category'));
+  v_category shift_category;
+  v_venue_name TEXT := trim(p_job->>'venue_name');
+  v_venue_address TEXT := trim(p_job->>'venue_address');
+  v_landmark TEXT := p_job->>'landmark';
+  v_city TEXT := COALESCE(p_job->>'city', 'Mumbai');
+  v_zone TEXT := p_job->>'zone';
+  v_date DATE := (p_job->>'date')::DATE;
+  v_start_time TIME := (p_job->>'start_time')::TIME;
+  v_end_time TIME := (p_job->>'end_time')::TIME;
+  v_hourly_rate NUMERIC := (p_job->>'hourly_rate')::NUMERIC;
+  v_slots_total INTEGER := (p_job->>'slots_total')::INTEGER;
+  v_status shift_status := COALESCE(p_job->>'status', 'open')::shift_status;
+  v_dress_code TEXT := p_job->>'dress_code';
+  v_supervisor_name TEXT := trim(p_job->>'supervisor_name');
+  v_supervisor_phone TEXT := trim(p_job->>'supervisor_phone');
+  v_reporting_instructions TEXT := p_job->>'reporting_instructions';
+  v_cancellation_policy TEXT := p_job->>'cancellation_policy';
+  v_eligibility_criteria TEXT := p_job->>'eligibility_criteria';
+  v_lat NUMERIC := (p_job->>'latitude')::NUMERIC;
+  v_lng NUMERIC := (p_job->>'longitude')::NUMERIC;
+  v_duties TEXT[] := ARRAY(SELECT jsonb_array_elements_text(COALESCE(p_job->'duties', '[]'::jsonb)));
+  v_required_skills TEXT[] := ARRAY(SELECT jsonb_array_elements_text(COALESCE(p_job->'required_skills', '[]'::jsonb)));
+  v_perks TEXT[] := ARRAY(SELECT jsonb_array_elements_text(COALESCE(p_job->'perks', '[]'::jsonb)));
+  v_breaks_minutes INTEGER := COALESCE((p_job->>'breaks_minutes')::INTEGER, 30);
+  v_meal_provided BOOLEAN := COALESCE((p_job->>'meal_provided')::BOOLEAN, false);
+  v_transport_provided BOOLEAN := COALESCE((p_job->>'transport_provided')::BOOLEAN, false);
+  v_overtime_policy TEXT := p_job->>'overtime_policy';
+  v_crosses_midnight BOOLEAN := false;
+  v_end_date DATE;
+  v_duration_hours NUMERIC;
+  v_total_pay NUMERIC;
+  v_min_wage NUMERIC := 100.0;
+  v_new_id UUID;
+BEGIN
+  IF v_organizer_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM organizer_profiles
+    WHERE id = v_organizer_id AND (verification_status = 'verified' OR is_current_admin())
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_NOT_VERIFIED', 'message', 'Organizer identity verification required to post shifts.');
+  END IF;
+
+  -- Safe enum casting
+  BEGIN
+    v_category := v_raw_cat::shift_category;
+  EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CATEGORY', 'message', 'Invalid shift category: ' || COALESCE(p_job->>'category', 'none'));
+  END;
+
+  -- Title length aligned with client bounds: 5 to 80 chars
+  IF length(v_title) < 5 OR length(v_title) > 80 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TITLE', 'message', 'Shift title must be between 5 and 80 characters.');
+  END IF;
+
+  -- Read min wage from settings
+  SELECT COALESCE((value->>'min_hourly_wage_inr')::numeric, 100.0) INTO v_min_wage
+  FROM platform_settings WHERE key = 'min_wage';
+
+  -- Rate limits: ₹100 to ₹2000/hr
+  IF v_hourly_rate < v_min_wage OR v_hourly_rate > 2000 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be between ₹' || v_min_wage || ' and ₹2,000/hr.');
+  END IF;
+
+  -- Slots limit: 1 to 100 workers
+  IF v_slots_total < 1 OR v_slots_total > 100 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be between 1 and 100 workers.');
+  END IF;
+
+  -- Date check in IST
+  IF v_date < (now() AT TIME ZONE 'Asia/Kolkata')::date THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date cannot be in the past.');
+  END IF;
+
+  -- Overnight calculation
+  IF v_end_time <= v_start_time THEN
+    v_crosses_midnight := true;
+    v_end_date := v_date + 1;
+    v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time + interval '24 hours')) / 3600.0)::numeric, 2);
+  ELSE
+    v_crosses_midnight := false;
+    v_end_date := v_date;
+    v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
+  END IF;
+
+  -- Allow duration between 0.5 and 24 hours
+  IF v_duration_hours < 0.5 OR v_duration_hours > 24.0 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 0.5 and 24 hours.');
+  END IF;
+
+  -- India geographic coordinate bounds check (Lat: 6–38 N, Lng: 68–98 E)
+  IF v_lat IS NOT NULL OR v_lng IS NOT NULL THEN
+    IF v_lat < 6.0 OR v_lat > 38.0 OR v_lng < 68.0 OR v_lng > 98.0 THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_COORDINATES', 'message', 'Coordinates must fall within the sovereign territory of India (6–38°N, 68–98°E).');
+    END IF;
+  END IF;
+
+  v_total_pay := round(v_hourly_rate * v_duration_hours, 2);
+
+  INSERT INTO jobs (
+    organizer_id, title, category, venue_name, venue_address, landmark,
+    city, zone, date, start_time, end_time, duration_hours,
+    hourly_rate, total_pay, slots_total, slots_filled, dress_code,
+    duties, perks, required_skills, breaks_minutes, meal_provided,
+    transport_provided, overtime_policy, reporting_instructions,
+    cancellation_policy, eligibility_criteria, latitude, longitude,
+    supervisor_name, supervisor_phone, status, crosses_midnight, end_date
+  ) VALUES (
+    v_organizer_id, v_title, v_category, v_venue_name, v_venue_address, v_landmark,
+    v_city, v_zone, v_date, v_start_time, v_end_time, v_duration_hours,
+    v_hourly_rate, v_total_pay, v_slots_total, 0, v_dress_code,
+    v_duties, v_perks, v_required_skills, v_breaks_minutes, v_meal_provided,
+    v_transport_provided, v_overtime_policy, v_reporting_instructions,
+    v_cancellation_policy, v_eligibility_criteria, v_lat, v_lng,
+    v_supervisor_name, v_supervisor_phone, v_status, v_crosses_midnight, v_end_date
+  ) RETURNING id INTO v_new_id;
+
+  INSERT INTO audit_logs (
+    actor_id, action, entity_type, entity_id, new_state
+  ) VALUES (
+    v_organizer_id, 'CREATE_JOB', 'job', v_new_id::TEXT,
+    jsonb_build_object('title', v_title, 'duration_hours', v_duration_hours, 'total_pay', v_total_pay, 'crosses_midnight', v_crosses_midnight)
+  );
+
+  RETURN jsonb_build_object('success', true, 'job_id', v_new_id, 'duration_hours', v_duration_hours, 'total_pay', v_total_pay);
+END;
+$$;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000012_robust_create_job_safe.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261015000013_fix_verification_case_column.sql
+-- ##############################################################################
+
+-- Migration 20261015000013: Fix document_masked_id in submit_verification_case_safe
+-- Replaces erroneous 'document_number_masked' with actual table column 'document_masked_id'
+
+CREATE OR REPLACE FUNCTION submit_verification_case_safe(
+  p_document_type TEXT,
+  p_masked_id TEXT,
+  p_storage_path TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_case_id UUID;
+  v_user_str TEXT;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Authentication required.');
+  END IF;
+
+  v_user_str := v_user_id::TEXT;
+
+  IF p_document_type NOT IN ('aadhaar', 'pan', 'gstin') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Document type must be aadhaar, pan, or gstin.');
+  END IF;
+
+  -- Storage path security: must be strictly scoped to caller's user directory
+  IF NOT (
+    p_storage_path LIKE (v_user_str || '/%')
+    OR p_storage_path LIKE ('kyc/' || v_user_str || '/%')
+    OR p_storage_path LIKE ('verification/' || v_user_str || '/%')
+    OR p_storage_path LIKE ('verification/%/' || v_user_str || '.%')
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Storage path must be scoped to your authenticated user directory.');
+  END IF;
+
+  -- Reject if pending case already exists for this document type
+  IF EXISTS (
+    SELECT 1 FROM verification_cases
+    WHERE profile_id = v_user_id AND document_type = p_document_type AND status = 'pending'
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'A verification case is already pending review for this document type.');
+  END IF;
+
+  INSERT INTO verification_cases (
+    profile_id, document_type, document_masked_id, document_storage_path, status
+  ) VALUES (
+    v_user_id, p_document_type, p_masked_id, p_storage_path, 'pending'
+  ) RETURNING id INTO v_case_id;
+
+  -- Update profile status to pending
+  PERFORM set_config('opskl.trusted', '1', true);
+  UPDATE worker_profiles SET verification_status = 'pending', updated_at = now() WHERE id = v_user_id;
+  UPDATE organizer_profiles SET verification_status = 'pending', updated_at = now() WHERE id = v_user_id;
+
+  RETURN jsonb_build_object('success', true, 'case_id', v_case_id, 'status', 'pending');
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION submit_verification_case_safe(TEXT, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION submit_verification_case_safe(TEXT, TEXT, TEXT) TO authenticated;
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261015000013_fix_verification_case_column.sql
+-- ##############################################################################
+
+
+-- ##############################################################################
+-- START MIGRATION: 20261016000000_security_privacy_coordinate_hardening.sql
+-- ##############################################################################
+
+-- ==============================================================================
+-- OPSKIL DATABASE MIGRATION: 20261016000000_security_privacy_coordinate_hardening.sql
+-- Resolves:
+--   1. Finding 2: Supervisor contact privacy shield on raw jobs table & public_jobs view
+--   2. Finding 4: Organizer GSTIN / billing address exposure shield on organizer_profiles
+--   3. Finding 6: Venue coordinates partial pair validation in create_job_safe
+-- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 1. HARDEN COORDINATE BOUNDS & INTEGRITY IN create_job_safe
+-- ------------------------------------------------------------------------------
+
+DROP FUNCTION IF EXISTS public.create_job_safe(JSONB, UUID);
+DROP FUNCTION IF EXISTS public.create_job_safe(JSONB);
+
+CREATE OR REPLACE FUNCTION public.create_job_safe(
+  p_job JSONB,
+  p_organizer_id UUID DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_effective_org_id UUID := COALESCE(p_organizer_id, (p_job->>'organizer_id')::uuid, auth.uid());
+  v_job_id UUID;
+  v_title TEXT := trim(COALESCE(p_job->>'title', ''));
+  v_raw_cat TEXT := lower(trim(COALESCE(p_job->>'category', 'conference')));
+  v_category shift_category;
+  v_venue_name TEXT := trim(COALESCE(p_job->>'venue_name', p_job->>'venueName', ''));
+  v_venue_addr TEXT := trim(COALESCE(p_job->>'venue_address', p_job->>'venueAddress', ''));
+  v_landmark TEXT := trim(COALESCE(p_job->>'landmark', ''));
+  v_city TEXT := COALESCE(NULLIF(trim(p_job->>'city'), ''), 'Mumbai');
+  v_zone TEXT := trim(COALESCE(p_job->>'zone', ''));
+  v_lat NUMERIC := (p_job->>'latitude')::numeric;
+  v_lng NUMERIC := (p_job->>'longitude')::numeric;
+  v_date DATE := (p_job->>'date')::date;
+  v_start_time TIME := (p_job->>'start_time')::time;
+  v_end_time TIME := (p_job->>'end_time')::time;
+  v_hourly_rate NUMERIC := COALESCE((p_job->>'hourly_rate')::numeric, (p_job->>'hourlyRate')::numeric, 0);
+  v_slots_total INT := COALESCE((p_job->>'slots_total')::int, (p_job->>'slotsTotal')::int, 0);
+  v_dress_code TEXT := trim(COALESCE(p_job->>'dress_code', p_job->>'dressCode', ''));
+  v_duties TEXT[] := CASE 
+    WHEN p_job->'duties' IS NOT NULL AND jsonb_typeof(p_job->'duties') = 'array' 
+    THEN ARRAY(SELECT jsonb_array_elements_text(p_job->'duties'))
+    ELSE ARRAY[]::TEXT[]
+  END;
+  v_required_skills TEXT[] := CASE 
+    WHEN COALESCE(p_job->'required_skills', p_job->'requiredSkills') IS NOT NULL 
+         AND jsonb_typeof(COALESCE(p_job->'required_skills', p_job->'requiredSkills')) = 'array'
+    THEN ARRAY(SELECT jsonb_array_elements_text(COALESCE(p_job->'required_skills', p_job->'requiredSkills')))
+    ELSE ARRAY[]::TEXT[]
+  END;
+  v_perks TEXT[] := CASE 
+    WHEN p_job->'perks' IS NOT NULL AND jsonb_typeof(p_job->'perks') = 'array' 
+    THEN ARRAY(SELECT jsonb_array_elements_text(p_job->'perks'))
+    ELSE ARRAY[]::TEXT[]
+  END;
+  v_eligibility TEXT := trim(COALESCE(p_job->>'eligibility_criteria', p_job->>'eligibilityCriteria', ''));
+  v_breaks_mins INT := COALESCE((p_job->>'breaks_minutes')::int, (p_job->>'breaksMinutes')::int, 30);
+  v_meal_provided BOOLEAN := COALESCE((p_job->>'meal_provided')::boolean, (p_job->>'mealProvided')::boolean, false);
+  v_transport_provided BOOLEAN := COALESCE((p_job->>'transport_provided')::boolean, (p_job->>'transportProvided')::boolean, false);
+  v_overtime_policy TEXT := trim(COALESCE(p_job->>'overtime_policy', p_job->>'overtimePolicy', ''));
+  v_reporting_instructions TEXT := trim(COALESCE(p_job->>'reporting_instructions', p_job->>'reportingInstructions', ''));
+  v_cancellation_policy TEXT := trim(COALESCE(p_job->>'cancellation_policy', p_job->>'cancellationPolicy', ''));
+  v_supervisor_name TEXT := trim(COALESCE(p_job->>'supervisor_name', p_job->>'supervisorName', ''));
+  v_supervisor_phone TEXT := trim(COALESCE(p_job->>'supervisor_phone', p_job->>'supervisorPhone', ''));
+  v_status shift_status := COALESCE(p_job->>'status', 'open')::shift_status;
+  v_crosses_midnight BOOLEAN;
+  v_end_date DATE;
+  v_duration_hours NUMERIC;
+  v_total_pay NUMERIC;
+  v_org_verified TEXT;
+  v_org_active BOOLEAN;
+  v_min_wage NUMERIC;
+BEGIN
+  -- Authentication check: must have an authenticated user (bypassed only for service_role / postgres superuser)
+  IF auth.uid() IS NULL AND COALESCE(auth.role(), '') <> 'service_role' AND current_user <> 'postgres' THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHENTICATED', 'message', 'Please sign in to publish shifts.');
+  END IF;
+
+  IF v_effective_org_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_REQUIRED', 'message', 'Organizer identity is required.');
+  END IF;
+
+  -- Authorization: Caller must be the organizer or admin
+  IF auth.uid() IS NOT NULL AND auth.uid() <> v_effective_org_id AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'You are not authorized to post shifts on behalf of another organizer.');
+  END IF;
+
+  -- Organizer verification check
+  SELECT verification_status INTO v_org_verified
+  FROM organizer_profiles WHERE id = v_effective_org_id;
+
+  SELECT is_active INTO v_org_active
+  FROM profiles WHERE id = v_effective_org_id;
+
+  IF v_org_active IS FALSE THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_INACTIVE', 'message', 'This organizer account has been suspended or deactivated.');
+  END IF;
+
+  -- Require existing organizer profile for publishing non-draft shifts
+  IF v_status <> 'draft' AND v_org_verified IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_NOT_FOUND', 'message', 'Organizer profile not found.');
+  END IF;
+
+  -- Require verified organizer for publishing non-draft shifts (admins bypass)
+  IF v_status <> 'draft' AND v_org_verified <> 'verified' AND NOT is_current_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_NOT_VERIFIED', 'message', 'Organizer identity verification required to post shifts.');
+  END IF;
+
+  -- Safe enum casting
+  BEGIN
+    v_category := v_raw_cat::shift_category;
+  EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_CATEGORY', 'message', 'Invalid shift category: ' || COALESCE(p_job->>'category', 'none'));
+  END;
+
+  -- Title length aligned: 5 to 80 chars
+  IF length(v_title) < 5 OR length(v_title) > 80 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TITLE', 'message', 'Shift title must be between 5 and 80 characters.');
+  END IF;
+
+  -- Read min wage from settings
+  SELECT COALESCE((value->>'min_hourly_wage_inr')::numeric, 100.0) INTO v_min_wage
+  FROM platform_settings WHERE key = 'min_wage';
+
+  -- Rate limits: ₹100 to ₹2000/hr
+  IF v_hourly_rate < v_min_wage OR v_hourly_rate > 2000 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_WAGE', 'message', 'Hourly rate must be between ₹' || v_min_wage || ' and ₹2,000/hr.');
+  END IF;
+
+  -- Slots limit: 1 to 50 workers (aligned with client schema)
+  IF v_slots_total < 1 OR v_slots_total > 50 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be between 1 and 50 workers.');
+  END IF;
+
+  -- Date check in IST
+  IF v_date < (now() AT TIME ZONE 'Asia/Kolkata')::date THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date cannot be in the past.');
+  END IF;
+
+  -- Overnight calculation
+  IF v_end_time <= v_start_time THEN
+    v_crosses_midnight := true;
+    v_end_date := v_date + 1;
+    v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time + interval '24 hours')) / 3600.0)::numeric, 2);
+  ELSE
+    v_crosses_midnight := false;
+    v_end_date := v_date;
+    v_duration_hours := round((EXTRACT(EPOCH FROM (v_end_time - v_start_time)) / 3600.0)::numeric, 2);
+  END IF;
+
+  -- Allow duration between 1.0 and 14.0 hours (aligned with client schema)
+  IF v_duration_hours < 1.0 OR v_duration_hours > 14.0 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 1 and 14 hours.');
+  END IF;
+
+  -- Require BOTH coordinates to be present together or BOTH absent (Fix 6)
+  IF (v_lat IS NULL AND v_lng IS NOT NULL) OR (v_lat IS NOT NULL AND v_lng IS NULL) THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INCOMPLETE_COORDINATES', 'message', 'Both latitude and longitude must be provided together or omitted.');
+  END IF;
+
+  -- India geographic coordinate bounds check (Lat: 6–38 N, Lng: 68–98 E)
+  IF v_lat IS NOT NULL AND v_lng IS NOT NULL THEN
+    IF v_lat < 6.0 OR v_lat > 38.0 OR v_lng < 68.0 OR v_lng > 98.0 THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_COORDINATES', 'message', 'Coordinates must fall within the sovereign territory of India (6–38°N, 68–98°E).');
+    END IF;
+  END IF;
+
+  v_total_pay := round(v_hourly_rate * v_duration_hours, 2);
+
+  INSERT INTO jobs (
+    organizer_id, title, category, venue_name, venue_address,
+    landmark, city, zone, latitude, longitude,
+    date, start_time, end_time, duration_hours,
+    hourly_rate, total_pay, slots_total, slots_filled,
+    dress_code, duties, perks, required_skills, eligibility_criteria,
+    breaks_minutes, meal_provided, transport_provided, overtime_policy,
+    reporting_instructions, cancellation_policy,
+    supervisor_name, supervisor_phone, status, crosses_midnight, end_date
+  ) VALUES (
+    v_effective_org_id, v_title, v_category, v_venue_name, v_venue_addr,
+    v_landmark, v_city, v_zone, v_lat, v_lng,
+    v_date, v_start_time, v_end_time, v_duration_hours,
+    v_hourly_rate, v_total_pay, v_slots_total, 0,
+    v_dress_code, v_duties, v_perks, v_required_skills, v_eligibility,
+    v_breaks_mins, v_meal_provided, v_transport_provided, v_overtime_policy,
+    v_reporting_instructions, v_cancellation_policy,
+    v_supervisor_name, v_supervisor_phone, v_status, v_crosses_midnight, v_end_date
+  ) RETURNING id INTO v_job_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'job_id', v_job_id,
+    'title', v_title,
+    'total_pay', v_total_pay,
+    'duration_hours', v_duration_hours,
+    'crosses_midnight', v_crosses_midnight
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.create_job_safe(JSONB, UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_job_safe(JSONB, UUID) TO authenticated;
+
+-- ------------------------------------------------------------------------------
+-- 2. SHIELD SUPERVISOR CONTACTS ON JOBS TABLE (Fix 2)
+-- ------------------------------------------------------------------------------
+
+-- Drop and recreate public_jobs view with security_barrier = true
+-- Omits supervisor_name and supervisor_phone
+DROP VIEW IF EXISTS public.public_jobs CASCADE;
+
+CREATE VIEW public.public_jobs
+WITH (security_barrier = true) AS
+  SELECT
+    id,
+    organizer_id,
+    title,
+    category,
+    venue_name,
+    venue_address,
+    landmark,
+    city,
+    zone,
+    date,
+    start_time,
+    end_time,
+    duration_hours,
+    hourly_rate,
+    total_pay,
+    wage_per_worker,
+    slots_total,
+    slots_filled,
+    dress_code,
+    duties,
+    perks,
+    required_skills,
+    eligibility_criteria,
+    application_deadline,
+    breaks_minutes,
+    meal_provided,
+    transport_provided,
+    overtime_policy,
+    latitude,
+    longitude,
+    status,
+    created_at,
+    updated_at,
+    crosses_midnight,
+    end_date
+  FROM public.jobs
+  WHERE status IN ('open', 'filling')
+    AND date >= CURRENT_DATE;
+
+GRANT SELECT ON public.public_jobs TO anon, authenticated;
+
+-- Restrict direct SELECT on jobs table:
+-- Only job's organizer, confirmed workers for that shift, or admin can select raw jobs row
+DROP POLICY IF EXISTS "Anyone can view open public jobs" ON public.jobs;
+DROP POLICY IF EXISTS "Anyone authenticated can view open jobs" ON public.jobs;
+DROP POLICY IF EXISTS "Organizers and confirmed crew view full jobs" ON public.jobs;
+
+CREATE POLICY "Organizers and confirmed crew view full jobs"
+  ON public.jobs FOR SELECT TO authenticated
+  USING (
+    organizer_id = auth.uid()
+    OR is_current_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.bookings b
+      WHERE b.job_id = jobs.id
+        AND b.worker_id = auth.uid()
+        AND b.status IN ('confirmed', 'checked_in', 'completed_awaiting_review', 'completed')
+    )
+  );
+
+-- ------------------------------------------------------------------------------
+-- 3. SHIELD SENSITIVE FIELDS (GSTIN, BILLING ADDRESS, PHONE) IN ORGANIZER PROFILES (Fix 4)
+-- ------------------------------------------------------------------------------
+
+-- Drop and recreate public organizer card view with security_barrier = true
+DROP VIEW IF EXISTS public.public_organizer_cards CASCADE;
+
+CREATE VIEW public.public_organizer_cards
+WITH (security_barrier = true) AS
+  SELECT
+    id,
+    business_name,
+    business_type,
+    profile_completion_status,
+    verification_status,
+    rating,
+    total_events_hosted,
+    created_at,
+    updated_at
+  FROM public.organizer_profiles;
+
+GRANT SELECT ON public.public_organizer_cards TO anon, authenticated;
+
+-- Restrict direct SELECT on organizer_profiles:
+-- An organizer can only read their own profile; admins can read all profiles
+DROP POLICY IF EXISTS "Public organizer card read access" ON public.organizer_profiles;
+DROP POLICY IF EXISTS "Organizers view own business profile" ON public.organizer_profiles;
+
+CREATE POLICY "Organizers view own business profile"
+  ON public.organizer_profiles FOR SELECT TO authenticated
+  USING (
+    id = auth.uid()
+    OR is_current_admin()
+  );
+
+
+-- ##############################################################################
+-- END MIGRATION: 20261016000000_security_privacy_coordinate_hardening.sql
+-- ##############################################################################
 

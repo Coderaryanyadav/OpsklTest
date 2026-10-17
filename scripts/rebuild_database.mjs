@@ -14,14 +14,18 @@ const connectionString = process.env.DATABASE_URL || process.argv[2];
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lericvniqdbvacgegrbp.supabase.co';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!connectionString) {
-  console.error('\x1b[31m[ERROR] Missing DATABASE_URL.\x1b[0m');
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DESTRUCTIVE_DATABASE_REBUILD !== 'true') {
+  console.error('\x1b[31m[DESTRUCTIVE ACTION BLOCKED]\x1b[0m');
+  console.error('scripts/rebuild_database.mjs drops and recreates the public schema and is destructive.');
+  console.error('To run this script on a dedicated local/test database, you must explicitly set:');
+  console.error('  ALLOW_DESTRUCTIVE_DATABASE_REBUILD=true');
   process.exit(1);
 }
 
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
 const client = new pg.Client({
   connectionString,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized },
 });
 
 function calculateSha256(content) {
@@ -42,16 +46,14 @@ async function run() {
     DROP SCHEMA IF EXISTS public CASCADE;
     CREATE SCHEMA public;
 
-    GRANT ALL ON SCHEMA public TO postgres;
-    GRANT ALL ON SCHEMA public TO anon;
-    GRANT ALL ON SCHEMA public TO authenticated;
-    GRANT ALL ON SCHEMA public TO service_role;
+    GRANT USAGE ON SCHEMA public TO anon, authenticated;
+    GRANT ALL ON SCHEMA public TO postgres, service_role;
 
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, service_role;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, service_role;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, service_role;
   `);
-  console.log('\x1b[32m✓ Public schema cleanly recreated with full grants.\x1b[0m\n');
+  console.log('\x1b[32m✓ Public schema cleanly recreated with least-privilege grants.\x1b[0m\n');
 
   console.log('Step 2: Initializing _opskil_migrations metadata table...');
   await client.query(`
@@ -161,11 +163,11 @@ async function run() {
   }
 
   console.log('\nStep 5: Provisioning Initial Admin User & Backfilling Auth Profiles...');
-  const adminEmail = 'admin@opskil.com';
-  const adminPassword = 'AdminOpskil2026!';
+  const adminEmail = process.env.ADMIN_EMAIL || process.argv[2] || 'admin@opskil.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || process.argv[3];
 
   let userId;
-  if (serviceRoleKey) {
+  if (serviceRoleKey && adminPassword) {
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -190,6 +192,12 @@ async function run() {
       userId = data.user.id;
       console.log(`  \x1b[32m✓ Created new auth.users record (ID: ${userId})\x1b[0m`);
     }
+  } else if (!adminPassword) {
+    console.log(`  \x1b[33m[NOTICE] No ADMIN_PASSWORD provided via environment. Skipping admin credentials provisioning.\x1b[0m`);
+    const userCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [adminEmail]);
+    if (userCheck.rows.length > 0) {
+      userId = userCheck.rows[0].id;
+    }
   } else {
     const userCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [adminEmail]);
     if (userCheck.rows.length > 0) {
@@ -198,18 +206,25 @@ async function run() {
   }
 
   if (userId) {
-    await client.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
-    await client.query(
-      `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
-       VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
-       ON CONFLICT (id) DO UPDATE SET 
-         role = 'admin',
-         full_name = 'Opskl Administrator',
-         is_active = true,
-         updated_at = now();`,
-      [userId, adminEmail]
-    );
-    await client.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
+    try {
+      await client.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
+      await client.query(
+        `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
+         VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
+         ON CONFLICT (id) DO UPDATE SET 
+           role = 'admin',
+           full_name = 'Opskl Administrator',
+           is_active = true,
+           updated_at = now();`,
+        [userId, adminEmail]
+      );
+    } finally {
+      try {
+        await client.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
+      } catch (e) {
+        console.error('Warning: Failed to re-enable trg_prevent_role_escalation trigger:', e.message);
+      }
+    }
     console.log(`  \x1b[32m✓ Provisioned admin profile for ${adminEmail}\x1b[0m`);
   }
 

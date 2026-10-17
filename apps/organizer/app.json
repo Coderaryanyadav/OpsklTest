@@ -95,7 +95,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "placeholder-organizer-project-id"
+        "projectId": ""
       }
     }
   }

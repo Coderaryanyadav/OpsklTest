@@ -61,23 +61,30 @@ async function run() {
 
   // 2. Authoritatively elevate role in profiles table (bypassing user-level role escalation trigger)
   console.log('Elevating profile role to admin in PostgreSQL...');
-  await pgClient.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
-  await pgClient.query(
-    `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
-     VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
-     ON CONFLICT (id) DO UPDATE SET 
-       role = 'admin',
-       full_name = 'Opskl Administrator',
-       is_active = true,
-       updated_at = now();`,
-    [userId, adminEmail]
-  );
-  await pgClient.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
+  try {
+    await pgClient.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
+    await pgClient.query(
+      `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
+       VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
+       ON CONFLICT (id) DO UPDATE SET 
+         role = 'admin',
+         full_name = 'Opskl Administrator',
+         is_active = true,
+         updated_at = now();`,
+      [userId, adminEmail]
+    );
+  } finally {
+    try {
+      await pgClient.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
+    } catch (e) {
+      console.error('Warning: Failed to re-enable trg_prevent_role_escalation trigger:', e.message);
+    }
+  }
 
   console.log('\x1b[32m✓ Administrator provisioned and authorized successfully!\x1b[0m');
   console.log(`\nPortal URL: http://localhost:3000/login`);
   console.log(`Email:      ${adminEmail}`);
-  console.log(`Password:   ${adminPassword}\n`);
+  console.log(`Password:   [CONFIGURED SECURELY]\n`);
 
   await pgClient.end();
 }

@@ -17,7 +17,8 @@ describe('Opskl Worker App Configuration', () => {
     expect(appConfig.expo.plugins).toContain('expo-router');
   });
 
-  test('has placeholder EAS projectId documented', () => {
-    expect(appConfig.expo.extra?.eas?.projectId).toBe('placeholder-worker-project-id');
+  test('has EAS configuration block defined for cloud builds', () => {
+    expect(appConfig.expo.extra?.eas).toBeDefined();
+    expect(typeof appConfig.expo.extra?.eas?.projectId).toBe('string');
   });
 });
