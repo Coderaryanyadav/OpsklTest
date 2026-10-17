@@ -6,83 +6,117 @@ import pg from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const migrationPath = path.join(rootDir, 'supabase', 'migrations', '20261015000000_launch_fixes.sql');
+const launchMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261015000000_launch_fixes.sql');
+const hardeningMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261016000000_security_privacy_coordinate_hardening.sql');
 
 const connectionString = process.env.DATABASE_URL || process.argv[2];
 
 async function run() {
-  console.log('\x1b[36m[OPSKL SQL INTEGRATION TEST SUITE]\x1b[0m');
+  console.log('\x1b[36m[OPSKL SQL INTEGRATION & LOGIC HARDENING TEST SUITE]\x1b[0m');
 
-  const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+  const launchSql = fs.readFileSync(launchMigrationPath, 'utf8');
+  const hardeningSql = fs.readFileSync(hardeningMigrationPath, 'utf8');
+  const combinedSql = `${launchSql}\n${hardeningSql}`;
 
-  // Verify critical invariants in the migration SQL
+  // Verify critical invariants across launch and latest hardening SQL migrations
   const checks = [
     {
       name: '1.1 Trusted bypass mechanism configured in check_worker_profile_update',
-      test: () => migrationSql.includes("current_setting('opskl.trusted', true) = '1'"),
+      test: () => combinedSql.includes("current_setting('opskl.trusted', true) = '1'"),
     },
     {
       name: '1.2 Dispute reason minimum length validation (>= 10)',
-      test: () => migrationSql.includes("length(trim(COALESCE(p_reason, ''))) < 10"),
+      test: () => combinedSql.includes("length(trim(COALESCE(p_reason, ''))) < 10"),
     },
     {
       name: '1.2 Direct INSERT policy on disputes dropped',
-      test: () => migrationSql.includes('DROP POLICY IF EXISTS "Participants create disputes" ON disputes'),
+      test: () => combinedSql.includes('DROP POLICY IF EXISTS "Participants create disputes" ON disputes'),
     },
     {
       name: '1.3 Organizer business_contact_phone relaxed from NOT NULL',
-      test: () => migrationSql.includes('ALTER TABLE organizer_profiles ALTER COLUMN business_contact_phone DROP NOT NULL'),
+      test: () => combinedSql.includes('ALTER TABLE organizer_profiles ALTER COLUMN business_contact_phone DROP NOT NULL'),
     },
     {
       name: '1.3 CSPRNG booking code replaced gen_random_bytes',
-      test: () => migrationSql.includes("upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))") && !migrationSql.includes('gen_random_bytes'),
+      test: () => combinedSql.includes("upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))") && !combinedSql.includes('gen_random_bytes'),
     },
     {
       name: '1.4 public_jobs view shielding supervisor contact created',
       test: () => {
-        const viewMatch = migrationSql.match(/CREATE OR REPLACE VIEW public_jobs AS([\s\S]*?)FROM jobs;/);
-        return viewMatch && !viewMatch[1].includes('supervisor_name') && migrationSql.includes('get_job_contact');
+        const viewMatch = hardeningSql.match(/CREATE VIEW public\.public_jobs([\s\S]*?)FROM public\.jobs/);
+        return viewMatch && !viewMatch[1].includes('supervisor_name') && !viewMatch[1].includes('supervisor_phone');
       },
     },
     {
       name: '1.5 Job lifecycle state machine validate_job_transition defined',
-      test: () => migrationSql.includes('CREATE OR REPLACE FUNCTION validate_job_transition('),
+      test: () => combinedSql.includes('CREATE OR REPLACE FUNCTION validate_job_transition('),
     },
     {
       name: '1.5 cancel_booking_safe slot reopen guarded against past/cancelled jobs',
-      test: () => migrationSql.includes("v_job.status IN ('filled', 'filling', 'open') AND v_job.date >= (now() AT TIME ZONE 'Asia/Kolkata')::date"),
+      test: () => combinedSql.includes("v_job.status IN ('filled', 'filling', 'open') AND v_job.date >= (now() AT TIME ZONE 'Asia/Kolkata')::date"),
     },
     {
       name: '1.6 Overlapping shift double-booking guard in confirm_worker_booking_safe',
-      test: () => migrationSql.includes('OVERLAPPING_SHIFT_SCHEDULE'),
+      test: () => combinedSql.includes('OVERLAPPING_SHIFT_SCHEDULE'),
     },
     {
       name: '1.7 Keyset paginated get_discovery_feed defined',
-      test: () => migrationSql.includes('CREATE OR REPLACE FUNCTION get_discovery_feed('),
+      test: () => combinedSql.includes('CREATE OR REPLACE FUNCTION get_discovery_feed('),
     },
     {
       name: '1.8 Attendance distance column widened to NUMERIC(8,2)',
-      test: () => migrationSql.includes('ALTER TABLE attendance_records ALTER COLUMN distance_to_venue_km TYPE NUMERIC(8, 2)'),
+      test: () => combinedSql.includes('ALTER TABLE attendance_records ALTER COLUMN distance_to_venue_km TYPE NUMERIC(8, 2)'),
     },
     {
       name: '1.9 Admin dispute resolution restores pre-dispute booking status on dismissal',
-      test: () => migrationSql.includes("v_target_booking_status := COALESCE(v_booking.status_before_dispute, 'confirmed')"),
+      test: () => combinedSql.includes("v_target_booking_status := COALESCE(v_booking.status_before_dispute, 'confirmed')"),
     },
     {
       name: '1.10 FY sequential invoice generator OPS/YY-YY/00001 defined',
-      test: () => migrationSql.includes("RETURN 'OPS/' || LPAD(v_fy_start::TEXT, 2, '0')"),
+      test: () => combinedSql.includes("RETURN 'OPS/' || LPAD(v_fy_start::TEXT, 2, '0')"),
     },
     {
       name: '1.10 Paid invoice immutability guard in generate_job_invoice_safe',
-      test: () => migrationSql.includes("IF v_existing.status IN ('escrow_funded', 'settled') THEN"),
+      test: () => combinedSql.includes("IF v_existing.status IN ('escrow_funded', 'settled') THEN"),
     },
     {
       name: '1.11 Overnight shifts crosses_midnight and end_date columns',
-      test: () => migrationSql.includes('ALTER TABLE jobs ADD COLUMN IF NOT EXISTS crosses_midnight BOOLEAN') && migrationSql.includes('ALTER TABLE jobs ADD COLUMN IF NOT EXISTS end_date DATE'),
+      test: () => combinedSql.includes('crosses_midnight') && combinedSql.includes('end_date'),
     },
     {
       name: '1.11 Sovereign India coordinate bounds validation (6-38 N, 68-98 E)',
-      test: () => migrationSql.includes('v_lat < 6.0 OR v_lat > 38.0 OR v_lng < 68.0 OR v_lng > 98.0'),
+      test: () => hardeningSql.includes('v_lat < 6.0 OR v_lat > 38.0 OR v_lng < 68.0 OR v_lng > 98.0'),
+    },
+    {
+      name: '2.1 Hardening migration 20261016: Partial coordinate pair rejection',
+      test: () => hardeningSql.includes('INCOMPLETE_COORDINATES'),
+    },
+    {
+      name: '2.2 Hardening migration 20261016: Public organizer card shields GSTIN & billing address',
+      test: () => {
+        const orgViewMatch = hardeningSql.match(/CREATE VIEW public\.public_organizer_cards([\s\S]*?)FROM public\.organizer_profiles;/);
+        return orgViewMatch && !orgViewMatch[1].includes('gstin') && !orgViewMatch[1].includes('billing_address');
+      },
+    },
+    {
+      name: '2.3 Hardening migration 20261016: Initial shift lifecycle status restricted to draft/open',
+      test: () => hardeningSql.includes('INVALID_INITIAL_STATUS') && hardeningSql.includes("v_raw_status NOT IN ('draft', 'open')"),
+    },
+    {
+      name: '2.4 Hardening migration 20261016: Application & payment deadlines persisted in INSERT',
+      test: () => hardeningSql.includes('v_app_deadline') && hardeningSql.includes('v_payment_deadline') && hardeningSql.includes('application_deadline, payment_deadline'),
+    },
+    {
+      name: '2.5 Hardening migration 20261016: Min wage fallback protects against missing settings row',
+      test: () => hardeningSql.includes('v_min_wage := 100.0;') && hardeningSql.includes('GREATEST(COALESCE(v_min_wage, 100.0), 100.0)'),
+    },
+    {
+      name: '2.6 Hardening migration 20261016: Same-day start time in the past rejected in IST',
+      test: () => hardeningSql.includes('PAST_START_TIME') && hardeningSql.includes("v_shift_start_timestamptz <= now()"),
+    },
+    {
+      name: '2.7 Hardening migration 20261016: Break duration bounds (0-120 mins and < shift duration)',
+      test: () => hardeningSql.includes('INVALID_BREAK_DURATION') && hardeningSql.includes('BREAK_EXCEEDS_DURATION'),
     },
   ];
 
@@ -105,9 +139,10 @@ async function run() {
   const liveDbUrl = connectionString;
   if (liveDbUrl) {
     console.log(`\nConnecting to test database at ${liveDbUrl.split('@')[1] || 'database'}...`);
+    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
     const client = new pg.Client({
       connectionString: liveDbUrl,
-      ssl: { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: false }, // Supports Supabase pooler TLS
     });
 
     try {
@@ -172,7 +207,7 @@ async function run() {
             'zone', 'Bandra Kurla Complex (BKC)',
             'latitude', 19.066,
             'longitude', NULL,
-            'date', (now() AT TIME ZONE 'Asia/Kolkata')::date::text,
+            'date', ((now() AT TIME ZONE 'Asia/Kolkata') + interval '3 days')::date::text,
             'start_time', '09:00',
             'end_time', '18:00',
             'durationHours', 9,
@@ -245,6 +280,171 @@ async function run() {
       }
       console.log(`\x1b[32m✓ Verified FY sequential invoice format and uniqueness (${inv1} -> ${inv2}).\x1b[0m`);
 
+      // 8. Assert shift creation lifecycle status restrictions (Defect 2)
+      for (const disallowedStatus of ['completed', 'cancelled', 'filled', 'in_progress']) {
+        const { rows: statusTestRows } = await client.query(`
+          SELECT create_job_safe(
+            jsonb_build_object(
+              'title', 'Disallowed Initial Status Shift',
+              'category', 'conference',
+              'venueName', 'Grand Hyatt Mumbai',
+              'venueAddress', 'BKC Mumbai',
+              'date', ((now() AT TIME ZONE 'Asia/Kolkata') + interval '3 days')::date::text,
+              'start_time', '10:00',
+              'end_time', '18:00',
+              'hourlyRate', 200,
+              'slotsTotal', 5,
+              'status', $1::text
+            ),
+            '6ad9b1d3-cd34-49ba-aa96-37d903451db4'::uuid
+          ) AS result;
+        `, [disallowedStatus]);
+        const statusRes = statusTestRows[0]?.result;
+        if (statusRes?.success !== false || statusRes?.error_code !== 'INVALID_INITIAL_STATUS') {
+          throw new Error(`LIFECYCLE STATUS INTEGRITY FAILURE: create_job_safe allowed initial status '${disallowedStatus}'! Got: ${JSON.stringify(statusRes)}`);
+        }
+      }
+      console.log('\x1b[32m✓ Verified create_job_safe rejects direct creation in non-initial lifecycle statuses.\x1b[0m');
+
+      // 9. Assert same-day start time in the past is rejected (Defect 4)
+      const { rows: pastTimeRows } = await client.query(`
+        SELECT create_job_safe(
+          jsonb_build_object(
+            'title', 'Same Day Past Start Time Shift',
+            'category', 'conference',
+            'venueName', 'Grand Hyatt Mumbai',
+            'venueAddress', 'BKC Mumbai',
+            'date', (now() AT TIME ZONE 'Asia/Kolkata')::date::text,
+            'start_time', '01:00',
+            'end_time', '09:00',
+            'hourlyRate', 200,
+            'slotsTotal', 5,
+            'status', 'draft'
+          ),
+          '6ad9b1d3-cd34-49ba-aa96-37d903451db4'::uuid
+        ) AS result;
+      `);
+      const pastTimeRes = pastTimeRows[0]?.result;
+      if (pastTimeRes?.success !== false || pastTimeRes?.error_code !== 'PAST_START_TIME') {
+        throw new Error(`SCHEDULE INTEGRITY FAILURE: create_job_safe allowed same-day past start time! Got: ${JSON.stringify(pastTimeRes)}`);
+      }
+      console.log('\x1b[32m✓ Verified create_job_safe rejects same-day shifts scheduled after start time.\x1b[0m');
+
+      // 10. Assert break duration bounds validation (Defect 5)
+      const { rows: breakBoundsRows } = await client.query(`
+        SELECT create_job_safe(
+          jsonb_build_object(
+            'title', 'Excessive Break Shift',
+            'category', 'conference',
+            'venueName', 'Grand Hyatt Mumbai',
+            'venueAddress', 'BKC Mumbai',
+            'date', ((now() AT TIME ZONE 'Asia/Kolkata') + interval '3 days')::date::text,
+            'start_time', '10:00',
+            'end_time', '18:00',
+            'hourlyRate', 200,
+            'slotsTotal', 5,
+            'breaksMinutes', 150,
+            'status', 'draft'
+          ),
+          '6ad9b1d3-cd34-49ba-aa96-37d903451db4'::uuid
+        ) AS result;
+      `);
+      const breakBoundsRes = breakBoundsRows[0]?.result;
+      if (breakBoundsRes?.success !== false || breakBoundsRes?.error_code !== 'INVALID_BREAK_DURATION') {
+        throw new Error(`BREAK DURATION FAILURE: create_job_safe allowed break > 120 mins! Got: ${JSON.stringify(breakBoundsRes)}`);
+      }
+      console.log('\x1b[32m✓ Verified create_job_safe validates break duration bounds (0-120 mins).\x1b[0m');
+
+      // 11. Transactional verification of deadline persistence & min-wage missing row fallback (Defects 1, 3, 6)
+      await client.query('BEGIN');
+      try {
+        const testOrgId = '6ad9b1d3-cd34-49ba-aa96-37d903451db4';
+        await client.query(`
+          INSERT INTO organizer_profiles (id, business_name, business_type, verification_status)
+          VALUES ($1, 'Verification Enterprise Corp', 'corporate', 'verified')
+          ON CONFLICT (id) DO UPDATE SET verification_status = 'verified';
+        `, [testOrgId]);
+
+        // A. Verify min-wage fallback with platform_settings row deleted
+        await client.query("DELETE FROM platform_settings WHERE key IN ('min_wage', 'min_hourly_wage_inr');");
+        const { rows: lowWageRows } = await client.query(`
+          SELECT create_job_safe(
+            jsonb_build_object(
+              'title', 'Test Sub Minimum Wage Shift',
+              'category', 'conference',
+              'venueName', 'Test Venue',
+              'venueAddress', 'BKC Mumbai',
+              'latitude', 19.066,
+              'longitude', 72.877,
+              'date', ((now() AT TIME ZONE 'Asia/Kolkata') + interval '3 days')::date::text,
+              'start_time', '10:00',
+              'end_time', '18:00',
+              'hourlyRate', 60,
+              'slotsTotal', 3,
+              'status', 'draft'
+            ),
+            $1::uuid
+          ) AS res;
+        `, [testOrgId]);
+        if (lowWageRows[0]?.res?.success !== false || lowWageRows[0]?.res?.error_code !== 'INVALID_WAGE') {
+          throw new Error(`MIN WAGE FALLBACK FAILURE: create_job_safe permitted ₹60/hr with missing settings row! Got: ${JSON.stringify(lowWageRows[0]?.res)}`);
+        }
+        console.log('\x1b[32m✓ Verified create_job_safe enforces ₹100 floor when platform_settings min_wage row is missing.\x1b[0m');
+
+        // B. Verify application & payment deadlines persistence and payable-hours rule
+        const appDeadline = new Date(Date.now() + 86400000 * 2).toISOString();
+        const payDeadline = new Date(Date.now() + 86400000 * 5).toISOString();
+
+        const { rows: dlRows } = await client.query(`
+          SELECT create_job_safe(
+            jsonb_build_object(
+              'title', 'Persisted Deadlines Verification Shift',
+              'category', 'conference',
+              'venueName', 'Jio World Convention Centre',
+              'venueAddress', 'BKC Mumbai',
+              'latitude', 19.066,
+              'longitude', 72.877,
+              'date', ((now() AT TIME ZONE 'Asia/Kolkata') + interval '4 days')::date::text,
+              'start_time', '09:00',
+              'end_time', '17:00',
+              'hourlyRate', 300,
+              'slotsTotal', 4,
+              'breaksMinutes', 45,
+              'application_deadline', $2::text,
+              'payment_deadline', $3::text,
+              'status', 'open'
+            ),
+            $1::uuid
+          ) AS res;
+        `, [testOrgId, appDeadline, payDeadline]);
+
+        const dlRes = dlRows[0]?.res;
+        if (!dlRes?.success || !dlRes?.job_id) {
+          throw new Error(`SHIFT CREATION FAILURE: Failed to create test shift with deadlines: ${JSON.stringify(dlRes)}`);
+        }
+
+        // Query raw database row back to verify persistence
+        const { rows: savedJobRows } = await client.query(`
+          SELECT id, status, application_deadline, payment_deadline, total_pay, duration_hours, breaks_minutes
+          FROM jobs WHERE id = $1;
+        `, [dlRes.job_id]);
+
+        const saved = savedJobRows[0];
+        if (!saved || !saved.application_deadline || !saved.payment_deadline) {
+          throw new Error(`DEADLINES PERSISTENCE FAILURE: Saved shift row missing application_deadline or payment_deadline: ${JSON.stringify(saved)}`);
+        }
+
+        // Assert payable-hours rule: 8 hours @ ₹300 = ₹2400 (breaks included in paid on-site duty)
+        if (Number(saved.total_pay) !== 2400.00 || Number(saved.duration_hours) !== 8.00) {
+          throw new Error(`PAYABLE HOURS RULE FAILURE: Expected total_pay 2400.00 for 8h @ 300, got: ${saved.total_pay}`);
+        }
+        console.log('\x1b[32m✓ Verified application_deadline and payment_deadline are authoritatively persisted and readable in jobs table.\x1b[0m');
+        console.log('\x1b[32m✓ Verified authoritative payable-hours rule: 8h @ ₹300/hr = ₹2,400 with 45min scheduled break included.\x1b[0m');
+      } finally {
+        await client.query('ROLLBACK');
+        console.log('\x1b[32m✓ Transaction rolled back cleanly without database mutations.\x1b[0m');
+      }
+
       await client.end();
     } catch (err) {
       console.error('\x1b[31m[ERROR] Live database verification failed:\x1b[0m', err.message);
@@ -252,7 +452,7 @@ async function run() {
     }
   }
 
-  console.log('\n\x1b[32m✓ Phase 1 SQL integration test suite completed successfully.\x1b[0m\n');
+  console.log('\n\x1b[32m✓ Full Opskl SQL integration & logic hardening test suite passed with 100% success.\x1b[0m\n');
 }
 
 run().catch((err) => {

@@ -66,14 +66,18 @@ DECLARE
   v_cancellation_policy TEXT := trim(COALESCE(p_job->>'cancellation_policy', p_job->>'cancellationPolicy', ''));
   v_supervisor_name TEXT := trim(COALESCE(p_job->>'supervisor_name', p_job->>'supervisorName', ''));
   v_supervisor_phone TEXT := trim(COALESCE(p_job->>'supervisor_phone', p_job->>'supervisorPhone', ''));
-  v_status shift_status := COALESCE(p_job->>'status', 'open')::shift_status;
+  v_raw_status TEXT := lower(trim(COALESCE(p_job->>'status', 'open')));
+  v_status shift_status;
+  v_app_deadline TIMESTAMPTZ;
+  v_payment_deadline TIMESTAMPTZ;
+  v_shift_start_timestamptz TIMESTAMPTZ;
   v_crosses_midnight BOOLEAN;
   v_end_date DATE;
   v_duration_hours NUMERIC;
   v_total_pay NUMERIC;
   v_org_verified TEXT;
   v_org_active BOOLEAN;
-  v_min_wage NUMERIC;
+  v_min_wage NUMERIC := 100.0;
 BEGIN
   -- Authentication check: must have an authenticated user (bypassed only for service_role / postgres superuser)
   IF auth.uid() IS NULL AND COALESCE(auth.role(), '') <> 'service_role' AND current_user <> 'postgres' THEN
@@ -88,6 +92,12 @@ BEGIN
   IF auth.uid() IS NOT NULL AND auth.uid() <> v_effective_org_id AND NOT is_current_admin() THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'You are not authorized to post shifts on behalf of another organizer.');
   END IF;
+
+  -- Lifecycle status check (Defect 2): Only 'draft' and 'open' are permitted at creation
+  IF v_raw_status NOT IN ('draft', 'open') THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_INITIAL_STATUS', 'message', 'Initial shift status must be either "draft" or "open". Status "' || v_raw_status || '" is prohibited at creation.');
+  END IF;
+  v_status := v_raw_status::shift_status;
 
   -- Organizer verification check
   SELECT verification_status INTO v_org_verified
@@ -110,7 +120,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'ORGANIZER_NOT_VERIFIED', 'message', 'Organizer identity verification required to post shifts.');
   END IF;
 
-  -- Safe enum casting
+  -- Safe category enum casting
   BEGIN
     v_category := v_raw_cat::shift_category;
   EXCEPTION WHEN OTHERS THEN
@@ -122,9 +132,22 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_TITLE', 'message', 'Shift title must be between 5 and 80 characters.');
   END IF;
 
-  -- Read min wage from settings
-  SELECT COALESCE((value->>'min_hourly_wage_inr')::numeric, 100.0) INTO v_min_wage
-  FROM platform_settings WHERE key = 'min_wage';
+  -- Read min wage from settings with safe fallback if row is missing (Defect 3)
+  v_min_wage := 100.0;
+  SELECT COALESCE(
+    CASE 
+      WHEN jsonb_typeof(value) = 'object' THEN (value->>'min_hourly_wage_inr')::numeric
+      WHEN jsonb_typeof(value) = 'number' THEN (value)::text::numeric
+      ELSE NULL
+    END,
+    100.0
+  ) INTO v_min_wage
+  FROM platform_settings 
+  WHERE key IN ('min_wage', 'min_hourly_wage_inr')
+  ORDER BY CASE WHEN key = 'min_hourly_wage_inr' THEN 1 ELSE 2 END
+  LIMIT 1;
+
+  v_min_wage := GREATEST(COALESCE(v_min_wage, 100.0), 100.0);
 
   -- Rate limits: ₹100 to ₹2000/hr
   IF v_hourly_rate < v_min_wage OR v_hourly_rate > 2000 THEN
@@ -136,12 +159,23 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SLOTS', 'message', 'Headcount must be between 1 and 50 workers.');
   END IF;
 
+  -- Schedule validation
+  IF v_date IS NULL OR v_start_time IS NULL OR v_end_time IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_SCHEDULE', 'message', 'Shift date, start time, and end time are required.');
+  END IF;
+
   -- Date check in IST
   IF v_date < (now() AT TIME ZONE 'Asia/Kolkata')::date THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Shift date cannot be in the past.');
   END IF;
 
-  -- Overnight calculation
+  -- Same-day start time check in IST (Defect 4)
+  v_shift_start_timestamptz := (v_date + v_start_time) AT TIME ZONE 'Asia/Kolkata';
+  IF v_shift_start_timestamptz <= now() THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'PAST_START_TIME', 'message', 'Shift start time has already passed for the scheduled date.');
+  END IF;
+
+  -- Overnight and duration calculation
   IF v_end_time <= v_start_time THEN
     v_crosses_midnight := true;
     v_end_date := v_date + 1;
@@ -157,6 +191,44 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_DURATION', 'message', 'Shift duration must be between 1 and 14 hours.');
   END IF;
 
+  -- Break duration bounds check (Defect 5: 0–120 mins and strictly less than shift duration)
+  IF v_breaks_mins < 0 OR v_breaks_mins > 120 THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_BREAK_DURATION', 'message', 'Break duration must be between 0 and 120 minutes.');
+  END IF;
+
+  IF (v_breaks_mins / 60.0) >= v_duration_hours THEN
+    RETURN jsonb_build_object('success', false, 'error_code', 'BREAK_EXCEEDS_DURATION', 'message', 'Break duration cannot equal or exceed total shift duration.');
+  END IF;
+
+  -- Deadlines parsing & validation (Defect 1)
+  IF p_job->>'application_deadline' IS NOT NULL AND trim(p_job->>'application_deadline') <> '' THEN
+    BEGIN
+      v_app_deadline := (p_job->>'application_deadline')::timestamptz;
+    EXCEPTION WHEN OTHERS THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_APPLICATION_DEADLINE', 'message', 'Invalid application deadline format.');
+    END;
+
+    IF v_app_deadline <= now() THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_APPLICATION_DEADLINE', 'message', 'Application deadline must be in the future.');
+    END IF;
+
+    IF v_app_deadline > v_shift_start_timestamptz THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_APPLICATION_DEADLINE', 'message', 'Application deadline cannot be after the shift start time.');
+    END IF;
+  END IF;
+
+  IF p_job->>'payment_deadline' IS NOT NULL AND trim(p_job->>'payment_deadline') <> '' THEN
+    BEGIN
+      v_payment_deadline := (p_job->>'payment_deadline')::timestamptz;
+    EXCEPTION WHEN OTHERS THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_PAYMENT_DEADLINE', 'message', 'Invalid payment deadline format.');
+    END;
+
+    IF v_payment_deadline < now() THEN
+      RETURN jsonb_build_object('success', false, 'error_code', 'INVALID_PAYMENT_DEADLINE', 'message', 'Payment deadline cannot be in the past.');
+    END IF;
+  END IF;
+
   -- Require BOTH coordinates to be present together or BOTH absent (Fix 6)
   IF (v_lat IS NULL AND v_lng IS NOT NULL) OR (v_lat IS NOT NULL AND v_lng IS NULL) THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'INCOMPLETE_COORDINATES', 'message', 'Both latitude and longitude must be provided together or omitted.');
@@ -169,8 +241,13 @@ BEGIN
     END IF;
   END IF;
 
+  -- Authoritative payable-hours rule (Defect 6):
+  -- In Indian event and exhibition commercial staffing, shifts are scheduled as full on-site engagement blocks.
+  -- Scheduled rest breaks (up to 120 minutes) are paid rest periods included in the on-site engagement duration.
+  -- Total pay is calculated directly from scheduled engagement duration: hourly_rate * duration_hours.
   v_total_pay := round(v_hourly_rate * v_duration_hours, 2);
 
+  -- Insert shift with application_deadline and payment_deadline persisted (Defect 1)
   INSERT INTO jobs (
     organizer_id, title, category, venue_name, venue_address,
     landmark, city, zone, latitude, longitude,
@@ -179,6 +256,7 @@ BEGIN
     dress_code, duties, perks, required_skills, eligibility_criteria,
     breaks_minutes, meal_provided, transport_provided, overtime_policy,
     reporting_instructions, cancellation_policy,
+    application_deadline, payment_deadline,
     supervisor_name, supervisor_phone, status, crosses_midnight, end_date
   ) VALUES (
     v_effective_org_id, v_title, v_category, v_venue_name, v_venue_addr,
@@ -188,6 +266,7 @@ BEGIN
     v_dress_code, v_duties, v_perks, v_required_skills, v_eligibility,
     v_breaks_mins, v_meal_provided, v_transport_provided, v_overtime_policy,
     v_reporting_instructions, v_cancellation_policy,
+    v_app_deadline, v_payment_deadline,
     v_supervisor_name, v_supervisor_phone, v_status, v_crosses_midnight, v_end_date
   ) RETURNING id INTO v_job_id;
 
@@ -197,7 +276,9 @@ BEGIN
     'title', v_title,
     'total_pay', v_total_pay,
     'duration_hours', v_duration_hours,
-    'crosses_midnight', v_crosses_midnight
+    'crosses_midnight', v_crosses_midnight,
+    'application_deadline', v_app_deadline,
+    'payment_deadline', v_payment_deadline
   );
 END;
 $$;

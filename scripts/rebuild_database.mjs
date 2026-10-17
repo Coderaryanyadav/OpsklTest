@@ -22,6 +22,26 @@ if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DESTRUCTIVE_DATAB
   process.exit(1);
 }
 
+// Second safety check & database target allowlist
+if (!connectionString) {
+  console.error('DATABASE_URL is required to run rebuild_database.mjs');
+  process.exit(1);
+}
+
+const parsedDbUrl = new URL(connectionString.replace(/^postgresql:\/\//, 'http://'));
+const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDbUrl.hostname);
+
+if (!isLocalDb) {
+  if (process.env.ALLOW_REMOTE_DATABASE_REBUILD !== 'true' || process.env.CONFIRM_DATABASE_HOST !== parsedDbUrl.hostname) {
+    console.error('\x1b[31m[REMOTE DATABASE TARGET BLOCKED]\x1b[0m');
+    console.error(`Database target '${parsedDbUrl.hostname}' is a remote host.`);
+    console.error('To rebuild a remote non-production database, you must provide a second explicit safety confirmation:');
+    console.error('  ALLOW_REMOTE_DATABASE_REBUILD=true');
+    console.error(`  CONFIRM_DATABASE_HOST=${parsedDbUrl.hostname}`);
+    process.exit(1);
+  }
+}
+
 const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
 const client = new pg.Client({
   connectionString,

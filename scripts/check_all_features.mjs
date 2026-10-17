@@ -191,11 +191,11 @@ async function main() {
 
     if (res.error) {
       if (res.error.code === 'over_email_send_rate_limit' || res.error.message.includes('rate limit')) {
-        logWarn(`Supabase Default Email Rate Limit triggered (${res.error.message}). Custom SMTP (SendGrid/Resend) is required for unlimited delivery.`);
+        throw new Error(`Supabase Default Email Rate Limit triggered (${res.error.message}). Custom SMTP (SendGrid/Resend) is required for unlimited delivery.`);
       } else if (res.error.message.includes('Signups not allowed')) {
-        logWarn('GoTrue requires user creation flag or existing user for OTP.');
+        throw new Error(`GoTrue requires user creation flag or existing user for OTP: ${res.error.message}`);
       } else {
-        logWarn(`GoTrue Auth response: ${res.error.message}`);
+        throw new Error(`GoTrue Auth response: ${res.error.message}`);
       }
     } else {
       logPass('GoTrue Email OTP endpoint responded 200 OK.');

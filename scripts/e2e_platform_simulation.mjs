@@ -64,7 +64,26 @@ async function main() {
     throw new Error('Missing environment keys in .env');
   }
 
-  const pg = new PgClient({ connectionString: dbUrl });
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('REFUSING TO RUN E2E SIMULATION: NODE_ENV is set to "production". Simulated mutations must never execute against production.');
+  }
+
+  // Guard against accidental execution on remote non-local databases
+  const parsedDb = new URL(dbUrl.replace(/^postgresql:\/\//, 'http://'));
+  const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDb.hostname);
+  if (!isLocalDb && process.env.ALLOW_E2E_MUTATING_TESTS !== 'true') {
+    console.error('\x1b[31m[PRODUCTION SAFETY GUARD BLOCKED EXECUTION]\x1b[0m');
+    console.error(`E2E simulation connects to remote database '${parsedDb.hostname}' and performs live mutations.`);
+    console.error('To run this test suite on a dedicated remote staging/test database, set:');
+    console.error('  ALLOW_E2E_MUTATING_TESTS=true');
+    process.exit(1);
+  }
+
+  const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+  const pg = new PgClient({
+    connectionString: dbUrl,
+    ssl: isLocalDb ? false : { rejectUnauthorized: false }, // Supports Supabase pooler TLS
+  });
   await pg.connect();
   console.log(`${colors.green}✓ Connected directly to PostgreSQL Pooler${colors.reset}`);
 
