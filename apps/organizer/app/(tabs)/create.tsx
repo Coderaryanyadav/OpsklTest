@@ -111,6 +111,8 @@ export default function OrganizerCreateShiftScreen() {
   // Step 4: Wages, Benefits & Terms
   const [hourlyRate, setHourlyRate] = useState('');
   const [breaksMinutes, setBreaksMinutes] = useState('');
+  const [applicationDeadline, setApplicationDeadline] = useState('');
+  const [paymentDeadline, setPaymentDeadline] = useState('');
   const [mealProvided, setMealProvided] = useState(false);
   const [transportProvided, setTransportProvided] = useState(false);
   const [overtimePolicy, setOvertimePolicy] = useState('');
@@ -153,6 +155,8 @@ export default function OrganizerCreateShiftScreen() {
           if (draft.dressCode) setDressCode(draft.dressCode);
           if (draft.hourlyRate) setHourlyRate(String(draft.hourlyRate));
           if (draft.breaksMinutes) setBreaksMinutes(String(draft.breaksMinutes));
+          if (draft.applicationDeadline) setApplicationDeadline(draft.applicationDeadline);
+          if (draft.paymentDeadline) setPaymentDeadline(draft.paymentDeadline);
           if (draft.mealProvided !== undefined) setMealProvided(Boolean(draft.mealProvided));
           if (draft.transportProvided !== undefined) setTransportProvided(Boolean(draft.transportProvided));
           if (draft.overtimePolicy) setOvertimePolicy(draft.overtimePolicy);
@@ -219,6 +223,19 @@ export default function OrganizerCreateShiftScreen() {
         Alert.alert('Validation Error', msg);
         return false;
       }
+      const bMins = parseInt(breaksMinutes, 10);
+      if (!isNaN(bMins) && (bMins < 0 || bMins > 120)) {
+        const msg = 'Break duration must be between 0 and 120 minutes.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
+        return false;
+      }
+      if (!isNaN(bMins) && bMins >= (parsedHours * 60)) {
+        const msg = 'Break duration cannot exceed or equal total shift duration.';
+        setSubmitError(msg);
+        Alert.alert('Validation Error', msg);
+        return false;
+      }
     }
     return true;
   };
@@ -276,6 +293,8 @@ export default function OrganizerCreateShiftScreen() {
       requiredSkills: skillsArray,
       eligibilityCriteria,
       breaksMinutes: parseInt(breaksMinutes, 10) || 30,
+      applicationDeadline: applicationDeadline.trim() ? applicationDeadline.trim() : undefined,
+      paymentDeadline: paymentDeadline.trim() ? paymentDeadline.trim() : undefined,
       mealProvided,
       transportProvided,
       overtimePolicy,
@@ -704,7 +723,24 @@ export default function OrganizerCreateShiftScreen() {
               value={breaksMinutes}
               onChangeText={setBreaksMinutes}
               keyboardType="number-pad"
-              placeholder="45"
+              placeholder="30"
+              helperText="Scheduled rest breaks up to 120 minutes are paid on-site rest periods (0-120 mins)."
+            />
+
+            <Input
+              label="Application Deadline (Optional)"
+              value={applicationDeadline}
+              onChangeText={setApplicationDeadline}
+              placeholder="YYYY-MM-DDTHH:MM"
+              helperText="Date & time when worker applications close (defaults to shift start)."
+            />
+
+            <Input
+              label="Payment Deadline (Optional)"
+              value={paymentDeadline}
+              onChangeText={setPaymentDeadline}
+              placeholder="YYYY-MM-DDTHH:MM"
+              helperText="Date & time when shift wages are finalized."
             />
 
             {/* Switches for meals & transport */}

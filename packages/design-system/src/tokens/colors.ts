@@ -1,27 +1,22 @@
 /**
- * OPSKL DESIGN SYSTEM — ENTERPRISE SAAS & APPLE-QUALITY COLOR TOKENS
+ * OPSKL DESIGN SYSTEM — APPLE-INSPIRED MINIMALIST PALETTE
  * Unified across Worker App, Organizer App, and Admin Web Console.
  *
  * Core Palette:
- * - Brand Primary: #2563EB (Cool Royal Blue)
- * - Brand Hover/Pressed: #1D4ED8
- * - Brand Subtle Surface: #EFF6FF
- * - Page Background: #FFFFFF
- * - Secondary Surface: #F8FAFC
- * - Tertiary Surface: #F1F5F9
- * - Border: #E2E8F0
- * - Strong Border: #CBD5E1
- * - Primary Text: #0F172A (Deep Slate)
- * - Body Text: #334155 (Slate 700)
- * - Secondary Text: #64748B (Slate 500)
- * - Muted Text: #94A3B8 (Slate 400)
+ * - Black: #000000
+ * - White: #FFFFFF
+ * - Secondary background: #F5F5F5
+ * - Subtle surface: #FAFAFA
+ * - Primary text: #111111
+ * - Secondary text: #737373
+ * - Dividers: #E5E5E5
+ * - Disabled: #D4D4D4
  *
- * Semantic Statuses:
- * - Approved / Success: #DCFCE7 / #15803D
- * - Pending / Warning: #FEF3C7 / #B45309
- * - Rejected / Danger: #FEE2E2 / #B91C1C
- * - Info / Navigation: #DBEAFE / #1D4ED8
- * - Neutral / Inactive: #F1F5F9 / #475569
+ * Semantic Statuses (Restrained & Accessible WCAG AA):
+ * - Approved / Success: #F0FDF4 / #15803D
+ * - Pending / Warning: #FFFBEB / #B45309
+ * - Rejected / Danger: #FEF2F2 / #DC2626
+ * - Info / Neutral: #F5F5F5 / #111111
  */
 
 export interface OpsklThemeColors {
@@ -44,6 +39,7 @@ export interface OpsklThemeColors {
   borderStrong: string;
   borderMuted: string;
   borderFocus: string;
+  disabled: string;
   // Semantic status colors
   success: string;
   successLight: string;
@@ -59,59 +55,61 @@ export interface OpsklThemeColors {
 }
 
 export const lightColors: OpsklThemeColors = {
-  primary: '#2563EB',
-  primaryHover: '#1D4ED8',
-  primaryLight: '#EFF6FF',
-  accent: '#2563EB',
+  primary: '#000000',
+  primaryHover: '#262626',
+  primaryLight: '#F5F5F5',
+  accent: '#111111',
   background: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
-  surfaceMuted: '#F8FAFC',
-  surfaceSecondary: '#F8FAFC',
-  surfaceTertiary: '#F1F5F9',
-  textPrimary: '#0F172A',
-  textBody: '#334155',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
+  surfaceMuted: '#FAFAFA',
+  surfaceSecondary: '#F5F5F5',
+  surfaceTertiary: '#E5E5E5',
+  textPrimary: '#111111',
+  textBody: '#111111',
+  textSecondary: '#737373',
+  textMuted: '#737373',
   textInverse: '#FFFFFF',
-  border: '#E2E8F0',
-  borderStrong: '#CBD5E1',
-  borderMuted: '#F1F5F9',
-  borderFocus: '#2563EB',
-  // Semantic Statuses (WCAG AA Compliant)
+  border: '#E5E5E5',
+  borderStrong: '#D4D4D4',
+  borderMuted: '#E5E5E5',
+  borderFocus: '#000000',
+  disabled: '#D4D4D4',
+  // Restrained Semantic Statuses (WCAG AA Compliant)
   success: '#15803D',
-  successLight: '#DCFCE7',
+  successLight: '#F0FDF4',
   warning: '#B45309',
-  warningLight: '#FEF3C7',
-  danger: '#B91C1C',
-  dangerLight: '#FEE2E2',
-  info: '#1D4ED8',
-  infoLight: '#DBEAFE',
-  neutralStatus: '#475569',
-  neutralStatusLight: '#F1F5F9',
-  cardShadow: 'rgba(15, 23, 42, 0.04)',
+  warningLight: '#FFFBEB',
+  danger: '#DC2626',
+  dangerLight: '#FEF2F2',
+  info: '#111111',
+  infoLight: '#F5F5F5',
+  neutralStatus: '#737373',
+  neutralStatusLight: '#F5F5F5',
+  cardShadow: 'rgba(0, 0, 0, 0.03)',
 };
 
 export const darkColors: OpsklThemeColors = {
-  primary: '#3B82F6',
-  primaryHover: '#60A5FA',
-  primaryLight: '#1E293B',
-  accent: '#3B82F6',
-  background: '#0F172A',
-  surface: '#1E293B',
-  surfaceElevated: '#334155',
-  surfaceMuted: '#1E293B',
-  surfaceSecondary: '#1E293B',
-  surfaceTertiary: '#0F172A',
-  textPrimary: '#F8FAFC',
-  textBody: '#E2E8F0',
-  textSecondary: '#94A3B8',
-  textMuted: '#64748B',
-  textInverse: '#0F172A',
-  border: '#334155',
-  borderStrong: '#475569',
-  borderMuted: '#1E293B',
-  borderFocus: '#3B82F6',
+  primary: '#FFFFFF',
+  primaryHover: '#E5E5E5',
+  primaryLight: '#1F1F1F',
+  accent: '#FFFFFF',
+  background: '#000000',
+  surface: '#111111',
+  surfaceElevated: '#1A1A1A',
+  surfaceMuted: '#171717',
+  surfaceSecondary: '#1A1A1A',
+  surfaceTertiary: '#262626',
+  textPrimary: '#FFFFFF',
+  textBody: '#F5F5F5',
+  textSecondary: '#A3A3A3',
+  textMuted: '#737373',
+  textInverse: '#000000',
+  border: '#262626',
+  borderStrong: '#404040',
+  borderMuted: '#1F1F1F',
+  borderFocus: '#FFFFFF',
+  disabled: '#404040',
   // Dark Semantic Statuses
   success: '#22C55E',
   successLight: '#052E16',
@@ -119,9 +117,9 @@ export const darkColors: OpsklThemeColors = {
   warningLight: '#451A03',
   danger: '#EF4444',
   dangerLight: '#450A0A',
-  info: '#60A5FA',
-  infoLight: '#172554',
-  neutralStatus: '#94A3B8',
-  neutralStatusLight: '#1E293B',
-  cardShadow: 'rgba(0, 0, 0, 0.4)',
+  info: '#E5E5E5',
+  infoLight: '#1F1F1F',
+  neutralStatus: '#A3A3A3',
+  neutralStatusLight: '#1F1F1F',
+  cardShadow: 'rgba(0, 0, 0, 0.6)',
 };

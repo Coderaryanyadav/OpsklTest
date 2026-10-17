@@ -82,7 +82,7 @@ export default function OrganizerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
+                  { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
                 ]}
               >
                 <Users size={16} color={colors.primary} strokeWidth={2.2} />
@@ -113,7 +113,7 @@ export default function OrganizerWelcomeScreen() {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: colors.primaryLight, borderColor: '#BFDBFE' },
+                  { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
                 ]}
               >
                 <ShieldCheck size={16} color={colors.primary} strokeWidth={2.2} />

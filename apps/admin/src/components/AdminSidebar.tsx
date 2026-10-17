@@ -97,12 +97,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside
       style={{
         width: 260,
-        backgroundColor: '#0F172A',
+        backgroundColor: '#000000',
         color: '#FFFFFF',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRight: '1px solid #1E293B',
+        borderRight: '1px solid #1F1F1F',
         height: '100vh',
         position: 'sticky',
         top: 0,
@@ -114,14 +114,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div
           style={{
             padding: '20px 20px 16px 20px',
-            borderBottom: '1px solid #1E293B',
+            borderBottom: '1px solid #1F1F1F',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: '#FFFFFF',
+                backgroundColor: '#FFFFFF',
+                color: '#000000',
                 fontWeight: 900,
                 fontSize: 13,
                 padding: '4px 8px',
@@ -135,7 +135,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: '#94A3B8',
+                color: '#737373',
                 letterSpacing: 1,
               }}
             >
@@ -151,7 +151,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               alignItems: 'center',
               gap: 8,
               padding: '6px 10px',
-              backgroundColor: systemStatus.isBookingPaused ? 'rgba(220, 38, 38, 0.15)' : '#121212',
+              backgroundColor: systemStatus.isBookingPaused ? 'rgba(220, 38, 38, 0.15)' : '#111111',
               borderRadius: 6,
               border: `1px solid ${systemStatus.isBookingPaused ? '#DC2626' : '#262626'}`,
             }}
@@ -161,7 +161,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: systemStatus.isBookingPaused ? '#DC2626' : '#16A34A',
+                backgroundColor: systemStatus.isBookingPaused ? '#DC2626' : '#15803D',
               }}
             />
             <span
@@ -184,7 +184,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: '#64748B',
+                  color: '#737373',
                   letterSpacing: 1,
                   padding: '4px 8px',
                   marginBottom: 4,
@@ -207,8 +207,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         padding: '9px 12px',
                         borderRadius: 6,
                         border: 'none',
-                        backgroundColor: isActive ? '#1E293B' : 'transparent',
-                        color: isActive ? '#FFFFFF' : '#94A3B8',
+                        backgroundColor: isActive ? '#1C1C1E' : 'transparent',
+                        color: isActive ? '#FFFFFF' : '#8E8E93',
                         cursor: 'pointer',
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 500,
@@ -217,7 +217,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#3B82F6' : '#94A3B8' }}>{item.icon}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#FFFFFF' : '#737373' }}>{item.icon}</span>
                         <span>{item.label}</span>
                       </div>
                       {item.badge !== undefined && (
@@ -227,8 +227,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             fontWeight: 700,
                             padding: '1px 6px',
                             borderRadius: 10,
-                            backgroundColor: isActive ? '#2563EB' : item.badgeColor,
-                            color: '#FFFFFF',
+                            backgroundColor: isActive ? '#FFFFFF' : (item.badgeColor || '#262626'),
+                            color: isActive ? '#000000' : '#FFFFFF',
                           }}
                         >
                           {item.badge}

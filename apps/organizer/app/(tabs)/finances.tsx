@@ -560,6 +560,14 @@ export default function OrganizerFinancesScreen() {
                   >
                     When your shift bookings complete attendance check-out and escrow settlement, official GST tax invoices will appear here.
                   </Text>
+                  <View style={{ marginTop: spacing.md, width: '100%', maxWidth: 220 }}>
+                    <Button
+                      title="View Published Shifts"
+                      variant="outline"
+                      size="sm"
+                      onPress={() => router.push('/(tabs)' as any)}
+                    />
+                  </View>
                 </Card>
               ) : (
                 (finances?.invoices || []).map((inv) => (

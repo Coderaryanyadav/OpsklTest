@@ -39,10 +39,10 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
           Safety Reports & Urgent Incidents
         </h1>
-        <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+        <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
           On-site worker safety reports, venue hazards, emergency SOS triggers, and harassment grievances.
         </p>
       </div>
@@ -50,15 +50,15 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E5E5E5',
           borderRadius: 12,
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
-            <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
               <th style={{ padding: '12px 16px' }}>Incident / Shift</th>
               <th style={{ padding: '12px 16px' }}>Urgency</th>
               <th style={{ padding: '12px 16px' }}>Category</th>
@@ -70,18 +70,18 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
           <tbody>
             {safetyReports.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#94A3B8' }}>
+                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
                   No active safety complaints reported.
                 </td>
               </tr>
             ) : (
               safetyReports.map((r) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={r.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 700, color: '#101D36' }}>
+                    <div style={{ fontWeight: 700, color: '#111111' }}>
                       {r.jobTitle || `Incident #${r.id.substring(0, 8)}`}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                    <div style={{ fontSize: 11, color: '#737373' }}>
                       Reported {new Date(r.createdAt).toLocaleDateString()}
                     </div>
                   </td>
@@ -94,23 +94,24 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                         fontWeight: 700,
                         backgroundColor:
                           r.severity === 'critical'
-                            ? '#FEE2E2'
+                            ? '#FEF2F2'
                             : r.severity === 'high'
-                            ? '#FEF3C7'
+                            ? '#FFFBEB'
                             : '#F5F5F5',
                         color:
                           r.severity === 'critical'
                             ? '#DC2626'
                             : r.severity === 'high'
-                            ? '#D97706'
-                            : '#262626',
+                            ? '#B45309'
+                            : '#111111',
+                        border: r.severity === 'low' || r.severity === 'medium' ? '1px solid #E5E5E5' : 'none',
                         textTransform: 'uppercase',
                       }}
                     >
                       {r.severity}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', textTransform: 'capitalize' }}>
+                  <td style={{ padding: '12px 16px', textTransform: 'capitalize', color: '#111111' }}>
                     {r.category.replace('_', ' ')}
                   </td>
                   <td style={{ padding: '12px 16px', color: '#737373', maxWidth: 280 }}>
@@ -125,8 +126,8 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                         borderRadius: 12,
                         fontSize: 11,
                         fontWeight: 700,
-                        backgroundColor: r.status === 'resolved' ? '#DCFCE7' : '#FEF3C7',
-                        color: r.status === 'resolved' ? '#16A34A' : '#D97706',
+                        backgroundColor: r.status === 'resolved' ? '#F0FDF4' : '#FFFBEB',
+                        color: r.status === 'resolved' ? '#15803D' : '#B45309',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -145,7 +146,7 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                         borderRadius: 6,
                         border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#000000',
+                        color: '#111111',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
@@ -167,7 +168,7 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -182,32 +183,33 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
               width: '100%',
               maxWidth: 540,
               padding: 24,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #E5E5E5',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column',
               gap: 16,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
                 Safety Grievance Investigation
               </h2>
               <button
                 onClick={() => setSelectedReport(null)}
-                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#737373' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ backgroundColor: '#F8FAFC', padding: 14, borderRadius: 8, fontSize: 13, gap: 6, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5', padding: 14, borderRadius: 8, fontSize: 13, gap: 6, display: 'flex', flexDirection: 'column', color: '#111111' }}>
               <div><strong>Category:</strong> {selectedReport.category}</div>
               <div><strong>Severity:</strong> {selectedReport.severity.toUpperCase()}</div>
               <div><strong>Incident Details:</strong> {selectedReport.description}</div>
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
                 Resolution Actions Taken:
               </label>
               <textarea
@@ -219,7 +221,9 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                   width: '100%',
                   padding: 10,
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#111111',
                   fontSize: 13,
                   outline: 'none',
                 }}
@@ -238,9 +242,9 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
                   backgroundColor: '#FFFFFF',
-                  color: '#475569',
+                  color: '#111111',
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',
@@ -256,7 +260,7 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
                   padding: '9px 18px',
                   borderRadius: 8,
                   border: 'none',
-                  backgroundColor: '#16A34A',
+                  backgroundColor: '#15803D',
                   color: '#FFFFFF',
                   fontWeight: 700,
                   fontSize: 13,

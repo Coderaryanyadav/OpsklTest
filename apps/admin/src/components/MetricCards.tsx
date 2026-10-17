@@ -66,24 +66,23 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
           key={card.title}
           style={{
             backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
+            border: '1px solid #E5E5E5',
             borderRadius: 8,
             padding: '20px',
-            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
           }}
         >
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {card.title}
             </div>
             <div
               style={{
                 fontSize: 26,
                 fontWeight: 700,
-                color: '#0F172A',
+                color: '#111111',
                 marginTop: 8,
                 letterSpacing: '-0.5px',
                 fontVariantNumeric: 'tabular-nums',
@@ -92,8 +91,8 @@ export const MetricCards: React.FC<MetricCardsProps> = ({ metrics }) => {
               {card.value}
             </div>
           </div>
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #F1F5F9' }}>
-            <div style={{ fontSize: 12, color: '#64748B' }}>{card.subtitle}</div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #E5E5E5' }}>
+            <div style={{ fontSize: 12, color: '#737373' }}>{card.subtitle}</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: card.statusColor, marginTop: 4 }}>
               {card.status}
             </div>

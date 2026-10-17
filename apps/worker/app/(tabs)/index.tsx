@@ -688,15 +688,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   restoreBtn: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E5E5E5',
   },
   restoreBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#334155',
+    color: '#111111',
   },
   retryBtn: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#DC2626',
   },
   retryBtnText: {
     fontSize: 11,

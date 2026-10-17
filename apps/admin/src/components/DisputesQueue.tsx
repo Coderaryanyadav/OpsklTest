@@ -49,10 +49,10 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
           Attendance & Wage Disputes
         </h1>
-        <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+        <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
           Investigate shift attendance disputes, check-in discrepancies, and wage adjustments with platform escrow protection.
         </p>
       </div>
@@ -61,15 +61,15 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E5E5E5',
           borderRadius: 12,
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
-            <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
               <th style={{ padding: '12px 16px' }}>Shift & Booking</th>
               <th style={{ padding: '12px 16px' }}>Raised By</th>
               <th style={{ padding: '12px 16px' }}>Claim Reason</th>
@@ -81,28 +81,28 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
           <tbody>
             {disputes.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#94A3B8' }}>
+                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
                   No active attendance or wage disputes reported.
                 </td>
               </tr>
             ) : (
               disputes.map((d) => (
-                <tr key={d.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={d.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 700, color: '#101D36' }}>
+                    <div style={{ fontWeight: 700, color: '#111111' }}>
                       Booking #{d.bookingId.substring(0, 8)}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                    <div style={{ fontSize: 11, color: '#737373' }}>
                       Case #{d.id.substring(0, 8)} • Filed {new Date(d.createdAt).toLocaleDateString()}
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#334155' }}>
+                  <td style={{ padding: '12px 16px', color: '#111111' }}>
                     {d.raisedBy.substring(0, 8)}
                   </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#101D36' }}>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111111' }}>
                     {d.reason}
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#475569', maxWidth: 260 }}>
+                  <td style={{ padding: '12px 16px', color: '#737373', maxWidth: 260 }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {d.details}
                     </div>
@@ -116,16 +116,16 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                         fontWeight: 700,
                         backgroundColor:
                           d.status === 'resolved'
-                            ? '#DCFCE7'
+                            ? '#F0FDF4'
                             : d.status === 'under_review'
                             ? '#F5F5F5'
-                            : '#FEF3C7',
+                            : '#FFFBEB',
                         color:
                           d.status === 'resolved'
-                            ? '#16A34A'
+                            ? '#15803D'
                             : d.status === 'under_review'
-                            ? '#262626'
-                            : '#D97706',
+                            ? '#111111'
+                            : '#B45309',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -145,7 +145,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                         borderRadius: 6,
                         border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#000000',
+                        color: '#111111',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
@@ -167,7 +167,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -182,41 +182,42 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
               width: '100%',
               maxWidth: 580,
               padding: 24,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #E5E5E5',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column',
               gap: 16,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
                 Adjudicate Attendance & Wage Dispute
               </h2>
               <button
                 onClick={() => setSelectedDispute(null)}
-                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#737373' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ backgroundColor: '#F8FAFC', padding: 14, borderRadius: 8, gap: 6, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5', padding: 14, borderRadius: 8, gap: 6, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748B' }}>Booking Ref:</span>
-                <span style={{ fontWeight: 700, color: '#101D36' }}>{selectedDispute.bookingId}</span>
+                <span style={{ color: '#737373' }}>Booking Ref:</span>
+                <span style={{ fontWeight: 700, color: '#111111' }}>{selectedDispute.bookingId}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748B' }}>Claim Reason:</span>
-                <span style={{ fontWeight: 600, color: '#101D36' }}>{selectedDispute.reason}</span>
+                <span style={{ color: '#737373' }}>Claim Reason:</span>
+                <span style={{ fontWeight: 600, color: '#111111' }}>{selectedDispute.reason}</span>
               </div>
               <div>
-                <span style={{ color: '#64748B', display: 'block', marginBottom: 2 }}>Case Details:</span>
-                <span style={{ color: '#334155', fontSize: 12 }}>{selectedDispute.details}</span>
+                <span style={{ color: '#737373', display: 'block', marginBottom: 2 }}>Case Details:</span>
+                <span style={{ color: '#111111', fontSize: 12 }}>{selectedDispute.details}</span>
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
                 Resolution Adjudication:
               </label>
               <select
@@ -226,10 +227,11 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   width: '100%',
                   padding: 10,
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
                   fontSize: 13,
                   outline: 'none',
                   backgroundColor: '#FFFFFF',
+                  color: '#111111',
                 }}
               >
                 <option value="resolved">Mark Resolved (Authorize Adjusted Settlement)</option>
@@ -238,7 +240,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
                 Adjusted Net Payout (₹):
               </label>
               <input
@@ -250,7 +252,9 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   width: '100%',
                   padding: 10,
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#111111',
                   fontSize: 13,
                   outline: 'none',
                 }}
@@ -258,7 +262,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
                 Investigation Case Notes:
               </label>
               <textarea
@@ -270,7 +274,9 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   width: '100%',
                   padding: 10,
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#111111',
                   fontSize: 13,
                   outline: 'none',
                 }}
@@ -289,9 +295,9 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
                   backgroundColor: '#FFFFFF',
-                  color: '#475569',
+                  color: '#111111',
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',

@@ -240,8 +240,8 @@ export default function OrganizerNotificationsScreen() {
             <Card
               variant="elevated"
               style={{
-                backgroundColor: '#EFF6FF',
-                borderColor: colors.primary,
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
                 padding: spacing.md,
               }}
             >

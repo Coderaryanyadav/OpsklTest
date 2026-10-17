@@ -658,6 +658,14 @@ export default function WorkerMyShiftsScreen() {
             <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
               Check the other tabs or explore the discovery feed for open shifts.
             </Text>
+            <View style={{ marginTop: spacing.md, width: '100%', maxWidth: 220 }}>
+              <Button
+                title="Explore Available Shifts"
+                variant="primary"
+                size="sm"
+                onPress={() => router.push('/(tabs)' as any)}
+              />
+            </View>
           </View>
         ) : (
           currentList.map((booking) => {

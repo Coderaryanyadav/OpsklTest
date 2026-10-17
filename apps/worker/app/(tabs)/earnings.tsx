@@ -531,10 +531,32 @@ export default function WorkerEarningsScreen() {
 
             {/* Ledger List */}
             {filteredRecords.length === 0 ? (
-              <Card variant="outlined" style={{ padding: spacing.xl, alignItems: 'center' }}>
-                <Text style={[typography.body, { color: colors.textMuted }]}>
-                  No transaction records in this category.
+              <Card variant="outlined" style={{ padding: spacing.xl, alignItems: 'center', borderRadius: radii.xl }}>
+                <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '700', textAlign: 'center' }]}>
+                  {(summary?.records?.length || 0) === 0 ? 'No Shift Earnings Yet' : 'No Transactions Found'}
                 </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
+                  {(summary?.records?.length || 0) === 0
+                    ? 'When you complete shifts and organizers verify your attendance, authoritative UPI disbursements and payment slips appear here.'
+                    : `No records match the "${activeFilter}" filter.`}
+                </Text>
+                <View style={{ marginTop: spacing.md, width: '100%', maxWidth: 220 }}>
+                  {(summary?.records?.length || 0) === 0 ? (
+                    <Button
+                      title="Find Available Shifts"
+                      variant="primary"
+                      size="sm"
+                      onPress={() => router.push('/(tabs)' as any)}
+                    />
+                  ) : (
+                    <Button
+                      title="Show All Transactions"
+                      variant="outline"
+                      size="sm"
+                      onPress={() => setActiveFilter('all')}
+                    />
+                  )}
+                </View>
               </Card>
             ) : (
               <View style={{ gap: spacing.sm }}>

@@ -82,7 +82,7 @@ export function JobDetailSheet({
             style={({ pressed }) => [
               styles.closeButton,
               {
-                backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+                backgroundColor: isDark ? '#1C1C1E' : '#F5F5F5',
                 borderRadius: radii.full,
                 opacity: pressed ? 0.7 : 1,
               },

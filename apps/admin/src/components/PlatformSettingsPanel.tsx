@@ -19,10 +19,10 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
           Platform System Configuration
         </h1>
-        <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+        <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
           Operational controls, safety killswitches, fee structures, and runtime configuration stored in Supabase platform_settings.
         </p>
       </div>
@@ -31,21 +31,21 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: `1.5px solid ${systemStatus.isBookingPaused ? '#DC2626' : '#E2E8F0'}`,
+          border: `1.5px solid ${systemStatus.isBookingPaused ? '#DC2626' : '#E5E5E5'}`,
           borderRadius: 12,
           padding: 24,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 18 }}>🚨</span>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: '#101D36' }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111111' }}>
                 Platform-Wide Shift Booking Emergency Pause
               </h2>
             </div>
-            <p style={{ fontSize: 13, color: '#64748B', marginTop: 4, maxWidth: 560 }}>
+            <p style={{ fontSize: 13, color: '#737373', marginTop: 4, maxWidth: 560 }}>
               Instantly pauses all new shift applications across the Worker app and Organizer publishing pipelines. Active shifts in progress remain functional.
             </p>
           </div>
@@ -56,7 +56,7 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
               padding: '10px 18px',
               borderRadius: 8,
               border: 'none',
-              backgroundColor: systemStatus.isBookingPaused ? '#16A34A' : '#DC2626',
+              backgroundColor: systemStatus.isBookingPaused ? '#15803D' : '#DC2626',
               color: '#FFFFFF',
               fontWeight: 700,
               fontSize: 13,
@@ -67,8 +67,8 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
           </button>
         </div>
 
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #F1F5F9', display: 'flex', gap: 12, alignItems: 'center' }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', minWidth: 120 }}>
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #F5F5F5', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', minWidth: 120 }}>
             Operational Reason:
           </label>
           <input
@@ -80,7 +80,9 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
               flex: 1,
               padding: '8px 12px',
               borderRadius: 6,
-              border: '1px solid #CBD5E1',
+              border: '1px solid #E5E5E5',
+              backgroundColor: '#FFFFFF',
+              color: '#111111',
               fontSize: 13,
               outline: 'none',
             }}
@@ -92,18 +94,18 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E5E5E5',
           borderRadius: 12,
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', fontWeight: 700, color: '#101D36' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #E5E5E5', fontWeight: 700, color: '#111111' }}>
           Active Database Configuration Keys
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
-            <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
               <th style={{ padding: '12px 16px' }}>Setting Key</th>
               <th style={{ padding: '12px 16px' }}>Current Value</th>
               <th style={{ padding: '12px 16px' }}>Description</th>
@@ -112,17 +114,17 @@ export const PlatformSettingsPanel: React.FC<PlatformSettingsPanelProps> = ({
           </thead>
           <tbody>
             {settings.map((s) => (
-              <tr key={s.key} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#000000' }}>
+              <tr key={s.key} style={{ borderBottom: '1px solid #F5F5F5' }}>
+                <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontWeight: 600, color: '#111111' }}>
                   {s.key}
                 </td>
-                <td style={{ padding: '12px 16px', fontWeight: 700, color: '#101D36' }}>
+                <td style={{ padding: '12px 16px', fontWeight: 700, color: '#111111' }}>
                   {typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value)}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#64748B' }}>
+                <td style={{ padding: '12px 16px', color: '#737373' }}>
                   {s.description || 'System setting'}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#94A3B8' }}>
+                <td style={{ padding: '12px 16px', color: '#737373' }}>
                   {new Date(s.updatedAt).toLocaleDateString()}
                 </td>
               </tr>

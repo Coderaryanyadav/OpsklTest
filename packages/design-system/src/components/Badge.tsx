@@ -23,66 +23,49 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const { colors, radii, spacing } = useOpsklTheme();
 
-  const getVariantStyles = (): { bg: string; text: string; dot: string } => {
+  const getVariantStyles = (): { bg: string; text: string; dot: string; border: string } => {
     switch (variant) {
       case 'success':
         return {
           bg: colors.successLight,
           text: colors.success,
           dot: colors.success,
+          border: '#DCFCE7',
         };
       case 'warning':
         return {
           bg: colors.warningLight,
           text: colors.warning,
           dot: colors.warning,
+          border: '#FEF3C7',
         };
       case 'danger':
         return {
           bg: colors.dangerLight,
           text: colors.danger,
           dot: colors.danger,
+          border: '#FEE2E2',
         };
       case 'info':
-        return {
-          bg: colors.infoLight,
-          text: colors.info,
-          dot: colors.info,
-        };
       case 'primary':
         return {
-          bg: colors.primaryLight,
-          text: colors.primary,
-          dot: colors.primary,
+          bg: colors.surfaceSecondary,
+          text: colors.textPrimary,
+          dot: colors.textPrimary,
+          border: colors.border,
         };
       case 'neutral':
       default:
         return {
-          bg: colors.neutralStatusLight,
-          text: colors.neutralStatus,
-          dot: colors.neutralStatus,
+          bg: colors.surfaceSecondary,
+          text: colors.textSecondary,
+          dot: colors.textSecondary,
+          border: colors.border,
         };
     }
   };
 
-  const getBorderColor = (): string => {
-    switch (variant) {
-      case 'success':
-        return '#BBF7D0';
-      case 'warning':
-        return '#FDE68A';
-      case 'danger':
-        return '#FECACA';
-      case 'info':
-      case 'primary':
-        return '#BFDBFE';
-      case 'neutral':
-      default:
-        return colors.border;
-    }
-  };
-
-  const { bg, text, dot } = getVariantStyles();
+  const { bg, text, dot, border } = getVariantStyles();
   const isSm = size === 'sm';
 
   return (
@@ -97,7 +80,7 @@ export const Badge: React.FC<BadgeProps> = ({
           paddingHorizontal: isSm ? spacing.xs + 4 : spacing.sm + 4,
           borderRadius: radii.full,
           borderWidth: 1,
-          borderColor: getBorderColor(),
+          borderColor: border,
         },
         style,
       ]}
@@ -109,7 +92,7 @@ export const Badge: React.FC<BadgeProps> = ({
             height: isSm ? 5 : 6,
             borderRadius: 3,
             backgroundColor: dot,
-            marginRight: spacing.xs,
+            marginRight: spacing.xs + 2,
           }}
         />
       ) : null}

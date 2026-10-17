@@ -84,10 +84,10 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
       {/* Search and Filters Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
             {type === 'worker' ? 'Verified Worker Talent Pool' : 'Event Agencies & Organizers Directory'}
           </h2>
-          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
             {type === 'worker'
               ? 'Real-time database records of registered on-demand event workforce across Mumbai'
               : 'Registered event planning agencies, venue hosts, and corporate organizers'}
@@ -103,14 +103,16 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
             style={{
               padding: '7px 12px',
               borderRadius: 8,
-              border: '1px solid #CBD5E1',
+              border: '1px solid #E5E5E5',
               fontSize: 13,
               width: 240,
               outline: 'none',
+              backgroundColor: '#FFFFFF',
+              color: '#111111',
             }}
           />
 
-          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2, border: '1px solid #E2E8F0' }}>
+          <div style={{ display: 'flex', backgroundColor: '#F5F5F5', borderRadius: 8, padding: 2, border: '1px solid #E5E5E5' }}>
             {(['all', 'verified', 'unverified', 'suspended'] as const).map((tab) => (
               <button
                 key={tab}
@@ -119,13 +121,12 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                   padding: '6px 12px',
                   borderRadius: 6,
                   border: 'none',
-                  backgroundColor: statusFilter === tab ? '#FFFFFF' : 'transparent',
-                  color: statusFilter === tab ? '#101D36' : '#64748B',
+                  backgroundColor: statusFilter === tab ? '#000000' : 'transparent',
+                  color: statusFilter === tab ? '#FFFFFF' : '#737373',
                   fontWeight: statusFilter === tab ? 700 : 500,
                   fontSize: 12,
                   cursor: 'pointer',
                   textTransform: 'capitalize',
-                  boxShadow: statusFilter === tab ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                 }}
               >
                 {tab}
@@ -138,9 +139,9 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
             style={{
               padding: '7px 14px',
               borderRadius: 8,
-              border: '1px solid #E2E8F0',
+              border: '1px solid #E5E5E5',
               backgroundColor: '#FFFFFF',
-              color: '#101D36',
+              color: '#111111',
               fontWeight: 600,
               fontSize: 12,
               cursor: 'pointer',
@@ -155,15 +156,15 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E5E5E5',
           borderRadius: 12,
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
-            <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
               <th style={{ padding: '12px 16px' }}>{type === 'worker' ? 'Worker Profile' : 'Agency / Company'}</th>
               <th style={{ padding: '12px 16px' }}>Contact Details</th>
               <th style={{ padding: '12px 16px' }}>{type === 'worker' ? 'Locality & Skills' : 'Business Type & GSTIN'}</th>
@@ -175,7 +176,7 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#94A3B8' }}>
+                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
                   No {type} accounts found matching current query.
                 </td>
               </tr>
@@ -186,19 +187,19 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                   : (u.verificationStatus === 'verified' || u.isGstinVerified);
 
                 return (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <tr key={u.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 700, color: '#101D36' }}>
+                      <div style={{ fontWeight: 700, color: '#111111' }}>
                         {type === 'organizer' && u.businessName ? u.businessName : u.fullName || 'Registered User'}
                       </div>
-                      <div style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
+                      <div style={{ fontSize: 11, color: '#737373', fontFamily: 'monospace' }}>
                         ID #{u.id.substring(0, 8)}
                       </div>
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ color: '#1E293B' }}>{u.email}</div>
-                      <div style={{ fontSize: 11, color: '#64748B' }}>
+                      <div style={{ color: '#111111' }}>{u.email}</div>
+                      <div style={{ fontSize: 11, color: '#737373' }}>
                         {u.phone || 'No phone registered'}
                       </div>
                     </td>
@@ -206,19 +207,19 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                     <td style={{ padding: '12px 16px' }}>
                       {type === 'worker' ? (
                         <div>
-                          <div style={{ color: '#1E293B', fontWeight: 500 }}>
+                          <div style={{ color: '#111111', fontWeight: 500 }}>
                             {u.preferredLocality || 'Mumbai'}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748B' }}>
+                          <div style={{ fontSize: 11, color: '#737373' }}>
                             {u.skills && u.skills.length > 0 ? u.skills.join(', ') : 'General Event Support'}
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <div style={{ color: '#1E293B', fontWeight: 500, textTransform: 'capitalize' }}>
+                          <div style={{ color: '#111111', fontWeight: 500, textTransform: 'capitalize' }}>
                             {(u.businessType || 'Event Agency').replace('_', ' ')}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: 11, color: '#737373', fontFamily: 'monospace' }}>
                             {u.gstin || 'No GSTIN on file'}
                           </div>
                         </div>
@@ -233,8 +234,8 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                           borderRadius: 12,
                           fontSize: 11,
                           fontWeight: 700,
-                          backgroundColor: isVerified ? '#DCFCE7' : '#FEF3C7',
-                          color: isVerified ? '#16A34A' : '#D97706',
+                          backgroundColor: isVerified ? '#F0FDF4' : '#FFFBEB',
+                          color: isVerified ? '#15803D' : '#B45309',
                           textTransform: 'uppercase',
                         }}
                       >
@@ -250,8 +251,9 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                           borderRadius: 12,
                           fontSize: 11,
                           fontWeight: 700,
-                          backgroundColor: u.isActive ? '#F1F5F9' : '#FEE2E2',
-                          color: u.isActive ? '#475569' : '#DC2626',
+                          backgroundColor: u.isActive ? '#F5F5F5' : '#FEF2F2',
+                          color: u.isActive ? '#111111' : '#DC2626',
+                          border: u.isActive ? '1px solid #E5E5E5' : 'none',
                           textTransform: 'uppercase',
                         }}
                       >
@@ -267,9 +269,9 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                           padding: '5px 12px',
                           borderRadius: 6,
                           border: '1px solid',
-                          borderColor: u.isActive ? '#FCA5A5' : '#86EFAC',
+                          borderColor: u.isActive ? '#DC2626' : '#15803D',
                           backgroundColor: u.isActive ? '#FEF2F2' : '#F0FDF4',
-                          color: u.isActive ? '#DC2626' : '#16A34A',
+                          color: u.isActive ? '#DC2626' : '#15803D',
                           fontWeight: 600,
                           fontSize: 11,
                           cursor: 'pointer',

@@ -80,25 +80,25 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
       {/* Header and Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+          <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
             Identity & Business Verification Queue
           </h1>
-          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+          <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
             Review KYC documents, Aadhaar records, and GST certificates before granting verified badges.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Entity Segment: Worker vs Organization */}
-          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 3, border: '1px solid #E2E8F0' }}>
+          <div style={{ display: 'flex', backgroundColor: '#F5F5F5', borderRadius: 8, padding: 3, border: '1px solid #E5E5E5' }}>
             <button
               onClick={() => setEntityType('all')}
               style={{
                 padding: '6px 14px',
                 borderRadius: 6,
                 border: 'none',
-                backgroundColor: entityType === 'all' ? '#101D36' : 'transparent',
-                color: entityType === 'all' ? '#FFFFFF' : '#64748B',
+                backgroundColor: entityType === 'all' ? '#000000' : 'transparent',
+                color: entityType === 'all' ? '#FFFFFF' : '#737373',
                 fontWeight: entityType === 'all' ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -108,7 +108,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               }}
             >
               <span>All Submissions</span>
-              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'all' ? '#334155' : '#E2E8F0', color: entityType === 'all' ? '#FFFFFF' : '#475569' }}>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'all' ? '#262626' : '#E5E5E5', color: entityType === 'all' ? '#FFFFFF' : '#737373' }}>
                 {verifications.length}
               </span>
             </button>
@@ -118,8 +118,8 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 padding: '6px 14px',
                 borderRadius: 6,
                 border: 'none',
-                backgroundColor: entityType === 'worker' ? '#101D36' : 'transparent',
-                color: entityType === 'worker' ? '#FFFFFF' : '#64748B',
+                backgroundColor: entityType === 'worker' ? '#000000' : 'transparent',
+                color: entityType === 'worker' ? '#FFFFFF' : '#737373',
                 fontWeight: entityType === 'worker' ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -129,7 +129,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               }}
             >
               <span>Workers KYC</span>
-              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'worker' ? '#334155' : '#E2E8F0', color: entityType === 'worker' ? '#FFFFFF' : '#475569' }}>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'worker' ? '#262626' : '#E5E5E5', color: entityType === 'worker' ? '#FFFFFF' : '#737373' }}>
                 {workerCasesCount}
               </span>
             </button>
@@ -139,8 +139,8 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 padding: '6px 14px',
                 borderRadius: 6,
                 border: 'none',
-                backgroundColor: entityType === 'organizer' ? '#101D36' : 'transparent',
-                color: entityType === 'organizer' ? '#FFFFFF' : '#64748B',
+                backgroundColor: entityType === 'organizer' ? '#000000' : 'transparent',
+                color: entityType === 'organizer' ? '#FFFFFF' : '#737373',
                 fontWeight: entityType === 'organizer' ? 700 : 500,
                 fontSize: 12,
                 cursor: 'pointer',
@@ -150,7 +150,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               }}
             >
               <span>Agencies & Organizers</span>
-              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'organizer' ? '#334155' : '#E2E8F0', color: entityType === 'organizer' ? '#FFFFFF' : '#475569' }}>
+              <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 8, backgroundColor: entityType === 'organizer' ? '#262626' : '#E5E5E5', color: entityType === 'organizer' ? '#FFFFFF' : '#737373' }}>
                 {orgCasesCount}
               </span>
             </button>
@@ -164,14 +164,16 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
             style={{
               padding: '7px 12px',
               borderRadius: 8,
-              border: '1px solid #CBD5E1',
+              border: '1px solid #E5E5E5',
               fontSize: 13,
               width: 200,
               outline: 'none',
+              backgroundColor: '#FFFFFF',
+              color: '#111111',
             }}
           />
 
-          <div style={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: 8, padding: 2, border: '1px solid #E2E8F0' }}>
+          <div style={{ display: 'flex', backgroundColor: '#F5F5F5', borderRadius: 8, padding: 2, border: '1px solid #E5E5E5' }}>
             {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => (
               <button
                 key={tab}
@@ -180,13 +182,12 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   padding: '6px 10px',
                   borderRadius: 6,
                   border: 'none',
-                  backgroundColor: filter === tab ? '#FFFFFF' : 'transparent',
-                  color: filter === tab ? '#101D36' : '#64748B',
+                  backgroundColor: filter === tab ? '#000000' : 'transparent',
+                  color: filter === tab ? '#FFFFFF' : '#737373',
                   fontWeight: filter === tab ? 700 : 500,
                   fontSize: 12,
                   cursor: 'pointer',
                   textTransform: 'capitalize',
-                  boxShadow: filter === tab ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                 }}
               >
                 {tab}
@@ -200,15 +201,15 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          border: '1px solid #E5E5E5',
           borderRadius: 12,
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
           <thead>
-            <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
               <th style={{ padding: '12px 16px' }}>Applicant Profile</th>
               <th style={{ padding: '12px 16px' }}>Document Type</th>
               <th style={{ padding: '12px 16px' }}>Masked ID Number</th>
@@ -220,18 +221,18 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
           <tbody>
             {filteredCases.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#94A3B8' }}>
+                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
                   No verification cases found matching current filters.
                 </td>
               </tr>
             ) : (
               filteredCases.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={c.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 700, color: '#101D36' }}>
+                    <div style={{ fontWeight: 700, color: '#111111' }}>
                       {c.applicantProfile?.fullName || `Profile #${c.profileId.substring(0, 8)}`}
                     </div>
-                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                    <div style={{ fontSize: 11, color: '#737373' }}>
                       {c.applicantProfile?.email ? `${c.applicantProfile.email} • ` : ''}
                       {c.applicantProfile?.role ? `${c.applicantProfile.role.toUpperCase()} • ` : ''}
                       Case #{c.id.substring(0, 8)}
@@ -244,18 +245,19 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                         borderRadius: 12,
                         fontSize: 11,
                         fontWeight: 700,
-                        backgroundColor: '#EFF6FF',
-                        color: '#1D4ED8',
+                        backgroundColor: '#F5F5F5',
+                        color: '#111111',
+                        border: '1px solid #E5E5E5',
                         textTransform: 'uppercase',
                       }}
                     >
                       {c.documentType}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: '#334155' }}>
+                  <td style={{ padding: '12px 16px', fontFamily: 'monospace', color: '#111111' }}>
                     {c.documentMaskedId}
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#64748B' }}>
+                  <td style={{ padding: '12px 16px', color: '#737373' }}>
                     {new Date(c.createdAt).toLocaleDateString('en-IN', {
                       day: '2-digit',
                       month: 'short',
@@ -274,16 +276,16 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                         letterSpacing: 0.5,
                         backgroundColor:
                           c.status === 'approved'
-                            ? '#DCFCE7'
+                            ? '#F0FDF4'
                             : c.status === 'rejected'
-                            ? '#FEE2E2'
-                            : '#FEF3C7',
+                            ? '#FEF2F2'
+                            : '#FFFBEB',
                         color:
                           c.status === 'approved'
-                            ? '#16A34A'
+                            ? '#15803D'
                             : c.status === 'rejected'
                             ? '#DC2626'
-                            : '#D97706',
+                            : '#B45309',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -302,7 +304,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                         borderRadius: 6,
                         border: '1px solid #E5E5E5',
                         backgroundColor: '#FFFFFF',
-                        color: '#000000',
+                        color: '#111111',
                         fontWeight: 600,
                         fontSize: 12,
                         cursor: 'pointer',
@@ -324,7 +326,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -339,35 +341,36 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               width: '100%',
               maxWidth: 580,
               padding: 24,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #E5E5E5',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column',
               gap: 16,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#101D36' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
                 Adjudicate Verification Case
               </h2>
               <button
                 onClick={() => setSelectedCase(null)}
-                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#64748B' }}
+                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#737373' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ backgroundColor: '#F8FAFC', padding: 14, borderRadius: 8, gap: 6, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5', padding: 14, borderRadius: 8, gap: 6, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748B' }}>Profile ID:</span>
-                <span style={{ fontWeight: 700, color: '#101D36' }}>{selectedCase.profileId}</span>
+                <span style={{ color: '#737373' }}>Profile ID:</span>
+                <span style={{ fontWeight: 700, color: '#111111' }}>{selectedCase.profileId}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748B' }}>Document Submitted:</span>
-                <span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{selectedCase.documentType} ({selectedCase.documentMaskedId})</span>
+                <span style={{ color: '#737373' }}>Document Submitted:</span>
+                <span style={{ fontWeight: 600, textTransform: 'uppercase', color: '#111111' }}>{selectedCase.documentType} ({selectedCase.documentMaskedId})</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#64748B' }}>Storage Reference:</span>
+                <span style={{ color: '#737373' }}>Storage Reference:</span>
                 <span style={{ fontSize: 12, color: '#737373', fontFamily: 'monospace' }}>{selectedCase.documentStoragePath || 'Secured Private Vault'}</span>
               </div>
               {selectedCase.documentStoragePath && (
@@ -413,7 +416,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#475569', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
                 Rejection Rationale (Mandatory if declining verification):
               </label>
               <textarea
@@ -425,7 +428,9 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   width: '100%',
                   padding: 10,
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#111111',
                   fontSize: 13,
                   outline: 'none',
                 }}
@@ -444,9 +449,9 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: 8,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid #E5E5E5',
                   backgroundColor: '#FFFFFF',
-                  color: '#475569',
+                  color: '#111111',
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: 'pointer',
@@ -480,7 +485,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   padding: '9px 18px',
                   borderRadius: 8,
                   border: 'none',
-                  backgroundColor: '#16A34A',
+                  backgroundColor: '#15803D',
                   color: '#FFFFFF',
                   fontWeight: 700,
                   fontSize: 13,

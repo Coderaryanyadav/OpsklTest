@@ -53,7 +53,7 @@ export function CardActionControls({
           styles.mainButton,
           styles.passButton,
           {
-            backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
             borderColor: colors.border,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,

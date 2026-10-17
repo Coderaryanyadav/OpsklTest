@@ -240,7 +240,7 @@ export default function OrganizerDashboardScreen() {
               paddingVertical: 10,
               borderRadius: radii.md,
               borderWidth: 1,
-              borderColor: organizerProfile.verificationStatus === 'pending' ? colors.border : '#FED7AA',
+              borderColor: colors.border,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
