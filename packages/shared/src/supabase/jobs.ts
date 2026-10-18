@@ -1410,3 +1410,93 @@ export async function getJobContact(jobId: string): Promise<{
   }
 }
 
+/**
+ * Authoritative Application Withdrawal RPC
+ * Enforces worker ownership and 2-hour pre-shift cutoff window.
+ */
+export async function withdrawJobApplicationSafe(
+  applicationId: string,
+  reason?: string
+): Promise<{ success: boolean; errorCode?: string; message?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('withdraw_job_application_safe', {
+      p_application_id: applicationId,
+      p_reason: reason ?? null,
+    });
+
+    if (error) {
+      logger.error('RPC error in withdraw_job_application_safe', error);
+      return { success: false, errorCode: error.code || 'TRANSACTION_ERROR', message: error.message };
+    }
+
+    return {
+      success: data?.success || false,
+      errorCode: data?.error_code,
+      message: data?.message,
+    };
+  } catch (err: any) {
+    logger.error('Unexpected error withdrawing job application', err);
+    return { success: false, errorCode: 'NETWORK_ERROR', message: err?.message || 'Network error' };
+  }
+}
+
+/**
+ * Authoritative Shift Editing RPC
+ * Prevents reducing capacity below confirmed workers, altering date/times, or reducing wages.
+ */
+export async function editJobSafe(
+  jobId: string,
+  jobUpdates: Record<string, any>
+): Promise<{ success: boolean; jobId?: string; errorCode?: string; message?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('edit_job_safe', {
+      p_job_id: jobId,
+      p_job: jobUpdates,
+    });
+
+    if (error) {
+      logger.error('RPC error in edit_job_safe', error);
+      return { success: false, errorCode: error.code || 'TRANSACTION_ERROR', message: error.message };
+    }
+
+    return {
+      success: data?.success || false,
+      jobId: data?.job_id,
+      errorCode: data?.error_code,
+      message: data?.message,
+    };
+  } catch (err: any) {
+    logger.error('Unexpected error editing job', err);
+    return { success: false, errorCode: 'NETWORK_ERROR', message: err?.message || 'Network error' };
+  }
+}
+
+/**
+ * Keyset-paginated Discovery Feed RPC
+ * Excludes ineligible, past, applied, and passed shifts with composable SQL filters.
+ */
+export async function getDiscoveryFeedRpc(
+  filters: Record<string, any> = {},
+  limit: number = 20,
+  cursor: Record<string, any> | null = null
+): Promise<{ success: boolean; jobs: Job[]; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('get_discovery_feed', {
+      p_filters: filters,
+      p_limit: limit,
+      p_cursor: cursor,
+    });
+
+    if (error) {
+      logger.error('RPC error in get_discovery_feed', error);
+      return { success: false, jobs: [], error: error.message };
+    }
+
+    const mappedJobs = (data || []).map((row: any) => mapJobRow(row));
+    return { success: true, jobs: mappedJobs };
+  } catch (err: any) {
+    logger.error('Unexpected error calling get_discovery_feed', err);
+    return { success: false, jobs: [], error: err?.message || 'Network error' };
+  }
+}
+

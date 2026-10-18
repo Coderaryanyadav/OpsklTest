@@ -10944,7 +10944,7 @@ BEGIN
       SELECT 1 FROM job_applications ja
       WHERE ja.job_id = j.id
         AND ja.worker_id = v_user_id
-        AND ja.status IN ('applied', 'shortlisted', 'hired', 'confirmed', 'rejected')
+        AND ja.status IN ('applied', 'shortlisted', 'confirmed', 'rejected')
     ))
     -- Exclude left swipe passes
     AND (v_user_id IS NULL OR NOT EXISTS (
@@ -11231,7 +11231,30 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNAUTHORIZED', 'message', 'Not authorized to hire for this shift');
   END IF;
 
-  -- 4. Platform Killswitch Check
+  -- 4. Idempotency Check: Existing Confirmed Booking (Checked early for replay tolerance)
+  SELECT id, status, check_in_code INTO v_existing_booking
+  FROM bookings
+  WHERE job_id = p_job_id AND worker_id = p_worker_id;
+
+  IF FOUND THEN
+    IF v_existing_booking.status = 'confirmed' THEN
+      RETURN jsonb_build_object(
+        'success', true,
+        'booking_id', v_existing_booking.id,
+        'check_in_code', v_existing_booking.check_in_code,
+        'status', 'confirmed',
+        'already_confirmed', true
+      );
+    ELSE
+      RETURN jsonb_build_object(
+        'success', false,
+        'error_code', 'EXISTING_BOOKING_STATUS',
+        'message', 'Worker already has a booking with status: ' || v_existing_booking.status
+      );
+    END IF;
+  END IF;
+
+  -- 5. Platform Killswitch Check
   IF EXISTS (
     SELECT 1 FROM platform_settings
     WHERE key = 'booking_killswitch' AND (value->>'is_paused')::BOOLEAN = true
@@ -11239,7 +11262,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'BOOKINGS_PAUSED', 'message', 'Shift bookings are temporarily paused platform-wide.');
   END IF;
 
-  -- 5. Require Organizer Identity Verification
+  -- 6. Require Organizer Identity Verification
   IF NOT EXISTS (
     SELECT 1 FROM organizer_profiles
     WHERE id = v_job.organizer_id AND (verification_status = 'verified' OR is_current_admin())
@@ -11247,7 +11270,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'UNVERIFIED_ORGANIZER', 'message', 'Organizer identity verification required before hiring.');
   END IF;
 
-  -- 6. Require Worker Active & KYC Verified
+  -- 7. Require Worker Active & KYC Verified
   IF NOT EXISTS (
     SELECT 1 FROM worker_profiles wp
     JOIN profiles p ON p.id = wp.id
@@ -11262,7 +11285,7 @@ BEGIN
     );
   END IF;
 
-  -- 7. Shift Status & Time Validity
+  -- 8. Shift Status & Time Validity
   IF v_job.status NOT IN ('open', 'filling') THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'JOB_NOT_OPEN', 'message', 'Shift is not open for hiring.');
   END IF;
@@ -11272,12 +11295,12 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error_code', 'PAST_DATE', 'message', 'Cannot hire workers for shifts that have already started.');
   END IF;
 
-  -- 8. Capacity Check: Atomic & Strict
+  -- 9. Capacity Check: Atomic & Strict
   IF v_job.slots_filled >= v_job.slots_total THEN
     RETURN jsonb_build_object('success', false, 'error_code', 'CAPACITY_REACHED', 'message', 'All openings for this shift have already been filled.');
   END IF;
 
-  -- 9. Application Requirement Check
+  -- 10. Application Requirement Check
   SELECT COALESCE((value->>'allow_direct_invites')::boolean, false) INTO v_allow_direct
   FROM platform_settings WHERE key = 'allow_direct_invites';
 
@@ -11295,7 +11318,7 @@ BEGIN
     END IF;
   END IF;
 
-  -- 10. Check for Overlapping Shifts on Schedule
+  -- 11. Check for Overlapping Shifts on Schedule
   v_job_start := (v_job.date + v_job.start_time) AT TIME ZONE 'Asia/Kolkata';
   v_job_end := (v_job.date + v_job.end_time + CASE WHEN v_job.end_time <= v_job.start_time THEN interval '1 day' ELSE interval '0' END) AT TIME ZONE 'Asia/Kolkata';
 
@@ -11324,17 +11347,17 @@ BEGIN
   -- Insert Booking
   INSERT INTO bookings (
     job_id, worker_id, organizer_id, status,
-    agreed_rate, total_payout, check_in_code, notes
+    agreed_hourly_rate, agreed_total_pay, check_in_code
   ) VALUES (
     p_job_id, p_worker_id, v_job.organizer_id, 'confirmed',
-    v_job.hourly_rate, v_job.total_pay, v_check_in_code, p_notes
+    v_job.hourly_rate, v_job.total_pay, v_check_in_code
   )
   RETURNING * INTO v_new_booking;
 
-  -- Update Application status to hired
+  -- Update Application status to confirmed
   IF v_app.id IS NOT NULL THEN
     UPDATE job_applications
-    SET status = 'hired', updated_at = now()
+    SET status = 'confirmed', updated_at = now()
     WHERE id = v_app.id;
   END IF;
 
@@ -11342,7 +11365,7 @@ BEGIN
   UPDATE jobs
   SET
     slots_filled = slots_filled + 1,
-    status = CASE WHEN slots_filled + 1 >= slots_total THEN 'filled'::job_status ELSE 'filling'::job_status END,
+    status = CASE WHEN slots_filled + 1 >= slots_total THEN 'filled'::shift_status ELSE 'filling'::shift_status END,
     updated_at = now()
   WHERE id = p_job_id;
 
