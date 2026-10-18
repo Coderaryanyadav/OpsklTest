@@ -25,6 +25,7 @@ import {
   getSystemOperationalStatus,
   syncKillswitchFromDatabase,
   SystemOperationalStatus,
+  adminSetUserStatusSafe,
 } from '@opskil/shared';
 import { adminSupabase } from '../lib/supabase';
 
@@ -154,12 +155,11 @@ export default function AdminDashboardPage() {
 
   const handleToggleActiveStatus = async (userId: string, currentActive: boolean) => {
     try {
-      const { error } = await adminSupabase
-        .from('profiles')
-        .update({ is_active: !currentActive, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-
-      if (error) throw error;
+      const reason = !currentActive ? 'Admin reactivation' : 'Admin suspension from dashboard';
+      const res = await adminSetUserStatusSafe(userId, !currentActive, reason);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to update user status');
+      }
 
       setDirectoryWorkers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, isActive: !currentActive } : u))
@@ -213,9 +213,6 @@ export default function AdminDashboardPage() {
 
   const handleSignOut = async () => {
     try {
-      if (typeof document !== 'undefined') {
-        document.cookie = 'opskil_test_session=; path=/; max-age=0; SameSite=Lax';
-      }
       await adminSupabase.auth.signOut();
     } finally {
       window.location.href = '/login';
@@ -247,6 +244,9 @@ export default function AdminDashboardPage() {
     status: 'approved' | 'rejected',
     reason: string
   ) => {
+    if (status === 'rejected' && (!reason || reason.trim().length < 5)) {
+      throw new Error('A specific rejection reason (at least 5 characters) is required.');
+    }
     const res = await resolveVerificationCaseSafe(
       caseId,
       status,

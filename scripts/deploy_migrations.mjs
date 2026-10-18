@@ -13,13 +13,28 @@ const connectionString = process.env.DATABASE_URL || process.argv[2];
 
 if (!connectionString) {
   console.error('\x1b[31m[ERROR] Missing DATABASE_URL.\x1b[0m');
-  console.error('Usage: DATABASE_URL="postgresql://postgres:[PASSWORD]@db.lericvniqdbvacgegrbp.supabase.co:5432/postgres" node scripts/deploy_migrations.mjs');
+  console.error('Usage: DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:[PORT]/[DBNAME]" node scripts/deploy_migrations.mjs');
   process.exit(1);
 }
 
+// Target database host safety verification
+const parsedDbUrl = new URL(connectionString.replace(/^postgresql:\/\//, 'http://'));
+const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDbUrl.hostname);
+
+if (process.env.NODE_ENV === 'production' && !isLocalDb) {
+  if (process.env.CONFIRM_PRODUCTION_MIGRATION !== 'true') {
+    console.error('\x1b[31m[PRODUCTION DEPLOYMENT GUARD BLOCKED EXECUTION]\x1b[0m');
+    console.error(`Database target '${parsedDbUrl.hostname}' is a remote production database.`);
+    console.error('To apply migrations to production, you must explicitly confirm:');
+    console.error('  CONFIRM_PRODUCTION_MIGRATION=true');
+    process.exit(1);
+  }
+}
+
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
 const client = new pg.Client({
   connectionString,
-  ssl: { rejectUnauthorized: false },
+  ssl: isLocalDb ? false : { rejectUnauthorized },
 });
 
 function calculateSha256(content) {
@@ -51,7 +66,28 @@ async function run() {
       REVOKE ALL ON TABLE _opskil_migrations FROM anon, authenticated;
     `);
 
-    const { rows: appliedRows } = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
+    let { rows: appliedRows } = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
+
+    // If _opskil_migrations is newly created on an existing initialized database,
+    // backfill baseline migration history for migrations that were already applied.
+    if (appliedRows.length === 0) {
+      const { rows: tableCheck } = await client.query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles';");
+      if (tableCheck.length > 0) {
+        console.log('Detected existing initialized database schema. Reconciling baseline migration history...');
+        const migrationFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
+        for (const f of migrationFiles) {
+          if (f < '20261017000000') {
+            const sql = fs.readFileSync(path.join(migrationsDir, f), 'utf8');
+            const checksum = calculateSha256(sql);
+            await client.query('INSERT INTO _opskil_migrations (filename, checksum) VALUES ($1, $2) ON CONFLICT (filename) DO NOTHING;', [f, checksum]);
+          }
+        }
+        const refreshed = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
+        appliedRows = refreshed.rows;
+        console.log(`\x1b[32m✓ Reconciled ${appliedRows.length} baseline migration records in _opskil_migrations.\x1b[0m\n`);
+      }
+    }
+
     const appliedMap = new Map(appliedRows.map((r) => [r.filename, r.checksum]));
 
     const migrationFiles = fs

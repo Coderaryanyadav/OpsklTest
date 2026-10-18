@@ -11,7 +11,7 @@ const rootDir = path.resolve(__dirname, '..');
 const migrationsDir = path.join(rootDir, 'supabase', 'migrations');
 
 const connectionString = process.env.DATABASE_URL || process.argv[2];
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lericvniqdbvacgegrbp.supabase.co';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DESTRUCTIVE_DATABASE_REBUILD !== 'true') {
@@ -226,25 +226,16 @@ async function run() {
   }
 
   if (userId) {
-    try {
-      await client.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
-      await client.query(
-        `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
-         VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
-         ON CONFLICT (id) DO UPDATE SET 
-           role = 'admin',
-           full_name = 'Opskl Administrator',
-           is_active = true,
-           updated_at = now();`,
-        [userId, adminEmail]
-      );
-    } finally {
-      try {
-        await client.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
-      } catch (e) {
-        console.error('Warning: Failed to re-enable trg_prevent_role_escalation trigger:', e.message);
-      }
-    }
+    await client.query(
+      `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
+       VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
+       ON CONFLICT (id) DO UPDATE SET 
+         role = 'admin',
+         full_name = 'Opskl Administrator',
+         is_active = true,
+         updated_at = now();`,
+      [userId, adminEmail]
+    );
     console.log(`  \x1b[32m✓ Provisioned admin profile for ${adminEmail}\x1b[0m`);
   }
 

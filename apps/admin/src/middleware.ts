@@ -33,12 +33,9 @@ export async function middleware(request: NextRequest) {
   // In production, block access safely with a config error rather than allowing unauthenticated access.
   // In development/test build steps, allow passthrough so static bundling succeeds.
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
-    if (process.env.NODE_ENV === 'production') {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('error', 'missing_configuration');
-      return NextResponse.redirect(loginUrl);
-    }
-    return response;
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', 'missing_configuration');
+    return NextResponse.redirect(loginUrl);
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -67,7 +64,20 @@ export async function middleware(request: NextRequest) {
     if (error || !user) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      // Transfer updated cookies from setAll (if any)
+      response.cookies.getAll().forEach((c) => {
+        redirectResponse.cookies.set(c.name, c.value, c);
+      });
+      // If error or invalid session, clear any existing auth token cookies to stop repeated refresh token loops
+      if (error) {
+        request.cookies.getAll().forEach((cookie) => {
+          if (cookie.name.includes('-auth-token') || cookie.name.startsWith('sb-')) {
+            redirectResponse.cookies.set(cookie.name, '', { maxAge: 0, path: '/' });
+          }
+        });
+      }
+      return redirectResponse;
     }
 
     // Server-side verification that authenticated session is an active admin
@@ -80,12 +90,22 @@ export async function middleware(request: NextRequest) {
     if (!profile || profile.role !== 'admin' || !profile.is_active) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'unauthorized_role');
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      response.cookies.getAll().forEach((c) => {
+        redirectResponse.cookies.set(c.name, c.value, c);
+      });
+      return redirectResponse;
     }
   } catch {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.includes('-auth-token') || cookie.name.startsWith('sb-')) {
+        redirectResponse.cookies.set(cookie.name, '', { maxAge: 0, path: '/' });
+      }
+    });
+    return redirectResponse;
   }
 
   return response;

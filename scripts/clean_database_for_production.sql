@@ -1,14 +1,28 @@
 -- ======================================================================
--- OPSKL DATABASE CLEANUP SCRIPT
+-- OPSKL DATABASE CLEANUP SCRIPT (HARDENED)
 -- Cleans all demo / test data and preserves only the Administrator
+--
+-- SAFETY INVARIANT:
+-- To execute this destructive script, you MUST explicitly execute:
+--   SET opskil.confirm_destructive_clean = 'I_UNDERSTAND_THIS_DELETES_ALL_DATA';
+-- Otherwise the script will abort immediately without modifying any tables.
 -- ======================================================================
 
 BEGIN;
 
--- 1. Temporarily disable triggers that guard deletions or validations
-SET session_replication_role = 'replica';
+-- 1. Explicit destructive action confirmation guard
+DO $$
+BEGIN
+  IF current_setting('opskil.confirm_destructive_clean', true) IS DISTINCT FROM 'I_UNDERSTAND_THIS_DELETES_ALL_DATA' THEN
+    RAISE EXCEPTION 'DESTRUCTIVE CLEAN BLOCKED: scripts/clean_database_for_production.sql drops all operational data. To run this script, you must first execute: SET opskil.confirm_destructive_clean = ''I_UNDERSTAND_THIS_DELETES_ALL_DATA'';';
+  END IF;
 
--- 2. Clear all transactional & operational marketplace data
+  IF current_database() IN ('production', 'opskil_production') AND current_setting('opskil.allow_production_clean', true) IS DISTINCT FROM 'true' THEN
+    RAISE EXCEPTION 'DESTRUCTIVE ACTION BLOCKED: Target database "%" is marked as production. Explicit override is required: SET opskil.allow_production_clean = ''true'';', current_database();
+  END IF;
+END $$;
+
+-- 2. Clear all transactional & operational marketplace child data first (triggers remain safely enabled)
 TRUNCATE TABLE public.shift_messages CASCADE;
 TRUNCATE TABLE public.saved_jobs CASCADE;
 TRUNCATE TABLE public.swipe_events CASCADE;
@@ -71,10 +85,7 @@ ON CONFLICT (id) DO UPDATE SET
   is_active = true,
   updated_at = now();
 
--- 7. Reset replication role back to normal
-SET session_replication_role = 'origin';
-
 COMMIT;
 
--- 8. Notify PostgREST to reload schema cache
+-- 7. Notify PostgREST to reload schema cache
 NOTIFY pgrst, 'reload schema';

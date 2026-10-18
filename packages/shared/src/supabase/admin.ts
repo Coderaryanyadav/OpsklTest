@@ -138,7 +138,7 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
  */
 export async function resolveVerificationCaseSafe(
   caseId: string,
-  status: 'approved' | 'rejected',
+  status: 'approved' | 'rejected' | 'revoked' | 'expired',
   rejectionReason?: string,
   adminId?: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -158,6 +158,37 @@ export async function resolveVerificationCaseSafe(
 
     if (data && data.success === false) {
       return { success: false, error: data.error || 'Verification resolution failed' };
+    }
+
+    return { success: Boolean(data?.success ?? true) };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Authoritatively suspend or activate a user account with audit logging
+ */
+export async function adminSetUserStatusSafe(
+  userId: string,
+  isActive: boolean,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  logger.info('Updating user active status', { userId, isActive });
+
+  try {
+    const { data, error } = await getClient().rpc('admin_set_user_status_safe', {
+      p_user_id: userId,
+      p_is_active: isActive,
+      p_reason: reason ?? null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (data && data.success === false) {
+      return { success: false, error: data.error || 'Failed to update user status.' };
     }
 
     return { success: Boolean(data?.success ?? true) };

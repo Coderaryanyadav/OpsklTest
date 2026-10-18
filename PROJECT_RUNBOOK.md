@@ -143,8 +143,8 @@ Because both the Worker and Organizer apps are built with Expo, running them sim
    ```
    *Open [http://localhost:3000](http://localhost:3000) in your browser.*
    - **Admin Portal**: [http://localhost:3000/login](http://localhost:3000/login)
-   - **Default Admin Account**: `admin@opskil.com` / `AdminOpskil2026!`
-   - **Provision/Update Admin Script**: `node scripts/create_admin.mjs <email> <password>`
+   - **Administrator Account**: Configured via `ADMIN_EMAIL` and `ADMIN_PASSWORD` environment variables during provisioning
+   - **Provision/Update Admin Script**: `ADMIN_PASSWORD="<secure_password>" node scripts/create_admin.mjs [email]`
 
 ---
 

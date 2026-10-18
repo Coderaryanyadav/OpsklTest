@@ -12,7 +12,7 @@ import {
   Card,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
-import { fetchUserProfile, fetchWorkerProfile, supabase } from '@opskil/shared';
+import { fetchUserProfile, fetchWorkerProfile, supabase, classifyAuthError } from '@opskil/shared';
 
 type AuthMode = 'signin' | 'signup';
 type SignInMethod = 'otp' | 'password';
@@ -118,7 +118,7 @@ export default function WorkerLoginScreen() {
       setOtpSent(true);
       Alert.alert('OTP Dispatched', `A 6-digit verification code has been sent to ${trimmed}. Check your inbox or spam.`);
     } catch (err: any) {
-      Alert.alert('Authentication Error', err?.message || 'Unable to send verification OTP.');
+      Alert.alert('Authentication Error', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -140,7 +140,7 @@ export default function WorkerLoginScreen() {
         Alert.alert('Verification Pending', 'No session was returned by the auth service.');
       }
     } catch (err: any) {
-      Alert.alert('Verification Failed', err?.message || 'Invalid or expired OTP code.');
+      Alert.alert('Verification Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -159,7 +159,7 @@ export default function WorkerLoginScreen() {
         await handlePostAuthRoute(res.session.user.id);
       }
     } catch (err: any) {
-      Alert.alert('Sign-In Failed', err?.message || 'Invalid email or password.');
+      Alert.alert('Sign-In Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }

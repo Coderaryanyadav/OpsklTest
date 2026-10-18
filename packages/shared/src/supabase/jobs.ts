@@ -623,6 +623,7 @@ export async function createJobSafe(
         supervisor_phone: job.supervisorPhone,
         status: job.status ?? 'open',
       },
+      p_organizer_id: resolvedOrganizerId,
     });
 
     if (rpcError) {

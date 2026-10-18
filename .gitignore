@@ -28,10 +28,9 @@ ios/build/
 build/
 
 # Environment files
-.env*.local
 .env
-.env.production
-.env.preview
+.env.*
+.env*.local
 !.env.example
 !.env.production.template
 
@@ -49,8 +48,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# TypeScript
+# TypeScript & Framework
 *.tsbuildinfo
 next-env.d.ts
 .vercel
-.env*

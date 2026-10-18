@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(req: NextRequest) {
+  // Production safety guard: block unverified direct user creation shortcuts in production
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DIRECT_ORGANIZER_REGISTRATION !== 'true') {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Direct unverified account creation is disabled in production. Please use standard registration with email/phone verification.',
+      },
+      { status: 403 }
+    );
+  }
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json(
+      { success: false, error: 'Server authentication service is temporarily unavailable.' },
+      { status: 500 }
+    );
+  }
+
   try {
     const body = await req.json();
     const { email, password, businessName, phone } = body || {};
@@ -108,8 +126,12 @@ export async function POST(req: NextRequest) {
       message: 'Organizer account successfully created and activated.',
     });
   } catch (err: any) {
+    const safeError =
+      err?.message && !err.message.includes('key') && !err.message.includes('postgres') && !err.message.includes('password')
+        ? err.message
+        : 'Registration failed due to a server error. Please try again.';
     return NextResponse.json(
-      { success: false, error: err?.message || 'Internal server error during registration.' },
+      { success: false, error: safeError },
       { status: 500 }
     );
   }

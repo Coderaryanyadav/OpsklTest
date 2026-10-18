@@ -8,20 +8,20 @@ This document contains every credential, endpoint, environment variable, archite
 
 | Component | Port / Host | Description |
 |---|---|---|
-| **Admin Dashboard (Vercel)** | `https://admin-blue-beta-41.vercel.app` | Production Admin Operations Console |
+| **Admin Dashboard (Production)** | `https://admin.opskil.com` (configured via `NEXT_PUBLIC_APP_URL`) | Production Admin Operations Console |
 | **Admin Dashboard (Local)** | `http://localhost:3000` | Local Next.js 15 dev server |
 | **Worker Mobile App (Metro)** | `http://localhost:8081` | Expo Metro Bundler for Worker App |
 | **Organizer Mobile App (Metro)**| `http://localhost:8082` | Expo Metro Bundler for Organizer App |
-| **Remote Database** | `lericvniqdbvacgegrbp.supabase.co` | Supabase PostgreSQL + Auth + Realtime |
+| **Remote Database** | Configured via `DATABASE_URL` | Supabase PostgreSQL + Auth + Realtime |
 
 ---
 
 ## 2. Master Credentials
 
 ### Administrator (Trust & Operations Console)
-- **Portal URL**: `https://admin-blue-beta-41.vercel.app/login` (or `http://localhost:3000/login`)
-- **Email**: `admin@opskil.com`
-- **Password**: `OpsklAdmin#2026!`
+- **Portal URL**: `https://admin.opskil.com/login` (or `http://localhost:3000/login`)
+- **Email**: `admin@opskil.com` (or value of `ADMIN_EMAIL`)
+- **Password**: Configured securely via `ADMIN_PASSWORD` during provisioning (never committed)
 - **Role**: `admin`
 - **Capabilities**:
   - Worker KYC Document Approvals (Aadhaar / PAN)
@@ -77,7 +77,7 @@ The application strictly enforces the following end-to-end operational invariant
 2. Fills Profile & Submits KYC Document (Aadhaar / PAN)
 3. Status = 'pending' -> Discovery feed shows [KYC PENDING]
    * Applying for shifts is HARD-BLOCKED with KYC_NOT_VERIFIED
-4. Admin opens Admin Portal (https://admin-blue-beta-41.vercel.app)
+4. Admin opens Admin Portal (https://admin.opskil.com or http://localhost:3000)
    * Navigates to Verification Queue
    * Reviews document and clicks [Approve]
 5. Worker status becomes 'verified'
@@ -125,13 +125,14 @@ npm run typecheck
 Stored securely in `.env` and `.env.local`:
 
 ```ini
-EXPO_PUBLIC_SUPABASE_URL="https://lericvniqdbvacgegrbp.supabase.co"
+EXPO_PUBLIC_SUPABASE_URL="https://[PROJECT-REF].supabase.co"
 EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-DATABASE_URL="postgresql://postgres:[PASSWORD]@db.lericvniqdbvacgegrbp.supabase.co:5432/postgres"
+DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres"
 
 # Next.js Admin
-NEXT_PUBLIC_SUPABASE_URL="https://lericvniqdbvacgegrbp.supabase.co"
+NEXT_PUBLIC_APP_URL="https://admin.opskil.com"
+NEXT_PUBLIC_SUPABASE_URL="https://[PROJECT-REF].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 NEXT_PUBLIC_APP_ENV="production"
 ```

@@ -62,6 +62,15 @@ export function redactSensitiveData(obj: any): any {
   return obj;
 }
 
+function sanitizeErrorMessage(msg: string): string {
+  if (!msg) return msg;
+  // Redact connection strings with embedded passwords: postgresql://user:pass@host
+  let out = msg.replace(/(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@)/gi, '$1[REDACTED_PASSWORD]$3');
+  // Redact raw JWT tokens
+  out = out.replace(/ey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, '[REDACTED_JWT_TOKEN]');
+  return out;
+}
+
 export const logger = {
   info(message: string, context?: Record<string, any>): void {
     const sanitized = context ? redactSensitiveData(context) : undefined;
@@ -73,14 +82,14 @@ export const logger = {
     let extra = '';
     if (context) {
       sanitizedContext = redactSensitiveData(context);
-      extra = errorOrContext instanceof Error ? ` — ${errorOrContext.message}` : ` — ${String(errorOrContext)}`;
+      extra = errorOrContext instanceof Error ? ` — ${sanitizeErrorMessage(errorOrContext.message)}` : ` — ${sanitizeErrorMessage(String(errorOrContext))}`;
     } else if (errorOrContext) {
       if (errorOrContext instanceof Error) {
-        extra = ` — ${errorOrContext.message}`;
+        extra = ` — ${sanitizeErrorMessage(errorOrContext.message)}`;
       } else if (typeof errorOrContext === 'object') {
         sanitizedContext = redactSensitiveData(errorOrContext);
       } else {
-        extra = ` — ${String(errorOrContext)}`;
+        extra = ` — ${sanitizeErrorMessage(String(errorOrContext))}`;
       }
     }
     console.warn(`[OPSKL WARN] ${message}${extra}`, sanitizedContext ? JSON.stringify(sanitizedContext) : '');
@@ -99,7 +108,8 @@ export const logger = {
     } else {
       errMessage = String(error || '');
     }
-    console.error(`[OPSKL ERROR] ${message} — ${errMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+    const safeErrMessage = sanitizeErrorMessage(errMessage);
+    console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
   },
 
   debug(message: string, context?: Record<string, any>): void {

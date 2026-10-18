@@ -76,6 +76,21 @@ export const MobilePublicEnvSchema = z.object({
 export type MobilePublicEnv = z.infer<typeof MobilePublicEnvSchema>;
 
 /**
+ * Web Dashboard Safe Public Environment Variable Schema
+ * Enforces strict isolation: privileged secrets must never use NEXT_PUBLIC_ prefix.
+ */
+export const WebPublicEnvSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url('NEXT_PUBLIC_SUPABASE_URL must be a valid URL'),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  NEXT_PUBLIC_APP_ENV: z.enum(['development', 'preview', 'production']).default('development'),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_DEFAULT_CITY: z.string().default('Mumbai'),
+  NEXT_PUBLIC_TIMEZONE: z.string().default('Asia/Kolkata'),
+});
+
+export type WebPublicEnv = z.infer<typeof WebPublicEnvSchema>;
+
+/**
  * Server Environment Variable Schema (Admin / Server functions only)
  */
 export const ServerEnvSchema = z.object({

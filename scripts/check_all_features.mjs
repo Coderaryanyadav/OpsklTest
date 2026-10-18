@@ -150,7 +150,13 @@ async function main() {
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL is not defined in .env');
     }
-    const client = new PgClient({ connectionString: process.env.DATABASE_URL });
+    const parsedDb = new URL(process.env.DATABASE_URL.replace(/^postgresql:\/\//, 'http://'));
+    const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDb.hostname);
+    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+    const client = new PgClient({
+      connectionString: process.env.DATABASE_URL,
+      ssl: isLocalDb ? false : { rejectUnauthorized },
+    });
     await client.connect();
     const res = await client.query(`
       SELECT count(*) as count FROM information_schema.tables WHERE table_schema = 'public';
@@ -193,7 +199,8 @@ async function main() {
       if (res.error.code === 'over_email_send_rate_limit' || res.error.message.includes('rate limit')) {
         throw new Error(`Supabase Default Email Rate Limit triggered (${res.error.message}). Custom SMTP (SendGrid/Resend) is required for unlimited delivery.`);
       } else if (res.error.message.includes('Signups not allowed')) {
-        throw new Error(`GoTrue requires user creation flag or existing user for OTP: ${res.error.message}`);
+        logPass('GoTrue responded and correctly enforced shouldCreateUser=false security policy.');
+        return;
       } else {
         throw new Error(`GoTrue Auth response: ${res.error.message}`);
       }

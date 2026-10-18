@@ -12,7 +12,7 @@ import {
   Card,
   KeyboardAwareContainer,
 } from '@opskil/design-system';
-import { fetchUserProfile, supabase } from '@opskil/shared';
+import { fetchUserProfile, supabase, classifyAuthError } from '@opskil/shared';
 
 type AuthMode = 'signin' | 'signup';
 type SignInMethod = 'otp' | 'password';
@@ -121,7 +121,7 @@ export default function OrganizerLoginScreen() {
       setOtpSent(true);
       Alert.alert('OTP Sent', `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox.`);
     } catch (err: any) {
-      Alert.alert('Authentication Status', err?.message || 'Unable to dispatch Email OTP.');
+      Alert.alert('Authentication Status', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -143,7 +143,7 @@ export default function OrganizerLoginScreen() {
         Alert.alert('Verification Pending', 'No session was returned by Supabase.');
       }
     } catch (err: any) {
-      Alert.alert('Verification Failed', err?.message || 'Invalid or expired OTP code.');
+      Alert.alert('Verification Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -162,7 +162,7 @@ export default function OrganizerLoginScreen() {
         await handlePostAuthRoute(res.session.user.id);
       }
     } catch (err: any) {
-      Alert.alert('Sign-In Failed', err?.message || 'Invalid email or password.');
+      Alert.alert('Sign-In Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }

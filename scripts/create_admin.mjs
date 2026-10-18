@@ -23,10 +23,23 @@ const adminClient = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+const parsedDbUrl = new URL(connectionString.replace(/^postgresql:\/\//, 'http://'));
+const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDbUrl.hostname);
+
+if (process.env.NODE_ENV === 'production' && !isLocalDb) {
+  if (process.env.CONFIRM_PRODUCTION_ADMIN_PROVISIONING !== 'true') {
+    console.error('\x1b[31m[PRODUCTION SAFETY GUARD BLOCKED EXECUTION]\x1b[0m');
+    console.error(`Database target '${parsedDbUrl.hostname}' is a remote production database.`);
+    console.error('To provision or update an administrator in production, you must explicitly confirm:');
+    console.error('  CONFIRM_PRODUCTION_ADMIN_PROVISIONING=true');
+    process.exit(1);
+  }
+}
+
 const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
 const pgClient = new pg.Client({
   connectionString,
-  ssl: { rejectUnauthorized },
+  ssl: isLocalDb ? false : { rejectUnauthorized },
 });
 
 async function run() {
@@ -60,27 +73,18 @@ async function run() {
     userId = data.user.id;
   }
 
-  // 2. Authoritatively elevate role in profiles table (bypassing user-level role escalation trigger)
+  // 2. Authoritatively elevate role in profiles table (permitted for postgres/service_role without disabling triggers)
   console.log('Elevating profile role to admin in PostgreSQL...');
-  try {
-    await pgClient.query('ALTER TABLE profiles DISABLE TRIGGER trg_prevent_role_escalation;');
-    await pgClient.query(
-      `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
-       VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
-       ON CONFLICT (id) DO UPDATE SET 
-         role = 'admin',
-         full_name = 'Opskl Administrator',
-         is_active = true,
-         updated_at = now();`,
-      [userId, adminEmail]
-    );
-  } finally {
-    try {
-      await pgClient.query('ALTER TABLE profiles ENABLE TRIGGER trg_prevent_role_escalation;');
-    } catch (e) {
-      console.error('Warning: Failed to re-enable trg_prevent_role_escalation trigger:', e.message);
-    }
-  }
+  await pgClient.query(
+    `INSERT INTO profiles (id, role, full_name, email, city, is_active, created_at, updated_at)
+     VALUES ($1, 'admin', 'Opskl Administrator', $2, 'Mumbai', true, now(), now())
+     ON CONFLICT (id) DO UPDATE SET 
+       role = 'admin',
+       full_name = 'Opskl Administrator',
+       is_active = true,
+       updated_at = now();`,
+    [userId, adminEmail]
+  );
 
   console.log('\x1b[32m✓ Administrator provisioned and authorized successfully!\x1b[0m');
   console.log(`\nPortal URL: http://localhost:3000/login`);

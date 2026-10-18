@@ -11,6 +11,27 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get('error');
+      if (err === 'missing_configuration') {
+        setErrorMsg('Configuration error: Live administrative backend credentials are not configured.');
+      } else if (err === 'unauthorized_role') {
+        setErrorMsg('Access denied: Active administrator credentials required for this portal.');
+      }
+
+      // Proactively purge any corrupted/expired refresh token stored locally
+      adminSupabase.auth.getSession().then(({ error }) => {
+        if (error) {
+          adminSupabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        }
+      }).catch(() => {
+        adminSupabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      });
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -46,7 +67,6 @@ export default function AdminLoginPage() {
           return;
         }
 
-        document.cookie = 'opskil_test_session=admin; path=/; max-age=86400; SameSite=Lax';
         const params = new URLSearchParams(window.location.search);
         const redirectUrl = params.get('redirect') || '/';
         window.location.href = redirectUrl;

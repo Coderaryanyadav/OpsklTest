@@ -82,7 +82,7 @@ async function main() {
   const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
   const pg = new PgClient({
     connectionString: dbUrl,
-    ssl: isLocalDb ? false : { rejectUnauthorized: false }, // Supports Supabase pooler TLS
+    ssl: isLocalDb ? false : { rejectUnauthorized },
   });
   await pg.connect();
   console.log(`${colors.green}✓ Connected directly to PostgreSQL Pooler${colors.reset}`);

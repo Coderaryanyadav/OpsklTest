@@ -8,8 +8,8 @@ test.describe('Opskl Admin Web Dashboard E2E Operations', () => {
     await page.goto('/login');
     const emailInput = page.locator('input[type="email"]');
     if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await emailInput.fill('admin@opskil.com');
-      await page.fill('input[type="password"]', 'AdminOpskil2026!');
+      await emailInput.fill(process.env.ADMIN_EMAIL || 'admin@opskil.com');
+      await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
       await page.click('button[type="submit"]');
       await page.waitForURL('/', { timeout: 10000 });
     }

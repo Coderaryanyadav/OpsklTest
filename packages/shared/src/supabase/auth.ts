@@ -40,12 +40,183 @@ export interface VerifyEmailOtpParams {
   expectedRole?: UserRole;
 }
 
+export const OTP_COOLDOWN_SECONDS = 30;
+export const MAX_OTP_FAILED_ATTEMPTS = 5;
+
+const otpDispatchTimestamps = new Map<string, number>();
+const otpFailedAttempts = new Map<string, number>();
+
+export type AuthErrorKind =
+  | 'network'
+  | 'invalid_credentials'
+  | 'unverified_account'
+  | 'expired_session'
+  | 'rate_limited'
+  | 'account_deactivated'
+  | 'unknown';
+
+export interface ClassifiedAuthError {
+  kind: AuthErrorKind;
+  message: string;
+  originalError?: any;
+}
+
+export function classifyAuthError(error: any): ClassifiedAuthError {
+  if (!error) {
+    return { kind: 'unknown', message: 'An unknown error occurred.' };
+  }
+
+  const rawMsg = (typeof error === 'string' ? error : error?.message || error?.error_description || String(error)).toLowerCase();
+
+  // 1. Network / connectivity errors
+  if (
+    rawMsg.includes('network') ||
+    rawMsg.includes('failed to fetch') ||
+    rawMsg.includes('fetch failed') ||
+    rawMsg.includes('timeout') ||
+    rawMsg.includes('econnrefused') ||
+    rawMsg.includes('internet connection') ||
+    error?.status === 0
+  ) {
+    return {
+      kind: 'network',
+      message: 'Network connection issue. Please check your internet connection and try again.',
+      originalError: error,
+    };
+  }
+
+  // 2. Rate limit / abuse protection
+  if (
+    rawMsg.includes('rate limit') ||
+    rawMsg.includes('too many requests') ||
+    rawMsg.includes('over_email_send_rate_limit') ||
+    rawMsg.includes('over_sms_send_rate_limit') ||
+    error?.status === 429
+  ) {
+    return {
+      kind: 'rate_limited',
+      message: 'Too many requests. Please wait a moment before trying again.',
+      originalError: error,
+    };
+  }
+
+  // 3. Unverified account
+  if (
+    rawMsg.includes('email not confirmed') ||
+    rawMsg.includes('phone not confirmed') ||
+    rawMsg.includes('unconfirmed') ||
+    rawMsg.includes('confirmation required')
+  ) {
+    return {
+      kind: 'unverified_account',
+      message: 'Your account is not verified yet. Please check your email/SMS for verification instructions.',
+      originalError: error,
+    };
+  }
+
+  // 4. Expired session
+  if (
+    rawMsg.includes('jwt expired') ||
+    rawMsg.includes('session expired') ||
+    rawMsg.includes('token is expired') ||
+    rawMsg.includes('invalid claim')
+  ) {
+    return {
+      kind: 'expired_session',
+      message: 'Your session has expired. Please sign in again.',
+      originalError: error,
+    };
+  }
+
+  // 5. Account deactivated
+  if (
+    rawMsg.includes('deactivated') ||
+    rawMsg.includes('banned') ||
+    rawMsg.includes('suspended') ||
+    rawMsg.includes('scheduled for deletion')
+  ) {
+    return {
+      kind: 'account_deactivated',
+      message: 'This account has been deactivated or suspended.',
+      originalError: error,
+    };
+  }
+
+  // 6. Invalid credentials / OTP
+  if (
+    rawMsg.includes('invalid login credentials') ||
+    rawMsg.includes('invalid grant') ||
+    rawMsg.includes('invalid otp') ||
+    rawMsg.includes('token has expired or is invalid') ||
+    rawMsg.includes('wrong password') ||
+    rawMsg.includes('user not found')
+  ) {
+    return {
+      kind: 'invalid_credentials',
+      message: 'Invalid credentials or verification code. Please check and try again.',
+      originalError: error,
+    };
+  }
+
+  return {
+    kind: 'unknown',
+    message: typeof error?.message === 'string' ? error.message : 'Authentication operation failed.',
+    originalError: error,
+  };
+}
+
+export function checkOtpResendAllowed(identifier: string): { allowed: boolean; waitSeconds?: number } {
+  const key = identifier.trim().toLowerCase();
+  const last = otpDispatchTimestamps.get(key);
+  if (!last) return { allowed: true };
+  const elapsed = (Date.now() - last) / 1000;
+  if (elapsed < OTP_COOLDOWN_SECONDS) {
+    return { allowed: false, waitSeconds: Math.ceil(OTP_COOLDOWN_SECONDS - elapsed) };
+  }
+  return { allowed: true };
+}
+
+export function recordOtpDispatched(identifier: string): void {
+  const key = identifier.trim().toLowerCase();
+  otpDispatchTimestamps.set(key, Date.now());
+  otpFailedAttempts.delete(key);
+}
+
+export function checkOtpAttemptsAllowed(identifier: string): { allowed: boolean; remainingAttempts: number } {
+  const key = identifier.trim().toLowerCase();
+  const attempts = otpFailedAttempts.get(key) || 0;
+  if (attempts >= MAX_OTP_FAILED_ATTEMPTS) {
+    return { allowed: false, remainingAttempts: 0 };
+  }
+  return { allowed: true, remainingAttempts: MAX_OTP_FAILED_ATTEMPTS - attempts };
+}
+
+export function recordFailedOtpAttempt(identifier: string): number {
+  const key = identifier.trim().toLowerCase();
+  const current = (otpFailedAttempts.get(key) || 0) + 1;
+  otpFailedAttempts.set(key, current);
+  return current;
+}
+
+export function resetOtpAttempts(identifier: string): void {
+  const key = identifier.trim().toLowerCase();
+  otpFailedAttempts.delete(key);
+}
+
 /**
  * Sign in / send 6-digit OTP to Email (Gmail) address with role-aware onboarding metadata.
  */
 export async function signInWithEmailOtp({ email, role, fullName }: EmailOtpSignInParams) {
   const normalizedEmail = email.trim().toLowerCase();
   logger.info('Initiating Email/Gmail OTP sign-in', { email: normalizedEmail, role });
+
+  const throttleCheck = checkOtpResendAllowed(normalizedEmail);
+  if (!throttleCheck.allowed) {
+    const waitMsg = `Please wait ${throttleCheck.waitSeconds} seconds before requesting a new OTP code.`;
+    const err: any = new Error(waitMsg);
+    err.status = 429;
+    throw err;
+  }
 
   const metadata: Record<string, any> = {};
   if (role) {
@@ -68,6 +239,7 @@ export async function signInWithEmailOtp({ email, role, fullName }: EmailOtpSign
     throw error;
   }
 
+  recordOtpDispatched(normalizedEmail);
   return data;
 }
 
@@ -79,6 +251,13 @@ export async function verifyEmailOtp({ email, token }: VerifyEmailOtpParams) {
   const normalizedEmail = email.trim().toLowerCase();
   const cleanToken = token.replace(/\D/g, '').trim();
   logger.info('Verifying Email/Gmail OTP token', { email: normalizedEmail });
+
+  const attemptsCheck = checkOtpAttemptsAllowed(normalizedEmail);
+  if (!attemptsCheck.allowed) {
+    const err: any = new Error('Too many failed verification attempts. Please request a new OTP code.');
+    err.status = 429;
+    throw err;
+  }
 
   // 1. Attempt standard email sign-in OTP verification
   let { data, error } = await supabase.auth.verifyOtp({
@@ -124,10 +303,12 @@ export async function verifyEmailOtp({ email, token }: VerifyEmailOtpParams) {
   }
 
   if (error) {
+    recordFailedOtpAttempt(normalizedEmail);
     logger.error('Email OTP verification failed', error, { email: normalizedEmail });
     throw error;
   }
 
+  resetOtpAttempts(normalizedEmail);
   return data;
 }
 
@@ -138,6 +319,14 @@ export async function signInWithPhoneOtp({ phone }: PhoneSignInParams) {
   const formattedPhone = normalizeIndianPhone(phone);
   logger.info('Initiating Phone OTP sign-in', { phone: formattedPhone });
 
+  const throttleCheck = checkOtpResendAllowed(formattedPhone);
+  if (!throttleCheck.allowed) {
+    const waitMsg = `Please wait ${throttleCheck.waitSeconds} seconds before requesting a new OTP code.`;
+    const err: any = new Error(waitMsg);
+    err.status = 429;
+    throw err;
+  }
+
   const { data, error } = await supabase.auth.signInWithOtp({
     phone: formattedPhone,
   });
@@ -147,6 +336,7 @@ export async function signInWithPhoneOtp({ phone }: PhoneSignInParams) {
     throw error;
   }
 
+  recordOtpDispatched(formattedPhone);
   return data;
 }
 
@@ -157,6 +347,13 @@ export async function verifyPhoneOtp({ phone, token }: VerifyOtpParams) {
   const formattedPhone = normalizeIndianPhone(phone);
   logger.info('Verifying Phone OTP token');
 
+  const attemptsCheck = checkOtpAttemptsAllowed(formattedPhone);
+  if (!attemptsCheck.allowed) {
+    const err: any = new Error('Too many failed verification attempts. Please request a new OTP code.');
+    err.status = 429;
+    throw err;
+  }
+
   const { data, error } = await supabase.auth.verifyOtp({
     phone: formattedPhone,
     token: token.trim(),
@@ -164,10 +361,12 @@ export async function verifyPhoneOtp({ phone, token }: VerifyOtpParams) {
   });
 
   if (error) {
+    recordFailedOtpAttempt(formattedPhone);
     logger.error('Phone OTP verification failed', error);
     throw error;
   }
 
+  resetOtpAttempts(formattedPhone);
   return data;
 }
 

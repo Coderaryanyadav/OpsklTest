@@ -1,5 +1,5 @@
-import { redactSensitiveData } from '../utils/logger';
-import { MobilePublicEnvSchema, ServerEnvSchema } from '../schemas';
+import { redactSensitiveData, logger } from '../utils/logger';
+import { MobilePublicEnvSchema, WebPublicEnvSchema, ServerEnvSchema } from '../schemas';
 
 describe('Phase 2 Security, Authorization & Privacy Controls', () => {
   describe('Private Credential Isolation', () => {
@@ -8,6 +8,7 @@ describe('Phase 2 Security, Authorization & Privacy Controls', () => {
         EXPO_PUBLIC_SUPABASE_URL: 'https://opskil.supabase.co',
         EXPO_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_token_1234567890',
         EXPO_PUBLIC_APP_ENV: 'development',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_service_role_secret',
       };
 
       const result = MobilePublicEnvSchema.safeParse(publicPayload);
@@ -15,6 +16,23 @@ describe('Phase 2 Security, Authorization & Privacy Controls', () => {
 
       // Verify server secrets are NOT accepted or exposed in public schema
       expect((result as any).data?.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
+    });
+
+    test('Web public environment schema rejects service-role keys and database URLs', () => {
+      const webPayload: Record<string, string> = {
+        NEXT_PUBLIC_SUPABASE_URL: 'https://opskil.supabase.co',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_token_1234567890',
+        NEXT_PUBLIC_APP_ENV: 'development',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_service_role_secret',
+        DATABASE_URL: 'postgresql://postgres:password@localhost:5432/postgres',
+      };
+
+      const result = WebPublicEnvSchema.safeParse(webPayload);
+      expect(result.success).toBe(true);
+
+      // Verify server secrets are NOT accepted or exposed in public web schema
+      expect((result as any).data?.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
+      expect((result as any).data?.DATABASE_URL).toBeUndefined();
     });
 
     test('Server environment schema strictly requires service-role key', () => {
@@ -43,6 +61,20 @@ describe('Phase 2 Security, Authorization & Privacy Controls', () => {
       expect(sanitized.otp).toBe('[REDACTED]');
       expect(sanitized.token).toBe('[REDACTED]');
       expect(sanitized.normalField).toBe('John Doe');
+    });
+
+    test('Diagnostic logger strips database passwords and JWT tokens from error strings', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      const errorWithDbUrl = new Error('Connection failed: postgresql://postgres:SecretDatabasePassword123@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres');
+      logger.error('DB Connection', errorWithDbUrl);
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      const loggedOutput = consoleErrorSpy.mock.calls[0][0];
+      expect(loggedOutput).not.toContain('SecretDatabasePassword123');
+      expect(loggedOutput).toContain('[REDACTED_PASSWORD]');
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
