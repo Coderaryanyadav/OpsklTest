@@ -9,6 +9,31 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const migrationsDir = path.join(rootDir, 'supabase', 'migrations');
 
+// Parse .env if present
+try {
+  const envPath = path.join(rootDir, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        let val = trimmed.slice(idx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch {
+  // Ignore errors reading local .env
+}
+
 const connectionString = process.env.DATABASE_URL || process.argv[2];
 
 if (!connectionString) {
@@ -31,7 +56,7 @@ if (process.env.NODE_ENV === 'production' && !isLocalDb) {
   }
 }
 
-const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
 const client = new pg.Client({
   connectionString,
   ssl: isLocalDb ? false : { rejectUnauthorized },

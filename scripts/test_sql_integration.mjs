@@ -11,6 +11,31 @@ const hardeningMigrationPath = path.join(rootDir, 'supabase', 'migrations', '202
 const adminGuardMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261017000000_safe_admin_role_escalation_guard.sql');
 const phase2MigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261017000001_shift_creation_and_rpc_hardening.sql');
 
+// Parse .env if present
+try {
+  const envPath = path.join(rootDir, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const key = trimmed.slice(0, idx).trim();
+        let val = trimmed.slice(idx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch {
+  // Ignore errors reading local .env
+}
+
 const connectionString = process.env.DATABASE_URL || process.argv[2];
 
 async function run() {
@@ -157,7 +182,7 @@ async function run() {
     console.log(`\nConnecting to test database at ${liveDbUrl.split('@')[1] || 'database'}...`);
     const parsedDb = new URL(liveDbUrl.replace(/^postgresql:\/\//, 'http://'));
     const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDb.hostname);
-    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
     const client = new pg.Client({
       connectionString: liveDbUrl,
       ssl: isLocalDb ? false : { rejectUnauthorized },
