@@ -94,14 +94,23 @@ export default function OrganizerProfileScreen() {
       return;
     }
     const trimmedGstin = formGstin.trim().toUpperCase();
-    const gstinChanged = !!trimmedGstin && trimmedGstin !== (organizerData?.gstin || '').toUpperCase();
+    const gstinChanged =
+      !!trimmedGstin && trimmedGstin !== (organizerData?.gstin || '').toUpperCase();
+    // Resubmit when GSTIN is present but no active review exists (covers partial-failure stuck state:
+    // profile GSTIN saved, upload/case failed, later saves skipped because gstinChanged was false).
+    const verificationStatus = organizerData?.verificationStatus;
+    const gstinNeedsCase =
+      !!trimmedGstin &&
+      (gstinChanged ||
+        (verificationStatus !== 'verified' && verificationStatus !== 'pending'));
+
     if (trimmedGstin) {
       const gstinResult = GstinSchema.safeParse(trimmedGstin);
       if (!gstinResult.success) {
         setEditError('Please enter a valid 15-character Indian GSTIN (e.g. 27AABCA1234F1Z5)');
         return;
       }
-      if (gstinChanged && !gstinAcknowledged) {
+      if (gstinNeedsCase && !gstinAcknowledged) {
         setEditError('Confirm GSTIN text submission below. Gallery PDF upload is not enabled in this build.');
         return;
       }
@@ -109,16 +118,9 @@ export default function OrganizerProfileScreen() {
     setSaving(true);
     setEditError(null);
     try {
-      await updateOrganizerProfile(userId, {
-        businessName: formBusinessName.trim(),
-        gstin: trimmedGstin || undefined,
-        billingAddress: formBillingAddress.trim() || undefined,
-        contactPhone: formContactPhone.trim() || undefined,
-        profileCompletionStatus: 'completed',
-      });
-
-      if (gstinChanged && trimmedGstin) {
-        // Honest GSTIN text submission — no gallery PDF. Backend still stores a text evidence marker.
+      // Submit KYC evidence BEFORE persisting GSTIN on the profile so a storage/RPC failure
+      // cannot leave an organizer with a saved GSTIN and no admin review case.
+      if (gstinNeedsCase && trimmedGstin) {
         const certificateBlob = `GSTIN_TEXT_SUBMISSION_${trimmedGstin}_${userId}_${Date.now()}`;
         const uploadRes = await uploadVerificationDocument(
           userId,
@@ -142,12 +144,20 @@ export default function OrganizerProfileScreen() {
         }
       }
 
+      await updateOrganizerProfile(userId, {
+        businessName: formBusinessName.trim(),
+        gstin: trimmedGstin || undefined,
+        billingAddress: formBillingAddress.trim() || undefined,
+        contactPhone: formContactPhone.trim() || undefined,
+        profileCompletionStatus: 'completed',
+      });
+
       const updated = await fetchOrganizerProfile(userId);
       setOrganizerData(updated);
       setEditModalVisible(false);
       OpsklAlert.alert(
         'Profile Updated',
-        gstinChanged
+        gstinNeedsCase
           ? 'Organization details saved. GSTIN was submitted as text for admin review (no PDF file attached).'
           : 'Organization profile details have been saved.'
       );

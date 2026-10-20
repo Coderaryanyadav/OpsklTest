@@ -120,6 +120,18 @@ export async function submitVerificationCaseSafe(
 }
 
 /**
+ * Maps a MIME content type to the storage object file extension.
+ * Plain-text GSTIN evidence must not be stored as `.pdf` (admin review / Content-Type mismatch).
+ */
+export function resolveVerificationDocumentExtension(contentType: string = 'application/pdf'): string {
+  const ct = (contentType || '').toLowerCase();
+  if (ct.includes('png')) return 'png';
+  if (ct.includes('jpeg') || ct.includes('jpg')) return 'jpg';
+  if (ct.includes('text') || ct.includes('plain')) return 'txt';
+  return 'pdf';
+}
+
+/**
  * Uploads a verification document (PDF/Image) to the private verification-documents bucket.
  * The storage path is strictly user-scoped to `${userId}/kyc_${documentType}_${Date.now()}.${extension}`.
  */
@@ -130,11 +142,7 @@ export async function uploadVerificationDocument(
   contentType: string = 'application/pdf'
 ): Promise<{ success: boolean; storagePath?: string; error?: string }> {
   try {
-    const extension = contentType.includes('png')
-      ? 'png'
-      : contentType.includes('jpeg') || contentType.includes('jpg')
-      ? 'jpg'
-      : 'pdf';
+    const extension = resolveVerificationDocumentExtension(contentType);
     const storagePath = `${userId}/kyc_${documentType}_${Date.now()}.${extension}`;
 
     const { error } = await supabase.storage
