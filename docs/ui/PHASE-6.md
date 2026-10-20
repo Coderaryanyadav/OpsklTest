@@ -1,91 +1,55 @@
-# OPSKL UI/UX — PHASE 6: Responsiveness, Accessibility & Interaction Repair
+# OPSKL UI/UX — PHASE 6: Keyboard, Accessibility & Safe Area
 
 **Date:** 2026-10-20  
-**Scope:** Worker Expo, Organizer Expo, Next.js Admin, and shared `@opskil/design-system`  
-**Constraint:** Preserve business logic and server-confirmed success paths. No fake data. Status must remain readable without color alone. Touch targets ≥ 44px where interactive.
+**Status:** Essentials complete (documented during Phase 7 QA). `PHASE-6.md` was missing at QA start; this records what was already in tree plus fixes applied in the Phase 7 pass.
+
+**Scope:** Cross-app polish after Worker / Organizer / Admin redesigns — keyboard avoidance, touch targets, tab safe areas, screen-reader labels, modal a11y, loading/error honesty.
 
 ---
 
-## Audit summary
+## Checklist
 
-Post-redesign screens were reviewed for layout overflow, keyboard occlusion, double-submit, missing error recovery, VoiceOver/TalkBack labels, focus visibility (Admin), and cross-app consistency with Phase 3–5 monochrome patterns.
-
-| Severity | Theme | Apps |
-| :--- | :--- | :--- |
-| High | Tab bar overlapped home indicator / keyboard | Worker, Organizer |
-| High | Chat / form modals not keyboard-aware | Worker My Shifts, Organizer Shift detail |
-| High | Check-in double-submit possible | Worker My Shifts |
-| High | Chat load failure silent | Worker My Shifts |
-| Medium | Titles clipped at `numberOfLines={1}` | Discover, sheets, ShiftCard, cards |
-| Medium | Filter / icon Pressables unlabeled | FilterSheet, Discover, chat report |
-| Medium | RN Modal missing dialog semantics | Worker / Organizer modals |
-| Medium | Dark `textMuted` contrast | Design-system tokens |
-| Medium | Admin keyboard focus / reduced motion | Admin `globals.css` |
-| Low | Lifecycle tabs without `accessibilityRole="tab"` | Worker My Shifts |
-
----
-
-## Issues found → fixes
-
-| Issue | Fix | Location |
-| :--- | :--- | :--- |
-| Tab bar unsafe area / keyboard | `useSafeAreaInsets` bottom pad + `tabBarHideOnKeyboard` | `apps/worker\|organizer/app/(tabs)/_layout.tsx` |
-| Chat modal keyboard occlusion | Wrap in `KeyboardAwareContainer`; `keyboardShouldPersistTaps` | Worker `my-shifts.tsx`, Organizer `shift/[id].tsx` |
-| Check-in double tap | `checkInBusyId` lock + Button `loading`/`disabled` | Worker `my-shifts.tsx` |
-| Chat fetch errors swallowed | `chatLoadError` + `ErrorRetry` | Worker `my-shifts.tsx` |
-| Title clipping | Prefer `numberOfLines={2}` on titles / venues / names | Discover, JobDetailSheet, ShiftCard, SwipeCard, WorkerCard, ApplicantRow, ScreenHeader |
-| Unlabeled controls | `accessibilityLabel` / `accessibilityRole` / `selected` state | FilterSheet chips, Discover Profile/Undo, lifecycle tabs, report flag |
-| Modal a11y | `accessibilityViewIsModal` + `onRequestClose` | Worker/Organizer modals, FilterSheet, JobDetailSheet |
-| Live regions | ErrorRetry assertive; Input a11y label fallback | Design-system `ErrorRetry`, `Input` |
-| Dark muted contrast | `textMuted` / secondary → `#A3A3A3` | `packages/design-system/src/tokens/colors.ts` |
-| Admin focus ring absent | `:focus-visible` on controls/inputs | `apps/admin/src/app/globals.css` |
-| Admin motion | `prefers-reduced-motion: reduce` short-circuits transitions | `apps/admin/src/app/globals.css` |
-| Send/Broadcast empty spam | Disable when input blank or sending | Worker chat, Organizer broadcast |
+| Item | Status | Notes |
+| :--- | :---: | :--- |
+| Tab bar safe-area padding (Worker + Organizer) | Fixed | `useSafeAreaInsets` + `tabBarHideOnKeyboard`; height includes bottom inset |
+| `BottomTabBar` DS component safe area + roles | Fixed | `accessibilityRole="tablist"/"tab"`, `accessibilityState.selected`, inset padding |
+| Tab `tabBarAccessibilityLabel`s | Fixed | Discover / My Shifts / Earnings / Profile; Shifts / Post / Roster / Finances / Profile |
+| `KeyboardAwareContainer` on auth + long forms | Fixed | Worker/Organizer login; onboarding; profile edit; chat/forgot modals |
+| Touch targets ≥ 44 via `touchTarget` tokens | Fixed (mostly) | Organizer dashboard uses `touchTarget.min`; worker headers retain `hitSlop` |
+| Modal `accessibilityViewIsModal` | Fixed | Added across Worker/Organizer modals; single-line JSX reformatted after Expo web SyntaxError |
+| Status never color-only | Fixed | `StatusIndicator` / badges with text labels on shift detail, chat, queues |
+| Chat load error surfaced | Fixed | `ErrorRetry` wired to `chatLoadError` in worker My Shifts chat modal |
+| Admin sidebar Sign out a11y | Fixed | `aria-label` / `title`; 44×44 hit area; CSS vars instead of raw `#A3A3A3` |
+| Screen reader coverage on every control | Remaining | Many icon-only buttons have labels; not exhaustively audited with VoiceOver/TalkBack |
+| Focus order / trap in all modals | Remaining | Escape/backdrop on Admin modals; RN Modal focus trap not fully verified on web |
+| Dynamic type / large text | Remaining | Not systematically tested |
+| Reduced motion | Remaining | Motion tokens exist; no `prefers-reduced-motion` wiring |
 
 ---
 
-## Cross-app consistency
+## Issues found
 
-- Shared `ErrorRetry`, `KeyboardAwareContainer`, `ScreenHeader` (2-line titles), status-with-text patterns reused across Worker/Organizer.
-- Chat modals both keyboard-aware; send actions gated while busy.
-- Filter/tab chips use 44px min height and selected accessibility state.
-- Admin keeps CSS-variable monochrome language from Phase 5; focus/motion hardening only (no RN imports).
-
----
-
-## Remaining limitations
-
-- Native RN `Modal` still lacks full web `role="dialog"` / focus-trap parity; `accessibilityViewIsModal` is the platform equivalent.
-- Organizer shift chat does not yet surface a dedicated load-error retry UI (Worker chat does).
-- Some dense Admin table cells remain single-line for layout density; truncation is intentional.
-- SegmentedControl / Select / DocumentUpload keep single-line labels by design.
-- Full automated a11y suite (axe / Detox VoiceOver) not added in this phase; rely on Playwright Admin e2e + unit tests + manual checklist below.
+1. **Expo web SyntaxError on Worker login** — single-line `<Modal … onRequestClose={() => …} accessibilityViewIsModal>` confused the bundler (`apps/worker/app/auth/login.tsx`). Blocked Worker web until reformatted multiline. Same pattern normalized on Organizer login, shift detail, finances, Worker earnings / my-shifts.
+2. **`chatLoadError` set but unread** — typecheck / honesty gap; fixed with `ErrorRetry`.
+3. **Brutal invariant tests brittle after redesign** — expected ALL-CAPS copy and literal `width: 44` (see Phase 7). Updated assertions to match sentence-case `StatusIndicator` labels and `touchTarget.min`.
+4. **Admin sidebar decorative hex** — `#262626` / `#A3A3A3` in footer; switched toward CSS variables.
 
 ---
 
-## Manual a11y checklist
+## Issues remaining
 
-- [ ] Worker: Discover filter sheet — every chip announces name + selected state
-- [ ] Worker: My Shifts tabs — selected tab announced; check-in button shows busy and blocks double tap
-- [ ] Worker: Chat — keyboard does not cover Send; failed load shows ErrorRetry
-- [ ] Worker/Organizer: Tab bar clears home indicator; hides when keyboard open
-- [ ] Organizer: Shift broadcast — keyboard-aware; Broadcast disabled when empty
-- [ ] Admin: Tab through sidebar/buttons/inputs — visible focus ring
-- [ ] Admin: OS reduced-motion — shell transitions essentially instant
-- [ ] Dark mode: secondary/muted text readable on near-black surfaces
+- Guest can briefly flash protected Organizer tabs (e.g. `/create`) before `_layout` auth effect redirects — race, not intentional guest create.
+- Worker My Shifts / Earnings / Profile: layout redirects guests to login; empty “guest” UI in screens is mostly unreachable but still present.
+- No automated a11y suite (axe / RN accessibility tests).
+- Admin authenticated modules not keyboard-tab audited in this pass (no admin session for visual QA).
+- Expo web screenshot tooling letterboxes phone emulation on a wider canvas — visual review used CDP `innerWidth` + snapshots, not only PNG framing.
 
 ---
 
-## Verification
+## Verification (Phase 6 essentials)
 
-| Suite | Command | Result |
-| :--- | :--- | :--- |
-| Worker unit | `npm --workspace=@opskil/worker test` | Pass — 22 tests |
-| Organizer unit | `npm --workspace=@opskil/organizer test` | Pass — 18 tests |
-| Admin e2e | `npm run test:e2e:admin` | Pass — 5/5 Playwright |
-
----
-
-## Out of scope (Phase 7)
-
-Visual polish pass, screenshot manifesto, store listing assets, and final cross-app regression capture are deferred to Phase 7.
+| Check | Result |
+| :--- | :--- |
+| Worker Expo web loads after Modal fix | Pass (welcome → guest Discover) |
+| Organizer guest dashboard + login gate on roster | Pass |
+| Design-system / app typechecks | Pass (see `FINAL_UI_QA.md`) |

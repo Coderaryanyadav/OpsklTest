@@ -231,7 +231,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div
         style={{
           padding: 16,
-          borderTop: '1px solid #262626',
+          borderTop: '1px solid var(--border-strong, #262626)',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -242,8 +242,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             width: 32,
             height: 32,
             borderRadius: '50%',
-            backgroundColor: '#262626',
-            border: '1px solid #404040',
+            backgroundColor: 'var(--surface-elevated, #262626)',
+            border: '1px solid var(--border-color, #404040)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -290,7 +290,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#A3A3A3',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               padding: 10,
               minWidth: 44,

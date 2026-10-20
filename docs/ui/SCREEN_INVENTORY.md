@@ -1,20 +1,21 @@
 # OPSKL — COMPLETE SCREEN INVENTORY
 
-**Date:** 2026-10-20  
-**Method:** Current source inspection + live renders (Admin `:3000`, Worker Expo web `:8081`, Organizer Expo web `:8082`)  
-**Behavior changes:** None (Phase 1 read-only)  
-**Live captures:** `docs/ui/screenshots/phase1/`  
+**Date:** 2026-10-20 (updated Phase 7)  
+**Method:** Source inspection after Phases 2–6 redesign + Phase 7 live renders (Admin `:3000`, Worker Expo web `:8081`, Organizer Expo web `:8082`)  
+**Behavior:** Redesign preserved auth gates and safe RPCs; no invented populated data in QA  
+**Live captures:** `docs/ui/screenshots/phase7/` (also phase1–5)  
+**Final QA:** `docs/ui/FINAL_UI_QA.md` · a11y pass: `docs/ui/PHASE-6.md`  
 **Prior catalog:** `screenshots/{worker,organizer,admin}/` (2026-10-15)
 
 ---
 
-## Summary counts
+## Summary counts (post-redesign)
 
-| App | Routes | Tab items | Modals / sheets | Root overlays |
-| :--- | ---: | ---: | ---: | ---: |
-| Worker | 10 (+ tabs layout + root) | 4 | 11 | 2 (role / deactivated) |
-| Organizer | 10 (+ tabs layout + root) | 5 | 8 | 2 (role / deactivated) |
-| Admin | 2 URL routes | 9 client modules | 5 | — |
+| App | Routes | Tab items | Modals / sheets | Root overlays | Design system |
+| :--- | ---: | ---: | ---: | ---: | :--- |
+| Worker | 10 (+ tabs layout + root) | 4 | 11 | 2 (role / deactivated) | `@opskil/design-system` |
+| Organizer | 10 (+ tabs layout + root) | 5 | 8 | 2 (role / deactivated) | `@opskil/design-system` |
+| Admin | 2 URL routes | 9 client modules (nav) | Shared `ui.tsx` modals | — | CSS vars in `globals.css` (no RN DS imports) |
 
 ---
 
@@ -121,16 +122,17 @@ Locality/category/wage/skill; Apply / Reset. Local state not resynced from paren
 | Field | Detail |
 | :--- | :--- |
 | **Route / file** | `/(tabs)/my-shifts` · `apps/worker/app/(tabs)/my-shifts.tsx` |
-| **Role** | Worker (layout redirects guests) |
+| **Role** | Worker (layout redirects guests to login) |
 | **Purpose** | Bookings lifecycle + attendance tools |
 | **Entry** | Tab; post-apply |
 | **Exit** | Discover; Maps; tel:; modals |
 | **Main action** | Context: Check-In / Check-Out / etc. |
 | **Secondary** | QR, Delay, Chat, Cancel, Dispute, SOS, Copy pass, Navigate |
 | **Data** | Bookings + attendance + safety + chat RPCs; `expo-location` |
-| **Components** | Card/Badge/Button/WageText/Input/ShiftCardSkeleton/`OpsklAlert` |
-| **States** | Skeletons; error+Retry; empty tab; guest UI mostly unreachable |
+| **Components** | Card/Badge/Button/WageText/Input/ShiftCardSkeleton/`OpsklAlert`/`ErrorRetry`/`StatusIndicator`/`KeyboardAwareContainer` |
+| **States** | Skeletons; error+Retry; empty tab; chat `ErrorRetry`; guest redirected by root layout |
 | **Tests** | phase3 GPS + past-shift categorization |
+| **Phase 7** | Authenticated booking UI **not** visually checked (no session) |
 
 #### Modals W5a–W5f
 | Modal | Purpose |

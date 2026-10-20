@@ -3,8 +3,9 @@
 Universal UI foundation for **Worker** (Expo), **Organizer** (Expo), and **Admin** (Next.js).  
 Package: `@opskil/design-system` → `packages/design-system`.
 
-**Phase 2:** Extend and consolidate the existing token + component library.  
-Do not invent a second parallel system. Screen migrations happen in Phases 3–5.
+**Phases 2–7:** Token + component library consolidated; Worker/Organizer/Admin screens migrated.  
+Admin mirrors tokens via CSS variables (`apps/admin/src/app/globals.css`) — no React Native imports.  
+Final QA: `docs/ui/FINAL_UI_QA.md`.
 
 ---
 
@@ -194,11 +195,19 @@ Wrap root once with `OpsklThemeProvider`. Prefer tokens over hardcoded hex.
 
 ### Admin
 
-Admin does not import RN components yet. Use CSS variables in `apps/admin/src/app/globals.css` (mirrored from `lightColors` + spacing/radii). Migrate surfaces in Phase 5.
+Admin does **not** import RN components. Use CSS variables in `apps/admin/src/app/globals.css` (mirrored from `lightColors` + spacing/radii) and helpers in `apps/admin/src/components/ui.tsx`.
 
 ---
 
-## Quality checklist (Phase 2)
+## Component count (exported)
+
+**45** React components under `packages/design-system/src/components/` plus `OpsklAlert.ts`, theme/auth contexts, `useRequireAuth`, `usePushNotifications`.
+
+Notable Phase 2+ additions still in final tree: `Screen`, `BottomTabBar`, `FormField`, wage/date/time/numeric inputs, `OtpInput`, `PasswordInput`, `SearchInput`, `Select`, `Checkbox`, `Radio`, `Toggle`, `Stepper`, `SegmentedControl`, `FilterPills`, `ShiftCard`, `WorkerCard`, `ApplicantRow`, `MetricCard`, `FinancialSummary`, `DataTable`, `Pagination`, `StatusIndicator`, `OfflineBanner`, `ErrorRetry`, `DocumentUpload`, `Divider`.
+
+---
+
+## Quality checklist (final)
 
 - [x] Central monochrome + semantic tokens  
 - [x] Typography, weights, spacing, radii, shadows  
@@ -207,9 +216,13 @@ Admin does not import RN components yet. Use CSS variables in `apps/admin/src/ap
 - [x] Core + domain + feedback components with interaction states  
 - [x] No decorative upload without host behavior  
 - [x] Prefer lists/typography over card grids (`FinancialSummary`, `DataTable`)  
-- [ ] Full screen migration (Phases 3–5)  
-- [ ] Admin web component adapter (Phase 5)  
-- [ ] Storybook / visual regression suite  
+- [x] Worker / Organizer screen migration (Phases 3–4)  
+- [x] Admin portal CSS redesign (Phase 5) — not a RN adapter  
+- [x] Keyboard / tab safe-area / basic a11y pass (Phase 6)  
+- [x] Final typecheck / test / guest visual QA (Phase 7)  
+- [ ] Authenticated visual QA (all roles) with real data  
+- [ ] Storybook / automated visual regression suite  
+- [ ] VoiceOver / TalkBack / axe audit  
 
 ---
 
@@ -217,6 +230,10 @@ Admin does not import RN components yet. Use CSS variables in `apps/admin/src/ap
 
 ```bash
 npm --workspace=@opskil/design-system run typecheck
+npm --workspace=@opskil/worker run typecheck && npm --workspace=@opskil/worker test
+npm --workspace=@opskil/organizer run typecheck && npm --workspace=@opskil/organizer test
+npm --workspace=@opskil/admin run typecheck
+PLAYWRIGHT_BROWSERS_PATH=0 npm --workspace=@opskil/admin run test:e2e
 npm test
 # Representative renders (dev servers):
 # Worker :8081 · Organizer :8082 · Admin :3000
