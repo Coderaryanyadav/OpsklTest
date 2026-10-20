@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Linking, Modal, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import {
   useOpsklTheme,
   Button,
@@ -47,10 +49,100 @@ export default function OrganizerProfileScreen() {
   const [formBillingAddress, setFormBillingAddress] = useState('');
   const [formContactPhone, setFormContactPhone] = useState('');
   const [gstinAcknowledged, setGstinAcknowledged] = useState(false);
+  const [pickedGstinDoc, setPickedGstinDoc] = useState<{ uri: string; name: string; mimeType: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   const userId = session?.user?.id;
+
+  const handlePickGstinDoc = () => {
+    OpsklAlert.alert(
+      'Attach GST Certificate',
+      'Upload your official Form GST REG-06 registration certificate:',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                OpsklAlert.alert('Permission Denied', 'Camera permission is required to photograph your GST certificate.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedGstinDoc({
+                  uri: asset.uri,
+                  name: asset.fileName || 'gst_certificate.jpg',
+                  mimeType: asset.mimeType || 'image/jpeg',
+                });
+                setGstinAcknowledged(true);
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Camera Error', err?.message || 'Failed to capture photo.');
+            }
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                OpsklAlert.alert('Permission Denied', 'Photo library permission is required to select document photos.');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedGstinDoc({
+                  uri: asset.uri,
+                  name: asset.fileName || 'gst_certificate.jpg',
+                  mimeType: asset.mimeType || 'image/jpeg',
+                });
+                setGstinAcknowledged(true);
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Gallery Error', err?.message || 'Failed to pick image.');
+            }
+          },
+        },
+        {
+          text: 'Upload PDF Certificate',
+          onPress: async () => {
+            try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf', 'image/*'],
+                copyToCacheDirectory: true,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedGstinDoc({
+                  uri: asset.uri,
+                  name: asset.name,
+                  mimeType: asset.mimeType || 'application/pdf',
+                });
+                setGstinAcknowledged(true);
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Document Error', err?.message || 'Failed to pick document.');
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   const loadProfile = useCallback(async () => {
     if (!userId) {
@@ -121,12 +213,16 @@ export default function OrganizerProfileScreen() {
       // Submit KYC evidence BEFORE persisting GSTIN on the profile so a storage/RPC failure
       // cannot leave an organizer with a saved GSTIN and no admin review case.
       if (gstinNeedsCase && trimmedGstin) {
-        const certificateBlob = `GSTIN_TEXT_SUBMISSION_${trimmedGstin}_${userId}_${Date.now()}`;
+        const uploadData = pickedGstinDoc
+          ? { uri: pickedGstinDoc.uri }
+          : `GSTIN_TEXT_SUBMISSION_${trimmedGstin}_${userId}_${Date.now()}`;
+        const contentType = pickedGstinDoc ? pickedGstinDoc.mimeType : 'text/plain';
+
         const uploadRes = await uploadVerificationDocument(
           userId,
           'gstin',
-          certificateBlob,
-          'text/plain'
+          uploadData,
+          contentType
         );
 
         if (!uploadRes.success || !uploadRes.storagePath) {
@@ -526,46 +622,34 @@ export default function OrganizerProfileScreen() {
                 onChangeText={setFormGstin}
                 placeholder="e.g. 27AABCA1234F1Z5"
                 autoCapitalize="characters"
-                maxLength={15}
-              />
+                />
             </FormField>
 
             <DocumentUpload
-              label="GSTIN text submission"
+              label="GST Registration Certificate (PDF / Photo)"
               fileName={
-                formGstin.trim().length === 15
-                  ? `GSTIN ${formGstin.trim().toUpperCase()} (text only)`
+                pickedGstinDoc
+                  ? pickedGstinDoc.name
+                  : formGstin.trim().length === 15
+                  ? `GSTIN ${formGstin.trim().toUpperCase()} (Tap to attach certificate)`
                   : null
               }
-              helperText="No gallery file is attached. Saving submits the GSTIN number above as text for admin review — same honesty pattern as worker KYC."
-              onPick={() => {
-                if (formGstin.trim().length !== 15) {
-                  OpsklAlert.alert(
-                    'Enter GSTIN first',
-                    'Type a valid 15-character GSTIN above, then acknowledge text submission.'
-                  );
-                  return;
-                }
-                setGstinAcknowledged(true);
-                OpsklAlert.alert(
-                  'GSTIN text ready',
-                  'No PDF will be uploaded. The GSTIN number will be submitted as text evidence for admin review.'
-                );
-              }}
+              helperText="Attach a scanned copy or clear photo of your Form GST REG-06 registration certificate."
+              onPick={handlePickGstinDoc}
               onClear={
-                gstinAcknowledged
-                  ? () => {
-                      setGstinAcknowledged(false);
-                    }
+                pickedGstinDoc
+                  ? () => setPickedGstinDoc(null)
+                  : gstinAcknowledged
+                  ? () => setGstinAcknowledged(false)
                   : undefined
               }
             />
 
-            {gstinAcknowledged && formGstin.trim().length === 15 ? (
+            {pickedGstinDoc ? (
               <InlineBanner
                 variant="info"
-                title="Text submission acknowledged"
-                message="Admin will review the GSTIN number. A scanned certificate PDF cannot be attached from this screen."
+                title="Document Certificate Ready"
+                message={`File "${pickedGstinDoc.name}" will be uploaded securely to private verification storage upon saving.`}
               />
             ) : null}
 

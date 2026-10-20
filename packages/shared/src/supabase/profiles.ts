@@ -145,9 +145,19 @@ export async function uploadVerificationDocument(
     const extension = resolveVerificationDocumentExtension(contentType);
     const storagePath = `${userId}/kyc_${documentType}_${Date.now()}.${extension}`;
 
+    let uploadPayload = fileData;
+    if (fileData && typeof fileData === 'object' && typeof fileData.uri === 'string') {
+      try {
+        const res = await fetch(fileData.uri);
+        uploadPayload = await res.blob();
+      } catch (blobErr) {
+        logger.warn('Could not convert URI to blob, falling back to direct payload', { error: blobErr });
+      }
+    }
+
     const { error } = await supabase.storage
       .from('verification-documents')
-      .upload(storagePath, fileData, {
+      .upload(storagePath, uploadPayload, {
         contentType,
         upsert: true,
       });

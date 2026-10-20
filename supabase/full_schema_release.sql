@@ -4743,15 +4743,11 @@ BEGIN
 
   IF p_current_status = 'draft' AND p_new_status IN ('open', 'cancelled') THEN
     RETURN true;
-  ELSIF p_current_status = 'open' AND p_new_status IN ('filling', 'filled', 'paused', 'cancelled') THEN
+  ELSIF p_current_status IN ('open', 'filling', 'filled') AND p_new_status IN ('open', 'filling', 'filled', 'in_progress', 'paused', 'cancelled') THEN
     RETURN true;
-  ELSIF p_current_status = 'filling' AND p_new_status IN ('filled', 'paused', 'cancelled') THEN
+  ELSIF p_current_status = 'paused' AND p_new_status IN ('open', 'filling', 'in_progress', 'cancelled') THEN
     RETURN true;
-  ELSIF p_current_status = 'filled' AND p_new_status IN ('filling', 'cancelled', 'in_progress') THEN
-    RETURN true;
-  ELSIF p_current_status = 'paused' AND p_new_status IN ('open', 'filling', 'cancelled') THEN
-    RETURN true;
-  ELSIF p_current_status = 'in_progress' AND p_new_status = 'completed' THEN
+  ELSIF p_current_status = 'in_progress' AND p_new_status IN ('completed', 'cancelled') THEN
     RETURN true;
   END IF;
 
@@ -8338,7 +8334,6 @@ DECLARE
 BEGIN
   v_role := CASE
     WHEN (NEW.raw_user_meta_data->>'role') = 'organizer' THEN 'organizer'::user_role
-    WHEN (NEW.raw_user_meta_data->>'role') = 'admin' THEN 'admin'::user_role
     ELSE 'worker'::user_role
   END;
 
@@ -10510,17 +10505,49 @@ BEGIN
     );
   END IF;
 
-  -- 8. Geolocation verification (if venue coordinates and worker GPS are present)
-  IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
-    v_distance := round((
-      6371 * acos(
-        least(1.0, greatest(-1.0,
-          cos(radians(v_job.latitude)) * cos(radians(p_lat)) *
-          cos(radians(p_lng) - radians(v_job.longitude)) +
-          sin(radians(v_job.latitude)) * sin(radians(p_lat))
-        ))
-      )
-    )::NUMERIC, 2);
+  -- 8. Geolocation verification & 300m boundary enforcement
+  IF NOT v_is_supervisor THEN
+    IF v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
+      IF p_lat IS NULL OR p_lng IS NULL THEN
+        RETURN jsonb_build_object(
+          'success', false,
+          'error_code', 'GPS_COORDINATES_REQUIRED',
+          'message', 'GPS coordinates are required to verify on-site arrival.'
+        );
+      END IF;
+
+      v_distance := round((
+        6371 * acos(
+          least(1.0, greatest(-1.0,
+            cos(radians(v_job.latitude)) * cos(radians(p_lat)) *
+            cos(radians(p_lng) - radians(v_job.longitude)) +
+            sin(radians(v_job.latitude)) * sin(radians(p_lat))
+          ))
+        )
+      )::NUMERIC, 2);
+
+      -- Enforce 300-metre geofence boundary (0.30 km)
+      IF v_distance > 0.30 THEN
+        RETURN jsonb_build_object(
+          'success', false,
+          'error_code', 'OUT_OF_GEOFENCE_RANGE',
+          'message', 'You are ' || round(v_distance * 1000) || 'm away from the venue. You must be within 300m to check in.'
+        );
+      END IF;
+    END IF;
+  ELSE
+    -- Supervisor manual override allows check-in regardless of distance
+    IF p_lat IS NOT NULL AND p_lng IS NOT NULL AND v_job.latitude IS NOT NULL AND v_job.longitude IS NOT NULL THEN
+      v_distance := round((
+        6371 * acos(
+          least(1.0, greatest(-1.0,
+            cos(radians(v_job.latitude)) * cos(radians(p_lat)) *
+            cos(radians(p_lng) - radians(v_job.longitude)) +
+            sin(radians(v_job.latitude)) * sin(radians(p_lat))
+          ))
+        )
+      )::NUMERIC, 2);
+    END IF;
   END IF;
 
   -- 9. Execute check-in mutation

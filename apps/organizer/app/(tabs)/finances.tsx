@@ -8,6 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import {
   useOpsklTheme,
   Badge,
@@ -24,6 +25,8 @@ import {
   LoadingView,
   OpsklAlert,
   InlineBanner,
+  Input,
+  Divider,
 } from '@opskil/design-system';
 import {
   formatINR,
@@ -31,6 +34,7 @@ import {
   fetchOrganizerProfile,
   fetchOrganizerJobs,
   generateJobInvoiceSafe,
+  submitInvoicePaymentReferenceSafe,
   OrganizerFinancesSummary,
   OrganizerInvoice,
   OrganizerProfile,
@@ -53,6 +57,8 @@ export default function OrganizerFinancesScreen() {
   const [activeView, setActiveView] = useState<ActiveView>('invoices');
 
   const [selectedInvoice, setSelectedInvoice] = useState<OrganizerInvoice | null>(null);
+  const [paymentRef, setPaymentRef] = useState('');
+  const [submittingPaymentRef, setSubmittingPaymentRef] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generatingForJobId, setGeneratingForJobId] = useState<string | null>(null);
 
@@ -480,7 +486,7 @@ export default function OrganizerFinancesScreen() {
             </View>
 
             {selectedInvoice ? (
-              <ScrollView contentContainerStyle={{ gap: spacing.md }}>
+              <ScrollView contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.xl }}>
                 <FinancialSummary
                   title={selectedInvoice.jobTitle}
                   items={[
@@ -502,7 +508,131 @@ export default function OrganizerFinancesScreen() {
                   totalLabel="Total invoice payable"
                   totalAmountLabel={formatINR(selectedInvoice.totalPayable)}
                 />
-                <Button title="Close Invoice Statement" variant="primary" onPress={() => setSelectedInvoice(null)} />
+
+                {selectedInvoice.status === 'escrow_funded' ? (
+                  <InlineBanner
+                    variant="info"
+                    title="Escrow Verified & Funded"
+                    message="Funds for this shift are held in nodal escrow and will be disbursed automatically to confirmed crew members upon checkout."
+                  />
+                ) : (
+                  <View
+                    style={{
+                      backgroundColor: colors.surfaceMuted,
+                      borderRadius: radii.md,
+                      padding: spacing.md,
+                      gap: spacing.sm,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                      Opskl Nodal Escrow Bank Account
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                      Transfer exact invoice amount via NEFT, RTGS, IMPS, or UPI, then submit your transaction UTR below:
+                    </Text>
+
+                    <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Beneficiary:</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }}>
+                          Opskl Technologies Pvt Ltd (Escrow)
+                        </Text>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Account Number:</Text>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            await Clipboard.setStringAsync('000405012345');
+                            OpsklAlert.alert('Copied', 'Account number copied to clipboard.');
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                            000405012345 📋
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>IFSC Code:</Text>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            await Clipboard.setStringAsync('HDFC0000004');
+                            OpsklAlert.alert('Copied', 'IFSC code copied to clipboard.');
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                            HDFC0000004 📋
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>UPI VPA:</Text>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            await Clipboard.setStringAsync('opskl.escrow@hdfcbank');
+                            OpsklAlert.alert('Copied', 'UPI VPA copied to clipboard.');
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                            opskl.escrow@hdfcbank 📋
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    <Divider style={{ marginVertical: spacing.xs }} />
+
+                    <Input
+                      label="Transaction Reference / UTR Number"
+                      value={paymentRef}
+                      onChangeText={setPaymentRef}
+                      placeholder="e.g. 429302194821 or UPI Ref ID"
+                      helperText="Enter the 12-digit UTR from your bank or UPI transfer receipt."
+                      autoCapitalize="characters"
+                    />
+
+                    <Button
+                      title="Submit Payment Reference"
+                      variant="primary"
+                      loading={submittingPaymentRef}
+                      onPress={async () => {
+                        if (!paymentRef.trim() || paymentRef.trim().length < 6) {
+                          OpsklAlert.alert(
+                            'Invalid Reference',
+                            'Please enter a valid bank transfer UTR or transaction reference number (minimum 6 characters).'
+                          );
+                          return;
+                        }
+                        setSubmittingPaymentRef(true);
+                        const res = await submitInvoicePaymentReferenceSafe(
+                          selectedInvoice.id,
+                          paymentRef.trim()
+                        );
+                        setSubmittingPaymentRef(false);
+                        if (res.success) {
+                          OpsklAlert.alert(
+                            'Payment Slip Submitted',
+                            'Your transfer reference has been registered. Opskl Admin will verify receipt with the nodal bank and mark escrow funded.'
+                          );
+                          setSelectedInvoice(null);
+                          setPaymentRef('');
+                          loadData();
+                        } else {
+                          OpsklAlert.alert(
+                            'Submission Error',
+                            res.error || 'Failed to submit payment reference. Please retry.'
+                          );
+                        }
+                      }}
+                    />
+                  </View>
+                )}
+
+                <Button title="Close Statement" variant="ghost" onPress={() => setSelectedInvoice(null)} />
               </ScrollView>
             ) : null}
           </View>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed-variant": "#45474b", "surface-container-lowest": "#ffffff", "on-background": "#191c1d", "on-tertiary-fixed": "#0b1c30", "inverse-primary": "#b0c6ff", "on-error-container": "#93000a", "on-tertiary": "#ffffff", "surface-container": "#edeeef", "inverse-on-surface": "#f0f1f2", "surface-container-highest": "#e1e3e4", "primary-fixed-dim": "#b0c6ff", "on-primary": "#ffffff", "secondary-container": "#e2e2e8", "on-surface-variant": "#434653", "tertiary-fixed-dim": "#b7c8e1", "surface-variant": "#e1e3e4", "on-primary-fixed-variant": "#00419c", "on-surface": "#191c1d", "inverse-surface": "#2e3132", "surface-bright": "#f8f9fa", "secondary": "#5d5e63", "surface-tint": "#1d59c1", "secondary-fixed-dim": "#c6c6cc", "surface-container-low": "#f3f4f5", "on-primary-container": "#bcceff", "primary-fixed": "#d9e2ff", "primary-container": "#0f52ba", "on-tertiary-container": "#bfd0ea", "surface-dim": "#d9dadb", "error-container": "#ffdad6", "surface-container-high": "#e7e8e9", "on-primary-fixed": "#001945", "on-secondary-fixed": "#1a1c20", "secondary-fixed": "#e2e2e8", "outline-variant": "#c3c6d5", "tertiary": "#324257", "on-secondary": "#ffffff", "on-secondary-container": "#636469", "outline": "#737784", "tertiary-fixed": "#d3e4fe", "on-error": "#ffffff", "surface": "#f8f9fa", "on-tertiary-fixed-variant": "#38485d", "background": "#f8f9fa", "primary": "#003c90", "tertiary-container": "#49596f", "error": "#ba1a1a" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "1rem", "space-xl": "2rem", "gutter-desktop": "1.5rem", "margin": "1rem", "margin-desktop": "2rem", "margin-tablet": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "space-md": "1rem" }, fontFamily: { "headline-lg-mobile": ["Plus Jakarta Sans"], "label-xs": ["Inter"], "label-lg": ["Inter"], "body-md": ["Inter"], "numeric-data": ["Inter"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-xs": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "numeric-data": ["15px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400" }], "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }] } } } };</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-background font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">domain_verification</span></div><div class="flex flex-col"><span class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">OPSKL MUMBAI</span><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none truncate max-w-[170px]">Organizer Shifts Management Roster</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container active:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full pb-12">
+<!-- Top Operational Banner & Quick Stats -->
+<section class="px-gutter pt-space-md pb-space-sm">
+<div class="bg-surface-container-low p-space-md rounded-xl flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">event_available</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Mumbai Roster Pulse</span>
+<span class="inline-flex w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">5 Active Events • 18 Confirmed Crew • 24 Pending</span>
+</div>
+</div>
+<button aria-label="Refresh Roster" class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high active:scale-95 transition-all" id="quick-refresh-btn">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+</button>
+</div>
+</section>
+<!-- Segmented Status Navigation -->
+<section class="px-gutter py-space-xs">
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+<button class="filter-tab px-3.5 py-2 rounded-lg bg-on-background text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm transition-all" data-filter="all">
+        All (5)
+      </button>
+<button class="filter-tab px-3.5 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-all" data-filter="active">
+        Active & Open (2)
+      </button>
+<button class="filter-tab px-3.5 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-all" data-filter="locked">
+        Roster Locked (1)
+      </button>
+<button class="filter-tab px-3.5 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-all" data-filter="drafts">
+        Drafts (1)
+      </button>
+<button class="filter-tab px-3.5 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-all" data-filter="completed">
+        Completed (1)
+      </button>
+</div>
+</section>
+<!-- Search & Locality Filter Chips Bar -->
+<section class="px-gutter pt-space-sm pb-space-md flex flex-col gap-space-sm">
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full h-11 pl-10 pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest shadow-sm" id="shift-search-input" placeholder="Search shift title, venue or booking ID..." type="text"/>
+<button aria-label="Clear Search" class="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-on-surface hidden" id="clear-search">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</button>
+</div>
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar text-on-surface-variant">
+<button class="chip-toggle px-3 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5 shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+<span>BKC Complex</span>
+</button>
+<button class="chip-toggle px-3 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5 shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+<span>NESCO Goregaon</span>
+</button>
+<button class="chip-toggle px-3 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5 shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[16px] text-secondary">calendar_month</span>
+<span>May 2025</span>
+</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 shrink-0 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Filter & Sort</span>
+</button>
+</div>
+</section>
+<!-- Shifts Roster List -->
+<section class="px-gutter flex flex-col gap-space-lg" id="shifts-list">
+<!-- Card 1: Active & Open (High Volume) -->
+<article class="shift-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-md shadow-sm transition-all hover:shadow-md" data-category="active">
+<!-- Status Badge & Meta Tag -->
+<div class="flex items-start justify-between gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-xs text-label-xs uppercase">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+          OPEN FOR APPLICATIONS • 24 APPLIED
+        </span>
+<span class="font-numeric-data text-body-sm text-secondary">#OPS-8841</span>
+</div>
+<!-- Shift Primary Info -->
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Delegate Registration & Badge Desk Associate</h2>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0">pin_drop</span>
+<span class="font-body-sm text-body-sm truncate">NESCO Grand Hall, Goregaon East, Mumbai</span>
+</div>
+</div>
+<!-- Schedule & Geo Coordinates -->
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Shift Timing (IST)</span>
+<span class="font-numeric-data text-body-sm text-on-surface">Sun 25 May • 08:30 – 17:30</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Rate & Quota</span>
+<span class="font-numeric-data text-body-sm text-on-surface">₹2,100 (₹233/hr) • 8 Spots</span>
+</div>
+</div>
+<!-- Live Pipeline Visual Funnel -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center text-secondary">
+<span class="font-label-xs text-label-xs uppercase tracking-wider">Candidate Pipeline</span>
+<span class="font-label-xs text-label-xs font-semibold text-primary">50% Screened</span>
+</div>
+<!-- Progress Bar Segment -->
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden flex">
+<div class="bg-primary-container w-[100%] h-full" title="Applied"></div>
+<div class="bg-primary-fixed-dim w-[50%] h-full" title="Screened"></div>
+<div class="bg-primary w-[16%] h-full" title="Shortlisted"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-xs text-label-xs pt-1">
+<div class="flex items-center gap-1 font-semibold text-on-surface">
+<span>24</span><span class="text-secondary font-normal">Applied</span>
+</div>
+<span class="text-secondary">➔</span>
+<div class="flex items-center gap-1 font-semibold text-on-surface">
+<span>12</span><span class="text-secondary font-normal">Screened</span>
+</div>
+<span class="text-secondary">➔</span>
+<div class="flex items-center gap-1 font-semibold text-on-surface">
+<span>4</span><span class="text-secondary font-normal">Shortlisted</span>
+</div>
+<span class="text-secondary">➔</span>
+<div class="flex items-center gap-1 font-semibold text-error">
+<span>0</span><span class="text-secondary font-normal">Confirmed</span>
+</div>
+</div>
+</div>
+<!-- Applicant Preview Stack -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center -space-x-2">
+<div class="w-7 h-7 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface font-label-xs text-label-xs shadow-sm">
+            RK
+          </div>
+<div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-label-xs text-label-xs shadow-sm">
+            AM
+          </div>
+<div class="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed font-label-xs text-label-xs shadow-sm">
+            PS
+          </div>
+<div class="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary font-label-xs text-label-xs shadow-sm">
+            +21
+          </div>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Aadhaar verified • English fluent</span>
+</div>
+<!-- Action Row -->
+<div class="flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 min-h-[44px] px-space-md bg-on-background text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-1.5 active:bg-primary-container transition-colors shadow-sm">
+<span>Review 24 Applicants</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button class="min-h-[44px] px-3.5 bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-center active:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Action Required / Selection in Progress -->
+<article class="shift-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-md shadow-sm transition-all hover:shadow-md" data-category="active">
+<!-- Status Badge with Expiration Countdown -->
+<div class="flex items-start justify-between gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-xs text-label-xs uppercase">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+          PENDING WORKER ACCEPTANCE
+        </span>
+<span class="font-numeric-data text-body-sm text-secondary">#OPS-9022</span>
+</div>
+<!-- Shift Primary Info -->
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Production & Backstage Logistics Coordinator</h2>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0">pin_drop</span>
+<span class="font-body-sm text-body-sm truncate">Dome SVP Stadium, Worli, Mumbai</span>
+</div>
+</div>
+<!-- Schedule & Details -->
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Shift Schedule (IST)</span>
+<span class="font-numeric-data text-body-sm text-on-surface">Mon 26 May • 14:00 – 23:00</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Compensation</span>
+<span class="font-numeric-data text-body-sm text-on-surface">₹2,800 / shift • 4 Spots</span>
+</div>
+</div>
+<!-- Urgent Timer Alert Box -->
+<div class="bg-surface-container p-space-sm rounded-lg flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest text-error flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">alarm</span>
+</div>
+<div class="flex flex-col text-on-surface">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-semibold">2 Workers Selected</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-numeric-data text-label-xs">02h 15m remaining</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+            Aarav K. and Priya S. must accept before offer rolls over to reserve candidates in queue.
+          </p>
+</div>
+</div>
+<!-- Acceptance Tracker Row -->
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">done</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">2 Accepted</span>
+</div>
+<span class="text-outline">•</span>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface">2 Awaiting Response</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 min-h-[44px] px-space-md bg-on-background text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-1.5 active:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">track_changes</span>
+<span>Track Confirmations</span>
+</button>
+<button class="min-h-[44px] px-space-md bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-center hover:bg-surface-container-high transition-colors">
+<span>Reserve List (3)</span>
+</button>
+</div>
+</article>
+<!-- Card 3: Roster Locked & Ready for Briefing -->
+<article class="shift-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-md shadow-sm transition-all hover:shadow-md" data-category="locked">
+<!-- Status Badge -->
+<div class="flex items-start justify-between gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-xs text-label-xs uppercase">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+          ROSTER LOCKED • READY FOR BRIEFING
+        </span>
+<span class="font-numeric-data text-body-sm text-secondary">#OPS-7719</span>
+</div>
+<!-- Shift Primary Info -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Lead Guest Relations & VIP Concierge</h2>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-xs text-label-xs">TOMORROW</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0">pin_drop</span>
+<span class="font-body-sm text-body-sm truncate">Jio World Convention Centre, BKC Gate 4</span>
+</div>
+</div>
+<!-- Schedule & Verified Details -->
+<div class="grid grid-cols-2 gap-space-sm bg-surface-container-low p-space-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Shift Hours (IST)</span>
+<span class="font-numeric-data text-body-sm text-on-surface">Sat 24 May • 10:00 – 19:00</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase">Total Payout</span>
+<span class="font-numeric-data text-body-sm text-on-surface">₹2,400 / shift • 6/6 Confirmed</span>
+</div>
+</div>
+<!-- Geofence & Escrow Status Bar -->
+<div class="bg-surface-container p-space-sm rounded-lg flex flex-col gap-2">
+<div class="flex items-center justify-between text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">radar</span>
+<span class="font-label-md text-label-md">Gate 4 Geofence (300m radius)</span>
+</div>
+<span class="font-numeric-data text-label-xs text-secondary">19.062° N, 72.868° E</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm border-t border-surface-container-high/40 pt-1.5">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">lock</span>
+            Escrow locked: ₹14,400
+          </span>
+<span class="text-secondary font-numeric-data">Check-in opens 09:15 AM</span>
+</div>
+</div>
+<!-- Confirmed Avatars with Check marks -->
+<div class="flex items-center justify-between">
+<div class="flex items-center -space-x-2">
+<div class="relative w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-xs text-label-xs shadow-sm">
+<span>VK</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+</div>
+<div class="relative w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center font-label-xs text-label-xs shadow-sm">
+<span>TD</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+</div>
+<div class="relative w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center font-label-xs text-label-xs shadow-sm">
+<span>SM</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+</div>
+<div class="relative w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center font-label-xs text-label-xs shadow-sm">
+<span>RJ</span>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-on-secondary-container text-on-primary flex items-center justify-center font-label-xs text-label-xs shadow-sm">
+            +2
+          </div>
+</div>
+<span class="font-label-md text-label-md text-primary font-semibold">100% Attendance Committed</span>
+</div>
+<!-- Action Row -->
+<div class="flex items-center gap-space-sm pt-space-xs">
+<button class="flex-1 min-h-[44px] px-space-md bg-primary-container text-on-primary rounded-lg font-label-lg text-label-lg flex items-center justify-center gap-2 active:bg-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">campaign</span>
+<span>Broadcast Briefing</span>
+</button>
+<button class="min-h-[44px] px-space-md bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-center hover:bg-surface-container-high transition-colors">
+<span>Gate 4 Roster</span>
+</button>
+</div>
+</article>
+<!-- Card 4: Draft State -->
+<article class="shift-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-md shadow-sm transition-all hover:shadow-md opacity-90 hover:opacity-100" data-category="drafts">
+<!-- Status Badge -->
+<div class="flex items-start justify-between gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          DRAFT • STEP 2 OF 4 COMPLETE
+        </span>
+<button aria-label="Discard Draft" class="text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<!-- Shift Primary Info -->
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">AV Console & Stage Cue Assistant</h2>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0">pin_drop</span>
+<span class="font-body-sm text-body-sm truncate">Grand Hyatt Mumbai, Santacruz East</span>
+</div>
+</div>
+<!-- Preliminary Schedule Draft -->
+<div class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">calendar_today</span>
+<span class="font-numeric-data text-body-sm text-on-surface">Fri 30 May • 16:00 – 00:00 IST</span>
+</div>
+<span class="font-label-xs text-label-xs text-secondary uppercase">2 Roles Configured</span>
+</div>
+<!-- Action Button -->
+<div class="pt-space-xs">
+<button class="w-full min-h-[44px] px-space-md bg-surface-container text-on-surface rounded-lg font-label-lg text-label-lg flex items-center justify-between hover:bg-surface-container-high active:scale-[0.99] transition-all">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">edit_note</span>
+<span>Resume Shift Setup & Publish</span>
+</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+<!-- Card 5: Completed Shift Record (Hidden on initial 'Active' if filtered, but visible on 'All') -->
+<article class="shift-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm transition-all opacity-75" data-category="completed">
+<div class="flex items-start justify-between gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs uppercase">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+          COMPLETED & RECONCILED
+        </span>
+<span class="font-numeric-data text-body-sm text-secondary">#OPS-6620</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Beverage Hospitality Server & Host</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Taj Lands End, Bandra West • 18 May 2025</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-numeric-data text-body-sm text-secondary">10/10 Crew Disbursed via UPI</span>
+<button class="font-label-md text-label-md text-primary hover:underline flex items-center gap-0.5">
+<span>View Audit Ledger</span>
+<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Empty Search Feedback State (Hidden by default) -->
+<div class="hidden px-gutter py-12 flex-col items-center justify-center text-center" id="empty-state">
+<div class="w-14 h-14 rounded-full bg-surface-container-low flex items-center justify-center text-secondary mb-space-sm">
+<span class="material-symbols-outlined text-[28px]">search_off</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">No shifts found</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs mt-1">
+      No shifts match your search criteria. Try removing locality filters or clear the search query.
+    </p>
+<button class="mt-space-md px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md" id="reset-filters-btn">
+      Reset Filters
+    </button>
+</div>
+<!-- Bottom Floating Sticky Action: Create New Shift -->
+<aside class="sticky bottom-20 inset-x-0 z-40 px-gutter pointer-events-none mt-space-lg flex justify-end">
+<button class="pointer-events-auto shadow-xl px-5 h-12 bg-on-background text-on-primary rounded-full flex items-center gap-2 hover:bg-primary-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="font-label-lg text-label-lg tracking-wide">+ Create New Shift</span>
+</button>
+</aside>
+</div>
+<script>
+  (function () {
+    const tabs = document.querySelectorAll('.filter-tab');
+    const cards = document.querySelectorAll('.shift-card');
+    const searchInput = document.getElementById('shift-search-input');
+    const clearBtn = document.getElementById('clear-search');
+    const emptyState = document.getElementById('empty-state');
+    const chipToggles = document.querySelectorAll('.chip-toggle');
+    const resetFiltersBtn = document.getElementById('reset-filters-btn');
+
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    function filterRoster() {
+      let visibleCount = 0;
+
+      cards.forEach((card) => {
+        const category = card.getAttribute('data-category');
+        const textContent = card.innerText.toLowerCase();
+
+        const matchesTab = (currentFilter === 'all') || (category === currentFilter);
+        const matchesSearch = textContent.includes(currentSearch.toLowerCase());
+
+        if (matchesTab && matchesSearch) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      if (visibleCount === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+      } else {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+      }
+    }
+
+    // Segmented tab switching
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => {
+          t.classList.remove('bg-on-background', 'text-on-primary', 'shadow-sm');
+          t.classList.add('bg-surface-container', 'text-on-surface-variant');
+        });
+
+        tab.classList.remove('bg-surface-container', 'text-on-surface-variant');
+        tab.classList.add('bg-on-background', 'text-on-primary', 'shadow-sm');
+
+        currentFilter = tab.getAttribute('data-filter');
+        filterRoster();
+      });
+    });
+
+    // Search query listener
+    searchInput.addEventListener('input', (e) => {
+      currentSearch = e.target.value.trim();
+      if (currentSearch.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      filterRoster();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      currentSearch = '';
+      clearBtn.classList.add('hidden');
+      filterRoster();
+      searchInput.focus();
+    });
+
+    // Locality chip toggle
+    chipToggles.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const chipText = chip.innerText.trim();
+        if (searchInput.value.includes(chipText)) {
+          searchInput.value = '';
+          currentSearch = '';
+          chip.classList.remove('bg-primary', 'text-on-primary');
+          chip.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+        } else {
+          searchInput.value = chipText;
+          currentSearch = chipText;
+          chip.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+          chip.classList.add('bg-primary', 'text-on-primary');
+        }
+        clearBtn.classList.toggle('hidden', searchInput.value.length === 0);
+        filterRoster();
+      });
+    });
+
+    if (resetFiltersBtn) {
+      resetFiltersBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        currentSearch = '';
+        clearBtn.classList.add('hidden');
+        tabs[0].click();
+        chipToggles.forEach((c) => {
+          c.classList.remove('bg-primary', 'text-on-primary');
+          c.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+        });
+      });
+    }
+
+    // Micro-interaction for refresh button
+    const refreshBtn = document.getElementById('quick-refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        const icon = refreshBtn.querySelector('span');
+        icon.classList.add('animate-spin');
+        setTimeout(() => {
+          icon.classList.remove('animate-spin');
+        }, 650);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-primary-container font-semibold"><div class="flex justify-between items-center h-16 px-space-xs"><a class="flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="organizer-event-command-&-dashboard" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="font-label-xs text-label-xs mt-0.5">Overview</span></a><a aria-current="page" class="flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] transition-colors text-primary-container font-semibold" data-path="organizer-shifts-management-roster" href="#"><span class="material-symbols-outlined text-[20px]">schedule</span><span class="font-label-xs text-label-xs mt-0.5">Shifts</span></a><a class="flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="active-live-venue-roster-tracker" href="#"><span class="material-symbols-outlined text-[20px]">badge</span><span class="font-label-xs text-label-xs mt-0.5">Roster</span></a><a class="flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="organizer-escrow-&-payout-ledger" href="#"><span class="material-symbols-outlined text-[20px]">account_balance_wallet</span><span class="font-label-xs text-label-xs mt-0.5">Finance</span></a><a class="flex-1 flex flex-col items-center justify-center min-w-[44px] min-h-[44px] text-on-surface-variant hover:text-on-surface transition-colors" data-path="organizer-enterprise-profile" href="#"><span class="material-symbols-outlined text-[20px]">corporate_fare</span><span class="font-label-xs text-label-xs mt-0.5">Profile</span></a></div></nav></body></html>

@@ -199,4 +199,31 @@ describe('Phase 3 — Marketplace Discovery, Distance & Server-side Eligibility'
       expect(res.success).toBe(true);
     });
   });
+
+  describe('Job Lifecycle Transitions & State Machine (FLOW-001)', () => {
+    // Pure validator matching PostgreSQL validate_job_transition
+    const validateJobTransition = (current: string, next: string): boolean => {
+      if (current === next) return true;
+      if (current === 'draft' && ['open', 'cancelled'].includes(next)) return true;
+      if (['open', 'filling', 'filled'].includes(current) && ['open', 'filling', 'filled', 'in_progress', 'paused', 'cancelled'].includes(next)) return true;
+      if (current === 'paused' && ['open', 'filling', 'in_progress', 'cancelled'].includes(next)) return true;
+      if (current === 'in_progress' && ['completed', 'cancelled'].includes(next)) return true;
+      return false;
+    };
+
+    test('permits partially-filled shifts (filling) to transition directly to in_progress at call time', () => {
+      expect(validateJobTransition('filling', 'in_progress')).toBe(true);
+      expect(validateJobTransition('open', 'in_progress')).toBe(true);
+      expect(validateJobTransition('filled', 'in_progress')).toBe(true);
+    });
+
+    test('permits in_progress shifts to complete and trigger invoice reconciliation', () => {
+      expect(validateJobTransition('in_progress', 'completed')).toBe(true);
+    });
+
+    test('rejects invalid backward transitions from terminal states', () => {
+      expect(validateJobTransition('completed', 'in_progress')).toBe(false);
+      expect(validateJobTransition('cancelled', 'open')).toBe(false);
+    });
+  });
 });

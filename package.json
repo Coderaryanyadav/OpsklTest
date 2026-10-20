@@ -23,6 +23,7 @@
     "test:sql": "node scripts/test_sql_integration.mjs",
     "test:e2e:admin": "npm --workspace=@opskil/admin run test:e2e",
     "screenshots": "node scripts/capture_all_screenshots.mjs",
+    "notifications:dispatch": "node scripts/dispatch_push_notifications.mjs",
     "check:all": "node scripts/check_all_features.mjs",
     "lint": "npm run lint --workspaces --if-present"
   },

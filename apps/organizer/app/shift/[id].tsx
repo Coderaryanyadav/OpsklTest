@@ -694,13 +694,23 @@ export default function OrganizerShiftDetailScreen() {
                   )}
 
                   {isCheckedIn && (
-                    <View style={{ flex: 1 }}>
-                      <Button
-                        title="Record Check-Out"
-                        variant="primary"
-                        size="sm"
-                        onPress={() => handleRecordCheckOut(member)}
-                      />
+                    <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title="Record Check-Out"
+                          variant="outline"
+                          size="sm"
+                          onPress={() => handleRecordCheckOut(member)}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title="Sign Off Shift"
+                          variant="primary"
+                          size="sm"
+                          onPress={() => handleApproveAttendance(member)}
+                        />
+                      </View>
                     </View>
                   )}
 

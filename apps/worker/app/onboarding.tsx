@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import {
   useOpsklTheme,
   Screen,
@@ -81,12 +83,99 @@ export default function WorkerOnboardingScreen() {
   const [upiId, setUpiId] = useState('');
   const [documentType, setDocumentType] = useState<'aadhaar' | 'pan'>('aadhaar');
   const [documentNumber, setDocumentNumber] = useState('');
+  const [pickedDocument, setPickedDocument] = useState<{ uri: string; name: string; mimeType: string } | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [existingCase, setExistingCase] = useState<VerificationCase | null>(null);
 
   const userId = session?.user?.id;
+
+  const handlePickDocument = () => {
+    OpsklAlert.alert(
+      'Attach Identity Proof',
+      `Choose how to attach your ${documentType.toUpperCase()} document:`,
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                OpsklAlert.alert('Permission Denied', 'Camera permission is required to photograph your document.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedDocument({
+                  uri: asset.uri,
+                  name: asset.fileName || `${documentType}_photo.jpg`,
+                  mimeType: asset.mimeType || 'image/jpeg',
+                });
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Camera Error', err?.message || 'Failed to capture photo.');
+            }
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                OpsklAlert.alert('Permission Denied', 'Photo library permission is required to select document photos.');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedDocument({
+                  uri: asset.uri,
+                  name: asset.fileName || `${documentType}_image.jpg`,
+                  mimeType: asset.mimeType || 'image/jpeg',
+                });
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Gallery Error', err?.message || 'Failed to pick image.');
+            }
+          },
+        },
+        {
+          text: 'Upload PDF Document',
+          onPress: async () => {
+            try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf', 'image/*'],
+                copyToCacheDirectory: true,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                setPickedDocument({
+                  uri: asset.uri,
+                  name: asset.name,
+                  mimeType: asset.mimeType || 'application/pdf',
+                });
+              }
+            } catch (err: any) {
+              OpsklAlert.alert('Document Error', err?.message || 'Failed to pick document.');
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   // Save/Resume: Preload existing profile and verification state
   useEffect(() => {
@@ -258,12 +347,16 @@ export default function WorkerOnboardingScreen() {
           ? `XXXX-XXXX-${cleanDoc.slice(-4)}`
           : `${cleanDoc.slice(0, 5)}****${cleanDoc.slice(-1)}`;
 
-        const docPayload = `KYC_EVIDENCE_${documentType.toUpperCase()}_${masked}_${userId}_${Date.now()}`;
+        const docPayload = pickedDocument
+          ? { uri: pickedDocument.uri }
+          : `KYC_EVIDENCE_${documentType.toUpperCase()}_${masked}_${userId}_${Date.now()}`;
+        const contentType = pickedDocument ? pickedDocument.mimeType : 'application/pdf';
+
         const uploadRes = await uploadVerificationDocument(
           userId,
           documentType,
           docPayload,
-          'application/pdf'
+          contentType
         );
 
         if (!uploadRes.success || !uploadRes.storagePath) {
@@ -667,20 +760,23 @@ export default function WorkerOnboardingScreen() {
             />
 
             <DocumentUpload
-              label="Verification submission"
+              label="Identity Proof Document (Photo / PDF)"
               fileName={
-                documentNumber.trim()
-                  ? `${documentType.toUpperCase()} details ready to submit`
+                pickedDocument
+                  ? pickedDocument.name
+                  : documentNumber.trim()
+                  ? `${documentType.toUpperCase()} number entered (Tap to attach file)`
                   : null
               }
-              helperText="No gallery file is attached. Saving the profile submits the document number above for admin review."
-              onPick={() => {
-                OpsklAlert.alert(
-                  'Submit Verification Details',
-                  'Enter your Aadhaar or PAN number above, then tap Save Profile. Opskl will queue a verification case for admin review. In-app camera/gallery upload is not enabled in this build.'
-                );
-              }}
-              onClear={documentNumber.trim() ? () => setDocumentNumber('') : undefined}
+              helperText="Attach a clear photo or PDF scan of your physical government ID card."
+              onPick={handlePickDocument}
+              onClear={
+                pickedDocument
+                  ? () => setPickedDocument(null)
+                  : documentNumber.trim()
+                  ? () => setDocumentNumber('')
+                  : undefined
+              }
             />
           </View>
 

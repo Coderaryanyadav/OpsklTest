@@ -152,7 +152,7 @@ async function main() {
     }
     const parsedDb = new URL(process.env.DATABASE_URL.replace(/^postgresql:\/\//, 'http://'));
     const isLocalDb = ['localhost', '127.0.0.1'].includes(parsedDb.hostname);
-    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+    const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
     const client = new PgClient({
       connectionString: process.env.DATABASE_URL,
       ssl: isLocalDb ? false : { rejectUnauthorized },

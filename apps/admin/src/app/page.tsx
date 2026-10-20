@@ -147,13 +147,17 @@ function AdminDashboardInner() {
           .select(
             'id, full_name, email, phone, is_active, created_at, worker_profiles(verification_status, is_aadhaar_verified, is_pan_verified, skills, preferred_locality, shifts_completed, upi_id)'
           )
-          .eq('role', 'worker'),
+          .eq('role', 'worker')
+          .order('created_at', { ascending: false })
+          .limit(100),
         adminSupabase
           .from('profiles')
           .select(
             'id, full_name, email, phone, is_active, created_at, organizer_profiles(business_name, business_type, verification_status, is_gstin_verified, gstin, total_events_hosted)'
           )
-          .eq('role', 'organizer'),
+          .eq('role', 'organizer')
+          .order('created_at', { ascending: false })
+          .limit(100),
       ]);
 
       if (workersQuery.data) {

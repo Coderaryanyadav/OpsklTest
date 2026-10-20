@@ -389,3 +389,40 @@ export async function initiateWorkerPayoutSafe(
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Submit bank transfer reference / UTR for Manual Escrow Pilot SOP
+ */
+export async function submitInvoicePaymentReferenceSafe(
+  invoiceId: string,
+  reference: string,
+  paymentMethod: string = 'neft_rtgs'
+): Promise<{ success: boolean; invoiceId?: string; invoiceNumber?: string; reference?: string; message?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('submit_invoice_payment_reference_safe', {
+      p_invoice_id: invoiceId,
+      p_reference: reference,
+      p_payment_method: paymentMethod,
+    });
+
+    if (error) {
+      logger.error('RPC submit_invoice_payment_reference_safe failed', error, { invoiceId, reference });
+      return { success: false, error: error.message };
+    }
+
+    if (!data?.success) {
+      return { success: false, error: data?.error || 'Failed to submit payment reference' };
+    }
+
+    return {
+      success: true,
+      invoiceId: data.invoice_id,
+      invoiceNumber: data.invoice_number,
+      reference: data.reference,
+      message: data.message,
+    };
+  } catch (err: any) {
+    logger.error('Failed to submit invoice payment reference', err, { invoiceId, reference });
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}

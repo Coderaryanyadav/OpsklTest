@@ -24,9 +24,11 @@ import {
   applyForJobSafe,
   fetchWorkerJobStatus,
   fetchWorkerBookings,
+  fetchWorkerProfile,
   checkShiftConflicts,
   ShiftConflictCheck,
   Job,
+  WorkerProfile,
   supabase,
 } from '@opskil/shared';
 import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
@@ -44,6 +46,7 @@ export default function WorkerShiftDetailScreen() {
   const [isBooked, setIsBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [conflictCheck, setConflictCheck] = useState<ShiftConflictCheck | null>(null);
+  const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -70,10 +73,15 @@ export default function WorkerShiftDetailScreen() {
           }
         }
 
-        const [statusData, userBookings] = await Promise.all([
+        const [statusData, userBookings, profile] = await Promise.all([
           session?.user?.id ? fetchWorkerJobStatus(resolvedJobId, session.user.id) : null,
           session?.user?.id ? fetchWorkerBookings(session.user.id) : Promise.resolve([]),
+          session?.user?.id ? fetchWorkerProfile(session.user.id) : Promise.resolve(null),
         ]);
+
+        if (profile) {
+          setWorkerProfile(profile);
+        }
 
         if (data) {
           setShift(data);
@@ -113,6 +121,20 @@ export default function WorkerShiftDetailScreen() {
             router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any),
         },
       ]);
+      return;
+    }
+
+    if (workerProfile && workerProfile.verificationStatus !== 'verified') {
+      Alert.alert(
+        'Identity Verification Required',
+        workerProfile.verificationStatus === 'pending'
+          ? 'Your identity documents are under review by Opskl admin. You can apply once approved.'
+          : 'Your profile must be verified before you can apply for shifts. Please complete your identity verification in onboarding.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Verify Identity Now', onPress: () => router.push('/onboarding' as any) },
+        ]
+      );
       return;
     }
 
@@ -406,6 +428,18 @@ export default function WorkerShiftDetailScreen() {
           />
         )}
 
+        {session?.user?.id && workerProfile && workerProfile.verificationStatus !== 'verified' && !isBooked && !applied && (
+          <InlineBanner
+            variant="warning"
+            title="Identity verification required"
+            message={
+              workerProfile.verificationStatus === 'pending'
+                ? 'Your government identity documents are currently under review by Opskl admin. You can apply as soon as verification is approved.'
+                : 'You must complete government identity verification (Aadhaar / PAN) before you can express interest in event shifts.'
+            }
+          />
+        )}
+
         <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.xs }}>
           {isBooked ? (
             <Button
@@ -428,6 +462,17 @@ export default function WorkerShiftDetailScreen() {
               size="lg"
               disabled={true}
               onPress={handleApply}
+            />
+          ) : session?.user?.id && workerProfile && workerProfile.verificationStatus !== 'verified' ? (
+            <Button
+              title={
+                workerProfile.verificationStatus === 'pending'
+                  ? 'Verification Pending Approval • View Status'
+                  : 'Complete Identity Verification to Apply'
+              }
+              variant="primary"
+              size="lg"
+              onPress={() => router.push('/onboarding' as any)}
             />
           ) : (
             <Button

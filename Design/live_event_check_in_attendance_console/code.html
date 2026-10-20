@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary-fixed-variant": "#45474b", "surface-container-lowest": "#ffffff", "on-background": "#191c1d", "on-tertiary-fixed": "#0b1c30", "inverse-primary": "#b0c6ff", "on-error-container": "#93000a", "on-tertiary": "#ffffff", "surface-container": "#edeeef", "inverse-on-surface": "#f0f1f2", "surface-container-highest": "#e1e3e4", "primary-fixed-dim": "#b0c6ff", "on-primary": "#ffffff", "secondary-container": "#e2e2e8", "on-surface-variant": "#434653", "tertiary-fixed-dim": "#b7c8e1", "surface-variant": "#e1e3e4", "on-primary-fixed-variant": "#00419c", "on-surface": "#191c1d", "inverse-surface": "#2e3132", "surface-bright": "#f8f9fa", "secondary": "#5d5e63", "surface-tint": "#1d59c1", "secondary-fixed-dim": "#c6c6cc", "surface-container-low": "#f3f4f5", "on-primary-container": "#bcceff", "primary-fixed": "#d9e2ff", "primary-container": "#0f52ba", "on-tertiary-container": "#bfd0ea", "surface-dim": "#d9dadb", "error-container": "#ffdad6", "surface-container-high": "#e7e8e9", "on-primary-fixed": "#001945", "on-secondary-fixed": "#1a1c20", "secondary-fixed": "#e2e2e8", "outline-variant": "#c3c6d5", "tertiary": "#324257", "on-secondary": "#ffffff", "on-secondary-container": "#636469", "outline": "#737784", "tertiary-fixed": "#d3e4fe", "on-error": "#ffffff", "surface": "#f8f9fa", "on-tertiary-fixed-variant": "#38485d", "background": "#f8f9fa", "primary": "#003c90", "tertiary-container": "#49596f", "error": "#ba1a1a" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "1rem", "space-xl": "2rem", "gutter-desktop": "1.5rem", "margin": "1rem", "margin-desktop": "2rem", "margin-tablet": "1.5rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "space-md": "1rem" }, fontFamily: { "headline-lg-mobile": ["Plus Jakarta Sans"], "label-xs": ["Inter"], "label-lg": ["Inter"], "body-md": ["Inter"], "numeric-data": ["Inter"], "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-md": ["Inter"] }, fontSize: { "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-xs": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "numeric-data": ["15px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400" }], "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }] } } } };</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-background font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-gutter flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Go back or close" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container active:bg-surface-container-high transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[210px]">Multi Step Shift Creator &amp; Wage Spec</h1></div><div class="flex items-center gap-space-xs"><button aria-label="Save draft or action" class="h-11 px-space-sm flex items-center justify-center font-label-md text-label-md text-on-surface-variant hover:text-on-surface">Save Draft</button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-safe bg-surface min-h-screen"><div class="flex flex-col w-full pb-12">
+<!-- Operational Breadcrumb & Live Radar Banner -->
+<div class="px-gutter pt-space-md pb-space-sm bg-surface-container-low flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-primary font-bold">Live Shift Active • Mumbai</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>09:45 AM IST</span>
+</div>
+</div>
+<div class="flex flex-col">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight">India FinTech Conclave 2025</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">domain</span>
+        Jio World Convention Centre, Gate 4 • Bandra Kurla Complex
+      </p>
+</div>
+</div>
+<!-- Venue & Geofence Map Context Strip -->
+<div class="relative px-gutter mt-space-md">
+<div class="relative w-full h-28 rounded-xl overflow-hidden shadow-sm" data-location="Jio World Convention Centre, Mumbai, India" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAkY8uP0-C8LrZa5BQ8aEZh9JupL4BYl3X2L4U0uuOHjeJEmRKCdAfj_6b6XJVtG2OdaHKX0SI7IfFZvhu85cX4Nb-48cEYN0o3utg8_ljXtNT_z3hnSCedP9iaZi4uqgFokaqZMQxgoB8GLtosY-tn_M9MNKx85SFvkjSdfncTKeSO-a5H9n_hLULID23otqg8IvDlkTv6jWdGfrD3iI83ExAA5kF-QrQG21ErICx-JADegQ77xPI8')">
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/85 via-on-surface/40 to-transparent flex flex-col justify-between p-space-sm">
+<div class="flex justify-between items-start">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest text-primary font-label-xs text-label-xs shadow-sm">
+<span class="material-symbols-outlined text-[13px] text-primary">radar</span>
+            GEOFENCE RADIUS: 300M
+          </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary text-on-primary font-label-xs text-label-xs">
+            GPS CALIBRATED (±3M)
+          </span>
+</div>
+<div class="flex items-center justify-between text-surface-container-lowest">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs opacity-80 uppercase tracking-wider">Designated Check-In Portal</span>
+<span class="font-label-lg text-label-lg font-bold">Turnstile Bank 4B (North Concourse)</span>
+</div>
+<div class="flex items-center gap-1 font-body-sm text-body-sm bg-surface-container-highest/20 backdrop-blur-md px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">pin_drop</span>
+<span>19.0645° N, 72.8679° E</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Attendance Metrics Bento Overview -->
+<div class="px-gutter mt-space-md">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant font-bold">Roster Completion</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">5 of 6 On Deck</span>
+</div>
+<div class="flex items-center gap-2">
+<!-- Mini Ring / Progress Visual -->
+<div class="relative w-11 h-11 flex items-center justify-center">
+<svg class="w-11 h-11 transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-highest" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="83.3, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute font-numeric-data text-label-md text-primary font-bold">83%</span>
+</div>
+</div>
+</div>
+<!-- 4-Stat Metric Strip -->
+<div class="grid grid-cols-4 gap-2 pt-space-xs">
+<div class="bg-surface-container-low rounded-lg p-2.5 flex flex-col text-center">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Expected</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">6</span>
+<span class="font-label-xs text-label-xs text-secondary mt-0.5">Guest Rel.</span>
+</div>
+<div class="bg-surface-container rounded-lg p-2.5 flex flex-col text-center">
+<span class="font-label-xs text-label-xs text-primary font-bold uppercase">Present</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold mt-0.5">5</span>
+<span class="font-label-xs text-label-xs text-primary mt-0.5">Verified</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-2.5 flex flex-col text-center">
+<span class="font-label-xs text-label-xs text-tertiary uppercase">In Bounds</span>
+<span class="font-headline-sm text-headline-sm text-tertiary font-bold mt-0.5">1</span>
+<span class="font-label-xs text-label-xs text-tertiary mt-0.5">120m away</span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-2.5 flex flex-col text-center">
+<span class="font-label-xs text-label-xs text-secondary uppercase">No-Show</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold mt-0.5">0</span>
+<span class="font-label-xs text-label-xs text-on-secondary-container mt-0.5">Clear</span>
+</div>
+</div>
+<!-- Live Shift Policy Pill -->
+<div class="mt-space-sm p-space-xs bg-surface-container-low rounded-lg flex items-center justify-between text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-1.5 pl-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">pace</span>
+<span>Shift Window: <strong>10:00 AM – 07:00 PM IST</strong></span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-label-xs text-label-xs uppercase">
+          T-15m to Briefing
+        </span>
+</div>
+</div>
+</div>
+<!-- Scanner & Verification Header Card -->
+<div class="px-gutter mt-space-md">
+<div class="bg-primary text-on-primary rounded-xl p-space-md shadow-md flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Background subtle technical badge watermark -->
+<div class="absolute -right-4 -bottom-6 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[130px]">qr_code_scanner</span>
+</div>
+<div class="flex items-start justify-between relative z-10">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="inline-flex w-2 h-2 rounded-full bg-surface-container-lowest animate-ping"></span>
+<span class="font-label-xs text-label-xs uppercase tracking-wider font-bold text-on-primary-container">Scanner Ready</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-primary mt-0.5">Supervisor Gate 4 Scanner Active</h3>
+<p class="font-body-sm text-body-sm text-primary-fixed-dim">Scan dynamic worker QR passes or validate credentials manually</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs relative z-10">
+<button class="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-surface-container-lowest text-primary font-label-lg text-label-lg active:bg-surface-container-high transition-colors shadow-sm" id="openScannerBtn">
+<span class="material-symbols-outlined text-[20px]">photo_camera</span>
+<span>Launch QR Scanner</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 px-3 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg active:bg-on-primary-fixed-variant transition-colors" id="openPinModalBtn">
+<span class="material-symbols-outlined text-[20px]">pin</span>
+<span>Manual PIN Entry</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Manual PIN Entry Modal Sheet (Interactive Element) -->
+<div class="hidden px-gutter mt-space-sm" id="pinModal">
+<div class="bg-surface-container-high rounded-xl p-space-md shadow-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">password</span>
+<span class="font-label-lg text-label-lg text-on-surface">Offline Manual Passcode Entry</span>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container" id="closePinModalBtn">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enter the worker's 4-digit backup code from their physical RFID card or SMS pass:</p>
+<div class="flex gap-2">
+<input class="w-1/4 h-12 text-center text-headline-sm font-headline-sm bg-surface-container-lowest rounded-lg text-on-surface outline-none focus:bg-primary-fixed" maxlength="1" placeholder="•" type="number"/>
+<input class="w-1/4 h-12 text-center text-headline-sm font-headline-sm bg-surface-container-lowest rounded-lg text-on-surface outline-none focus:bg-primary-fixed" maxlength="1" placeholder="•" type="number"/>
+<input class="w-1/4 h-12 text-center text-headline-sm font-headline-sm bg-surface-container-lowest rounded-lg text-on-surface outline-none focus:bg-primary-fixed" maxlength="1" placeholder="•" type="number"/>
+<input class="w-1/4 h-12 text-center text-headline-sm font-headline-sm bg-surface-container-lowest rounded-lg text-on-surface outline-none focus:bg-primary-fixed" maxlength="1" placeholder="•" type="number"/>
+</div>
+<button class="w-full py-2.5 bg-on-background text-surface-container-lowest rounded-lg font-label-md text-label-md font-semibold active:bg-primary transition-colors">
+        Validate Passcode &amp; Check-In
+      </button>
+</div>
+</div>
+<!-- Worker Attendance Section Header & Filter -->
+<div class="px-gutter mt-space-lg flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Crew Attendance Roll</h3>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-numeric-data text-body-sm font-semibold">6</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-high p-0.5 rounded-lg">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-on-surface font-label-xs text-label-xs font-bold shadow-sm">All (6)</button>
+<button class="px-2 py-1 rounded text-on-surface-variant font-label-xs text-label-xs">Pending (1)</button>
+</div>
+</div>
+<!-- Crew Roster Cards List -->
+<div class="px-gutter mt-space-sm flex flex-col gap-space-sm">
+<!-- Worker 1: Aarav Kulkarni -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Close up portrait photograph of young professional Indian man named Aarav smiling politely, dressed in sharp black event management polo shirt, crisp indoor studio lighting, warm skin tones, professional conference badge lanyard visible." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHQb33TQf2CTV5kux_VaWIP82z4TT0NX6wvmG7fvuWE2rD_V3N073tiU0f7NLi0vW5wM8t70ab_nZdxkImU4kuW29mHnGXjbO_F9cx-4JE9Of9-lDCuoKkdFRqZQaDkm-gSTxLe5t5wJ742Xy1jZXzyA78NblvlmgRdQmJIst5hy7volakdW9ymL2L_LafMoJnq1sIN_i0srKAzPMOQD1ehpMY6W9lC6jQL6Oyio0T_wPHzq3Qe8N9"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Aarav Kulkarni</span>
+<span class="material-symbols-outlined text-[16px] text-primary" title="Identity Verified">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8821 • Lead Usher</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+</div>
+</div>
+<div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span>Checked In: <strong class="font-numeric-data">09:28 AM IST</strong></span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">share_location</span>
+<span>Gate 4 QR (±4m)</span>
+</div>
+</div>
+</div>
+<!-- Worker 2: Priya Sharma -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait photo of a young Indian businesswoman named Priya with neatly tied back hair, wearing corporate black hospitality event attire, focused neutral expression, soft ambient convention centre lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARzQP_lj0ovZiBuveA5B183WMKWD5PZkWBqtPBCA8ecD_6xgQeSypHyxlK5ABQpGsdJaIm2S_AYjN0rqUU7Lw_2lxh2uE30NmJwzmiJnv9kZLfXmbVZWZVZd9Z3t-aVQcSk992l-dLNDyecc0z7YEWITDgB1ziSUYck8jS0uhNYCS9qiayGtLjs8H43bufTIiiIa_L52gziGAkXdpKPTfFe48tJAAmMYdGhcjq3LBbqkgrDFg8o88P"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Priya Sharma</span>
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8824 • VIP Host</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+</div>
+</div>
+<div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span>Checked In: <strong class="font-numeric-data">09:32 AM IST</strong></span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">share_location</span>
+<span>Gate 4 QR (±2m)</span>
+</div>
+</div>
+</div>
+<!-- Worker 3: Rohan Deshmukh -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Headshot of a friendly Indian event operations specialist named Rohan wearing professional dark blazer and white formal shirt, clear direct gaze, high quality studio portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC55HMHNzy8oxReDYw6lpLHSYtaMX9EO9wZYhhgOrIDrpu88ly8i5lowtlFr1bn6JVJdN673R5c-Dr634HwSyqkaHNDRmmIDKKfIaZhRrT1AocMfTB1x2z5vfHuN8u_BlgPBZcS0h6gHcPeRnRgzTki84QmXYB7T4RUedZjHBCFWvW6W1p6-KJTBpcpHgpkWitDEdTNcmySi38GLtMzUMgehTZ3K7SWbar0th08cXHVXpvgh-A7RZZa"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Rohan Deshmukh</span>
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8829 • Delegate Desk</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+</div>
+</div>
+<div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span>Checked In: <strong class="font-numeric-data">09:35 AM IST</strong></span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">share_location</span>
+<span>Gate 4 QR (±5m)</span>
+</div>
+</div>
+</div>
+<!-- Worker 4: Sneha Patel -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Professional candid portrait of young Indian woman named Sneha with hair tied back, wearing event coordinator dark uniform with identification pass, warm confident expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwxIksMJoGe7CzNfGlsacXAcTSE1sEHjskcm7Rvbhb30ir7axFcBt80qrMmKiyUf0uHkfZYlDevTND6zv_cjCjYFUsxaOGUz9ckMRIZku6WAh37wi8LhyhF2RzXf3eeK-vkw74Lu9XsdYNgeDWcYbPbgzgrZhznqGkwyU8VXvaJa385DdvBk_sc1pjyyykgmR00x9fLSpO5dk3kiVMdp4fp6NTixz7GhxtgmSWN-NIwRvf0dCo-_ty"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Sneha Patel</span>
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8833 • Hall Access Mgr</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+</div>
+</div>
+<div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span>Checked In: <strong class="font-numeric-data">09:40 AM IST</strong></span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">share_location</span>
+<span>Gate 4 QR (±3m)</span>
+</div>
+</div>
+</div>
+<!-- Worker 5: Ananya Rao -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait of South Asian woman named Ananya in elegant black guest relations suit, smiling calmly with crisp lighting, clean background, modern enterprise atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcEU-SJBewQqLUbOkxS9qO5tzquQpYWyJSj6WRd2gWFn2u_qg7KMwersibYxHYjngXP4vOXnoOF_igl3m6_kRKcnBMogmCTU4VW4PwZ0h2nlh5PXwXSJDI6hSQtSH9E7hVtfDcRbMS6wj8_dMRlpBLqHOYMKu4JUBFof4fxDxk3ZXfKKCh8tzLGzpzavPufI9OkkcssNz_I-1ioAqixdx1MffjB3HcCqf1poyNOJb9IejwLcjmRP0u"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Ananya Rao</span>
+<span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8839 • Speaker Lounge</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+</div>
+</div>
+<div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span>Checked In: <strong class="font-numeric-data">09:44 AM IST</strong></span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">share_location</span>
+<span>Gate 4 QR (±4m)</span>
+</div>
+</div>
+</div>
+<!-- Worker 6 (Pending / In Bounds): Vikram Joshi -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm" id="vikramCard">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Portrait photograph of young Indian man named Vikram dressed in smart black formal shirt, looking energetic, clear modern indoor lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrtMCQfQJd1n7bASBPLkPBNEfNvJuu85ryw_32BowvQM9176wM0QKLFjvwKpli01SX627l3ijRVTaqykfAmtYKxhprJRlL8I7uZeUwKJcCOQ5_q8OHUaXdYBgcfAqbKzl5yXN1urQE7-OHTFl26ZM4vYT4p4H0V6B0PWL7D8XOiWeNI7wiRsh_pkP4citprWihE58oLxJfMXcQakveTC9wVoBLCGsGUx1lVx3IdP9OHqjlOLqiy_u7"/>
+<div class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary text-[10px]">directions_walk</span>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Vikram Joshi</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs">ID Validated</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8842 • Usher</span>
+</div>
+</div>
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-tertiary">
+<span class="inline-flex w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">Approaching</span>
+</div>
+</div>
+<!-- Real-time geofence indicator badge -->
+<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">my_location</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Within Geofence (120m away)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Walking to Gate 4 Turnstiles</span>
+</div>
+</div>
+<span class="font-numeric-data text-label-xs font-bold px-2 py-0.5 rounded bg-surface-container text-tertiary">
+          ETA ~2 MIN
+        </span>
+</div>
+<!-- Quick Action Buttons for Approaching Crew -->
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<a class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md active:bg-surface-container transition-colors" href="tel:+919820011223">
+<span class="material-symbols-outlined text-[18px] text-tertiary">call</span>
+<span>Call Worker</span>
+</a>
+<button class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-on-background text-surface-container-lowest font-label-md text-label-md active:bg-primary transition-colors" id="manualOverrideBtn">
+<span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+<span>Manual Check-in</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Real-Time Escrow & Wage Milestone Info Banner -->
+<div class="px-gutter mt-space-lg">
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">account_balance_wallet</span>
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Escrow Settlement Safeguard</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+        Approving attendance locks and validates billable shift hours. The automated escrow wage batch release is scheduled for 
+        <strong class="text-on-surface font-semibold">11:00 PM IST tonight</strong> following final supervisor sign-off.
+      </p>
+<div class="mt-space-xs flex items-center justify-between text-body-sm pt-2 bg-surface-container-lowest px-3 py-2 rounded-lg">
+<span class="text-on-surface-variant font-label-xs uppercase tracking-wide">Locked Escrow Pool</span>
+<span class="font-numeric-data text-label-lg text-on-surface font-bold">₹15,000.00 (6 Crew × ₹2,500)</span>
+</div>
+</div>
+</div>
+<!-- Operational Footer Actions -->
+<div class="px-gutter mt-space-lg flex flex-col gap-space-sm">
+<button class="w-full py-3.5 px-4 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm active:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">more_time</span>
+<span>Adjust Shift Hours / Overtime Allowance</span>
+</button>
+<button class="w-full py-4 px-4 rounded-xl bg-on-background text-surface-container-lowest font-headline-sm text-headline-sm flex items-center justify-center gap-2 shadow-md active:bg-primary transition-colors" id="signOffBtn">
+<span class="material-symbols-outlined text-[22px]">verified_user</span>
+<span>Sign-Off Attendance &amp; Validate Timesheet</span>
+</button>
+<div class="text-center pb-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+        Audit trail logged under Supervisor Token: <strong>MUM-SUP-4109</strong>
+</span>
+</div>
+</div>
+</div>
+<script>
+  // Micro-interaction handlers for Organizer Gate Console
+  document.addEventListener('DOMContentLoaded', () => {
+    const pinModalBtn = document.getElementById('openPinModalBtn');
+    const closePinModalBtn = document.getElementById('closePinModalBtn');
+    const pinModal = document.getElementById('pinModal');
+    const manualOverrideBtn = document.getElementById('manualOverrideBtn');
+    const vikramCard = document.getElementById('vikramCard');
+    const signOffBtn = document.getElementById('signOffBtn');
+    const openScannerBtn = document.getElementById('openScannerBtn');
+
+    if (pinModalBtn && pinModal) {
+      pinModalBtn.addEventListener('click', () => {
+        pinModal.classList.toggle('hidden');
+        if (!pinModal.classList.contains('hidden')) {
+          pinModal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+
+    if (closePinModalBtn && pinModal) {
+      closePinModalBtn.addEventListener('click', () => {
+        pinModal.classList.add('hidden');
+      });
+    }
+
+    if (manualOverrideBtn && vikramCard) {
+      manualOverrideBtn.addEventListener('click', () => {
+        vikramCard.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-space-sm">
+              <div class="w-11 h-11 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+                <img src="placeholder" data-alt="Portrait photograph of young Indian man named Vikram dressed in smart black formal shirt, looking energetic, clear modern indoor lighting." class="w-full h-full object-cover" />
+              </div>
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-label-lg text-label-lg text-on-surface font-bold">Vikram Joshi</span>
+                  <span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+                </div>
+                <span class="font-body-sm text-body-sm text-on-surface-variant">Badge: #IN-8842 • Usher</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-primary">
+              <span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
+              <span class="font-label-xs text-label-xs font-bold uppercase tracking-wide">On Duty</span>
+            </div>
+          </div>
+          <div class="mt-1 pt-2 bg-surface-container-low rounded-lg px-space-sm py-2 flex items-center justify-between text-body-sm">
+            <div class="flex items-center gap-1 text-on-surface">
+              <span class="material-symbols-outlined text-[16px] text-primary">how_to_reg</span>
+              <span>Manual Override: <strong class="font-numeric-data">09:46 AM IST</strong></span>
+            </div>
+            <div class="flex items-center gap-1 text-on-surface-variant font-numeric-data text-body-sm">
+              <span class="material-symbols-outlined text-[14px] text-tertiary">verified_user</span>
+              <span>Supervisor Auth</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    if (openScannerBtn) {
+      openScannerBtn.addEventListener('click', () => {
+        alert("Initializing camera module for Jio World Centre Gate 4 scanner feed...");
+      });
+    }
+
+    if (signOffBtn) {
+      signOffBtn.addEventListener('click', () => {
+        signOffBtn.classList.add('bg-primary-container');
+        signOffBtn.innerHTML = `
+          <span class="material-symbols-outlined text-[22px] text-on-primary animate-spin">sync</span>
+          <span>Signing Off Attendance...</span>
+        `;
+        setTimeout(() => {
+          signOffBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[22px] text-on-primary">task_alt</span>
+            <span>Timesheets Validated &amp; Queued</span>
+          `;
+          signOffBtn.classList.remove('bg-on-background');
+          signOffBtn.classList.add('bg-primary');
+        }, 1100);
+      });
+    }
+  });
+</script></main></body></html>

@@ -630,13 +630,22 @@ export default function WorkerEarningsScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-                    Opskl Pilot Settlement: Wages are safeguarded in escrow. Disbursed directly to your verified UPI VPA via IMPS once attendance is completed.
+                    Opskl Pilot Settlement: Shift wages are safeguarded in nodal escrow. Admin processes payment directly to your verified UPI VPA within 24 hours of shift conclusion.
                   </Text>
                 </View>
 
-                {(selectedRecord.status === 'pending' || selectedRecord.status === 'escrow_locked') && (
+                {selectedRecord.status === 'escrow_locked' && (
                   <Button
-                    title={initiatingPayout ? 'Initiating Payout...' : 'Initiate UPI IMPS Payout'}
+                    title="Disbursement Queued (Escrow Secured)"
+                    variant="secondary"
+                    disabled={true}
+                    onPress={() => {}}
+                  />
+                )}
+
+                {selectedRecord.status === 'pending' && (
+                  <Button
+                    title={initiatingPayout ? 'Processing...' : 'Request Payout Review'}
                     variant="primary"
                     loading={initiatingPayout}
                     onPress={() => handleInitiatePayout(selectedRecord)}

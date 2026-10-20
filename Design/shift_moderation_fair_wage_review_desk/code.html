@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "on-error": "#ffffff",
+        "on-secondary-fixed-variant": "#45474b",
+        "surface-bright": "#f8f9fa",
+        "on-tertiary-fixed-variant": "#38485d",
+        "on-primary-fixed-variant": "#00419c",
+        "secondary-container": "#e2e2e8",
+        "tertiary-fixed-dim": "#b7c8e1",
+        "on-background": "#191c1d",
+        "on-tertiary": "#ffffff",
+        "surface-variant": "#e1e3e4",
+        "on-secondary": "#ffffff",
+        "primary": "#003c90",
+        "inverse-surface": "#2e3132",
+        "primary-fixed-dim": "#b0c6ff",
+        "secondary-fixed-dim": "#c6c6cc",
+        "on-surface-variant": "#434653",
+        "surface-container-high": "#e7e8e9",
+        "primary-fixed": "#d9e2ff",
+        "on-secondary-container": "#636469",
+        "primary-container": "#0f52ba",
+        "surface-dim": "#d9dadb",
+        "on-tertiary-fixed": "#0b1c30",
+        "error-container": "#ffdad6",
+        "tertiary-container": "#49596f",
+        "outline-variant": "#c3c6d5",
+        "surface-container": "#edeeef",
+        "tertiary": "#324257",
+        "inverse-on-surface": "#f0f1f2",
+        "on-tertiary-container": "#bfd0ea",
+        "on-surface": "#191c1d",
+        "inverse-primary": "#b0c6ff",
+        "error": "#ba1a1a",
+        "secondary-fixed": "#e2e2e8",
+        "surface-tint": "#1d59c1",
+        "outline": "#737784",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f3f4f5",
+        "secondary": "#5d5e63",
+        "on-primary-container": "#bcceff",
+        "on-secondary-fixed": "#1a1c20",
+        "surface-container-highest": "#e1e3e4",
+        "tertiary-fixed": "#d3e4fe",
+        "background": "#f8f9fa",
+        "surface": "#f8f9fa",
+        "on-error-container": "#93000a",
+        "on-primary-fixed": "#001945",
+        "on-primary": "#ffffff"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "gutter-desktop": "1.5rem",
+        "space-sm": "0.5rem",
+        "margin-desktop": "2rem",
+        "space-xs": "0.25rem",
+        "space-xl": "2rem",
+        "margin": "1rem",
+        "margin-tablet": "1.5rem",
+        "gutter": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem"
+      },
+      "fontFamily": {
+        "label-xs": [
+          "Inter"
+        ],
+        "label-md": [
+          "Inter"
+        ],
+        "numeric-data": [
+          "Inter"
+        ],
+        "headline-sm": [
+          "Plus Jakarta Sans"
+        ],
+        "body-sm": [
+          "Inter"
+        ],
+        "body-md": [
+          "Inter"
+        ],
+        "headline-lg-mobile": [
+          "Plus Jakarta Sans"
+        ],
+        "headline-lg": [
+          "Plus Jakarta Sans"
+        ],
+        "display-lg": [
+          "Plus Jakarta Sans"
+        ],
+        "label-lg": [
+          "Inter"
+        ],
+        "body-lg": [
+          "Inter"
+        ],
+        "display-lg-mobile": [
+          "Plus Jakarta Sans"
+        ]
+      },
+      "fontSize": {
+        "label-xs": [
+          "10px",
+          {
+            "lineHeight": "14px",
+            "letterSpacing": "0.05em",
+            "fontWeight": "700"
+          }
+        ],
+        "label-md": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "numeric-data": [
+          "15px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "500"
+          }
+        ],
+        "headline-sm": [
+          "18px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-sm": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.005em",
+            "fontWeight": "400"
+          }
+        ],
+        "body-md": [
+          "14px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "0em",
+            "fontWeight": "400"
+          }
+        ],
+        "headline-lg-mobile": [
+          "20px",
+          {
+            "lineHeight": "28px",
+            "letterSpacing": "-0.015em",
+            "fontWeight": "600"
+          }
+        ],
+        "headline-lg": [
+          "24px",
+          {
+            "lineHeight": "32px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "display-lg": [
+          "36px",
+          {
+            "lineHeight": "44px",
+            "letterSpacing": "-0.025em",
+            "fontWeight": "700"
+          }
+        ],
+        "label-lg": [
+          "14px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "0.01em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-lg": [
+          "16px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "-0.005em",
+            "fontWeight": "400"
+          }
+        ],
+        "display-lg-mobile": [
+          "28px",
+          {
+            "lineHeight": "36px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "700"
+          }
+        ]
+      }
+    }
+  }
+}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-tertiary text-on-tertiary z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col h-full"><div class="h-16 px-gutter-desktop flex items-center justify-between bg-inverse-surface"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded-lg bg-primary-container flex items-center justify-center text-on-primary font-headline-sm text-headline-sm font-bold">O</div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-primary tracking-tight font-bold leading-none">Opskl</span><span class="font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Admin Console</span></div></div><span class="px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-xs text-label-xs font-bold uppercase">v2.4</span></div><nav class="flex-1 overflow-y-auto px-space-sm py-space-md flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><div class="px-space-sm pt-space-xs pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Operations Core</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="overview-and-action-queues" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="font-label-md text-label-md">Action Queues</span></a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg transition-colors bg-primary-container text-on-primary-container font-label-md" data-path="shift-moderation" href="#"><span class="material-symbols-outlined text-[18px]">schedule</span><span class="font-label-md text-label-md">Shift Moderation</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="disputes-and-incidents" href="#"><span class="material-symbols-outlined text-[18px]">gavel</span><span class="font-label-md text-label-md">Disputes &amp; Incidents</span></a><div class="px-space-sm pt-space-sm pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Trust &amp; Verification</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="worker-verification-kyc" href="#"><span class="material-symbols-outlined text-[18px]">badge</span><span class="font-label-md text-label-md">Worker KYC (Aadhaar)</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="organizer-verification-gstin" href="#"><span class="material-symbols-outlined text-[18px]">domain_verification</span><span class="font-label-md text-label-md">Organizer Entity (GSTIN)</span></a><div class="px-space-sm pt-space-sm pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Network &amp; Governance</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="worker-and-organizer-directories" href="#"><span class="material-symbols-outlined text-[18px]">folder_shared</span><span class="font-label-md text-label-md">Master Directories</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="audit-logs-and-governance" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-label-md text-label-md">Audit &amp; Compliance Logs</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="emergency-marketplace-controls" href="#"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-label-md text-label-md">Emergency Controls</span></a></nav><div class="p-space-sm bg-inverse-surface"><div class="flex items-center justify-between px-space-sm py-1.5 rounded-lg bg-tertiary"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-primary-fixed"></span><span class="font-label-xs text-label-xs text-on-tertiary uppercase">Mumbai Grid Active</span></div><span class="font-numeric-data text-body-sm text-tertiary-fixed-dim">IST +05:30</span></div></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs px-space-sm py-1 rounded bg-secondary-container text-on-secondary-fixed"><span class="material-symbols-outlined text-[16px] text-primary">hub</span><span class="font-label-xs text-label-xs uppercase tracking-wide font-bold">Opskl Mumbai Command Hub (Production)</span></div><div class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high"><span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span><span class="font-label-xs text-label-xs text-on-surface uppercase font-semibold">Health: Nominal (99.98%)</span></div><div class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">lock</span><span class="font-label-xs text-label-xs text-on-surface-variant uppercase font-semibold">Tier-1 SuperAdmin</span></div></div><div class="flex items-center gap-space-md"><button aria-label="Pending Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span></button><div class="h-5 w-px bg-surface-variant"></div><div class="flex items-center gap-space-sm"><div class="text-right flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kavita Sharma</span><span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Head of Field Operations</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="w-full max-w-[1440px] mx-auto px-gutter-desktop py-space-md"><div class="flex flex-col w-full">
+<!-- Sub-Header Breadcrumb & Operational Context Bar -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-md">
+<div class="flex items-center gap-space-xs font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider">
+<span>Opskl Command</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span>Moderation Desk</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span class="text-primary font-bold">Shift &amp; Fair Wage Review</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high font-numeric-data text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary">verified_user</span>
+<span>MMR Wage Enforcement Engine v3.1</span>
+</div>
+<div class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container font-label-xs text-label-xs text-on-surface uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span>Sync: Live (IST 11:42:08)</span>
+</div>
+</div>
+</div>
+<!-- Primary Header & Section Controls -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-lg">
+<div>
+<span class="font-label-xs text-label-xs text-primary font-bold uppercase tracking-wider">Statutory Audit Queue</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Event Shift Moderation &amp; Fair Wage Review</h1>
+<p class="font-body-md text-body-md text-on-surface-variant pt-space-xs">
+        Automated compliance gatekeeping for short-duration hospitality, production, and exhibition crews across Mumbai Metropolitan Region.
+      </p>
+</div>
+<!-- Active Tab Filter Matrix -->
+<div class="flex items-center gap-1 p-1 bg-surface-container rounded-lg self-start lg:self-auto overflow-x-auto max-w-full">
+<button class="px-space-sm py-1.5 rounded font-label-md text-label-md bg-surface-container-lowest text-on-surface shadow-sm whitespace-nowrap transition-colors" type="button">
+        Pending Moderation <span class="ml-1 px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-fixed text-label-xs">5</span>
+</button>
+<button class="px-space-sm py-1.5 rounded font-label-md text-label-md bg-error-container text-on-error-container font-bold whitespace-nowrap transition-colors" type="button">
+        Flagged for Wage Review <span class="ml-1 px-1.5 py-0.2 rounded-full bg-error text-on-error text-label-xs">2</span>
+</button>
+<button class="px-space-sm py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high whitespace-nowrap transition-colors" type="button">
+        Approved &amp; Live <span class="ml-1 text-on-surface-variant text-label-xs">34</span>
+</button>
+<button class="px-space-sm py-1.5 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high whitespace-nowrap transition-colors" type="button">
+        Rejected / Revision <span class="ml-1 text-on-surface-variant text-label-xs">8</span>
+</button>
+</div>
+</div>
+<!-- Fair Wage Governance Summary Notification Banner -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-md shadow-sm mb-space-lg">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md pl-space-xs">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">policy</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-md text-label-md text-on-surface font-bold">Fair Wage Governance Active</span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-xs text-label-xs font-semibold uppercase">Maharashtra Gig Act Baseline</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pt-0.5">
+            Minimum platform wage floor is <strong class="text-on-surface font-semibold font-numeric-data">₹1,600 / 8h shift</strong> in MMR. Shift rates below regional venue benchmarks trigger mandatory Tier-1 Human Admin adjudication prior to worker discovery broadcast.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="text-right hidden xl:flex flex-col">
+<span class="font-label-xs text-label-xs uppercase text-on-surface-variant">Escrow Guarantee Rate</span>
+<span class="font-numeric-data text-body-lg text-primary font-bold">100.0% Pre-funded</span>
+</div>
+<button class="px-space-sm py-2 rounded-lg bg-surface-container-highest text-on-surface font-label-md text-label-md hover:bg-secondary-container transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Adjust Regional Floors</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary Workspace: Split Layout (12-Column Responsive Matrix) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Left Column: Master Moderation Data Table (7 Cols on desktop, expandable) -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<!-- Table Filter and Search Header -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-xs flex-1 min-w-[240px]">
+<span class="material-symbols-outlined text-outline text-[18px]">search</span>
+<input class="bg-transparent font-body-md text-body-md text-on-surface placeholder:text-outline outline-none w-full" placeholder="Filter by Ref ID, Organizer, Venue or GSTIN..." type="text"/>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Sorting:</span>
+<button class="flex items-center gap-1 px-space-xs py-1 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold" type="button">
+<span>Risk Severity (High-Low)</span>
+<span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Moderation Table Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-xs text-label-xs uppercase tracking-wider">
+<th class="py-space-sm px-space-md font-semibold">Shift Ref / Organizer</th>
+<th class="py-space-sm px-space-sm font-semibold">Role &amp; Venue</th>
+<th class="py-space-sm px-space-sm font-semibold">Shift Timing (IST)</th>
+<th class="py-space-sm px-space-sm font-semibold text-right">Wage Rate</th>
+<th class="py-space-sm px-space-sm font-semibold">Escrow</th>
+<th class="py-space-sm px-space-sm font-semibold">Status / Indicator</th>
+<th class="py-space-sm px-space-md font-semibold text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1: High Risk Flagged (Active Selected Row) -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors cursor-pointer" onclick="selectRow('OPS-9041')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-numeric-data font-bold text-body-md text-primary">#OPS-9041</span>
+</div>
+<div class="font-label-md text-label-md text-on-surface font-bold pt-1 leading-tight">Skyline Events &amp; Promos</div>
+<div class="flex items-center gap-1 pt-1 font-label-xs text-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-primary-container">verified</span>
+<span class="font-numeric-data">27AABCS8891P1Z5</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-label-md text-label-md text-on-surface font-bold">AV Console &amp; Runner</div>
+<div class="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant pt-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span>Grand Hyatt Mumbai, Santacruz</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1">
+                    Req: <span class="font-numeric-data font-semibold text-on-surface">2 Staff</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-numeric-data text-body-md text-on-surface font-semibold">26 May 2025</div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant">08:00 – 18:00 IST</div>
+<span class="inline-block mt-1 px-1.5 py-0.2 rounded bg-surface-container-high text-error font-label-xs text-label-xs font-bold uppercase">10 Hours (Overtime)</span>
+</td>
+<td class="py-space-md px-space-sm align-top text-right">
+<div class="font-numeric-data font-bold text-headline-sm text-error">₹1,400<span class="text-body-sm font-normal text-on-surface-variant">/sh</span></div>
+<div class="font-numeric-data text-body-sm text-error font-semibold">₹140.00 / hr</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-0.5">Total: ₹2,800</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-xs text-label-xs font-semibold">
+<span class="material-symbols-outlined text-[14px] text-primary">account_balance_wallet</span>
+<span class="font-numeric-data">₹3,130</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1">Incl. 11.8% Fee</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-error-container text-on-error-container font-label-xs text-label-xs font-bold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+<span>Wage Deficit</span>
+</span>
+<div class="font-label-xs text-label-xs text-error font-semibold pt-1 leading-tight">
+                    Benchmark ₹2,000+
+                  </div>
+</td>
+<td class="py-space-md px-space-md align-top text-right">
+<button class="px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-colors shadow-sm flex items-center gap-1 ml-auto" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>Review Flag</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Compliant Large Shift -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow('OPS-9022')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-numeric-data font-semibold text-body-md text-on-surface">#OPS-9022</span>
+</div>
+<div class="font-label-md text-label-md text-on-surface font-bold pt-1 leading-tight">Apex Live Experiences Pvt Ltd</div>
+<div class="flex items-center gap-1 pt-1 font-label-xs text-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-primary">verified</span>
+<span class="font-numeric-data">27AACCA9918K1ZM</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-label-md text-label-md text-on-surface font-bold">Production &amp; Backstage Logistics</div>
+<div class="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant pt-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span>Dome SVP Stadium, Worli</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1">
+                    Req: <span class="font-numeric-data font-semibold text-on-surface">4 Staff</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-numeric-data text-body-md text-on-surface font-semibold">26 May 2025</div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant">14:00 – 23:00 IST</div>
+<span class="inline-block mt-1 px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-xs text-label-xs">9 Hours</span>
+</td>
+<td class="py-space-md px-space-sm align-top text-right">
+<div class="font-numeric-data font-bold text-headline-sm text-on-surface">₹2,800<span class="text-body-sm font-normal text-on-surface-variant">/sh</span></div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant font-semibold">₹311.11 / hr</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-0.5">Total: ₹11,200</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-xs text-label-xs font-semibold">
+<span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+<span class="font-numeric-data">₹12,521.60</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1 font-semibold text-primary">Fully Funded</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold uppercase tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span>Compliant</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top text-right">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-secondary-container transition-colors flex items-center gap-1 ml-auto" type="button">
+<span>View Details</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Exhibition Registration Desk -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer" onclick="selectRow('OPS-8841')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-numeric-data font-semibold text-body-md text-on-surface">#OPS-8841</span>
+</div>
+<div class="font-label-md text-label-md text-on-surface font-bold pt-1 leading-tight">TechSparks Mumbai</div>
+<div class="flex items-center gap-1 pt-1 font-label-xs text-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-primary">verified</span>
+<span class="font-numeric-data">27AAACT9011J1ZO</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-label-md text-label-md text-on-surface font-bold">Delegate Registration Desk</div>
+<div class="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant pt-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span>NESCO Centre, Goregaon</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1">
+                    Req: <span class="font-numeric-data font-semibold text-on-surface">8 Staff</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-numeric-data text-body-md text-on-surface font-semibold">25 May 2025</div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant">08:30 – 17:30 IST</div>
+<span class="inline-block mt-1 px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-xs text-label-xs">9 Hours</span>
+</td>
+<td class="py-space-md px-space-sm align-top text-right">
+<div class="font-numeric-data font-bold text-headline-sm text-on-surface">₹2,100<span class="text-body-sm font-normal text-on-surface-variant">/sh</span></div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant font-semibold">₹233.33 / hr</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-0.5">Total: ₹16,800</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-xs text-label-xs font-semibold">
+<span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+<span class="font-numeric-data">₹18,782.40</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1 font-semibold text-primary">Fully Funded</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold uppercase tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span>Compliant</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top text-right">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-secondary-container transition-colors flex items-center gap-1 ml-auto" type="button">
+<span>View Details</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Unverified GSTIN + Unfunded Escrow Blocked -->
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer opacity-90" onclick="selectRow('OPS-9065')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="font-numeric-data font-semibold text-body-md text-on-surface">#OPS-9065</span>
+</div>
+<div class="font-label-md text-label-md text-on-surface font-bold pt-1 leading-tight">Urban Mirage Hospitality</div>
+<div class="flex items-center gap-1 pt-1 font-label-xs text-label-xs text-error font-semibold">
+<span class="material-symbols-outlined text-[13px]">pending</span>
+<span>GSTIN Pending Verification</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-label-md text-label-md text-on-surface font-bold">VIP Lounge Host</div>
+<div class="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant pt-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline">location_on</span>
+<span>Jio World Centre, BKC</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-1">
+                    Req: <span class="font-numeric-data font-semibold text-on-surface">6 Staff</span>
+</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="font-numeric-data text-body-md text-on-surface font-semibold">28 May 2025</div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant">17:00 – 01:00 IST</div>
+<span class="inline-block mt-1 px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-label-xs text-label-xs">8 Hours</span>
+</td>
+<td class="py-space-md px-space-sm align-top text-right">
+<div class="font-numeric-data font-bold text-headline-sm text-on-surface">₹2,500<span class="text-body-sm font-normal text-on-surface-variant">/sh</span></div>
+<div class="font-numeric-data text-body-sm text-on-surface-variant font-semibold">₹312.50 / hr</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant pt-0.5">Total: ₹15,000</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+<span>Unfunded</span>
+</div>
+<div class="font-label-xs text-label-xs text-error pt-1 font-semibold">₹0.00 Deposited</div>
+</td>
+<td class="py-space-md px-space-sm align-top">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs font-bold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[13px] text-error">lock</span>
+<span>Blocked</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top text-right">
+<button class="px-space-sm py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center gap-1 ml-auto" type="button">
+<span>Inspect</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container-low font-label-xs text-label-xs text-on-surface-variant">
+<div class="flex items-center gap-space-xs">
+<span>Showing <strong class="text-on-surface">1 - 4</strong> of 49 active submissions</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded bg-surface-container text-on-surface font-semibold disabled:opacity-50" disabled="" type="button">Previous</button>
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-bold" type="button">1</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high" type="button">2</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high" type="button">3</button>
+<button class="px-2 py-1 rounded bg-surface-container text-on-surface font-semibold hover:bg-surface-container-high" type="button">Next</button>
+</div>
+</div>
+</div>
+<!-- Quick Metrics Strip -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">currency_rupee</span>
+</div>
+<div>
+<div class="font-numeric-data text-headline-sm text-on-surface font-bold">₹248.50</div>
+<div class="font-label-xs text-label-xs uppercase text-on-surface-variant">MMR Avg Hourly Offered</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[22px]">timer</span>
+</div>
+<div>
+<div class="font-numeric-data text-headline-sm text-on-surface font-bold">18m 42s</div>
+<div class="font-label-xs text-label-xs uppercase text-on-surface-variant">Admin Review Turnaround</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[22px]">verified</span>
+</div>
+<div>
+<div class="font-numeric-data text-headline-sm text-on-surface font-bold">96.4%</div>
+<div class="font-label-xs text-label-xs uppercase text-on-surface-variant">1st-Pass Compliance Rate</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Focused Flagged Shift Review Panel / Decision Drawer (5 Cols) -->
+<div class="lg:col-span-5 flex flex-col gap-space-md sticky top-20">
+<!-- Panel Header & Identification Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-md overflow-hidden">
+<!-- Header Banner with Status Flag -->
+<div class="p-space-md bg-error-container/40 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-error text-[20px]">flag</span>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-error font-bold">Action Required: Statutory Flag</span>
+<span class="font-numeric-data font-bold text-headline-sm text-on-surface">Inspection Desk: #OPS-9041</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-error text-on-error font-label-xs text-label-xs font-bold uppercase">Critical Flag</span>
+</div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Venue & Organizer Identity Unit -->
+<div class="flex items-start justify-between gap-space-sm pb-space-sm bg-surface-container-low p-space-sm rounded-lg">
+<div class="flex items-start gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary font-bold font-headline-sm shrink-0">
+                SE
+              </div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Skyline Events &amp; Promos</h3>
+<span class="material-symbols-outlined text-[15px] text-primary">verified</span>
+</div>
+<div class="font-label-xs text-label-xs text-on-surface-variant font-numeric-data">GSTIN: 27AABCS8891P1Z5</div>
+<div class="flex items-center gap-space-sm pt-1">
+<span class="font-label-xs text-label-xs text-on-surface font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px] text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>4.6</span>
+</span>
+<span class="text-outline text-label-xs">•</span>
+<span class="font-label-xs text-label-xs text-on-surface-variant">3 completed shifts on Opskl</span>
+</div>
+</div>
+</div>
+<button class="text-primary hover:text-on-primary-fixed-variant p-1 rounded hover:bg-surface-container-high transition-colors" title="View Organizer Master Record" type="button">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</button>
+</div>
+<!-- Shift & Venue Geolocation Context -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase font-bold tracking-wider">Venue &amp; Deployment Roster</span>
+<div class="p-space-sm bg-surface-container-low rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-bold">Grand Hyatt Mumbai, Santacruz East</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container-highest text-on-surface-variant font-label-xs text-label-xs uppercase font-semibold">Tier-1 5-Star Hotel</span>
+</div>
+<div class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-1 font-numeric-data">
+<span class="material-symbols-outlined text-[14px] text-outline">schedule</span>
+<span>26 May 2025, 08:00 – 18:00 IST</span>
+</span>
+<span>•</span>
+<span class="font-numeric-data text-error font-semibold">10h Long Shift</span>
+</div>
+<div class="flex items-center justify-between pt-1 font-label-xs text-label-xs text-on-surface-variant">
+<span>Role: <strong class="text-on-surface">AV Console &amp; Runner (Technical Crew)</strong></span>
+<span>Required Headcount: <strong class="text-on-surface font-numeric-data">2 Specialists</strong></span>
+</div>
+</div>
+</div>
+<!-- Compliance Violation Breakdown (Deep Dive) -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-xs text-label-xs text-error uppercase font-bold tracking-wider">Compliance Violation Breakdown</span>
+<span class="font-label-xs text-label-xs text-error font-semibold">2 Critical Infractions</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Violation Item 1: Hourly Rate Deficit -->
+<div class="p-space-sm bg-error-container/30 rounded-lg flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-error text-[16px]">trending_down</span>
+<span class="font-label-md text-label-md text-on-error-container font-bold">Severe Wage Deficit vs Venue Benchmark</span>
+</div>
+<span class="px-1.5 py-0.2 rounded bg-error text-on-error font-label-xs text-label-xs font-bold uppercase">-30% Below Peer</span>
+</div>
+<div class="grid grid-cols-3 gap-2 p-2 bg-surface-container-lowest rounded">
+<div>
+<span class="block font-label-xs text-label-xs text-on-surface-variant">Offered Pay</span>
+<span class="font-numeric-data text-body-md font-bold text-error">₹1,400.00</span>
+<span class="block font-label-xs text-label-xs text-outline">₹140.00/hr (10h)</span>
+</div>
+<div>
+<span class="block font-label-xs text-label-xs text-on-surface-variant">Venue Floor</span>
+<span class="font-numeric-data text-body-md font-bold text-on-surface">₹2,000.00</span>
+<span class="block font-label-xs text-label-xs text-on-surface-variant">₹200.00/hr</span>
+</div>
+<div>
+<span class="block font-label-xs text-label-xs text-error font-semibold">Underpaid By</span>
+<span class="font-numeric-data text-body-md font-bold text-error">₹60.00/hr</span>
+<span class="block font-label-xs text-label-xs text-error font-semibold">-₹600 / worker</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-error-container leading-tight">
+                  Grand Hyatt technical AV runner historical median is ₹2,250 / 8 hrs. At 10 hours including post-event breakdown, offered ₹1,400 falls below platform statutory minimums.
+                </p>
+</div>
+<!-- Violation Item 2: Welfare & Meal Non-Compliance -->
+<div class="p-space-sm bg-error-container/30 rounded-lg flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-error text-[16px]">restaurant</span>
+<span class="font-label-md text-label-md text-on-error-container font-bold">Welfare Clause 4.2 Breach: No Meals Marked</span>
+</div>
+<span class="px-1.5 py-0.2 rounded bg-error text-on-error font-label-xs text-label-xs font-bold uppercase">Mandatory Food</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-error-container leading-tight">
+                  Organizer marked <strong class="font-semibold text-on-surface">"No Meals Provided"</strong> for a continuous 10-hour deployment. Opskl Worker Welfare Code stipulates any shift exceeding 6.0 hours MUST provide either hot catered meal or a minimum <strong class="font-semibold text-on-surface font-numeric-data">₹300 meal voucher allowance</strong> per staff.
+                </p>
+</div>
+</div>
+</div>
+<!-- Escrow Balance & Calculation Review -->
+<div class="p-space-sm bg-surface-container-low rounded-lg flex flex-col gap-space-xs font-numeric-data">
+<div class="flex items-center justify-between font-label-xs text-label-xs uppercase text-on-surface-variant font-bold">
+<span>Financial Escrow Ledger</span>
+<span class="text-primary font-bold">Payment Secured</span>
+</div>
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant font-body-sm">Locked Escrow Capital:</span>
+<span class="font-bold text-on-surface">₹3,130.40</span>
+</div>
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant font-body-sm">Total Worker Disbursement (Current):</span>
+<span class="font-bold text-error">₹2,800.00 (₹1,400 x 2)</span>
+</div>
+<div class="flex justify-between text-body-sm">
+<span class="text-on-surface-variant font-body-sm">Required Compliant Escrow (₹2k + Meal):</span>
+<span class="font-bold text-primary">₹5,142.80</span>
+</div>
+<div class="h-px bg-surface-variant my-1"></div>
+<div class="flex justify-between text-label-md font-bold">
+<span class="text-error font-bold font-label-md">Escrow Top-up Required:</span>
+<span class="text-error font-numeric-data font-bold">+₹2,012.40</span>
+</div>
+</div>
+<!-- Structured Action Dispatch Controls -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<span class="font-label-xs text-label-xs uppercase font-bold text-on-surface-variant tracking-wider">Adjudication Decision</span>
+<!-- Primary Action 1: Reject & Request Structured Revision -->
+<button class="w-full px-space-md py-3 rounded-lg bg-on-background text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-colors flex items-center justify-center gap-space-xs shadow-sm" onclick="triggerDecision('reject_revise')" type="button">
+<span class="material-symbols-outlined text-[18px]">rule</span>
+<span>Reject &amp; Enforce Statutory Revision</span>
+</button>
+<p class="font-label-xs text-label-xs text-on-surface-variant text-center pb-1">
+              Dispatches automated notice asking Skyline Events to update wage to ₹2,000 + ₹300 meal allowance.
+            </p>
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<!-- Action 2: Operational Exemption (Requires Note) -->
+<button class="px-space-sm py-2.5 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-secondary-container transition-colors flex items-center justify-center gap-1" onclick="triggerDecision('approve_exemption')" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span>Grant Exemption</span>
+</button>
+<!-- Action 3: Suspend Shift -->
+<button class="px-space-sm py-2.5 rounded-lg bg-error-container text-on-error-container font-label-md text-label-md hover:bg-error hover:text-on-error transition-colors flex items-center justify-center gap-1 font-bold" onclick="triggerDecision('suspend_shift')" type="button">
+<span class="material-symbols-outlined text-[16px]">gavel</span>
+<span>Suspend Shift</span>
+</button>
+</div>
+</div>
+<!-- Audit Log Trail Stamp -->
+<div class="p-space-xs bg-surface-container-lowest rounded flex items-center justify-between text-on-surface-variant font-label-xs text-label-xs">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">history</span>
+<span>Flag triggered by System Rule #MMR-WAGE-04</span>
+</div>
+<span class="font-numeric-data">Today 10:14 IST</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Interactive Feedback Drawer Overlay (Hidden by Default) -->
+<div class="fixed inset-0 bg-inverse-surface/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-space-md" id="actionModal">
+<div class="bg-surface-container-lowest w-full max-w-lg rounded-xl shadow-xl overflow-hidden flex flex-col">
+<div class="p-space-md bg-inverse-surface text-on-primary flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">send_and_archive</span>
+<span class="font-headline-sm text-headline-sm font-bold" id="modalTitle">Dispatch Structured Wage Revision Notice</span>
+</div>
+<button class="text-tertiary-fixed-dim hover:text-on-primary" onclick="closeModal()" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="p-space-md flex flex-col gap-space-md">
+<div class="p-space-sm rounded bg-surface-container font-body-sm text-body-sm text-on-surface">
+<strong>Recipient:</strong> Operations Desk at <span class="font-semibold">Skyline Events &amp; Promos</span> (contact@skylineevents.in)
+        </div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface font-semibold">Structured Mandate &amp; Rationale</label>
+<textarea class="w-full p-space-sm rounded-lg bg-surface-container-low font-body-md text-body-md text-on-surface border-none outline-none focus:ring-1 focus:ring-primary" readonly="" rows="4">Your shift submission #OPS-9041 (Grand Hyatt Mumbai) violates Platform Minimum Wage Schedule for 10-hour Technical Crew. 
+
+Required adjustments:
+1. Revise per-shift pay to minimum ₹2,000.00 net.
+2. Enable Catered Food or credit ₹300.00 Meal Allowance.
+3. Authorize additional Escrow top-up of ₹2,012.40 to activate shift visibility.</textarea>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface font-semibold">SuperAdmin Operational Note (Auditable)</label>
+<input class="p-space-sm rounded-lg bg-surface-container-low font-body-md text-body-md text-on-surface border-none outline-none" placeholder="e.g., Reviewed against Bandra-Santacruz AV benchmark index 2025-Q2" type="text" value="Enforcing MMR hospitality-tech minimum under Opskl Bylaw 4.2."/>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-space-xs">
+<button class="px-space-md py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors" onclick="closeModal()" type="button">
+            Cancel
+          </button>
+<button class="px-space-md py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-bold hover:bg-primary transition-colors flex items-center gap-1" onclick="confirmDispatch()" type="button">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>Confirm &amp; Transmit to Organizer</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+    function selectRow(refId) {
+      // In production console, loads the detail panel corresponding to refId
+      console.log('Selected Shift for Inspection:', refId);
+    }
+
+    function triggerDecision(actionType) {
+      const modal = document.getElementById('actionModal');
+      const title = document.getElementById('modalTitle');
+      if (actionType === 'reject_revise') {
+        title.innerText = 'Dispatch Structured Wage Revision Notice';
+      } else if (actionType === 'approve_exemption') {
+        title.innerText = 'Approve Shift with Special Operational Exemption';
+      } else if (actionType === 'suspend_shift') {
+        title.innerText = 'Initiate Shift Suspension Protocol';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('actionModal').classList.add('hidden');
+    }
+
+    function confirmDispatch() {
+      closeModal();
+      alert('Statutory notice dispatched. Shift #OPS-9041 moved to Revision Queue.');
+    }
+  </script>
+</div></div></main></div></body></html>

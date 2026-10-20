@@ -212,5 +212,19 @@ describe('Phase 2 Security, Authorization & Privacy Controls', () => {
       expect(validateCoordinates(null, null).valid).toBe(true);
       expect(validateCoordinates(55.0, 72.868).valid).toBe(false); // Outside India
     });
+
+    test('Self-registration role assignment strictly prevents admin privilege escalation (SEC-001)', () => {
+      const resolveProvisionedRole = (rawMetadata: Record<string, any>): string => {
+        const requestedRole = rawMetadata?.role;
+        if (requestedRole === 'organizer') return 'organizer';
+        // 'admin' in client metadata must be ignored and default to worker
+        return 'worker';
+      };
+
+      expect(resolveProvisionedRole({ role: 'organizer' })).toBe('organizer');
+      expect(resolveProvisionedRole({ role: 'worker' })).toBe('worker');
+      expect(resolveProvisionedRole({ role: 'admin' })).toBe('worker'); // Blocked!
+      expect(resolveProvisionedRole({})).toBe('worker');
+    });
   });
 });

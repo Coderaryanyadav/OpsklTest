@@ -102,6 +102,38 @@ describe('Phase 5 — Booking State Machine & Attendance Engine', () => {
       expect(res.error).toContain('INVALID_TRANSITION');
     });
 
+    test('rejects check-in when worker is outside 300m geofence radius (OUT_OF_GEOFENCE_RANGE)', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error_code: 'OUT_OF_GEOFENCE_RANGE',
+          message: 'You are 850m away from the venue. You must be within 300m to check in.',
+        },
+        error: null,
+      });
+
+      const res = await checkInWorkerSafe('booking-101', 'OP-4829', 19.070, 72.875);
+      expect(res.success).toBe(false);
+      expect(res.errorCode).toBe('OUT_OF_GEOFENCE_RANGE');
+      expect(res.error).toContain('OUT_OF_GEOFENCE_RANGE');
+    });
+
+    test('rejects check-in when venue requires GPS but coordinates are not provided (GPS_COORDINATES_REQUIRED)', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error_code: 'GPS_COORDINATES_REQUIRED',
+          message: 'GPS coordinates are required to verify on-site arrival.',
+        },
+        error: null,
+      });
+
+      const res = await checkInWorkerSafe('booking-101', 'OP-4829');
+      expect(res.success).toBe(false);
+      expect(res.errorCode).toBe('GPS_COORDINATES_REQUIRED');
+      expect(res.error).toContain('GPS_COORDINATES_REQUIRED');
+    });
+
     test('successful check-out records departure and calculates hours worked', async () => {
       __mockRpc.mockResolvedValueOnce({
         data: {

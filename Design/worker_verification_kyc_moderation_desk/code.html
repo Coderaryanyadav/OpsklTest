@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "on-error": "#ffffff",
+        "on-secondary-fixed-variant": "#45474b",
+        "surface-bright": "#f8f9fa",
+        "on-tertiary-fixed-variant": "#38485d",
+        "on-primary-fixed-variant": "#00419c",
+        "secondary-container": "#e2e2e8",
+        "tertiary-fixed-dim": "#b7c8e1",
+        "on-background": "#191c1d",
+        "on-tertiary": "#ffffff",
+        "surface-variant": "#e1e3e4",
+        "on-secondary": "#ffffff",
+        "primary": "#003c90",
+        "inverse-surface": "#2e3132",
+        "primary-fixed-dim": "#b0c6ff",
+        "secondary-fixed-dim": "#c6c6cc",
+        "on-surface-variant": "#434653",
+        "surface-container-high": "#e7e8e9",
+        "primary-fixed": "#d9e2ff",
+        "on-secondary-container": "#636469",
+        "primary-container": "#0f52ba",
+        "surface-dim": "#d9dadb",
+        "on-tertiary-fixed": "#0b1c30",
+        "error-container": "#ffdad6",
+        "tertiary-container": "#49596f",
+        "outline-variant": "#c3c6d5",
+        "surface-container": "#edeeef",
+        "tertiary": "#324257",
+        "inverse-on-surface": "#f0f1f2",
+        "on-tertiary-container": "#bfd0ea",
+        "on-surface": "#191c1d",
+        "inverse-primary": "#b0c6ff",
+        "error": "#ba1a1a",
+        "secondary-fixed": "#e2e2e8",
+        "surface-tint": "#1d59c1",
+        "outline": "#737784",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f3f4f5",
+        "secondary": "#5d5e63",
+        "on-primary-container": "#bcceff",
+        "on-secondary-fixed": "#1a1c20",
+        "surface-container-highest": "#e1e3e4",
+        "tertiary-fixed": "#d3e4fe",
+        "background": "#f8f9fa",
+        "surface": "#f8f9fa",
+        "on-error-container": "#93000a",
+        "on-primary-fixed": "#001945",
+        "on-primary": "#ffffff"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "gutter-desktop": "1.5rem",
+        "space-sm": "0.5rem",
+        "margin-desktop": "2rem",
+        "space-xs": "0.25rem",
+        "space-xl": "2rem",
+        "margin": "1rem",
+        "margin-tablet": "1.5rem",
+        "gutter": "1rem",
+        "space-lg": "1.5rem",
+        "space-md": "1rem"
+      },
+      "fontFamily": {
+        "label-xs": [
+          "Inter"
+        ],
+        "label-md": [
+          "Inter"
+        ],
+        "numeric-data": [
+          "Inter"
+        ],
+        "headline-sm": [
+          "Plus Jakarta Sans"
+        ],
+        "body-sm": [
+          "Inter"
+        ],
+        "body-md": [
+          "Inter"
+        ],
+        "headline-lg-mobile": [
+          "Plus Jakarta Sans"
+        ],
+        "headline-lg": [
+          "Plus Jakarta Sans"
+        ],
+        "display-lg": [
+          "Plus Jakarta Sans"
+        ],
+        "label-lg": [
+          "Inter"
+        ],
+        "body-lg": [
+          "Inter"
+        ],
+        "display-lg-mobile": [
+          "Plus Jakarta Sans"
+        ]
+      },
+      "fontSize": {
+        "label-xs": [
+          "10px",
+          {
+            "lineHeight": "14px",
+            "letterSpacing": "0.05em",
+            "fontWeight": "700"
+          }
+        ],
+        "label-md": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "numeric-data": [
+          "15px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "500"
+          }
+        ],
+        "headline-sm": [
+          "18px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-sm": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.005em",
+            "fontWeight": "400"
+          }
+        ],
+        "body-md": [
+          "14px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "0em",
+            "fontWeight": "400"
+          }
+        ],
+        "headline-lg-mobile": [
+          "20px",
+          {
+            "lineHeight": "28px",
+            "letterSpacing": "-0.015em",
+            "fontWeight": "600"
+          }
+        ],
+        "headline-lg": [
+          "24px",
+          {
+            "lineHeight": "32px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "display-lg": [
+          "36px",
+          {
+            "lineHeight": "44px",
+            "letterSpacing": "-0.025em",
+            "fontWeight": "700"
+          }
+        ],
+        "label-lg": [
+          "14px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "0.01em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-lg": [
+          "16px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "-0.005em",
+            "fontWeight": "400"
+          }
+        ],
+        "display-lg-mobile": [
+          "28px",
+          {
+            "lineHeight": "36px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "700"
+          }
+        ]
+      }
+    }
+  }
+}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-tertiary text-on-tertiary z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col h-full"><div class="h-16 px-gutter-desktop flex items-center justify-between bg-inverse-surface"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded-lg bg-primary-container flex items-center justify-center text-on-primary font-headline-sm text-headline-sm font-bold">O</div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-primary tracking-tight font-bold leading-none">Opskl</span><span class="font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Admin Console</span></div></div><span class="px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-xs text-label-xs font-bold uppercase">v2.4</span></div><nav class="flex-1 overflow-y-auto px-space-sm py-space-md flex flex-col gap-space-xs" data-active-classes="bg-primary-container text-on-primary-container font-label-md"><div class="px-space-sm pt-space-xs pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Operations Core</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="overview-and-action-queues" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="font-label-md text-label-md">Action Queues</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="shift-moderation" href="#"><span class="material-symbols-outlined text-[18px]">schedule</span><span class="font-label-md text-label-md">Shift Moderation</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="disputes-and-incidents" href="#"><span class="material-symbols-outlined text-[18px]">gavel</span><span class="font-label-md text-label-md">Disputes &amp; Incidents</span></a><div class="px-space-sm pt-space-sm pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Trust &amp; Verification</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="worker-verification-kyc" href="#"><span class="material-symbols-outlined text-[18px]">badge</span><span class="font-label-md text-label-md">Worker KYC (Aadhaar)</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="organizer-verification-gstin" href="#"><span class="material-symbols-outlined text-[18px]">domain_verification</span><span class="font-label-md text-label-md">Organizer Entity (GSTIN)</span></a><div class="px-space-sm pt-space-sm pb-1 font-label-xs text-label-xs text-tertiary-fixed-dim uppercase tracking-wider">Network &amp; Governance</div><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="worker-and-organizer-directories" href="#"><span class="material-symbols-outlined text-[18px]">folder_shared</span><span class="font-label-md text-label-md">Master Directories</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="audit-logs-and-governance" href="#"><span class="material-symbols-outlined text-[18px]">receipt_long</span><span class="font-label-md text-label-md">Audit &amp; Compliance Logs</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-tertiary-container hover:bg-tertiary-container hover:text-on-tertiary transition-colors" data-path="emergency-marketplace-controls" href="#"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-label-md text-label-md">Emergency Controls</span></a></nav><div class="p-space-sm bg-inverse-surface"><div class="flex items-center justify-between px-space-sm py-1.5 rounded-lg bg-tertiary"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-primary-fixed"></span><span class="font-label-xs text-label-xs text-on-tertiary uppercase">Mumbai Grid Active</span></div><span class="font-numeric-data text-body-sm text-tertiary-fixed-dim">IST +05:30</span></div></div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-gutter-desktop flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs px-space-sm py-1 rounded bg-secondary-container text-on-secondary-fixed"><span class="material-symbols-outlined text-[16px] text-primary">hub</span><span class="font-label-xs text-label-xs uppercase tracking-wide font-bold">Opskl Mumbai Command Hub (Production)</span></div><div class="flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-high"><span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span><span class="font-label-xs text-label-xs text-on-surface uppercase font-semibold">Health: Nominal (99.98%)</span></div><div class="flex items-center gap-1 px-space-sm py-1 rounded bg-surface-container"><span class="material-symbols-outlined text-[14px] text-on-surface-variant">lock</span><span class="font-label-xs text-label-xs text-on-surface-variant uppercase font-semibold">Tier-1 SuperAdmin</span></div></div><div class="flex items-center gap-space-md"><button aria-label="Pending Notifications" class="relative p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span></button><div class="h-5 w-px bg-surface-variant"></div><div class="flex items-center gap-space-sm"><div class="text-right flex flex-col"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kavita Sharma</span><span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Head of Field Operations</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></div></header><main class="w-full pt-16 bg-surface"><div class="w-full max-w-[1440px] mx-auto px-gutter-desktop py-space-md"><div class="flex flex-col w-full pb-10">
+<!-- Breadcrumbs & Meta Pipeline Strip -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-md">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-xs text-label-xs uppercase tracking-wider">
+<span>Opskl Command</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Verification</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Worker KYC Queue</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Auto-OCR Engine: Active (v4.1.2)</span>
+</div>
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-error-container text-on-error-container font-label-xs text-label-xs font-semibold">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+<span>Avg Verification TTR: 14m 20s</span>
+</div>
+</div>
+</div>
+<!-- Header & Live Queue Counters -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md mb-space-lg">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+        Worker Identity Verification (KYC) Moderation
+      </h1>
+<div class="flex items-center gap-space-sm mt-1">
+<span class="px-space-sm py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-md text-label-md font-semibold">
+          14 Pending Review
+        </span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">•</span>
+<span class="inline-flex items-center gap-1 px-space-sm py-0.5 rounded bg-error-container text-on-error-container font-label-xs text-label-xs font-bold uppercase tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+          3 SLA Warnings (&gt;3h)
+        </span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">•</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">
+          Mumbai Zone Grid: Phase 1 High-Density Event Deployments
+        </span>
+</div>
+</div>
+<!-- Right Controls Quick Stat -->
+<div class="flex items-center gap-space-md self-start lg:self-auto">
+<div class="flex flex-col text-right">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Operator ID</span>
+<span class="font-numeric-data text-numeric-data text-on-surface font-semibold">OPR-MUM-892 (K. Sharma)</span>
+</div>
+<div class="h-8 w-px bg-surface-variant"></div>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface flex items-center gap-space-xs font-label-md text-label-md transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+<span>Refresh Stream</span>
+</button>
+</div>
+</div>
+<!-- Search and Global Filter Bar -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-sm mb-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-md">
+<!-- Search -->
+<div class="lg:col-span-4 relative">
+<span class="material-symbols-outlined absolute left-3 top-3 text-[18px] text-on-surface-variant">search</span>
+<input class="w-full h-11 pl-10 pr-space-md rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container" placeholder="Search by worker legal name, phone, or UID token..." type="text"/>
+</div>
+<!-- Filter: Zone -->
+<div class="lg:col-span-2">
+<div class="relative">
+<select class="w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md appearance-none focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container pr-8 cursor-pointer">
+<option>Mumbai Zone: All Hubs</option>
+<option selected="">BKC (Bandra Kurla Complex)</option>
+<option>NESCO / Goregaon East</option>
+<option>Western Suburbs (Andheri/Juhu)</option>
+<option>South Bombay / Dome SVP</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-3 text-[18px] text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Filter: ID Type -->
+<div class="lg:col-span-2">
+<div class="relative">
+<select class="w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md appearance-none focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container pr-8 cursor-pointer">
+<option>ID Document: All Types</option>
+<option selected="">Masked Aadhaar (eKYC)</option>
+<option>PAN Card</option>
+<option>Voter Identity Card</option>
+<option>Indian Driving License</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-3 text-[18px] text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Filter: SLA / Age -->
+<div class="lg:col-span-2">
+<div class="relative">
+<select class="w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md appearance-none focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container pr-8 cursor-pointer">
+<option>Queue Age: Oldest First</option>
+<option>Critical SLA Breach (&gt;3h)</option>
+<option>High Priority Tier-1 Roles</option>
+<option>Flagged / Auto-OCR Doubt</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-3 text-[18px] text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Action: Batch Pre-screen -->
+<div class="lg:col-span-2 flex items-center justify-end">
+<button class="w-full h-11 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center gap-space-xs font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Advanced Filters</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Two-Pane Split Inspection Workplace -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Left Pane: Candidate Queue List (35% width / col-span-4) -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<div class="flex items-center justify-between px-space-xs">
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-on-surface-variant font-bold">
+          Prioritized Intake Roster (Oldest First)
+        </span>
+<span class="text-on-surface-variant font-numeric-data text-body-sm">Sorted by SLA Wait</span>
+</div>
+<!-- Card 1: Aarav Kulkarni (Active/Selected) -->
+<div class="relative p-space-md rounded-xl bg-surface-container-lowest shadow-md cursor-pointer transition-all duration-150 ring-2 ring-primary">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-error-container text-on-error-container font-label-xs text-label-xs font-bold uppercase tracking-wider">
+              ● SLA Warning: 3h 40m
+            </span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold">
+              Aadhaar
+            </span>
+</div>
+<span class="material-symbols-outlined text-[18px] text-primary">arrow_forward</span>
+</div>
+<div class="flex items-center gap-space-md my-space-sm">
+<div class="w-11 h-11 rounded-lg bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-headline-sm text-headline-sm font-bold shrink-0">
+            AK
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Aarav Ramesh Kulkarni</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Role: BKC Lead Concierge applicant</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+<span>Bandra East (BKC)</span>
+</div>
+<span class="font-numeric-data font-semibold text-primary">OCR Match: 100%</span>
+</div>
+</div>
+<!-- Card 2: Sneha Patel -->
+<div class="relative p-space-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low shadow-sm cursor-pointer transition-all duration-150">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs font-semibold uppercase tracking-wider">
+              Submitted 2h 10m ago
+            </span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold">
+              PAN Card
+            </span>
+</div>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Normal</span>
+</div>
+<div class="flex items-center gap-space-md my-space-sm">
+<div class="w-11 h-11 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center font-headline-sm text-headline-sm font-bold shrink-0">
+            SP
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Sneha Mukesh Patel</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Role: NESCO Badge Desk applicant</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Goregaon East (NESCO)</span>
+</div>
+<span class="font-numeric-data text-on-surface font-semibold">OCR Match: 94%</span>
+</div>
+</div>
+<!-- Card 3: Rohan Deshmukh -->
+<div class="relative p-space-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low shadow-sm cursor-pointer transition-all duration-150">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs font-semibold uppercase tracking-wider">
+              Submitted 1h 45m ago
+            </span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold">
+              Aadhaar
+            </span>
+</div>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Normal</span>
+</div>
+<div class="flex items-center gap-space-md my-space-sm">
+<div class="w-11 h-11 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center font-headline-sm text-headline-sm font-bold shrink-0">
+            RD
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Rohan Vilas Deshmukh</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Role: Dome SVP Usher applicant</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Worli / Lower Parel</span>
+</div>
+<span class="font-numeric-data text-on-surface font-semibold">OCR Match: 99%</span>
+</div>
+</div>
+<!-- Card 4: Vikram Joshi -->
+<div class="relative p-space-md rounded-xl bg-surface-container-lowest hover:bg-surface-container-low shadow-sm cursor-pointer transition-all duration-150">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs font-semibold uppercase tracking-wider">
+              Submitted 50m ago
+            </span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-semibold">
+              Voter ID
+            </span>
+</div>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Fast-Track</span>
+</div>
+<div class="flex items-center gap-space-md my-space-sm">
+<div class="w-11 h-11 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center font-headline-sm text-headline-sm font-bold shrink-0">
+            VJ
+          </div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Vikram Ganesh Joshi</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Role: Grand Hyatt AV Assist applicant</span>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+<span>Santacruz East</span>
+</div>
+<span class="font-numeric-data text-on-surface font-semibold">OCR Match: 91%</span>
+</div>
+</div>
+<!-- Queue Pagination Micro-Indicator -->
+<div class="p-space-sm bg-surface-container rounded-lg flex items-center justify-between text-on-surface-variant font-label-xs text-label-xs">
+<span>Showing 4 of 14 queue submissions</span>
+<div class="flex gap-1">
+<button class="w-6 h-6 rounded bg-surface-container-high flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[14px]">chevron_left</span>
+</button>
+<button class="w-6 h-6 rounded bg-surface-container-high flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Pane: Document Review & Inspection Studio (65% width / col-span-8) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- Candidate Profile Banner -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-space-md mb-space-md">
+<div class="flex items-start gap-space-md">
+<!-- Candidate Photo -->
+<div class="relative">
+<img class="w-16 h-16 rounded-xl object-cover bg-surface-container" data-alt="Close-up professional identity document headshot of a young Indian male in his late twenties wearing a neutral collared shirt, neutral studio lighting, sharp passport photograph format with high clarity against a plain light gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrs-Q0ty--KrsptTu1Y7FMH2lbaEBNE4fVknuIt4oP6-pkVtDVE27xhe8xfG8kKg0J22m-OoF-LfGRY72ZEMVe0jI63BioU3vw_DPRvv44WLfyqk1p_E3sX-q3tkFpYZ6_GZyxX-sBFMbEKozPSoLAwdJP1lME9k-jMiJncMPdmGw9XN1e27SzvlKn_7mUzu_sgKtEB2JrvQR-q4A3FNQatrayuWWc_zEYpFD6hiWpxoN1mxcjA0nr"/>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[12px]">verified</span>
+</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm flex-wrap">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Aarav Ramesh Kulkarni</h2>
+<span class="px-space-xs py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-xs text-label-xs font-bold uppercase tracking-wide">
+                  Candidate ID #MUM-WRK-4491
+                </span>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-xs text-label-xs font-semibold">
+                  Aadhaar eKYC Flow
+                </span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                Applied for Tier-1 Role: <strong class="text-on-surface">BKC Lead Concierge (Multi-lingual Hospitality)</strong>
+</span>
+</div>
+</div>
+<!-- Trust Badges -->
+<div class="flex md:flex-col items-end gap-1">
+<span class="px-space-sm py-1 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs font-bold uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+              Aadhaar OTP Verified
+            </span>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Registered: 24 May 2025 (10:14 IST)</span>
+</div>
+</div>
+<!-- Metadata Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-space-md pt-space-md bg-surface-container-low rounded-lg p-space-md">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Contact Phone</span>
+<span class="font-numeric-data text-numeric-data text-on-surface font-semibold flex items-center gap-1 mt-0.5">
+              +91 98201 •••••
+              <span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Email Address</span>
+<span class="font-body-md text-body-md text-on-surface font-medium truncate mt-0.5">aarav.k@•••••.com</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Resident Cluster</span>
+<span class="font-body-md text-body-md text-on-surface font-medium truncate mt-0.5">Bandra East, Mumbai</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Work Radius Preference</span>
+<span class="font-body-md text-body-md text-on-surface font-medium mt-0.5">BKC / Kurla / Lower Parel</span>
+</div>
+</div>
+</div>
+<!-- Side-by-Side Verification Cards -->
+<div class="grid grid-cols-1 gap-space-lg">
+<!-- Card 1: Masked Aadhaar Card (Front & Back) + Interactive Inspector -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-md">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-primary">badge</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+                  Document 1: Government Identity (Masked Aadhaar)
+                </h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Front and Back high-resolution physical scans uploaded via secure webview. Full UID masked per UIDAI regulations.
+              </p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-high px-space-xs py-1 rounded-lg">
+<button class="p-1 rounded hover:bg-surface-container-highest text-on-surface" title="Rotate Left">
+<span class="material-symbols-outlined text-[18px]">rotate_left</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-highest text-on-surface" title="Rotate Right">
+<span class="material-symbols-outlined text-[18px]">rotate_right</span>
+</button>
+<div class="h-4 w-px bg-surface-variant"></div>
+<button class="p-1 rounded hover:bg-surface-container-highest text-on-surface" title="Zoom In">
+<span class="material-symbols-outlined text-[18px]">zoom_in</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-highest text-on-surface" title="Zoom Out">
+<span class="material-symbols-outlined text-[18px]">zoom_out</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-highest text-on-surface" title="View High-Res Modal">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Document Previews -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md mb-space-lg">
+<!-- Document Front Preview -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-xs text-label-xs text-on-surface-variant">
+<span class="font-bold uppercase tracking-wider">Aadhaar Front View (Color Scanned)</span>
+<span class="text-primary font-semibold">1.4 MB • 300 DPI</span>
+</div>
+<div class="relative w-full h-56 rounded-xl bg-surface-container overflow-hidden shadow-inner flex items-center justify-center group">
+<img class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" data-alt="High resolution scan of the front face of an Indian Republic national identity card with clear blue and white emblem patterns, photo box, government hologram stamp, and masked last 4 digits showing, institutional documentary lighting, sharp typography representation" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjDEC5sN9PfBMfEcUQOgH4ycW8GVP6UiG2RHrdZgyKMpzR2p0xQIX-KjblqJNIJipiqGhECd5SUBvBZJjO6Bl6HvAVa7-Su237XI2En7VJU7Yfs2r2ChsosOI98rfBGvuE_fwtUtWLs-4PHZ-6x1o2slbIG8t-vgRIJo3iIr1bqwnDWfQ_w867j8OtEhaTQlylLJIimBsQu-QKjG7d4jV7ISEXfbtJUuycGAEq-o734oCfA60hAEsh"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
+<div class="absolute bottom-2 left-2 px-2 py-1 rounded bg-inverse-surface/80 text-inverse-on-surface font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">verified_user</span>
+<span>Photo &amp; Hologram Visible</span>
+</div>
+</div>
+</div>
+<!-- Document Back Preview -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-xs text-label-xs text-on-surface-variant">
+<span class="font-bold uppercase tracking-wider">Aadhaar Back View (Address &amp; Barcode)</span>
+<span class="text-primary font-semibold">1.1 MB • 300 DPI</span>
+</div>
+<div class="relative w-full h-56 rounded-xl bg-surface-container overflow-hidden shadow-inner flex items-center justify-center group">
+<img class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" data-alt="Clear high resolution document scan of the rear reverse side of an Indian resident identity card featuring printed Marathi and English official address lines, statutory QR code square, and UIDAI security microtext patterns under flat office inspection lamp" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtwye9qQ4_adQA1492sTpFk4Eq56n8_voDTtUq--07CH5Iddjdo_AgDOj8jSxjO4Vbv6ObaP_No-p41gxD-3KyNthFMlhINaIyEvvX-h7MQmeQXVq3_TAA1m0hN85aHM9bAP-JTCeT2H5eULlUrDltyYmFS5KkQT18dL0QXena-uPMvg6JGIKFIAu3tXz4RU0DWW8VZmNNWHF5O63eFO2MIRYV7kzXSAKHHOOmap03ajuCh9_PuWdS"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/60 via-transparent to-transparent opacity-80 pointer-events-none"></div>
+<div class="absolute bottom-2 left-2 px-2 py-1 rounded bg-inverse-surface/80 text-inverse-on-surface font-label-xs text-label-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed">qr_code_2</span>
+<span>QR Cryptographic Stamp Readable</span>
+</div>
+</div>
+</div>
+</div>
+<!-- OCR Extracted Data Comparison Table -->
+<div class="flex flex-col">
+<div class="flex items-center justify-between mb-space-xs">
+<h4 class="font-label-lg text-label-lg text-on-surface font-bold">
+                Automated OCR vs. Worker Self-Declaration Audit
+              </h4>
+<span class="px-space-xs py-0.5 rounded bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs font-bold uppercase">
+                Confidence Score: 99.4%
+              </span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-xs text-label-xs uppercase tracking-wider">
+<th class="py-2.5 px-space-md rounded-l-lg">Target Field</th>
+<th class="py-2.5 px-space-md">Extracted Document Data (OCR)</th>
+<th class="py-2.5 px-space-md">Candidate Self-Declaration</th>
+<th class="py-2.5 px-space-md rounded-r-lg">Compliance &amp; Match State</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-space-md font-semibold text-on-surface">Full Legal Name</td>
+<td class="py-3 px-space-md font-numeric-data text-on-surface">Aarav Ramesh Kulkarni</td>
+<td class="py-3 px-space-md text-on-surface-variant">Aarav Ramesh Kulkarni</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                        100% Match
+                      </span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-space-md font-semibold text-on-surface">Aadhaar UID Format</td>
+<td class="py-3 px-space-md font-numeric-data text-on-surface tracking-wider">•••• •••• 8291</td>
+<td class="py-3 px-space-md text-on-surface-variant tracking-wider">•••• •••• 8291</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+                        Masked UIDAI Compliant
+                      </span>
+</td>
+</tr>
+<tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-space-md font-semibold text-on-surface">Year of Birth (DOB)</td>
+<td class="py-3 px-space-md font-numeric-data text-on-surface">14/08/1998</td>
+<td class="py-3 px-space-md text-on-surface-variant">14/08/1998</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">done_all</span>
+                        Age: 26 Yrs (&gt;18 Statutory)
+                      </span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-space-md font-semibold text-on-surface">Address &amp; Pincode</td>
+<td class="py-3 px-space-md font-body-sm text-body-sm text-on-surface">Flat 402, Shiv Sadan, Kalanagar, Bandra East, Mumbai 400051</td>
+<td class="py-3 px-space-md font-body-sm text-body-sm text-on-surface-variant">Bandra East / BKC Cluster, Mumbai 400051</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded bg-surface-container text-on-surface font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px] text-primary">pin_drop</span>
+                        Valid Zone Match (BKC Hub)
+                      </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Card 2: Bank / UPI Settlement Pre-Check -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-primary">account_balance</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+                Document 2: Bank &amp; UPI Escrow Settlement Pre-Check
+              </h3>
+</div>
+<span class="px-space-xs py-0.5 rounded bg-surface-container-high text-primary font-label-xs text-label-xs font-bold uppercase">
+              NPCI Real-Time Active
+            </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- UPI Identification -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Target UPI VPA</span>
+<p class="font-numeric-data text-numeric-data font-bold text-on-surface mt-1">aaravkulkarni@okhdfcbank</p>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 block">HDFC Bank Limited</span>
+</div>
+<div class="mt-space-md flex items-center gap-1 text-primary font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">check</span>
+                Virtual Address Active
+              </div>
+</div>
+<!-- Penny-Drop Verification -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Penny-Drop Ledger Verification</span>
+<p class="font-numeric-data text-numeric-data font-bold text-on-surface mt-1">₹1.00 Disbursed</p>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 block">UTR #414489201991 (Settled)</span>
+</div>
+<div class="mt-space-md flex items-center gap-1 text-primary font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">price_check</span>
+                IMPS Credit Confirmed
+              </div>
+</div>
+<!-- Bank Account Holder Match -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase">Bank-Registered Account Holder</span>
+<p class="font-numeric-data text-numeric-data font-bold text-on-surface mt-1">Aarav R Kulkarni</p>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 block">Fuzzy Match Score: 98.2%</span>
+</div>
+<div class="mt-space-md flex items-center gap-1 text-primary font-label-xs text-label-xs font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">task_alt</span>
+                Beneficiary Validated
+              </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Decision & Moderation Action Box (Desk Console Sticky Footer) -->
+<div class="sticky bottom-4 z-30 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-space-lg shadow-xl ring-1 ring-surface-variant/40">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface">Adjudication &amp; KYC Action Panel</span>
+</div>
+<span class="font-label-xs text-label-xs text-on-surface-variant">Worker status: <strong class="text-on-surface">Pending Field Review</strong></span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md mb-space-md">
+<!-- Rejection Reason Dropdown -->
+<div class="md:col-span-5 flex flex-col gap-space-xs">
+<label class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider font-semibold">
+              Rejection / Exception Reason (If Disapproving)
+            </label>
+<div class="relative">
+<select class="w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container pr-8 cursor-pointer" id="rejectionSelect">
+<option value="">Select Pre-Set Rejection Flag...</option>
+<option value="blur">Blurred / Illegible Document Scan</option>
+<option value="privacy">Unmasked Aadhaar Number (Privacy Violation)</option>
+<option value="mismatch">Name Mismatch with Bank Account (&lt;85%)</option>
+<option value="underage">Underage Applicant (&lt;18 Statutory Years)</option>
+<option value="fraud">Fraudulent / Altered / Tampered Document</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-3 text-[18px] text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Admin Notes -->
+<div class="md:col-span-7 flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider font-semibold">
+                Admin Audit Notes &amp; Dispatch Log
+              </label>
+<div class="flex items-center gap-1 font-label-xs text-label-xs text-primary cursor-pointer hover:underline" onclick="document.getElementById('adminNotes').value='Document scans verified against UIDAI standards. Bank penny drop confirms identity. Ready for concierge bidding.';">
+<span>Insert Approved Template</span>
+</div>
+</div>
+<textarea class="w-full px-space-md py-2 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container resize-none" id="adminNotes" placeholder="Add contextual remarks for compliance logs, or specify clear re-upload directives for candidate SMS..." rows="2">Document scans verified against UIDAI standards. Bank penny drop confirms identity. Ready for concierge bidding.</textarea>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-xs">
+<div class="flex items-center gap-space-xs w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-space-md h-11 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-center gap-space-xs transition-colors" onclick="alert('Request dispatched to Aarav Kulkarni via SMS &amp; App Push notification with upload guidelines.')" type="button">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+<span>Request Re-upload</span>
+</button>
+<button class="flex-1 sm:flex-none px-space-md h-11 rounded-lg bg-error-container hover:bg-error hover:text-on-error text-on-error-container font-label-md text-label-md flex items-center justify-center gap-space-xs transition-colors" onclick="if(confirm('Are you sure you want to permanently reject this candidate submission?')) alert('Application rejected and archived in Compliance Ledger.');" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span>Reject Application</span>
+</button>
+</div>
+<!-- Dual Lock Confirmation Approve Button -->
+<div class="w-full sm:w-auto flex items-center gap-space-sm">
+<div class="hidden xl:flex flex-col text-right">
+<span class="font-label-xs text-label-xs text-on-surface-variant">Instant Activation</span>
+<span class="font-label-xs text-label-xs text-primary font-bold">Unlocks BKC Shift Bidding</span>
+</div>
+<button class="w-full sm:w-auto px-space-lg h-11 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg font-bold flex items-center justify-center gap-space-xs shadow-md transition-all active:scale-95" id="approveBtn" onclick="handleApprove(this)" type="button">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span id="approveBtnText">Approve Worker KYC &amp; Unlock Bidding</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mandatory Statutory Footer Compliance Strip -->
+<div class="mt-space-xl p-space-md rounded-xl bg-surface-container flex flex-col md:flex-row items-center justify-between gap-space-sm text-on-surface-variant font-label-xs text-label-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">security</span>
+<span>
+<strong>UIDAI Aadhaar Data Vault &amp; RBI PSS Compliant:</strong> Full 12-digit Aadhaar UID numbers are strictly prohibited and never stored in raw plaintext across Opskl servers. All cached documents purge permanently within 72 hours of verification sign-off.
+      </span>
+</div>
+<div class="flex items-center gap-space-md shrink-0">
+<span>Log Node: MUM-DC1-LEDGER</span>
+<span class="text-surface-variant">•</span>
+<span class="text-primary font-bold">Audit Trail Encrypted (SHA-256)</span>
+</div>
+</div>
+</div>
+<!-- Interactive Adjudication Behavior Script -->
+<script>
+  function handleApprove(button) {
+    const textSpan = document.getElementById('approveBtnText');
+    if (button.dataset.confirmState === 'pending') {
+      button.classList.remove('bg-primary-container', 'hover:bg-primary');
+      button.classList.add('bg-primary');
+      textSpan.textContent = 'Processing Verification...';
+      button.disabled = true;
+
+      setTimeout(() => {
+        textSpan.textContent = 'KYC Approved & Shift Access Granted';
+        button.classList.add('bg-surface-container-highest', 'text-on-surface');
+        alert('Success: Aarav Ramesh Kulkarni (#MUM-WRK-4491) has been approved. Notification dispatched to field manager Kavita Sharma.');
+      }, 700);
+    } else {
+      button.dataset.confirmState = 'pending';
+      textSpan.textContent = 'Confirm Approval & Shift Clearance?';
+      button.classList.add('animate-pulse');
+      setTimeout(() => {
+        if (button.dataset.confirmState === 'pending') {
+          button.dataset.confirmState = '';
+          textSpan.textContent = 'Approve Worker KYC & Unlock Bidding';
+          button.classList.remove('animate-pulse');
+        }
+      }, 5000);
+    }
+  }
+</script></div></main></div></body></html>

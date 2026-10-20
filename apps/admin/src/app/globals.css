@@ -8,60 +8,60 @@
 
 :root {
   /* Surfaces */
-  --bg-color: #FFFFFF;
+  --bg-color: #F8F9FA;
   --surface-color: #FFFFFF;
   --surface-card: #FFFFFF;
-  --surface-muted: #FAFAFA;
-  --surface-secondary: #F5F5F5;
-  --surface-tertiary: #E5E5E5;
+  --surface-muted: #F1F3F5;
+  --surface-secondary: #EDEEEF;
+  --surface-tertiary: #E7E8E9;
 
   /* Borders */
-  --border-color: #E5E5E5;
-  --border-strong: #D4D4D4;
-  --border-muted: #E5E5E5;
-  --border-focus: #000000;
+  --border-color: #E2E4E8;
+  --border-strong: #CBD5E1;
+  --border-muted: #E2E4E8;
+  --border-focus: #0F52BA;
 
-  /* Brand / primary (monochrome) */
-  --primary-color: #000000;
-  --primary-hover: #262626;
-  --primary-light: #F5F5F5;
-  --accent-color: #111111;
+  /* Brand / primary */
+  --primary-color: #0F1115;
+  --primary-hover: #1F242D;
+  --primary-light: #F1F3F5;
+  --accent-color: #0F52BA;
 
   /* Legacy Admin aliases */
-  --navy-color: #111111;
-  --navy-sidebar: #000000;
+  --navy-color: #0F1115;
+  --navy-sidebar: #0F1115;
 
   /* Text */
-  --text-main: #111111;
-  --text-body: #111111;
-  --text-secondary: #737373;
-  --text-muted: #737373;
+  --text-main: #0F1115;
+  --text-body: #191C1D;
+  --text-secondary: #64748B;
+  --text-muted: #737784;
   --text-inverse: #FFFFFF;
-  --disabled: #D4D4D4;
+  --disabled: #CBD5E1;
 
   /* Semantic status */
-  --success-color: #15803D;
-  --success-light: #F0FDF4;
+  --success-color: #047857;
+  --success-light: #ECFDF5;
   --warning-color: #B45309;
   --warning-light: #FFFBEB;
-  --danger-color: #DC2626;
+  --danger-color: #B91C1C;
   --danger-hover: #991B1B;
   --danger-light: #FEF2F2;
-  --info-color: #111111;
-  --info-light: #F5F5F5;
-  --neutral-status: #737373;
-  --neutral-status-light: #F5F5F5;
+  --info-color: #1D4ED8;
+  --info-light: #EFF6FF;
+  --neutral-status: #475569;
+  --neutral-status-light: #F1F5F9;
 
   /* Elevation */
-  --card-shadow: rgba(0, 0, 0, 0.03);
-  --overlay-bg: rgba(0, 0, 0, 0.45);
+  --card-shadow: rgba(15, 17, 21, 0.04);
+  --overlay-bg: rgba(15, 17, 21, 0.5);
 
   /* Sidebar */
-  --sidebar-bg: #000000;
-  --sidebar-border: #1F1F1F;
+  --sidebar-bg: #0F1115;
+  --sidebar-border: #1E232D;
   --sidebar-text: #FFFFFF;
-  --sidebar-muted: #8E8E93;
-  --sidebar-active: #1C1C1E;
+  --sidebar-muted: #8E98A8;
+  --sidebar-active: #1C2331;
   --sidebar-width: 260px;
 
   /* Spacing */

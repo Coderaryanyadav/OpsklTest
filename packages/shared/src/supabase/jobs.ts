@@ -1493,7 +1493,8 @@ export async function getDiscoveryFeedRpc(
     }
 
     const mappedJobs = (data || []).map((row: any) => mapJobRow(row));
-    return { success: true, jobs: mappedJobs };
+    const enrichedJobs = await enrichJobsWithOrganizerCards(mappedJobs);
+    return { success: true, jobs: enrichedJobs };
   } catch (err: any) {
     logger.error('Unexpected error calling get_discovery_feed', err);
     return { success: false, jobs: [], error: err?.message || 'Network error' };

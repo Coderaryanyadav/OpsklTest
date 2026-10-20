@@ -235,6 +235,141 @@ export default function WorkerDiscoverScreen() {
         </View>
       )}
 
+      {/* Stitch Quick Filter Chips Strip */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, gap: 8, paddingVertical: 8 }}
+        style={{ flexGrow: 0 }}
+      >
+        <Pressable
+          onPress={handleResetFilters}
+          style={[
+            styles.quickFilterChip,
+            {
+              backgroundColor: !hasActiveFilters ? colors.primary : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: !hasActiveFilters ? colors.textInverse : colors.textPrimary,
+            }}
+          >
+            All Venues
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setFilters({ ...filters, minWage: 2000 })}
+          style={[
+            styles.quickFilterChip,
+            {
+              backgroundColor: filters.minWage === 2000 ? colors.primary : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: filters.minWage === 2000 ? colors.textInverse : colors.textPrimary,
+            }}
+          >
+            <Text style={{ color: colors.accent, fontWeight: '800' }}>₹ </Text>
+            ₹2,000+ / shift
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            const bkcZone = MUMBAI_ZONES.find((z) => z.id === 'bkc') || MUMBAI_ZONES[1];
+            handleApplyZone({ ...filters, zone: 'bkc' }, bkcZone);
+          }}
+          style={[
+            styles.quickFilterChip,
+            {
+              backgroundColor: activeZone.id === 'bkc' ? colors.primary : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: activeZone.id === 'bkc' ? colors.textInverse : colors.textPrimary,
+            }}
+          >
+            BKC (Jio World)
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            const nescoZone = MUMBAI_ZONES.find((z) => z.id === 'goregaon') || MUMBAI_ZONES[2];
+            handleApplyZone({ ...filters, zone: 'goregaon' }, nescoZone);
+          }}
+          style={[
+            styles.quickFilterChip,
+            {
+              backgroundColor: activeZone.id === 'goregaon' ? colors.primary : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: activeZone.id === 'goregaon' ? colors.textInverse : colors.textPrimary,
+            }}
+          >
+            NESCO Goregaon
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setFilters({ ...filters, category: 'hospitality' })}
+          style={[
+            styles.quickFilterChip,
+            {
+              backgroundColor: filters.category === 'hospitality' ? colors.primary : colors.surface,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: filters.category === 'hospitality' ? colors.textInverse : colors.textPrimary,
+            }}
+          >
+            Hospitality
+          </Text>
+        </Pressable>
+      </ScrollView>
+
+      {/* Operational Feed Header & Locality Summary */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Available Shifts
+          </Text>
+          <View style={{ backgroundColor: colors.surfaceMuted, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9999, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{cards.length} LIVE</Text>
+          </View>
+        </View>
+        <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500' }}>
+          Refreshed just now
+        </Text>
+      </View>
+
       {/* Failure Recovery Alert Banner (Protects against false-positive swipe success) */}
       {failedApplication && (
         <InlineBanner

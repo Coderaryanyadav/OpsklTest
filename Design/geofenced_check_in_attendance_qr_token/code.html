@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "secondary-container": "#e2e2e8", "tertiary-fixed": "#d3e4fe", "surface-container-high": "#e7e8e9", "on-error-container": "#93000a", "inverse-surface": "#2e3132", "on-secondary-container": "#636469", "on-background": "#191c1d", "on-tertiary-container": "#bfd0ea", "surface-container-highest": "#e1e3e4", "on-surface": "#191c1d", "on-tertiary-fixed-variant": "#38485d", "primary-container": "#0f52ba", "secondary": "#5d5e63", "surface-container": "#edeeef", "on-secondary-fixed": "#1a1c20", "outline-variant": "#c3c6d5", "on-primary": "#ffffff", "inverse-on-surface": "#f0f1f2", "secondary-fixed-dim": "#c6c6cc", "tertiary": "#324257", "inverse-primary": "#b0c6ff", "primary": "#003c90", "on-tertiary-fixed": "#0b1c30", "on-primary-fixed-variant": "#00419c", "surface-container-low": "#f3f4f5", "on-error": "#ffffff", "primary-fixed": "#d9e2ff", "on-secondary-fixed-variant": "#45474b", "on-primary-container": "#bcceff", "surface": "#f8f9fa", "primary-fixed-dim": "#b0c6ff", "surface-bright": "#f8f9fa", "surface-variant": "#e1e3e4", "error": "#ba1a1a", "tertiary-container": "#49596f", "secondary-fixed": "#e2e2e8", "surface-dim": "#d9dadb", "surface-tint": "#1d59c1", "on-secondary": "#ffffff", "error-container": "#ffdad6", "tertiary-fixed-dim": "#b7c8e1", "on-tertiary": "#ffffff", "on-surface-variant": "#434653", "on-primary-fixed": "#001945", "outline": "#737784", "surface-container-lowest": "#ffffff", "background": "#f8f9fa" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-lg": "1.5rem", "space-md": "1rem", "margin-tablet": "1.5rem", "space-sm": "0.5rem", "gutter": "1rem", "gutter-desktop": "1.5rem", "margin-desktop": "2rem", "margin": "1rem", "space-xs": "0.25rem", "space-xl": "2rem" }, fontFamily: { "label-md": ["Inter"], "label-lg": ["Inter"], "display-lg": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"], "label-xs": ["Inter"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-md": ["Inter"], "body-lg": ["Inter"], "numeric-data": ["Inter"], "headline-sm": ["Plus Jakarta Sans"] }, fontSize: { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" }], "display-lg-mobile": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-xs": ["10px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "700" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.005em", "fontWeight": "400" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "numeric-data": ["15px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "500" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }] } } } };</script><style>@layer base { html, body { margin: 0; padding: 0; min-height: 100%; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } } .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24; }</style></head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-space-xs flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface hover:text-primary transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[200px]">Geofenced Check In &amp; Attendance Qr Token</h1></div><div class="flex items-center gap-space-xs"><button aria-label="Shift Action Menu" class="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-safe bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<!-- Status Chip & Context Header -->
+<div class="flex flex-col gap-space-xs mb-space-md">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-xs text-label-xs tracking-wider uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+        ● LIVE SHIFT CHECK-IN
+      </span>
+<span class="font-numeric-data text-body-sm text-secondary font-medium">19 Oct, 2024</span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold tracking-tight mt-1">Lead Guest Relations &amp; VIP Concierge</h2>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">location_on</span>
+<span>Jio World Convention Centre, BKC Gate 4, Mumbai</span>
+</div>
+</div>
+<!-- Geofence Radar Verification Unit -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md mb-space-md relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-tertiary-fixed/30 pointer-events-none blur-xl"></div>
+<div class="flex items-start gap-space-md">
+<div class="relative w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+</span>
+<svg class="absolute inset-0 w-full h-full text-primary/30 animate-spin" fill="none" style="animation-duration: 8s;" viewbox="0 0 48 48">
+<circle cx="24" cy="24" r="18" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1.5"></circle>
+</svg>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg font-bold text-primary">WITHIN GEOFENCE VERIFIED</span>
+<span class="material-symbols-outlined text-[18px] text-primary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          GPS Accuracy: ±4 meters • Verified at Gate 4 Perimeter (19.0645° N, 72.8679° E)
+        </p>
+<div class="mt-2.5 inline-flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded text-on-surface-variant font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[13px] text-secondary">sensors</span>
+<span>Sensor locked at 09:28 AM IST</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Dynamic Attendance QR Token Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-md p-space-md mb-space-md flex flex-col items-center relative overflow-hidden text-center">
+<!-- Dynamic Screenshot Watermark Band -->
+<div class="w-full bg-surface-container-high py-1 px-3 rounded-lg mb-space-md flex items-center justify-between text-secondary">
+<span class="font-label-xs text-label-xs flex items-center gap-1 tracking-wider uppercase">
+<span class="material-symbols-outlined text-[14px]">shield</span> Dynamic IST Token
+      </span>
+<span class="font-label-xs text-label-xs font-semibold text-error tracking-tight">Screenshots Invalid</span>
+</div>
+<!-- Center QR Container with Custom Grid & Center Logo -->
+<div class="relative p-3 bg-surface-container-lowest rounded-xl shadow-sm mb-3">
+<!-- High Contrast Stylized SVG QR Matrix with Target Reticles -->
+<svg class="w-52 h-52 text-on-surface" fill="currentColor" viewbox="0 0 100 100">
+<!-- Top-Left Finder -->
+<rect fill="currentColor" height="24" rx="2" width="24" x="6" y="6"></rect>
+<rect fill="#FFFFFF" height="18" rx="1" width="18" x="9" y="9"></rect>
+<rect fill="currentColor" height="10" rx="1" width="10" x="13" y="13"></rect>
+<!-- Top-Right Finder -->
+<rect fill="currentColor" height="24" rx="2" width="24" x="70" y="6"></rect>
+<rect fill="#FFFFFF" height="18" rx="1" width="18" x="73" y="9"></rect>
+<rect fill="currentColor" height="10" rx="1" width="10" x="77" y="13"></rect>
+<!-- Bottom-Left Finder -->
+<rect fill="currentColor" height="24" rx="2" width="24" x="6" y="70"></rect>
+<rect fill="#FFFFFF" height="18" rx="1" width="18" x="9" y="73"></rect>
+<rect fill="currentColor" height="10" rx="1" width="10" x="13" y="77"></rect>
+<!-- Alignment Module -->
+<rect fill="currentColor" height="14" rx="1" width="14" x="72" y="72"></rect>
+<rect fill="#FFFFFF" height="8" rx="0.5" width="8" x="75" y="75"></rect>
+<rect fill="currentColor" height="4" width="4" x="77" y="77"></rect>
+<!-- Data Clusters (Representative high density QR points) -->
+<rect height="4" rx="0.5" width="4" x="34" y="8"></rect>
+<rect height="4" rx="0.5" width="4" x="42" y="8"></rect>
+<rect height="4" rx="0.5" width="8" x="54" y="8"></rect>
+<rect height="4" rx="0.5" width="16" x="38" y="16"></rect>
+<rect height="8" rx="0.5" width="4" x="58" y="16"></rect>
+<rect height="4" rx="0.5" width="8" x="34" y="24"></rect>
+<rect height="4" rx="0.5" width="4" x="46" y="24"></rect>
+<rect height="4" rx="0.5" width="16" x="8" y="34"></rect>
+<rect height="12" rx="0.5" width="4" x="8" y="42"></rect>
+<rect height="4" rx="0.5" width="8" x="16" y="42"></rect>
+<rect height="8" rx="0.5" width="8" x="20" y="50"></rect>
+<rect height="4" rx="0.5" width="12" x="72" y="34"></rect>
+<rect height="6" rx="0.5" width="6" x="88" y="38"></rect>
+<rect height="4" rx="0.5" width="8" x="68" y="42"></rect>
+<rect height="4" rx="0.5" width="14" x="80" y="46"></rect>
+<rect height="10" rx="0.5" width="6" x="72" y="54"></rect>
+<rect height="4" rx="0.5" width="8" x="34" y="68"></rect>
+<rect height="4" rx="0.5" width="14" x="46" y="72"></rect>
+<rect height="12" rx="0.5" width="4" x="34" y="78"></rect>
+<rect height="4" rx="0.5" width="12" x="42" y="82"></rect>
+<rect height="10" rx="0.5" width="6" x="58" y="82"></rect>
+</svg>
+<!-- Center Opskl Badge Overlay -->
+<div class="absolute inset-0 m-auto w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-md">
+<span class="font-display-lg text-[13px] text-on-primary font-bold tracking-tighter">OPS</span>
+</div>
+</div>
+<!-- Token ID with Tap to Copy -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container active:bg-secondary-container transition-colors mb-2" id="copy-token-btn" onclick="navigator.clipboard.writeText('OPS-8842-JW'); this.classList.add('bg-tertiary-fixed'); setTimeout(() =&gt; this.classList.remove('bg-tertiary-fixed'), 1000);">
+<span class="font-numeric-data text-headline-sm text-on-surface font-bold tracking-wider">OPS-8842-JW</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">content_copy</span>
+</button>
+<!-- Security Timer Countdown Widget -->
+<div class="flex items-center gap-2 mb-3">
+<div class="relative w-5 h-5 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-surface-container-high" cx="18" cy="18" fill="none" r="14" stroke-width="3"></circle>
+<circle class="stroke-primary" cx="18" cy="18" fill="none" id="countdown-ring" r="14" stroke-dasharray="88" stroke-dashoffset="24" stroke-linecap="round" stroke-width="3"></circle>
+</svg>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">
+        Token refreshes in <strong class="text-on-surface font-numeric-data" id="timer-sec">42s</strong>
+</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs leading-relaxed">
+      Present this QR token to Apex Live Roster Supervisor (<span class="font-semibold text-on-surface">Rohit Mehta</span>) or Event Desk scanner at Gate 4 concourse.
+    </p>
+</div>
+<!-- Step-by-Step Attendance Milestone Tracker -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md mb-space-md">
+<h3 class="font-label-lg text-label-lg text-on-surface uppercase tracking-wider mb-space-md flex items-center justify-between">
+<span>Operational Checkpoints</span>
+<span class="font-label-xs text-label-xs text-primary font-bold">2 of 4 In Progress</span>
+</h3>
+<div class="flex flex-col gap-3">
+<!-- Step 1: Checked -->
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="flex-1 min-w-0 pb-2">
+<div class="flex items-center justify-between">
+<p class="font-label-md text-label-md text-on-surface font-semibold">Geofence Perimeter Reached</p>
+<span class="font-label-xs text-label-xs text-secondary font-medium">09:28 AM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Validated inside 50m JWCC radius</p>
+</div>
+</div>
+<!-- Step 2: Current (Active Indicator) -->
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center text-on-primary shrink-0 mt-0.5 ring-4 ring-tertiary-fixed">
+<span class="material-symbols-outlined text-[16px] animate-pulse">qr_code_scanner</span>
+</div>
+<div class="flex-1 min-w-0 pb-2">
+<div class="flex items-center justify-between">
+<p class="font-label-md text-label-md text-primary font-bold">Supervisor QR Scan &amp; Briefing Sign-in</p>
+<span class="font-label-xs text-label-xs px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-bold uppercase">Pending Scan</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Reporting to Rohit Mehta at Gate 4 concourse</p>
+</div>
+</div>
+<!-- Step 3: Upcoming -->
+<div class="flex items-start gap-3 opacity-60">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+</div>
+<div class="flex-1 min-w-0 pb-2">
+<p class="font-label-md text-label-md text-on-surface font-semibold">Shift Active: 10:00 AM – 07:00 PM IST</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hourly ledger logged via event system</p>
+</div>
+</div>
+<!-- Step 4: Upcoming -->
+<div class="flex items-start gap-3 opacity-60">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">logout</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-semibold">Geofenced Check-Out &amp; Hours Sign-off</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Instant disbursement validation upon close</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Contingency & Fallback Options -->
+<div class="bg-surface-container-low rounded-xl p-space-md mb-space-md">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">help</span>
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Scanner or Network Latency?</h4>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">
+      If supervisor camera cannot read the dynamic screen code, verbally provide your single-use manual passcode:
+    </p>
+<div class="flex items-center justify-between bg-surface-container-lowest px-3 py-2.5 rounded-lg mb-3 shadow-sm">
+<div class="flex flex-col">
+<span class="font-label-xs text-label-xs text-secondary uppercase font-semibold">Manual Attendance PIN</span>
+<span class="font-numeric-data text-headline-sm font-bold text-on-surface tracking-wider">884 - 219</span>
+</div>
+<span class="font-label-xs text-label-xs bg-surface-container px-2 py-1 rounded text-secondary font-medium">Valid for shift</span>
+</div>
+<!-- On-Site Coordinator Call Link -->
+<a class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md active:bg-secondary-container transition-colors" href="tel:+919820011223">
+<span class="material-symbols-outlined text-[18px] text-primary">phone_in_talk</span>
+      Call Lead Coordinator (Rohit Mehta)
+    </a>
+</div>
+<!-- Operational Wage Calculation Disclaimer -->
+<div class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-surface-container-high/60 mb-space-md">
+<span class="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight">
+      Checking in confirms your physical presence on duty. Shift wages calculate from scheduled reporting time once supervisor badge is scanned.
+    </p>
+</div>
+<!-- Secondary SOS / Incident Report link -->
+<div class="flex flex-col items-center">
+<button class="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-error py-2 px-3 rounded font-label-sm text-label-md transition-colors" onclick="alert('Access team notified. A field coordinator is en route to Gate 4 concourse.')" type="button">
+<span class="material-symbols-outlined text-[16px]">report_problem</span>
+      Report Venue Access Issue / Dispute Location
+    </button>
+</div>
+</div>
+<script>
+  // Dynamic Token Countdown Logic
+  (function initTokenCountdown() {
+    let timeLeft = 42;
+    const maxTime = 60;
+    const timerDisplay = document.getElementById('timer-sec');
+    const ring = document.getElementById('countdown-ring');
+    const circumference = 88;
+
+    setInterval(() => {
+      timeLeft--;
+      if (timeLeft < 0) {
+        timeLeft = maxTime;
+      }
+      if (timerDisplay) {
+        timerDisplay.innerText = timeLeft + 's';
+      }
+      if (ring) {
+        const offset = circumference - (timeLeft / maxTime) * circumference;
+        ring.style.strokeDashoffset = offset;
+      }
+    }, 1000);
+  })();
+</script></main></body></html>

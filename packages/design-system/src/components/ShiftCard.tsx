@@ -57,8 +57,17 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
   return (
     <Card
       onPress={onPress}
-      variant="elevated"
-      style={[{ marginBottom: spacing.md }, style]}
+      variant="outlined"
+      style={[
+        {
+          marginBottom: spacing.md,
+          borderRadius: radii.lg,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          padding: spacing.md,
+        },
+        style,
+      ]}
       testID={testID}
     >
       {/* Header: Title and Status Badge */}
@@ -88,6 +97,7 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
                 fontSize: typography.caption.fontSize,
                 color: colors.textSecondary,
                 marginTop: 2,
+                fontWeight: '500',
               }}
               numberOfLines={2}
             >
@@ -115,32 +125,33 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
           <Text
             style={{
-              fontSize: typography.h3.fontSize,
+              fontSize: typography.h2.fontSize || 22,
               fontWeight: '800',
               color: colors.textPrimary,
               letterSpacing: -0.3,
             }}
           >
-            ₹{shift.hourlyRate}
+            ₹{shift.totalWage ? shift.totalWage : shift.hourlyRate}
           </Text>
           <Text
             style={{
               fontSize: typography.caption.fontSize,
               color: colors.textSecondary,
-              marginLeft: 2,
+              marginLeft: 4,
+              fontWeight: '600',
             }}
           >
-            /hr
+            {shift.totalWage ? 'total' : '/hr'}
           </Text>
           {shift.totalWage ? (
             <Text
               style={{
-                fontSize: typography.caption.fontSize,
+                fontSize: 12,
                 color: colors.textSecondary,
-                marginLeft: spacing.sm,
+                marginLeft: spacing.xs,
               }}
             >
-              (₹{shift.totalWage} total)
+              (₹{shift.hourlyRate}/hr)
             </Text>
           ) : null}
         </View>
@@ -150,30 +161,34 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: colors.surfaceSecondary,
+              backgroundColor: colors.surfaceMuted,
               paddingHorizontal: spacing.sm,
-              paddingVertical: 2,
+              paddingVertical: 3,
               borderRadius: radii.full,
+              borderWidth: 1,
+              borderColor: colors.border,
             }}
           >
             <OpsklIcon name="users" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
             <Text
               style={{
-                fontSize: 12,
-                fontWeight: '600',
+                fontSize: 11,
+                fontWeight: '700',
                 color: colors.textPrimary,
+                textTransform: 'uppercase',
+                letterSpacing: 0.3,
               }}
             >
-              {shift.filledSlots ?? 0}/{shift.totalSlots} slots
+              {shift.filledSlots ?? 0}/{shift.totalSlots} confirmed
             </Text>
           </View>
         ) : null}
       </View>
 
       {/* Metadata: Date, Time, Venue */}
-      <View style={{ marginTop: spacing.xs, gap: 4 }}>
+      <View style={{ marginTop: spacing.xs, gap: 5 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <OpsklIcon name="time" size={14} color={colors.textSecondary} style={{ marginRight: spacing.xs }} />
+          <OpsklIcon name="time" size={14} color={colors.accent} style={{ marginRight: spacing.xs }} />
           <Text
             style={{
               fontSize: typography.caption.fontSize,
@@ -181,13 +196,13 @@ export const ShiftCard: React.FC<ShiftCardProps> = ({
               fontWeight: '500',
             }}
           >
-            {shift.shiftDate} • {shift.startTime} – {shift.endTime}
+            {shift.shiftDate} • {shift.startTime} – {shift.endTime} (IST)
           </Text>
         </View>
 
         {(shift.venueName || shift.city) && (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <OpsklIcon name="location" size={14} color={colors.textSecondary} style={{ marginRight: spacing.xs }} />
+            <OpsklIcon name="location" size={14} color={colors.accent} style={{ marginRight: spacing.xs }} />
             <Text
               style={{
                 fontSize: typography.caption.fontSize,

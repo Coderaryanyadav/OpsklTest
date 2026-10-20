@@ -3,6 +3,7 @@ import {
   Job,
   DiscoveryFeedFilters,
   fetchDiscoveryFeed,
+  getDiscoveryFeedRpc,
   applyForJobSafe,
   recordSwipePass,
   undoSwipePass,
@@ -59,27 +60,40 @@ export function useDiscoveryFeed(workerId: string | null, verificationStatus?: s
       setError(null);
 
       try {
-        const result = await fetchDiscoveryFeed({
-          workerId: workerId ?? undefined,
-          filters,
-          page: 1,
-          pageSize: 30,
-        });
+        const rpcFilters: Record<string, any> = {};
+        if (filters.city) rpcFilters.city = filters.city;
+        if (filters.zone && filters.zone !== 'All Zones') rpcFilters.zone = filters.zone;
+        if (filters.category && filters.category !== 'all') rpcFilters.category = filters.category;
+        if (filters.minWage && filters.minWage > 0) rpcFilters.min_wage = filters.minWage;
+        if (filters.date) rpcFilters.date = filters.date;
+
+        const rpcRes = await getDiscoveryFeedRpc(rpcFilters, 30);
 
         if (!isMounted.current) return;
 
-        // If backend query encountered an error or RLS rejection, surface error state immediately — do NOT mask with demo fixtures
-        if (result.error) {
-          setError(result.error);
-          setCards([]);
+        if (!rpcRes.success) {
+          // Fallback to fetchDiscoveryFeed if RPC returned an error
+          const fallbackRes = await fetchDiscoveryFeed({
+            workerId: workerId ?? undefined,
+            filters,
+            page: 1,
+            pageSize: 30,
+          });
+
+          if (!isMounted.current) return;
+
+          if (fallbackRes.error) {
+            setError(fallbackRes.error);
+            setCards([]);
+            return;
+          }
+
+          let activeJobs = fallbackRes.jobs.filter((j) => !appliedJobIdsRef.current.has(j.id));
+          setCards(activeJobs);
           return;
         }
 
-        let activeJobs = result.jobs;
-
-        // Filter out any already applied job IDs in session
-        activeJobs = activeJobs.filter((j) => !appliedJobIdsRef.current.has(j.id));
-
+        let activeJobs = rpcRes.jobs.filter((j) => !appliedJobIdsRef.current.has(j.id));
         setCards(activeJobs);
       } catch (err: any) {
         if (!isMounted.current) return;
