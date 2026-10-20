@@ -1,6 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
+import {
+  EmptyRow,
+  Modal,
+  Pagination,
+  SegmentedControl,
+  StatusPill,
+  TableShell,
+  maskId,
+  maskUpi,
+  useClientPagination,
+} from './ui';
 
 export interface DirectoryUser {
   id: string;
@@ -10,15 +21,13 @@ export interface DirectoryUser {
   role: 'worker' | 'organizer';
   isActive: boolean;
   createdAt: string;
-  // Worker-specific
   verificationStatus?: string;
   isAadhaarVerified?: boolean;
   isPanVerified?: boolean;
   skills?: string[];
-  preferredLocality?: string;
+  preferredLocality?: string | null;
   shiftsCompleted?: number;
   upiId?: string | null;
-  // Organizer-specific
   businessName?: string;
   businessType?: string;
   isGstinVerified?: boolean;
@@ -31,6 +40,7 @@ interface DirectoryTableProps {
   users: DirectoryUser[];
   onToggleActiveStatus: (userId: string, currentActive: boolean) => Promise<void>;
   onRefresh: () => void;
+  actionError?: string | null;
 }
 
 export const DirectoryTable: React.FC<DirectoryTableProps> = ({
@@ -38,19 +48,28 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
   users,
   onToggleActiveStatus,
   onRefresh,
+  actionError,
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'unverified' | 'suspended'>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [confirmUser, setConfirmUser] = useState<DirectoryUser | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const filtered = users.filter((u) => {
     if (statusFilter === 'suspended' && u.isActive) return false;
     if (statusFilter === 'verified') {
-      const isVerified = type === 'worker' ? (u.verificationStatus === 'verified' || u.isAadhaarVerified) : (u.verificationStatus === 'verified' || u.isGstinVerified);
+      const isVerified =
+        type === 'worker'
+          ? u.verificationStatus === 'verified' || u.isAadhaarVerified
+          : u.verificationStatus === 'verified' || u.isGstinVerified;
       if (!isVerified) return false;
     }
     if (statusFilter === 'unverified') {
-      const isVerified = type === 'worker' ? (u.verificationStatus === 'verified' || u.isAadhaarVerified) : (u.verificationStatus === 'verified' || u.isGstinVerified);
+      const isVerified =
+        type === 'worker'
+          ? u.verificationStatus === 'verified' || u.isAadhaarVerified
+          : u.verificationStatus === 'verified' || u.isGstinVerified;
       if (isVerified) return false;
     }
 
@@ -66,215 +85,161 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
     return true;
   });
 
-  const handleToggle = async (user: DirectoryUser) => {
-    const action = user.isActive ? 'Suspend' : 'Reactivate';
-    if (!window.confirm(`${action} user account for ${user.fullName || user.email}?`)) {
-      return;
-    }
-    setUpdatingId(user.id);
+  const { page, pageCount, pageRows, setPage, summary } = useClientPagination(filtered, 10);
+
+  const handleConfirmToggle = async () => {
+    if (!confirmUser) return;
+    setUpdatingId(confirmUser.id);
+    setLocalError(null);
     try {
-      await onToggleActiveStatus(user.id, user.isActive);
+      await onToggleActiveStatus(confirmUser.id, confirmUser.isActive);
+      setConfirmUser(null);
+    } catch (err: any) {
+      setLocalError(err?.message || 'Failed to update account status');
     } finally {
       setUpdatingId(null);
     }
   };
 
+  const displayError = localError || actionError;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Search and Filters Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div className="admin-toolbar">
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-            {type === 'worker' ? 'Verified Worker Talent Pool' : 'Event Agencies & Organizers Directory'}
+          <h2 className="admin-section-title">
+            {type === 'worker' ? 'Worker directory' : 'Organizer directory'}
           </h2>
-          <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
+          <p className="admin-section-desc">
             {type === 'worker'
-              ? 'Real-time database records of registered on-demand event workforce across Mumbai'
-              : 'Registered event planning agencies, venue hosts, and corporate organizers'}
+              ? 'Registered workforce profiles and KYC status'
+              : 'Registered agencies and organizer accounts'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-toolbar-actions">
           <input
-            type="text"
-            placeholder={`Search ${type}s by name, email, phone...`}
+            type="search"
+            className="admin-input admin-input-sm"
+            placeholder={`Search ${type}s…`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: '7px 12px',
-              borderRadius: 8,
-              border: '1px solid #E5E5E5',
-              fontSize: 13,
-              width: 240,
-              outline: 'none',
-              backgroundColor: '#FFFFFF',
-              color: '#111111',
-            }}
+            style={{ width: 220 }}
+            aria-label={`Search ${type}s`}
           />
 
-          <div style={{ display: 'flex', backgroundColor: '#F5F5F5', borderRadius: 8, padding: 2, border: '1px solid #E5E5E5' }}>
-            {(['all', 'verified', 'unverified', 'suspended'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setStatusFilter(tab)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  border: 'none',
-                  backgroundColor: statusFilter === tab ? '#000000' : 'transparent',
-                  color: statusFilter === tab ? '#FFFFFF' : '#737373',
-                  fontWeight: statusFilter === tab ? 700 : 500,
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'verified', label: 'Verified' },
+              { value: 'unverified', label: 'Unverified' },
+              { value: 'suspended', label: 'Suspended' },
+            ]}
+          />
 
-          <button
-            onClick={onRefresh}
-            style={{
-              padding: '7px 14px',
-              borderRadius: 8,
-              border: '1px solid #E5E5E5',
-              backgroundColor: '#FFFFFF',
-              color: '#111111',
-              fontWeight: 600,
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            ↻ Refresh
+          <button type="button" className="admin-btn admin-btn-secondary admin-btn-sm" onClick={onRefresh}>
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Directory Table */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E5E5E5',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}
+      {displayError && (
+        <div className="admin-banner admin-banner--danger" role="alert">
+          {displayError}
+        </div>
+      )}
+
+      <TableShell
+        footer={<Pagination page={page} pageCount={pageCount} onChange={setPage} summary={summary} />}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+        <table className="admin-table">
           <thead>
-            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
-              <th style={{ padding: '12px 16px' }}>{type === 'worker' ? 'Worker Profile' : 'Agency / Company'}</th>
-              <th style={{ padding: '12px 16px' }}>Contact Details</th>
-              <th style={{ padding: '12px 16px' }}>{type === 'worker' ? 'Locality & Skills' : 'Business Type & GSTIN'}</th>
-              <th style={{ padding: '12px 16px' }}>KYC Status</th>
-              <th style={{ padding: '12px 16px' }}>Account</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+            <tr>
+              <th>{type === 'worker' ? 'Worker' : 'Agency'}</th>
+              <th>Contact</th>
+              <th>{type === 'worker' ? 'Skills / UPI' : 'Business / GSTIN'}</th>
+              <th>KYC</th>
+              <th>Account</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
-                  No {type} accounts found matching current query.
-                </td>
-              </tr>
+            {pageRows.length === 0 ? (
+              <EmptyRow
+                colSpan={6}
+                title="No accounts"
+                message={`No ${type} accounts match the current query.`}
+              />
             ) : (
-              filtered.map((u) => {
-                const isVerified = type === 'worker'
-                  ? (u.verificationStatus === 'verified' || u.isAadhaarVerified)
-                  : (u.verificationStatus === 'verified' || u.isGstinVerified);
+              pageRows.map((u) => {
+                const isVerified =
+                  type === 'worker'
+                    ? u.verificationStatus === 'verified' || u.isAadhaarVerified
+                    : u.verificationStatus === 'verified' || u.isGstinVerified;
 
                 return (
-                  <tr key={u.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 700, color: '#111111' }}>
-                        {type === 'organizer' && u.businessName ? u.businessName : u.fullName || 'Registered User'}
+                  <tr key={u.id}>
+                    <td>
+                      <div className="cell-primary">
+                        {type === 'organizer' && u.businessName
+                          ? u.businessName
+                          : u.fullName || 'Registered user'}
                       </div>
-                      <div style={{ fontSize: 11, color: '#737373', fontFamily: 'monospace' }}>
-                        ID #{u.id.substring(0, 8)}
-                      </div>
+                      <div className="cell-muted cell-mono">ID {maskId(u.id)}</div>
                     </td>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ color: '#111111' }}>{u.email}</div>
-                      <div style={{ fontSize: 11, color: '#737373' }}>
-                        {u.phone || 'No phone registered'}
-                      </div>
+                    <td>
+                      <div>{u.email}</div>
+                      <div className="cell-muted">{u.phone || 'No phone'}</div>
                     </td>
 
-                    <td style={{ padding: '12px 16px' }}>
+                    <td>
                       {type === 'worker' ? (
                         <div>
-                          <div style={{ color: '#111111', fontWeight: 500 }}>
-                            {u.preferredLocality || 'Mumbai'}
+                          <div style={{ fontWeight: 500 }}>
+                            {u.skills && u.skills.length > 0 ? u.skills.join(', ') : 'No skills listed'}
                           </div>
-                          <div style={{ fontSize: 11, color: '#737373' }}>
-                            {u.skills && u.skills.length > 0 ? u.skills.join(', ') : 'General Event Support'}
+                          <div className="cell-muted">
+                            {u.preferredLocality ? u.preferredLocality : 'Locality not set'}
+                            {u.upiId ? ` · UPI ${maskUpi(u.upiId)}` : ''}
                           </div>
                         </div>
                       ) : (
                         <div>
-                          <div style={{ color: '#111111', fontWeight: 500, textTransform: 'capitalize' }}>
-                            {(u.businessType || 'Event Agency').replace('_', ' ')}
+                          <div style={{ fontWeight: 500, textTransform: 'capitalize' }}>
+                            {(u.businessType || 'event agency').replace(/_/g, ' ')}
                           </div>
-                          <div style={{ fontSize: 11, color: '#737373', fontFamily: 'monospace' }}>
-                            {u.gstin || 'No GSTIN on file'}
+                          <div className="cell-muted cell-mono">
+                            {u.gstin ? maskId(u.gstin, 4) : 'No GSTIN on file'}
                           </div>
                         </div>
                       )}
                     </td>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          backgroundColor: isVerified ? '#F0FDF4' : '#FFFBEB',
-                          color: isVerified ? '#15803D' : '#B45309',
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        {isVerified ? 'VERIFIED' : 'PENDING KYC'}
-                      </span>
+                    <td>
+                      <StatusPill
+                        label={isVerified ? 'Verified' : 'Pending KYC'}
+                        tone={isVerified ? 'success' : 'warning'}
+                      />
                     </td>
 
-                    <td style={{ padding: '12px 16px' }}>
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          backgroundColor: u.isActive ? '#F5F5F5' : '#FEF2F2',
-                          color: u.isActive ? '#111111' : '#DC2626',
-                          border: u.isActive ? '1px solid #E5E5E5' : 'none',
-                          textTransform: 'uppercase',
-                        }}
-                      >
-                        {u.isActive ? 'ACTIVE' : 'SUSPENDED'}
-                      </span>
+                    <td>
+                      <StatusPill
+                        label={u.isActive ? 'Active' : 'Suspended'}
+                        tone={u.isActive ? 'neutral' : 'danger'}
+                      />
                     </td>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <button
-                        onClick={() => handleToggle(u)}
+                        type="button"
+                        className={`admin-btn admin-btn-sm ${u.isActive ? 'admin-btn-danger' : 'admin-btn-success'}`}
                         disabled={updatingId === u.id}
-                        style={{
-                          padding: '5px 12px',
-                          borderRadius: 6,
-                          border: '1px solid',
-                          borderColor: u.isActive ? '#DC2626' : '#15803D',
-                          backgroundColor: u.isActive ? '#FEF2F2' : '#F0FDF4',
-                          color: u.isActive ? '#DC2626' : '#15803D',
-                          fontWeight: 600,
-                          fontSize: 11,
-                          cursor: 'pointer',
+                        onClick={() => {
+                          setLocalError(null);
+                          setConfirmUser(u);
                         }}
                       >
                         {u.isActive ? 'Suspend' : 'Reactivate'}
@@ -286,7 +251,44 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
             )}
           </tbody>
         </table>
-      </div>
+      </TableShell>
+
+      {confirmUser && (
+        <Modal
+          title={confirmUser.isActive ? 'Suspend account?' : 'Reactivate account?'}
+          onClose={() => setConfirmUser(null)}
+        >
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+            {confirmUser.isActive
+              ? `Suspend ${confirmUser.fullName || confirmUser.email}? They will be unable to use the platform until reactivated.`
+              : `Reactivate ${confirmUser.fullName || confirmUser.email}?`}
+          </p>
+
+          {localError && (
+            <div className="admin-banner admin-banner--danger" role="alert">
+              {localError}
+            </div>
+          )}
+
+          <div className="admin-modal-actions">
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setConfirmUser(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={`admin-btn ${confirmUser.isActive ? 'admin-btn-danger' : 'admin-btn-primary'}`}
+              disabled={updatingId === confirmUser.id}
+              onClick={handleConfirmToggle}
+            >
+              {updatingId === confirmUser.id
+                ? 'Updating…'
+                : confirmUser.isActive
+                ? 'Confirm suspend'
+                : 'Confirm reactivate'}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

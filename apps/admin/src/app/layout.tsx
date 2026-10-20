@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Opskl Admin Portal — Marketplace Governance',
-  description: 'Operations, Escrow, and Verification Command Center for Opskl India',
+  title: 'Opskl Admin',
+  description: 'Operations, verification, and compliance console for Opskl',
 };
 
 export default function RootLayout({

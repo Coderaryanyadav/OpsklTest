@@ -2,6 +2,16 @@
 
 import React, { useState } from 'react';
 import { Dispute } from '@opskil/shared';
+import {
+  EmptyRow,
+  Modal,
+  Pagination,
+  StatusPill,
+  StatusTone,
+  TableShell,
+  maskId,
+  useClientPagination,
+} from './ui';
 
 interface DisputesQueueProps {
   disputes: Dispute[];
@@ -11,11 +21,24 @@ interface DisputesQueueProps {
     notes: string,
     adjustedPayout?: number
   ) => Promise<void>;
+  compact?: boolean;
+}
+
+function statusTone(status: string): StatusTone {
+  if (status === 'resolved') return 'success';
+  if (status === 'dismissed') return 'neutral';
+  if (status === 'under_review') return 'info';
+  return 'warning';
+}
+
+function statusLabel(status: string): string {
+  return status.replace(/_/g, ' ');
 }
 
 export const DisputesQueue: React.FC<DisputesQueueProps> = ({
   disputes,
   onResolveDispute,
+  compact = false,
 }) => {
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   const [resolutionStatus, setResolutionStatus] = useState<'resolved' | 'dismissed'>('resolved');
@@ -23,6 +46,8 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
   const [adjustedPayout, setAdjustedPayout] = useState('');
   const [modalError, setModalError] = useState('');
   const [resolving, setResolving] = useState(false);
+
+  const { page, pageCount, pageRows, setPage, summary } = useClientPagination(disputes, compact ? 5 : 10);
 
   const handleResolve = async () => {
     if (!selectedDispute) return;
@@ -47,108 +72,59 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Header */}
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-          Attendance & Wage Disputes
-        </h1>
-        <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
-          Investigate shift attendance disputes, check-in discrepancies, and wage adjustments with platform escrow protection.
+        <h2 className="admin-section-title">Attendance & wage disputes</h2>
+        <p className="admin-section-desc">
+          Investigate attendance disputes and wage adjustments. Dismissed cases are not counted as active.
         </p>
       </div>
 
-      {/* Disputes Table */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E5E5E5',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}
+      <TableShell
+        footer={<Pagination page={page} pageCount={pageCount} onChange={setPage} summary={summary} />}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+        <table className="admin-table">
           <thead>
-            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
-              <th style={{ padding: '12px 16px' }}>Shift & Booking</th>
-              <th style={{ padding: '12px 16px' }}>Raised By</th>
-              <th style={{ padding: '12px 16px' }}>Claim Reason</th>
-              <th style={{ padding: '12px 16px' }}>Details</th>
-              <th style={{ padding: '12px 16px' }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+            <tr>
+              <th>Shift & booking</th>
+              <th>Raised by</th>
+              <th>Claim</th>
+              <th>Details</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {disputes.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
-                  No active attendance or wage disputes reported.
-                </td>
-              </tr>
+            {pageRows.length === 0 ? (
+              <EmptyRow colSpan={6} title="No disputes" message="No attendance or wage disputes reported." />
             ) : (
-              disputes.map((d) => (
-                <tr key={d.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 700, color: '#111111' }}>
-                      Booking #{d.bookingId.substring(0, 8)}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#737373' }}>
-                      Case #{d.id.substring(0, 8)} • Filed {new Date(d.createdAt).toLocaleDateString()}
+              pageRows.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <div className="cell-primary">Booking {maskId(d.bookingId)}</div>
+                    <div className="cell-muted">
+                      Case {maskId(d.id)} · Filed {new Date(d.createdAt).toLocaleDateString('en-IN')}
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#111111' }}>
-                    {d.raisedBy.substring(0, 8)}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#111111' }}>
-                    {d.reason}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#737373', maxWidth: 260 }}>
+                  <td className="cell-mono">{maskId(d.raisedBy)}</td>
+                  <td style={{ fontWeight: 600 }}>{d.reason}</td>
+                  <td style={{ color: 'var(--text-secondary)', maxWidth: 260 }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {d.details}
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        backgroundColor:
-                          d.status === 'resolved'
-                            ? '#F0FDF4'
-                            : d.status === 'under_review'
-                            ? '#F5F5F5'
-                            : '#FFFBEB',
-                        color:
-                          d.status === 'resolved'
-                            ? '#15803D'
-                            : d.status === 'under_review'
-                            ? '#111111'
-                            : '#B45309',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {d.status.replace('_', ' ')}
-                    </span>
+                  <td>
+                    <StatusPill label={statusLabel(d.status)} tone={statusTone(d.status)} />
                   </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                  <td style={{ textAlign: 'right' }}>
                     <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary admin-btn-sm"
                       onClick={() => {
                         setSelectedDispute(d);
                         setAdjustedPayout('');
                         setNotes('');
                         setModalError('');
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 6,
-                        border: '1px solid #E5E5E5',
-                        backgroundColor: '#FFFFFF',
-                        color: '#111111',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
+                        setResolutionStatus('resolved');
                       }}
                     >
                       Investigate
@@ -159,173 +135,83 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
             )}
           </tbody>
         </table>
-      </div>
+      </TableShell>
 
-      {/* Adjudicate Dispute Modal */}
       {selectedDispute && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              width: '100%',
-              maxWidth: 580,
-              padding: 24,
-              border: '1px solid #E5E5E5',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-                Adjudicate Attendance & Wage Dispute
-              </h2>
-              <button
-                onClick={() => setSelectedDispute(null)}
-                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#737373' }}
-              >
-                ✕
-              </button>
+        <Modal title="Adjudicate dispute" onClose={() => setSelectedDispute(null)}>
+          <div className="admin-modal-body-card">
+            <div className="admin-modal-row">
+              <span>Booking</span>
+              <span className="cell-mono">{maskId(selectedDispute.bookingId)}</span>
             </div>
-
-            <div style={{ backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5', padding: 14, borderRadius: 8, gap: 6, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#737373' }}>Booking Ref:</span>
-                <span style={{ fontWeight: 700, color: '#111111' }}>{selectedDispute.bookingId}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#737373' }}>Claim Reason:</span>
-                <span style={{ fontWeight: 600, color: '#111111' }}>{selectedDispute.reason}</span>
-              </div>
-              <div>
-                <span style={{ color: '#737373', display: 'block', marginBottom: 2 }}>Case Details:</span>
-                <span style={{ color: '#111111', fontSize: 12 }}>{selectedDispute.details}</span>
-              </div>
+            <div className="admin-modal-row">
+              <span>Claim</span>
+              <span style={{ fontWeight: 600 }}>{selectedDispute.reason}</span>
             </div>
-
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
-                Resolution Adjudication:
-              </label>
-              <select
-                value={resolutionStatus}
-                onChange={(e) => setResolutionStatus(e.target.value as any)}
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  fontSize: 13,
-                  outline: 'none',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                }}
-              >
-                <option value="resolved">Mark Resolved (Authorize Adjusted Settlement)</option>
-                <option value="dismissed">Dismiss Dispute Claim (No Adjustment)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
-                Adjusted Net Payout (₹):
-              </label>
-              <input
-                type="number"
-                value={adjustedPayout}
-                onChange={(e) => setAdjustedPayout(e.target.value)}
-                placeholder="Optional adjusted wage amount in INR"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                  fontSize: 13,
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
-                Investigation Case Notes:
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Detail GPS logs, supervisor confirmation, or check-in terminal timestamps..."
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                  fontSize: 13,
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            {modalError && (
-              <div style={{ color: '#DC2626', fontSize: 12, fontWeight: 600 }}>
-                ⚠️ {modalError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
-              <button
-                onClick={() => setSelectedDispute(null)}
-                style={{
-                  padding: '9px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleResolve}
-                disabled={resolving}
-                style={{
-                  padding: '9px 18px',
-                  borderRadius: 8,
-                  border: 'none',
-                  backgroundColor: '#000000',
-                  color: '#FFFFFF',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  opacity: resolving ? 0.7 : 1,
-                }}
-              >
-                Confirm Adjudication
-              </button>
+              <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: 2 }}>Details</span>
+              <span style={{ fontSize: 12 }}>{selectedDispute.details}</span>
             </div>
           </div>
-        </div>
+
+          <div>
+            <label className="admin-label" htmlFor="dispute-resolution">
+              Resolution
+            </label>
+            <select
+              id="dispute-resolution"
+              className="admin-select"
+              value={resolutionStatus}
+              onChange={(e) => setResolutionStatus(e.target.value as 'resolved' | 'dismissed')}
+            >
+              <option value="resolved">Resolved (authorize adjusted settlement)</option>
+              <option value="dismissed">Dismissed (no adjustment)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="admin-label" htmlFor="adjusted-payout">
+              Adjusted net payout (₹)
+            </label>
+            <input
+              id="adjusted-payout"
+              className="admin-input"
+              type="number"
+              value={adjustedPayout}
+              onChange={(e) => setAdjustedPayout(e.target.value)}
+              placeholder="Optional adjusted wage amount"
+            />
+          </div>
+
+          <div>
+            <label className="admin-label" htmlFor="dispute-notes">
+              Investigation notes (required)
+            </label>
+            <textarea
+              id="dispute-notes"
+              className="admin-input"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="GPS logs, supervisor confirmation, check-in timestamps…"
+              rows={3}
+            />
+          </div>
+
+          {modalError && (
+            <div className="admin-banner admin-banner--danger" role="alert">
+              {modalError}
+            </div>
+          )}
+
+          <div className="admin-modal-actions">
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setSelectedDispute(null)}>
+              Cancel
+            </button>
+            <button type="button" className="admin-btn admin-btn-primary" disabled={resolving} onClick={handleResolve}>
+              Confirm adjudication
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import { Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   OpsklThemeProvider,
@@ -12,8 +11,11 @@ import {
   AuthProvider,
   useAuth,
   EmptyState,
+  OpsklAlert,
+  Screen,
 } from '@opskil/design-system';
 import { universalStorage } from '@opskil/shared';
+import { UserX, Trash2 } from 'lucide-react-native';
 
 export { OpsklErrorBoundary as ErrorBoundary } from '@opskil/design-system';
 
@@ -88,27 +90,29 @@ function RootNavigator() {
   // Handle role mismatch (e.g. Organizer credentials in Worker app)
   if (!loading && roleMismatch) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+      <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={{ justifyContent: 'center', padding: spacing.xl }}>
         <EmptyState
+          icon={<UserX size={32} color={colors.textMuted} strokeWidth={2} />}
           title="Organizer Account Detected"
-          description="You are currently signed in with an Organizer account. Please use the Opskl Organizer app to manage shifts, or sign out to use this Worker app."
+          description="You are signed in with an Organizer account. Use the Opskl Organizer app to manage shifts, or sign out to continue as a worker."
           actionLabel="Sign Out of Organizer Account"
           onAction={async () => {
             await logout();
             router.replace('/auth/login' as any);
           }}
         />
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   // Handle deactivated account
   if (!loading && isDeactivated) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+      <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={{ justifyContent: 'center', padding: spacing.xl }}>
         <EmptyState
+          icon={<Trash2 size={32} color={colors.textMuted} strokeWidth={2} />}
           title="Account Scheduled for Deletion"
-          description="Your account is currently deactivated and pending permanent deletion. Would you like to cancel deletion and restore your account?"
+          description="Your account is deactivated and pending permanent deletion. Restore it to keep working shifts on Opskl."
           actionLabel="Restore My Account"
           onAction={async () => {
             const res = await cancelAccountDeletion();
@@ -116,11 +120,11 @@ function RootNavigator() {
               await refreshProfile();
               router.replace('/(tabs)' as any);
             } else {
-              Alert.alert('Restoration Failed', res.error || 'Failed to cancel deletion.');
+              OpsklAlert.alert('Restoration Failed', res.error || 'Failed to cancel deletion.');
             }
           }}
         />
-      </SafeAreaView>
+      </Screen>
     );
   }
 

@@ -19,7 +19,7 @@ export function CardActionControls({
   onUndo,
   onDetails,
 }: CardActionControlsProps) {
-  const { colors, radii, isDark } = useOpsklTheme();
+  const { colors, radii, touchTarget, shadows } = useOpsklTheme();
 
   return (
     <View style={styles.controlsContainer}>
@@ -31,10 +31,13 @@ export function CardActionControls({
           styles.actionButton,
           styles.smallButton,
           {
-            backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF',
+            backgroundColor: colors.surface,
             borderColor: colors.border,
             opacity: !canUndo || disabled ? 0.35 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
+            minWidth: touchTarget.min,
+            minHeight: touchTarget.min,
+            ...shadows.sm,
           },
         ]}
         accessibilityRole="button"
@@ -53,10 +56,12 @@ export function CardActionControls({
           styles.mainButton,
           styles.passButton,
           {
-            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+            backgroundColor: colors.surface,
             borderColor: colors.border,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
+            minHeight: touchTarget.comfortable,
+            ...shadows.sm,
           },
         ]}
         accessibilityRole="button"
@@ -74,10 +79,13 @@ export function CardActionControls({
           styles.actionButton,
           styles.smallButton,
           {
-            backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF',
+            backgroundColor: colors.surface,
             borderColor: colors.border,
             opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
             borderRadius: radii.full,
+            minWidth: touchTarget.min,
+            minHeight: touchTarget.min,
+            ...shadows.sm,
           },
         ]}
         accessibilityRole="button"
@@ -123,19 +131,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
   smallButton: {
     width: 44,
     height: 44,
-  },
-  smallIconText: {
-    fontSize: 20,
-    fontWeight: '700',
   },
   mainButton: {
     height: 52,
@@ -144,20 +143,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   passButton: {},
-  passIconText: {
-    fontSize: 20,
-    fontWeight: '900',
-  },
   passLabelText: {
     fontSize: 15,
     fontWeight: '800',
   },
   applyButton: {},
-  applyIconText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-  },
   applyLabelText: {
     fontSize: 15,
     fontWeight: '800',

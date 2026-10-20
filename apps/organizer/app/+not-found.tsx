@@ -1,41 +1,23 @@
-import { Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useOpsklTheme, Button } from '@opskil/design-system';
+import { useOpsklTheme, EmptyState, Screen } from '@opskil/design-system';
+import { Search } from 'lucide-react-native';
 
 export default function NotFoundScreen() {
   const router = useRouter();
-  const { colors, spacing, typography } = useOpsklTheme();
+  const { colors, spacing, iconSizes } = useOpsklTheme();
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing.xl,
-      }}
+    <Screen
+      edges={['top', 'bottom', 'left', 'right']}
+      contentStyle={{ justifyContent: 'center', padding: spacing.xl }}
     >
-      <Text style={{ fontSize: 40, marginBottom: spacing.md }}>🔍</Text>
-      <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-        Screen Not Found
-      </Text>
-      <Text
-        style={[
-          typography.body,
-          { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xl },
-        ]}
-      >
-        This organizer page doesn't exist or has moved.
-      </Text>
-      <Button
-        title="Return to Dashboard"
-        variant="primary"
-        size="md"
-        fullWidth={false}
-        onPress={() => router.replace('/' as any)}
+      <EmptyState
+        icon={<Search size={iconSizes.xxl} color={colors.textMuted} strokeWidth={2} />}
+        title="Screen Not Found"
+        description="This organizer page doesn't exist or has moved."
+        actionLabel="Return to Dashboard"
+        onAction={() => router.replace('/' as any)}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

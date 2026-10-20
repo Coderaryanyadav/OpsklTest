@@ -2,10 +2,30 @@
 
 import React, { useState } from 'react';
 import { SafetyReport } from '@opskil/shared';
+import {
+  EmptyRow,
+  Modal,
+  Pagination,
+  StatusPill,
+  StatusTone,
+  TableShell,
+  maskId,
+  useClientPagination,
+} from './ui';
 
 interface SafetyQueueProps {
   safetyReports: SafetyReport[];
   onResolveSafetyReport: (reportId: string, actionTaken: string) => Promise<void>;
+}
+
+function severityTone(severity: string): StatusTone {
+  if (severity === 'critical') return 'danger';
+  if (severity === 'high') return 'warning';
+  return 'neutral';
+}
+
+function statusTone(status: string): StatusTone {
+  return status === 'resolved' ? 'success' : 'warning';
 }
 
 export const SafetyQueue: React.FC<SafetyQueueProps> = ({
@@ -16,6 +36,8 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
   const [actionNotes, setActionNotes] = useState('');
   const [modalError, setModalError] = useState('');
   const [resolving, setResolving] = useState(false);
+
+  const { page, pageCount, pageRows, setPage, summary } = useClientPagination(safetyReports, 10);
 
   const handleResolve = async () => {
     if (!selectedReport) return;
@@ -39,117 +61,58 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-          Safety Reports & Urgent Incidents
-        </h1>
-        <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
-          On-site worker safety reports, venue hazards, emergency SOS triggers, and harassment grievances.
+        <h2 className="admin-section-title">Safety reports</h2>
+        <p className="admin-section-desc">
+          Workplace safety reports, venue hazards, SOS triggers, and harassment grievances.
         </p>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E5E5E5',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}
+      <TableShell
+        footer={<Pagination page={page} pageCount={pageCount} onChange={setPage} summary={summary} />}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+        <table className="admin-table">
           <thead>
-            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
-              <th style={{ padding: '12px 16px' }}>Incident / Shift</th>
-              <th style={{ padding: '12px 16px' }}>Urgency</th>
-              <th style={{ padding: '12px 16px' }}>Category</th>
-              <th style={{ padding: '12px 16px' }}>Description</th>
-              <th style={{ padding: '12px 16px' }}>Status</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+            <tr>
+              <th>Incident / shift</th>
+              <th>Urgency</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {safetyReports.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
-                  No active safety complaints reported.
-                </td>
-              </tr>
+            {pageRows.length === 0 ? (
+              <EmptyRow colSpan={6} title="No reports" message="No active safety complaints reported." />
             ) : (
-              safetyReports.map((r) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 700, color: '#111111' }}>
-                      {r.jobTitle || `Incident #${r.id.substring(0, 8)}`}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#737373' }}>
-                      Reported {new Date(r.createdAt).toLocaleDateString()}
+              pageRows.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <div className="cell-primary">{r.jobTitle || `Incident ${maskId(r.id)}`}</div>
+                    <div className="cell-muted">
+                      Reported {new Date(r.createdAt).toLocaleDateString('en-IN')}
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        backgroundColor:
-                          r.severity === 'critical'
-                            ? '#FEF2F2'
-                            : r.severity === 'high'
-                            ? '#FFFBEB'
-                            : '#F5F5F5',
-                        color:
-                          r.severity === 'critical'
-                            ? '#DC2626'
-                            : r.severity === 'high'
-                            ? '#B45309'
-                            : '#111111',
-                        border: r.severity === 'low' || r.severity === 'medium' ? '1px solid #E5E5E5' : 'none',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {r.severity}
-                    </span>
+                  <td>
+                    <StatusPill label={r.severity} tone={severityTone(r.severity)} />
                   </td>
-                  <td style={{ padding: '12px 16px', textTransform: 'capitalize', color: '#111111' }}>
-                    {r.category.replace('_', ' ')}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#737373', maxWidth: 280 }}>
+                  <td style={{ textTransform: 'capitalize' }}>{r.category.replace(/_/g, ' ')}</td>
+                  <td style={{ color: 'var(--text-secondary)', maxWidth: 280 }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {r.description}
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        backgroundColor: r.status === 'resolved' ? '#F0FDF4' : '#FFFBEB',
-                        color: r.status === 'resolved' ? '#15803D' : '#B45309',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {r.status}
-                    </span>
+                  <td>
+                    <StatusPill label={r.status} tone={statusTone(r.status)} />
                   </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                  <td style={{ textAlign: 'right' }}>
                     <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary admin-btn-sm"
                       onClick={() => {
                         setSelectedReport(r);
                         setActionNotes('');
                         setModalError('');
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 6,
-                        border: '1px solid #E5E5E5',
-                        backgroundColor: '#FFFFFF',
-                        color: '#111111',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        cursor: 'pointer',
                       }}
                     >
                       Investigate
@@ -160,119 +123,51 @@ export const SafetyQueue: React.FC<SafetyQueueProps> = ({
             )}
           </tbody>
         </table>
-      </div>
+      </TableShell>
 
-      {/* Safety Resolution Modal */}
       {selectedReport && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              width: '100%',
-              maxWidth: 540,
-              padding: 24,
-              border: '1px solid #E5E5E5',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-                Safety Grievance Investigation
-              </h2>
-              <button
-                onClick={() => setSelectedReport(null)}
-                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#737373' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5', padding: 14, borderRadius: 8, fontSize: 13, gap: 6, display: 'flex', flexDirection: 'column', color: '#111111' }}>
-              <div><strong>Category:</strong> {selectedReport.category}</div>
-              <div><strong>Severity:</strong> {selectedReport.severity.toUpperCase()}</div>
-              <div><strong>Incident Details:</strong> {selectedReport.description}</div>
-            </div>
-
+        <Modal title="Safety investigation" onClose={() => setSelectedReport(null)}>
+          <div className="admin-modal-body-card">
             <div>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#111111', display: 'block', marginBottom: 6 }}>
-                Resolution Actions Taken:
-              </label>
-              <textarea
-                value={actionNotes}
-                onChange={(e) => setActionNotes(e.target.value)}
-                placeholder="Detail emergency contact, venue medical support, or supervisor warnings issued..."
-                rows={3}
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                  fontSize: 13,
-                  outline: 'none',
-                }}
-              />
+              <strong>Category:</strong> {selectedReport.category.replace(/_/g, ' ')}
             </div>
-
-            {modalError && (
-              <div style={{ color: '#DC2626', fontSize: 12, fontWeight: 600 }}>
-                ⚠️ {modalError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button
-                onClick={() => setSelectedReport(null)}
-                style={{
-                  padding: '9px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #E5E5E5',
-                  backgroundColor: '#FFFFFF',
-                  color: '#111111',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleResolve}
-                disabled={resolving}
-                style={{
-                  padding: '9px 18px',
-                  borderRadius: 8,
-                  border: 'none',
-                  backgroundColor: '#15803D',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  opacity: resolving ? 0.7 : 1,
-                }}
-              >
-                Mark Resolved & Close
-              </button>
+            <div>
+              <strong>Severity:</strong> {selectedReport.severity}
+            </div>
+            <div>
+              <strong>Details:</strong> {selectedReport.description}
             </div>
           </div>
-        </div>
+
+          <div>
+            <label className="admin-label" htmlFor="safety-actions">
+              Resolution actions taken (required)
+            </label>
+            <textarea
+              id="safety-actions"
+              className="admin-input"
+              value={actionNotes}
+              onChange={(e) => setActionNotes(e.target.value)}
+              placeholder="Emergency contact, medical support, supervisor warnings…"
+              rows={3}
+            />
+          </div>
+
+          {modalError && (
+            <div className="admin-banner admin-banner--danger" role="alert">
+              {modalError}
+            </div>
+          )}
+
+          <div className="admin-modal-actions">
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setSelectedReport(null)}>
+              Cancel
+            </button>
+            <button type="button" className="admin-btn admin-btn-success" disabled={resolving} onClick={handleResolve}>
+              Mark resolved
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );

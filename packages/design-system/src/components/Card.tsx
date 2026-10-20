@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   View,
+  Text,
   Pressable,
   StyleProp,
   ViewStyle,
@@ -24,7 +25,7 @@ export const Card: React.FC<CardProps> = ({
   padding,
   testID,
 }) => {
-  const { colors, radii, spacing, shadows, isDark } = useOpsklTheme();
+  const { colors, radii, spacing, shadows } = useOpsklTheme();
 
   const cardPadding = padding !== undefined ? padding : spacing.lg;
 
@@ -35,12 +36,11 @@ export const Card: React.FC<CardProps> = ({
     borderWidth: 1,
     borderColor: colors.border,
     width: '100%',
-    ...(variant === 'elevated' ? (isDark ? shadows.sm : shadows.sm) : {}),
+    ...(variant === 'elevated' ? shadows.sm : {}),
   };
 
   // On React Native Web, naked strings/whitespace outside of <Text> cause
-  // "Unexpected text node: . A text node cannot be a child of a <View>."
-  // We filter out purely whitespace strings, and if any raw string is passed, wrap it safely in Text.
+  // "Unexpected text node". Filter whitespace-only strings; wrap other strings in Text.
   const sanitizedChildren = React.Children.toArray(children)
     .filter((child) => {
       if (typeof child === 'string') {
@@ -51,9 +51,9 @@ export const Card: React.FC<CardProps> = ({
     .map((child, index) => {
       if (typeof child === 'string') {
         return (
-          <React.Fragment key={`card-text-${index}`}>
-            {/* Safe rendering */}
-          </React.Fragment>
+          <Text key={`card-text-${index}`} style={{ color: colors.textPrimary }}>
+            {child}
+          </Text>
         );
       }
       return child;

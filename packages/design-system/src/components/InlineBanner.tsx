@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
-import { spacing } from '../tokens/spacing';
+import { View, Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
 export type InlineBannerVariant = 'info' | 'warning' | 'error' | 'success';
@@ -26,7 +25,7 @@ export const InlineBanner: React.FC<InlineBannerProps> = ({
   style,
   testID,
 }) => {
-  const { colors } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const getBorderColor = () => {
     switch (variant) {
@@ -62,84 +61,86 @@ export const InlineBanner: React.FC<InlineBannerProps> = ({
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
       style={[
-        styles.container,
         {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          padding: spacing.md,
+          borderRadius: radii.sm,
+          borderWidth: 1,
+          marginVertical: spacing.xs,
           backgroundColor: getBgColor(),
           borderColor: getBorderColor(),
         },
         style,
       ]}
     >
-      <View style={styles.content}>
+      <View style={{ flex: 1 }}>
         {title ? (
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+          <Text
+            style={{
+              fontSize: typography.caption.fontSize,
+              fontWeight: '700',
+              marginBottom: spacing.xxs,
+              color: colors.textPrimary,
+            }}
+          >
+            {title}
+          </Text>
         ) : null}
-        <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
+        <Text
+          style={{
+            fontSize: typography.caption.fontSize,
+            lineHeight: typography.caption.lineHeight,
+            color: colors.textSecondary,
+          }}
+        >
+          {message}
+        </Text>
 
         {actionLabel && onAction ? (
-          <TouchableOpacity
+          <Pressable
             onPress={onAction}
             accessibilityRole="button"
             accessibilityLabel={actionLabel}
-            style={styles.actionBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{
+              marginTop: spacing.xs,
+              alignSelf: 'flex-start',
+              minHeight: 44,
+              justifyContent: 'center',
+            }}
+            hitSlop={8}
           >
-            <Text style={[styles.actionText, { color: colors.textPrimary }]}>{actionLabel}</Text>
-          </TouchableOpacity>
+            <Text
+              style={{
+                fontSize: typography.caption.fontSize,
+                fontWeight: '700',
+                textDecorationLine: 'underline',
+                color: colors.textPrimary,
+              }}
+            >
+              {actionLabel}
+            </Text>
+          </Pressable>
         ) : null}
       </View>
 
       {onDismiss ? (
-        <TouchableOpacity
+        <Pressable
           onPress={onDismiss}
           accessibilityRole="button"
           accessibilityLabel="Dismiss banner"
-          style={styles.dismissBtn}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={{
+            marginLeft: spacing.sm,
+            minWidth: 44,
+            minHeight: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          hitSlop={8}
         >
-          <Text style={[styles.dismissText, { color: colors.textSecondary }]}>✕</Text>
-        </TouchableOpacity>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>✕</Text>
+        </Pressable>
       ) : null}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginVertical: spacing.xs,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: spacing.xxs,
-  },
-  message: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  actionBtn: {
-    marginTop: spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-  dismissBtn: {
-    marginLeft: spacing.sm,
-    padding: spacing.xxs,
-  },
-  dismissText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

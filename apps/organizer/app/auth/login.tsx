@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Alert, TouchableOpacity, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import {
   useOpsklTheme,
   useAuth,
+  Screen,
   ScreenHeader,
   Input,
+  PasswordInput,
+  OtpInput,
   Button,
-  Card,
   KeyboardAwareContainer,
+  SegmentedControl,
+  Divider,
+  FormField,
+  OpsklAlert,
 } from '@opskil/design-system';
 import { fetchUserProfile, supabase, classifyAuthError } from '@opskil/shared';
 
@@ -20,7 +25,7 @@ type SignInMethod = 'otp' | 'password';
 export default function OrganizerLoginScreen() {
   const router = useRouter();
   const { redirect, mode: initialMode } = useLocalSearchParams<{ redirect?: string; mode?: AuthMode }>();
-  const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { colors, spacing, radii, typography, touchTarget } = useOpsklTheme();
   const {
     sendEmailOtp,
     verifyEmailOtp,
@@ -35,7 +40,6 @@ export default function OrganizerLoginScreen() {
   const [mode, setMode] = useState<AuthMode>(initialMode === 'signup' ? 'signup' : 'signin');
   const [signInMethod, setSignInMethod] = useState<SignInMethod>('otp');
 
-  // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -44,12 +48,10 @@ export default function OrganizerLoginScreen() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Forgot Password Modal
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Deep Link / OAuth Callback
   useEffect(() => {
     const handleUrl = async (url: string) => {
       if (url && (url.includes('code=') || url.includes('access_token='))) {
@@ -60,7 +62,7 @@ export default function OrganizerLoginScreen() {
             await handlePostAuthRoute(res.session.user.id);
           }
         } catch (err: any) {
-          Alert.alert('Authentication Error', err?.message || 'Failed to complete OAuth callback.');
+          OpsklAlert.alert('Authentication Error', err?.message || 'Failed to complete OAuth callback.');
         } finally {
           setLoading(false);
         }
@@ -81,7 +83,6 @@ export default function OrganizerLoginScreen() {
   const handlePostAuthRoute = async (userId: string) => {
     let profile = await fetchUserProfile(userId);
 
-    // If profile is worker, offer or automatically enable Organizer role
     if (profile && profile.role === 'worker') {
       try {
         const { data: switchRes } = await supabase.rpc('switch_user_role_safe', {
@@ -92,14 +93,14 @@ export default function OrganizerLoginScreen() {
         if (switchRes && switchRes.success) {
           profile = await fetchUserProfile(userId);
         }
-      } catch (e) {
+      } catch {
         // Continue to check
       }
     }
 
     if (!profile || profile.isActive === false || (profile.role !== 'organizer' && profile.role !== 'admin')) {
       await supabase.auth.signOut().catch(() => {});
-      Alert.alert(
+      OpsklAlert.alert(
         'Account Setup Required',
         'Unable to verify an active Organizer account for this identity. Please register your organization below.'
       );
@@ -112,16 +113,16 @@ export default function OrganizerLoginScreen() {
   const handleSendOtp = async () => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
-      Alert.alert('Invalid Email', 'Please enter a valid business email address.');
+      OpsklAlert.alert('Invalid Email', 'Please enter a valid business email address.');
       return;
     }
     setLoading(true);
     try {
       await sendEmailOtp(trimmed, 'organizer');
       setOtpSent(true);
-      Alert.alert('OTP Sent', `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox.`);
+      OpsklAlert.alert('OTP Sent', `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox.`);
     } catch (err: any) {
-      Alert.alert('Authentication Status', classifyAuthError(err).message);
+      OpsklAlert.alert('Authentication Status', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -131,7 +132,7 @@ export default function OrganizerLoginScreen() {
     if (loading) return;
     const cleanOtp = otp.replace(/\D/g, '').trim();
     if (cleanOtp.length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter the complete 6-digit code.');
+      OpsklAlert.alert('Invalid Code', 'Please enter the complete 6-digit code.');
       return;
     }
     setLoading(true);
@@ -140,10 +141,10 @@ export default function OrganizerLoginScreen() {
       if (res?.session) {
         await handlePostAuthRoute(res.session.user.id);
       } else {
-        Alert.alert('Verification Pending', 'No session was returned by Supabase.');
+        OpsklAlert.alert('Verification Pending', 'No session was returned by the auth service.');
       }
     } catch (err: any) {
-      Alert.alert('Verification Failed', classifyAuthError(err).message);
+      OpsklAlert.alert('Verification Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -152,7 +153,7 @@ export default function OrganizerLoginScreen() {
   const handlePasswordSignIn = async () => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !password) {
-      Alert.alert('Missing Fields', 'Please enter both your business email and password.');
+      OpsklAlert.alert('Missing Fields', 'Please enter both your business email and password.');
       return;
     }
     setLoading(true);
@@ -162,7 +163,7 @@ export default function OrganizerLoginScreen() {
         await handlePostAuthRoute(res.session.user.id);
       }
     } catch (err: any) {
-      Alert.alert('Sign-In Failed', classifyAuthError(err).message);
+      OpsklAlert.alert('Sign-In Failed', classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -174,19 +175,19 @@ export default function OrganizerLoginScreen() {
     const cleanPhone = phone.replace(/\D/g, '');
 
     if (!trimmedOrg || trimmedOrg.length < 2) {
-      Alert.alert('Organization Name Required', 'Please enter your organization or agency name.');
+      OpsklAlert.alert('Organization Name Required', 'Please enter your organization or agency name.');
       return;
     }
     if (cleanPhone.length < 10) {
-      Alert.alert('Valid Phone Required', 'Please enter a 10-digit business contact number.');
+      OpsklAlert.alert('Valid Phone Required', 'Please enter a 10-digit business contact number.');
       return;
     }
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      Alert.alert('Valid Email Required', 'Please enter a valid business email address.');
+      OpsklAlert.alert('Valid Email Required', 'Please enter a valid business email address.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+      OpsklAlert.alert('Weak Password', 'Password must be at least 6 characters.');
       return;
     }
 
@@ -203,7 +204,6 @@ export default function OrganizerLoginScreen() {
       if (res?.session) {
         await handlePostAuthRoute(res.session.user.id);
       } else {
-        // Attempt immediate login if auto-confirmed by backend
         try {
           const loginRes = await signInWithPassword(trimmedEmail, password, 'organizer');
           if (loginRes?.session) {
@@ -214,14 +214,14 @@ export default function OrganizerLoginScreen() {
           // If unconfirmed, show info
         }
 
-        Alert.alert(
+        OpsklAlert.alert(
           'Registration Received',
           `Your organization profile for "${trimmedOrg}" has been created. Please sign in with your credentials.`,
           [{ text: 'Sign In Now', onPress: () => setMode('signin') }]
         );
       }
     } catch (err: any) {
-      Alert.alert('Registration Failed', err?.message || 'Unable to register organizer account.');
+      OpsklAlert.alert('Registration Failed', err?.message || 'Unable to register organizer account.');
     } finally {
       setLoading(false);
     }
@@ -240,7 +240,7 @@ export default function OrganizerLoginScreen() {
         }
       }
     } catch (err: any) {
-      Alert.alert('Google Sign-In Error', err?.message || 'Could not initiate Google OAuth.');
+      OpsklAlert.alert('Google Sign-In Error', err?.message || 'Could not initiate Google OAuth.');
     } finally {
       setLoading(false);
     }
@@ -249,18 +249,18 @@ export default function OrganizerLoginScreen() {
   const handleSendResetEmail = async () => {
     const trimmed = resetEmail.trim().toLowerCase();
     if (!trimmed || !trimmed.includes('@')) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      OpsklAlert.alert('Invalid Email', 'Please enter a valid email address.');
       return;
     }
     setResetLoading(true);
     try {
       const redirectUrl = Linking.createURL('/auth/login');
       await sendPasswordReset(trimmed, redirectUrl);
-      Alert.alert('Reset Instructions Sent', `Password reset link has been dispatched to ${trimmed}.`);
+      OpsklAlert.alert('Reset Instructions Sent', `Password reset link has been dispatched to ${trimmed}.`);
       setShowForgotModal(false);
       setResetEmail('');
     } catch (err: any) {
-      Alert.alert('Reset Failed', err?.message || 'Unable to dispatch password reset link.');
+      OpsklAlert.alert('Reset Failed', err?.message || 'Unable to dispatch password reset link.');
     } finally {
       setResetLoading(false);
     }
@@ -269,88 +269,41 @@ export default function OrganizerLoginScreen() {
   const handleResendVerification = async () => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes('@')) {
-      Alert.alert('Email Required', 'Please enter your email above to resend verification.');
+      OpsklAlert.alert('Email Required', 'Please enter your email above to resend verification.');
       return;
     }
     setLoading(true);
     try {
       await resendVerification(trimmed);
-      Alert.alert('Verification Sent', `A new verification email has been dispatched to ${trimmed}.`);
+      OpsklAlert.alert('Verification Sent', `A new verification email has been dispatched to ${trimmed}.`);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Unable to resend verification email.');
+      OpsklAlert.alert('Error', err?.message || 'Unable to resend verification email.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <Screen edges={['top', 'bottom']}>
       <ScreenHeader
         title={mode === 'signin' ? 'Organizer Sign In' : 'Register Organization'}
         onBack={() => router.back()}
       />
 
       <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, paddingBottom: 60 }}>
-        {/* Mode Selector Tabs */}
-        <View
-          style={{
-            flexDirection: 'row',
-            backgroundColor: colors.surfaceMuted,
-            borderRadius: radii.md,
-            padding: 4,
-            marginBottom: spacing.lg,
+        <SegmentedControl
+          options={[
+            { value: 'signin', label: 'Sign In' },
+            { value: 'signup', label: 'Register' },
+          ]}
+          value={mode}
+          onChange={(v) => {
+            setMode(v);
+            setOtpSent(false);
           }}
-        >
-          <TouchableOpacity
-            onPress={() => {
-              setMode('signin');
-              setOtpSent(false);
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              alignItems: 'center',
-              backgroundColor: mode === 'signin' ? colors.surface : 'transparent',
-              borderRadius: radii.sm,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '700',
-                color: mode === 'signin' ? colors.textPrimary : colors.textMuted,
-              }}
-            >
-              Sign In
-            </Text>
-          </TouchableOpacity>
+          style={{ marginBottom: spacing.lg }}
+        />
 
-          <TouchableOpacity
-            onPress={() => {
-              setMode('signup');
-              setOtpSent(false);
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              alignItems: 'center',
-              backgroundColor: mode === 'signup' ? colors.surface : 'transparent',
-              borderRadius: radii.sm,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '700',
-                color: mode === 'signup' ? colors.textPrimary : colors.textMuted,
-              }}
-            >
-              Register Organization
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Google OAuth Button */}
         <TouchableOpacity
           onPress={handleGoogleSignIn}
           disabled={loading}
@@ -363,79 +316,43 @@ export default function OrganizerLoginScreen() {
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: radii.md,
-            paddingVertical: 12,
+            minHeight: touchTarget.comfortable,
             marginBottom: spacing.md,
             gap: 10,
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Google"
         >
           <View
             style={{
               width: 22,
               height: 22,
               borderRadius: 11,
-              backgroundColor: '#000000',
+              backgroundColor: colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>G</Text>
+            <Text style={{ color: colors.textInverse, fontWeight: '900', fontSize: 13 }}>G</Text>
           </View>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
             Continue with Google
           </Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: spacing.md }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          <Text style={{ marginHorizontal: 12, fontSize: 12, color: colors.textMuted, fontWeight: '600' }}>
-            OR WITH BUSINESS EMAIL
-          </Text>
-          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-        </View>
+        <Divider label="OR WITH BUSINESS EMAIL" />
 
         {mode === 'signin' ? (
-          <Card variant="outlined">
-            {/* Sign-in Method Tabs */}
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: spacing.md }}>
-              <TouchableOpacity
-                onPress={() => setSignInMethod('otp')}
-                style={{
-                  borderBottomWidth: 2,
-                  borderBottomColor: signInMethod === 'otp' ? colors.primary : 'transparent',
-                  paddingBottom: 6,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: signInMethod === 'otp' ? colors.textPrimary : colors.textMuted,
-                  }}
-                >
-                  Email One-Time OTP
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setSignInMethod('password')}
-                style={{
-                  borderBottomWidth: 2,
-                  borderBottomColor: signInMethod === 'password' ? colors.primary : 'transparent',
-                  paddingBottom: 6,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: signInMethod === 'password' ? colors.textPrimary : colors.textMuted,
-                  }}
-                >
-                  Email & Password
-                </Text>
-              </TouchableOpacity>
-            </View>
+          <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+            <SegmentedControl
+              options={[
+                { value: 'otp', label: 'Email OTP' },
+                { value: 'password', label: 'Password' },
+              ]}
+              value={signInMethod}
+              onChange={setSignInMethod}
+              style={{ marginBottom: spacing.md }}
+            />
 
             <Input
               label="Business Email Address"
@@ -458,20 +375,12 @@ export default function OrganizerLoginScreen() {
                   loading={loading}
                   disabled={loading}
                   onPress={handleSendOtp}
-                  style={{ marginTop: spacing.sm }}
                 />
               ) : (
                 <>
-                  <Input
-                    label="Enter 6-Digit Code"
-                    value={otp}
-                    onChangeText={setOtp}
-                    placeholder="123456"
-                    keyboardType="number-pad"
-                    autoComplete="one-time-code"
-                    textContentType="oneTimeCode"
-                    maxLength={6}
-                  />
+                  <FormField label="Enter 6-Digit OTP" helperText={`Code sent to ${email.trim().toLowerCase()}`}>
+                    <OtpInput value={otp} onChange={setOtp} autoFocus />
+                  </FormField>
                   <Button
                     title="Verify OTP & Open Workspace"
                     variant="primary"
@@ -479,9 +388,8 @@ export default function OrganizerLoginScreen() {
                     loading={loading}
                     disabled={loading}
                     onPress={handleVerifyOtp}
-                    style={{ marginTop: spacing.sm }}
                   />
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button
                       title="Resend Code"
                       variant="ghost"
@@ -504,12 +412,11 @@ export default function OrganizerLoginScreen() {
               )
             ) : (
               <>
-                <Input
+                <PasswordInput
                   label="Password"
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Enter secure password"
-                  secureTextEntry
                   autoComplete="password"
                   textContentType="password"
                 />
@@ -520,16 +427,30 @@ export default function OrganizerLoginScreen() {
                   loading={loading}
                   disabled={loading}
                   onPress={handlePasswordSignIn}
-                  style={{ marginTop: spacing.sm }}
                 />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm }}>
-                  <TouchableOpacity onPress={() => setShowForgotModal(true)}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: spacing.sm,
+                    minHeight: touchTarget.min,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setResetEmail(email);
+                      setShowForgotModal(true);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Forgot password"
+                  >
                     <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                       Forgot Password?
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={handleResendVerification}>
+                  <TouchableOpacity onPress={handleResendVerification} accessibilityRole="button">
                     <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textMuted }}>
                       Resend Verification Email
                     </Text>
@@ -537,10 +458,9 @@ export default function OrganizerLoginScreen() {
                 </View>
               </>
             )}
-          </Card>
+          </View>
         ) : (
-          /* Register Organization Form */
-          <Card variant="outlined">
+          <View style={{ gap: spacing.xs, marginTop: spacing.md }}>
             <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: 2 }]}>
               Register New Organization
             </Text>
@@ -576,12 +496,11 @@ export default function OrganizerLoginScreen() {
               autoCapitalize="none"
             />
 
-            <Input
+            <PasswordInput
               label="Create Master Password"
               value={password}
               onChangeText={setPassword}
               placeholder="Min. 6 characters"
-              secureTextEntry
               autoComplete="new-password"
               textContentType="newPassword"
             />
@@ -595,16 +514,37 @@ export default function OrganizerLoginScreen() {
               onPress={handleSignUp}
               style={{ marginTop: spacing.sm }}
             />
-          </Card>
+          </View>
         )}
       </KeyboardAwareContainer>
 
-      {/* Forgot Password Modal */}
-      <Modal visible={showForgotModal} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: spacing.xl }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: radii.xl, padding: spacing.xl, gap: spacing.md }}>
+      <Modal
+        visible={showForgotModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowForgotModal(false)}
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            padding: spacing.xl,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: spacing.xl,
+              gap: spacing.md,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Reset Password</Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
               Enter your registered business email address to receive password reset instructions.
             </Text>
             <Input
@@ -614,27 +554,32 @@ export default function OrganizerLoginScreen() {
               placeholder="organizer@agency.com"
               keyboardType="email-address"
               autoCapitalize="none"
+              autoFocus
             />
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
               <Button
                 title="Cancel"
                 variant="outline"
                 size="md"
-                onPress={() => setShowForgotModal(false)}
+                onPress={() => {
+                  setShowForgotModal(false);
+                  setResetEmail('');
+                }}
                 style={{ flex: 1 }}
               />
               <Button
-                title={resetLoading ? 'Sending...' : 'Send Reset Link'}
+                title={resetLoading ? 'Sending…' : 'Send Reset Link'}
                 variant="primary"
                 size="md"
                 disabled={resetLoading}
+                loading={resetLoading}
                 onPress={handleSendResetEmail}
                 style={{ flex: 1 }}
               />
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }

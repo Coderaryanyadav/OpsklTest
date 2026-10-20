@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { logger } from '@opskil/shared';
 import { adminSupabase } from '../../lib/supabase';
 
@@ -21,14 +20,16 @@ export default function AdminLoginPage() {
         setErrorMsg('Access denied: Active administrator credentials required for this portal.');
       }
 
-      // Proactively purge any corrupted/expired refresh token stored locally
-      adminSupabase.auth.getSession().then(({ error }) => {
-        if (error) {
+      adminSupabase.auth
+        .getSession()
+        .then(({ error }) => {
+          if (error) {
+            adminSupabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          }
+        })
+        .catch(() => {
           adminSupabase.auth.signOut({ scope: 'local' }).catch(() => {});
-        }
-      }).catch(() => {
-        adminSupabase.auth.signOut({ scope: 'local' }).catch(() => {});
-      });
+        });
     }
   }, []);
 
@@ -54,7 +55,6 @@ export default function AdminLoginPage() {
       }
 
       if (authData?.session) {
-        // Enforce administrator role and active status
         const { data: profile, error: profError } = await adminSupabase
           .from('profiles')
           .select('role, is_active')
@@ -84,167 +84,62 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--bg-color)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '440px',
-          backgroundColor: 'var(--surface-color)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '16px',
-          padding: '32px',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              backgroundColor: 'var(--primary-color)',
-              color: '#FFFFFF',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: '800',
-              fontSize: '22px',
-              marginBottom: '16px',
-            }}
-          >
-            O
-          </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.3px' }}>
-            Opskl Administrative Portal
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '6px' }}>
-            Restricted access for platform administrators and compliance auditors
+    <div className="admin-login-page">
+      <div className="admin-login-card">
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div className="admin-login-brand">O</div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.3px' }}>Opskl Admin</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6 }}>
+            Restricted access for platform administrators
           </p>
         </div>
 
         {errorMsg && (
-          <div
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '20px',
-              fontSize: '13px',
-              color: '#EF4444',
-            }}
-          >
+          <div className="admin-banner admin-banner--danger" role="alert" style={{ marginBottom: 20 }}>
             {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: 'var(--text-muted)',
-                marginBottom: '6px',
-                textTransform: 'uppercase',
-              }}
-            >
-              Admin Email
+            <label className="admin-label" htmlFor="admin-email">
+              Admin email
             </label>
             <input
+              id="admin-email"
+              className="admin-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@opskil.com"
               required
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                backgroundColor: 'var(--surface-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                color: 'var(--text-main)',
-                fontSize: '14px',
-                outline: 'none',
-              }}
+              autoComplete="username"
             />
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: '600',
-                color: 'var(--text-muted)',
-                marginBottom: '6px',
-                textTransform: 'uppercase',
-              }}
-            >
-              Master Password
+            <label className="admin-label" htmlFor="admin-password">
+              Password
             </label>
             <input
+              id="admin-password"
+              className="admin-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter secure password"
+              placeholder="Enter password"
               required
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                backgroundColor: 'var(--surface-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                color: 'var(--text-main)',
-                fontSize: '14px',
-                outline: 'none',
-              }}
+              autoComplete="current-password"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: '8px',
-              padding: '12px',
-              backgroundColor: 'var(--primary-color)',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              textAlign: 'center',
-              fontWeight: '600',
-              fontSize: '14px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Authenticating…' : 'Authenticate & Open Command Console'}
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={loading} style={{ marginTop: 8 }}>
+            {loading ? 'Authenticating…' : 'Sign in'}
           </button>
 
-          <Link
-            href="/"
-            style={{
-              textAlign: 'center',
-              fontSize: '13px',
-              color: 'var(--text-secondary)',
-              marginTop: '8px',
-              textDecoration: 'underline',
-            }}
-          >
-            ← Return to Overview Shell
-          </Link>
+          <p className="admin-login-note">Admin access only</p>
         </form>
       </div>
     </div>
   );
-}
+};

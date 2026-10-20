@@ -12,7 +12,12 @@ export const LoadingView: React.FC<LoadingViewProps> = ({ message = 'Loading shi
   const { colors, spacing, typography } = useOpsklTheme();
 
   return (
-    <View style={[styles.center, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.center, { backgroundColor: colors.background }]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={message}
+      accessibilityLiveRegion="polite"
+    >
       <ActivityIndicator size="large" color={colors.primary} />
       <Text
         style={{

@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useOpsklTheme,
@@ -17,9 +16,14 @@ import {
   Button,
   WageText,
   Input,
-  EmptyState,
   useAuth,
   OpsklAlert as Alert,
+  Screen,
+  ErrorRetry,
+  StatusIndicator,
+  KeyboardAwareContainer,
+  InlineBanner,
+  LoadingView,
 } from '@opskil/design-system';
 import {
   Booking,
@@ -44,7 +48,7 @@ import {
   subscribeToShiftApplications,
   subscribeToShiftRoster,
 } from '@opskil/shared';
-import { Star, CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react-native';
+import { CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react-native';
 
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
@@ -212,28 +216,33 @@ export default function OrganizerShiftDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[typography.body, { marginTop: 12, color: colors.textSecondary }]}>
-          Loading live shift console…
-        </Text>
-      </SafeAreaView>
+      <Screen edges={['top', 'bottom']}>
+        <LoadingView message="Loading live shift console…" />
+      </Screen>
     );
   }
 
   if (error || !job) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Screen edges={['top', 'bottom']}>
         <ScreenHeader title="Shift Console" onBack={() => router.back()} />
-        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
-          <EmptyState
-            title="Shift Not Found"
-            description={error || 'This shift is unavailable or you do not have permission to view it.'}
-            actionLabel="Return to Dashboard"
-            onAction={() => router.back()}
+        <View style={{ flex: 1, padding: spacing.xl }}>
+          <ErrorRetry
+            variant="block"
+            title="Shift unavailable"
+            message={error || 'This shift is unavailable or you do not have permission to view it.'}
+            onRetry={loadShiftData}
+            retryLabel="Retry"
+          />
+          <Button
+            title="Return to Dashboard"
+            variant="outline"
+            size="md"
+            onPress={() => router.back()}
+            style={{ marginTop: spacing.md }}
           />
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -251,7 +260,8 @@ export default function OrganizerShiftDetailScreen() {
       return;
     }
     setCheckInBooking(booking);
-    setManualCode(booking.checkInCode || '');
+    // Do not pre-fill the expected code — supervisor must enter what the worker shows.
+    setManualCode('');
     setCheckInError(null);
   };
 
@@ -270,11 +280,11 @@ export default function OrganizerShiftDetailScreen() {
         const tokenCode = parts[2];
         const expirySec = parseInt(parts[3], 10);
         if (tokenBookingId !== checkInBooking.id) {
-          setCheckInError('This attendance QR pass belongs to a different worker or booking.');
+          setCheckInError('This attendance pass code belongs to a different worker or booking.');
           return;
         }
         if (Date.now() / 1000 > expirySec) {
-          setCheckInError('This attendance QR pass has expired (>60s). Please ask worker to refresh their token.');
+          setCheckInError('This attendance pass code has expired (>60s). Ask the worker to refresh the code on their app.');
           return;
         }
         finalCode = tokenCode;
@@ -435,42 +445,30 @@ export default function OrganizerShiftDetailScreen() {
   const totalEscrow = activeCrew.reduce((acc, c) => acc + c.agreedTotalPay, 0);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']}>
       <ScreenHeader
         title="Live Shift Console"
         subtitle={activeJob.title}
+        largeTitle
         onBack={() => router.back()}
-        rightAction={<Badge label={`${activeJob.durationHours}h SHIFT`} variant="neutral" size="sm" />}
+        rightAction={
+          <StatusIndicator label={`${activeJob.durationHours}h shift`} tone="neutral" size="sm" />
+        }
       />
 
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
         {!session?.user?.id && (
-          <Card
-            variant="outlined"
-            style={{
-              padding: spacing.md,
-              borderColor: colors.borderFocus,
-              backgroundColor: colors.surfaceMuted,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flex: 1, marginRight: spacing.md }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  Guest Console Preview
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                  Sign in with your organizer account to verify crew arrivals, record departures, and approve attendance payouts.
-                </Text>
-              </View>
-              <Button
-                title="Sign In"
-                variant="primary"
-                size="sm"
-                fullWidth={false}
-                onPress={() => router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any)}
-              />
-            </View>
-          </Card>
+          <InlineBanner
+            variant="info"
+            title="Guest console preview"
+            message="Sign in to verify crew arrivals with pass codes, record departures, and approve attendance payouts."
+            actionLabel="Sign In"
+            onAction={() =>
+              router.push(
+                `/auth/login?redirect=${encodeURIComponent(`/shift/${id}`)}` as any
+              )
+            }
+          />
         )}
 
         {/* Attendance Summary Banner */}
@@ -484,9 +482,15 @@ export default function OrganizerShiftDetailScreen() {
                 {checkedInCount} / {activeCrew.length} Checked In
               </Text>
             </View>
-            <Badge
-              label={activeCrew.length > 0 && checkedInCount === activeCrew.length ? 'ALL PRESENT' : `${activeCrew.length - checkedInCount} PENDING`}
-              variant="neutral"
+            <StatusIndicator
+              label={
+                activeCrew.length > 0 && checkedInCount === activeCrew.length
+                  ? 'All present'
+                  : `${Math.max(0, activeCrew.length - checkedInCount)} pending`
+              }
+              tone={
+                activeCrew.length > 0 && checkedInCount === activeCrew.length ? 'success' : 'neutral'
+              }
             />
           </View>
 
@@ -575,24 +579,25 @@ export default function OrganizerShiftDetailScreen() {
             const isNoShow = member.status === 'no_show';
             const isCancelled = member.status === 'cancelled';
 
-            let badgeVariant: 'success' | 'warning' | 'primary' | 'danger' | 'info' = 'primary';
-            let badgeLabel = 'CONFIRMED (PENDING ARRIVAL)';
+            let statusToneValue: 'success' | 'warning' | 'primary' | 'danger' | 'info' | 'neutral' =
+              'primary';
+            let badgeLabel = 'Confirmed (pending arrival)';
 
             if (isCheckedIn) {
-              badgeVariant = 'success';
-              badgeLabel = 'ON-SITE PRESENT';
+              statusToneValue = 'success';
+              badgeLabel = 'On-site present';
             } else if (isAwaitingReview) {
-              badgeVariant = 'warning';
-              badgeLabel = 'AWAITING SIGN-OFF';
+              statusToneValue = 'warning';
+              badgeLabel = 'Awaiting sign-off';
             } else if (isCompleted) {
-              badgeVariant = 'success';
-              badgeLabel = 'COMPLETED (PAYOUT SETTLED)';
+              statusToneValue = 'success';
+              badgeLabel = 'Completed (payout settled)';
             } else if (isNoShow) {
-              badgeVariant = 'danger';
-              badgeLabel = 'NO-SHOW';
+              statusToneValue = 'danger';
+              badgeLabel = 'No-show';
             } else if (isCancelled) {
-              badgeVariant = 'danger';
-              badgeLabel = 'CANCELLED';
+              statusToneValue = 'danger';
+              badgeLabel = 'Cancelled';
             }
 
             return (
@@ -606,25 +611,24 @@ export default function OrganizerShiftDetailScreen() {
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <Text
+                        style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, flexShrink: 1 }}
+                        numberOfLines={2}
+                      >
                         {profile?.fullName || 'Worker'}
                       </Text>
-                      {worker?.verificationStatus === 'verified' && (
-                        <Badge label="VERIFIED" variant="success" size="sm" />
-                      )}
+                      {worker?.verificationStatus === 'verified' ? (
+                        <StatusIndicator label="Verified" tone="success" size="sm" />
+                      ) : null}
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 }}>
-                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                        {profile?.phone || 'Contact verified'} •
-                      </Text>
-                      <Star size={11} color={colors.warning} fill={colors.warning} />
-                      <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
-                        {worker?.rating && worker.rating > 0 ? worker.rating.toFixed(1) : 'New'}
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                      Token: {member.checkInCode || 'Not Provisioned'}
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                      {profile?.phone || 'Contact on file'} • Rating:{' '}
+                      {worker?.rating && worker.rating > 0 ? worker.rating.toFixed(1) : 'New / unrated'}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                      Pass code issued to worker app
+                      {member.checkInCode ? ' (verify by entry below)' : ' — not provisioned yet'}
                     </Text>
                     {member.notes && member.notes.includes('[DELAY ALERT]') ? (
                       <View
@@ -648,7 +652,7 @@ export default function OrganizerShiftDetailScreen() {
                     ) : null}
                   </View>
 
-                  <Badge label={badgeLabel} variant={badgeVariant} size="sm" />
+                  <StatusIndicator label={badgeLabel} tone={statusToneValue} size="sm" />
                 </View>
 
                 {/* Status-specific action buttons */}
@@ -790,13 +794,18 @@ export default function OrganizerShiftDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Manual Check-In Verification Modal */}
-      <Modal visible={Boolean(checkInBooking)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+      {/* Pass-code check-in — no camera QR scanner in this build */}
+      <Modal
+        visible={Boolean(checkInBooking)} transparent animationType="fade" onRequestClose={() => setCheckInBooking(null)}
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border }]}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Verify Worker Arrival</Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-              Confirm check-in for {checkInBooking?.worker?.profile?.fullName || 'Worker'}. Enter the pass code shown on their Opskl app pass:
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+              Confirm check-in for {checkInBooking?.worker?.profile?.fullName || 'Worker'}. Ask them to show the
+              attendance pass code in their Opskl Worker app, then type it below. This build does not include a
+              camera QR scanner.
             </Text>
 
             <View style={{ marginVertical: spacing.md }}>
@@ -807,15 +816,11 @@ export default function OrganizerShiftDetailScreen() {
                   setManualCode(val);
                   if (checkInError) setCheckInError(null);
                 }}
-                placeholder="e.g. OP-4829"
+                placeholder="Enter code from worker app"
                 autoCapitalize="characters"
                 error={checkInError || undefined}
+                autoFocus
               />
-              {checkInBooking?.checkInCode ? (
-                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
-                  Expected System Token: {checkInBooking.checkInCode}
-                </Text>
-              ) : null}
             </View>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -842,16 +847,18 @@ export default function OrganizerShiftDetailScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
-      {/* No-Show Documentation Modal */}
-      <Modal visible={Boolean(noShowBooking)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+      <Modal
+        visible={Boolean(noShowBooking)} transparent animationType="fade" onRequestClose={() => setNoShowBooking(null)}
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border }]}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Record No-Show</Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-              Document failure to arrive on-site for {noShowBooking?.worker?.profile?.fullName || 'Worker'}. This reopens the opening for standby workers and notifies the worker with dispute rights.
+              Document failure to arrive for {noShowBooking?.worker?.profile?.fullName || 'Worker'}. This reopens the opening for standby workers.
             </Text>
 
             <View style={{ marginVertical: spacing.md }}>
@@ -888,16 +895,18 @@ export default function OrganizerShiftDetailScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
-      {/* Cancellation Modal */}
-      <Modal visible={Boolean(cancelBooking)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
+      <Modal
+        visible={Boolean(cancelBooking)} transparent animationType="fade" onRequestClose={() => setCancelBooking(null)}
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={styles.modalBackdrop}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border }]}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Cancel Worker Booking</Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-              Cancel confirmed booking for {cancelBooking?.worker?.profile?.fullName || 'Worker'}? Please provide a reason:
+              Cancel confirmed booking for {cancelBooking?.worker?.profile?.fullName || 'Worker'}? Provide a reason:
             </Text>
 
             <View style={{ marginVertical: spacing.md }}>
@@ -934,12 +943,14 @@ export default function OrganizerShiftDetailScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
-      {/* Shift Broadcast & Team Chat Modal */}
-      <Modal visible={showChatModal} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
+      <Modal
+        visible={showChatModal} transparent animationType="slide" onRequestClose={() => setShowChatModal(false)}
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={styles.modalBackdrop}>
           <View
             style={[
               styles.modalContent,
@@ -949,6 +960,8 @@ export default function OrganizerShiftDetailScreen() {
                 maxWidth: 440,
                 width: '100%',
                 maxHeight: '85%',
+                borderWidth: 1,
+                borderColor: colors.border,
               },
             ]}
           >
@@ -977,6 +990,7 @@ export default function OrganizerShiftDetailScreen() {
                 borderColor: colors.border,
               }}
               contentContainerStyle={{ gap: 8 }}
+              keyboardShouldPersistTaps="handled"
             >
               {loadingChat ? (
                 <View style={{ padding: 20, alignItems: 'center' }}>
@@ -1030,6 +1044,7 @@ export default function OrganizerShiftDetailScreen() {
                 size="md"
                 fullWidth={false}
                 loading={sendingChat}
+                disabled={sendingChat || !chatInput.trim()}
                 onPress={handleSendTeamBroadcast}
               />
             </View>
@@ -1043,9 +1058,9 @@ export default function OrganizerShiftDetailScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
 

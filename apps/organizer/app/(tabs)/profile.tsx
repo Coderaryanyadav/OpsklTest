@@ -1,8 +1,25 @@
-import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, Linking, Modal, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useOpsklTheme, Card, Badge, Button, Input, useAuth } from '@opskil/design-system';
+import {
+  useOpsklTheme,
+  Button,
+  Input,
+  useAuth,
+  Screen,
+  ScreenHeader,
+  ErrorRetry,
+  EmptyState,
+  StatusIndicator,
+  FormField,
+  DocumentUpload,
+  InlineBanner,
+  Toggle,
+  KeyboardAwareContainer,
+  LoadingView,
+  OpsklAlert,
+  Divider,
+} from '@opskil/design-system';
 import {
   fetchOrganizerProfile,
   updateOrganizerProfile,
@@ -12,6 +29,7 @@ import {
   uploadVerificationDocument,
 } from '@opskil/shared';
 import { GstinSchema } from '@opskil/validation';
+import { Building2 } from 'lucide-react-native';
 
 export default function OrganizerProfileScreen() {
   const router = useRouter();
@@ -20,41 +38,51 @@ export default function OrganizerProfileScreen() {
 
   const [organizerData, setOrganizerData] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Edit organization profile state
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [formBusinessName, setFormBusinessName] = useState('');
   const [formGstin, setFormGstin] = useState('');
   const [formBillingAddress, setFormBillingAddress] = useState('');
   const [formContactPhone, setFormContactPhone] = useState('');
+  const [gstinAcknowledged, setGstinAcknowledged] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   const userId = session?.user?.id;
 
-  useEffect(() => {
-    async function loadProfile() {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const data = await fetchOrganizerProfile(userId);
-        setOrganizerData(data);
-      } catch (err) {
-        console.error('Failed to load organizer profile', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadProfile = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      setRefreshing(false);
+      setLoadError(null);
+      return;
     }
-    loadProfile();
+    try {
+      setLoadError(null);
+      const data = await fetchOrganizerProfile(userId);
+      setOrganizerData(data);
+    } catch (err: any) {
+      console.error('Failed to load organizer profile', err);
+      setLoadError(err?.message || 'Could not load organization profile.');
+      setOrganizerData(null);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleOpenEdit = () => {
     setFormBusinessName(organizerData?.businessName || userProfile?.fullName || '');
     setFormGstin(organizerData?.gstin || '');
     setFormBillingAddress(organizerData?.billingAddress || '');
     setFormContactPhone(organizerData?.businessContactPhone || userProfile?.phone || '');
+    setGstinAcknowledged(false);
     setEditError(null);
     setEditModalVisible(true);
   };
@@ -66,10 +94,15 @@ export default function OrganizerProfileScreen() {
       return;
     }
     const trimmedGstin = formGstin.trim().toUpperCase();
+    const gstinChanged = !!trimmedGstin && trimmedGstin !== (organizerData?.gstin || '').toUpperCase();
     if (trimmedGstin) {
       const gstinResult = GstinSchema.safeParse(trimmedGstin);
       if (!gstinResult.success) {
         setEditError('Please enter a valid 15-character Indian GSTIN (e.g. 27AABCA1234F1Z5)');
+        return;
+      }
+      if (gstinChanged && !gstinAcknowledged) {
+        setEditError('Confirm GSTIN text submission below. Gallery PDF upload is not enabled in this build.');
         return;
       }
     }
@@ -84,18 +117,18 @@ export default function OrganizerProfileScreen() {
         profileCompletionStatus: 'completed',
       });
 
-      if (trimmedGstin) {
-        // Upload certificate to private storage bucket before submitting verification case
-        const certificateBlob = `GSTIN_DOCUMENT_EVIDENCE_${trimmedGstin}_${userId}_${Date.now()}`;
+      if (gstinChanged && trimmedGstin) {
+        // Honest GSTIN text submission — no gallery PDF. Backend still stores a text evidence marker.
+        const certificateBlob = `GSTIN_TEXT_SUBMISSION_${trimmedGstin}_${userId}_${Date.now()}`;
         const uploadRes = await uploadVerificationDocument(
           userId,
           'gstin',
           certificateBlob,
-          'application/pdf'
+          'text/plain'
         );
 
         if (!uploadRes.success || !uploadRes.storagePath) {
-          throw new Error(uploadRes.error || 'Failed to upload GSTIN certificate to secure storage.');
+          throw new Error(uploadRes.error || 'Failed to submit GSTIN text evidence for review.');
         }
 
         const verifyRes = await submitVerificationCaseSafe(
@@ -112,10 +145,10 @@ export default function OrganizerProfileScreen() {
       const updated = await fetchOrganizerProfile(userId);
       setOrganizerData(updated);
       setEditModalVisible(false);
-      Alert.alert(
+      OpsklAlert.alert(
         'Profile Updated',
-        trimmedGstin
-          ? 'Organization details saved and GSTIN verification case submitted for admin review.'
+        gstinChanged
+          ? 'Organization details saved. GSTIN was submitted as text for admin review (no PDF file attached).'
           : 'Organization profile details have been saved.'
       );
     } catch (err: any) {
@@ -131,15 +164,15 @@ export default function OrganizerProfileScreen() {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Unable to open link', `Please visit ${url} in your browser.`);
+        OpsklAlert.alert('Unable to open link', `Please visit ${url} in your browser.`);
       }
     } catch {
-      Alert.alert('Notice', `Please visit ${url}`);
+      OpsklAlert.alert('Notice', `Please visit ${url}`);
     }
   };
 
   const handleSignOut = async () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out of your Organizer account?', [
+    OpsklAlert.alert('Sign Out', 'Are you sure you want to sign out of your Organizer account?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
@@ -152,9 +185,9 @@ export default function OrganizerProfileScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
+    OpsklAlert.alert(
       'Delete Organization Account',
-      'Are you sure you want to permanently delete your Opskl organizer account? All active listings and billing history will be queued for archival in accordance with store policies.',
+      'Are you sure you want to permanently delete your Opskl organizer account? Active listings and billing history will be queued for archival.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -162,16 +195,20 @@ export default function OrganizerProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             if (!userId) return;
-            const res = await requestAccountDeletionSafe(userId, 'Organizer requested in-app account deletion');
+            const res = await requestAccountDeletionSafe(
+              userId,
+              'Organizer requested in-app account deletion'
+            );
             if (!res.success) {
-              Alert.alert(
+              OpsklAlert.alert(
                 'Deletion Request Denied',
-                res.error || 'Your organization deletion request could not be processed due to active listings or pending settlements.'
+                res.error ||
+                  'Your organization deletion request could not be processed due to active listings or pending settlements.'
               );
               return;
             }
             await signOut();
-            Alert.alert(
+            OpsklAlert.alert(
               'Account Deactivated',
               'Your organization account has been deactivated and queued for permanent data purge in 30 days.'
             );
@@ -182,256 +219,248 @@ export default function OrganizerProfileScreen() {
   };
 
   const businessName = organizerData?.businessName || userProfile?.fullName || 'Event Host Organization';
-  const initials = businessName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase() || 'OP';
+  const initials =
+    businessName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'OP';
+
+  const verificationTone = (): 'success' | 'warning' | 'danger' | 'neutral' => {
+    switch (organizerData?.verificationStatus) {
+      case 'verified':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      case 'rejected':
+        return 'danger';
+      default:
+        return 'neutral';
+    }
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <View
-        style={{
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 14,
-          backgroundColor: colors.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
-        <Text
-          style={[
-            typography.h2,
-            {
-              color: colors.textPrimary,
-              fontWeight: '700',
-              letterSpacing: -0.5,
-            },
-          ]}
+    <Screen edges={['top']}>
+      <ScreenHeader
+        title="Organization Profile"
+        subtitle="Business credentials, GSTIN registration and account settings"
+      />
+
+      {loading ? (
+        <LoadingView message="Loading organization…" />
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadProfile();
+              }}
+            />
+          }
         >
-          Organization Profile
-        </Text>
-        <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
-          Business credentials, GSTIN registration and account settings
-        </Text>
-      </View>
-
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-        {loading ? (
-          <View style={{ padding: spacing.xl, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={{ marginTop: 8, color: colors.textMuted }}>Loading organization…</Text>
-          </View>
-        ) : !userId ? (
-          <>
-            {/* Guest Organizer Card */}
-            <Card variant="elevated">
-              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
-                <View
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: radii.md,
-                    backgroundColor: colors.surfaceMuted,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 12,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                >
-                  <Text style={{ fontSize: 22, fontWeight: '800', color: colors.textPrimary }}>OP</Text>
-                </View>
-                <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
-                  Guest Organizer
-                </Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, maxWidth: 280, lineHeight: 18 }}>
-                  Sign in with your organization account to manage business credentials, submit GSTIN for verified invoices, and configure billing profiles.
-                </Text>
-                <View style={{ marginTop: spacing.md, width: '100%', gap: spacing.sm }}>
-                  <Button
-                    title="Sign In as Organizer"
-                    variant="primary"
-                    size="md"
-                    onPress={() => router.push('/auth/login?redirect=/(tabs)/profile' as any)}
-                  />
-                </View>
-              </View>
-            </Card>
-          </>
-        ) : (
-          <>
-            {/* Organization Identity Card */}
-            <Card variant="elevated">
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View
-                  style={{
-                    width: 58,
-                    height: 58,
-                    borderRadius: radii.md,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: spacing.md,
-                  }}
-                >
-                  <Text style={{ fontSize: 22, color: '#FFFFFF', fontWeight: '800' }}>{initials}</Text>
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                    <Text style={[typography.h3, { color: colors.textPrimary }]}>
-                      {businessName}
+          {loadError ? (
+            <ErrorRetry
+              variant="block"
+              title="Profile unavailable"
+              message={loadError}
+              onRetry={loadProfile}
+            />
+          ) : !userId ? (
+            <EmptyState
+              icon={<Building2 size={28} color={colors.textMuted} strokeWidth={2} />}
+              title="Guest Organizer"
+              description="Sign in to manage business credentials, submit GSTIN for verified invoices, and configure billing."
+              actionLabel="Sign In as Organizer"
+              onAction={() => router.push('/auth/login?redirect=/(tabs)/profile' as any)}
+            />
+          ) : (
+            <>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radii.lg,
+                  padding: spacing.lg,
+                  backgroundColor: colors.surface,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: radii.md,
+                      backgroundColor: colors.primary,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: spacing.md,
+                    }}
+                  >
+                    <Text style={{ fontSize: 22, color: colors.textInverse, fontWeight: '800' }}>
+                      {initials}
                     </Text>
-                    {organizerData?.verificationStatus === 'verified' ? (
-                      <Badge label="Verified Business Host" variant="success" size="sm" />
-                    ) : organizerData?.verificationStatus === 'pending' ? (
-                      <Badge label="Verification Under Review" variant="warning" size="sm" />
-                    ) : organizerData?.verificationStatus === 'rejected' ? (
-                      <Badge label="Verification Rejected" variant="danger" size="sm" />
-                    ) : (
-                      <Badge label="Unverified Host" variant="neutral" size="sm" />
-                    )}
                   </View>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-                    {organizerData?.gstin ? `GSTIN: ${organizerData.gstin}` : 'GST registration pending'} • Mumbai
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 2 }}>
-                    ★ {organizerData?.rating && organizerData.rating > 0 ? `${organizerData.rating.toFixed(1)} Host Rating` : 'New Host (Unrated)'} • {organizerData?.totalEventsHosted ?? 0} Shifts Hosted
-                  </Text>
+
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                      <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={2}>
+                        {businessName}
+                      </Text>
+                      <StatusIndicator
+                        label={
+                          organizerData?.verificationStatus === 'verified'
+                            ? 'Verified host'
+                            : organizerData?.verificationStatus === 'pending'
+                              ? 'Under review'
+                              : organizerData?.verificationStatus === 'rejected'
+                                ? 'Rejected'
+                                : 'Unverified'
+                        }
+                        tone={verificationTone()}
+                        size="sm"
+                      />
+                    </View>
+                    <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
+                      {organizerData?.gstin
+                        ? `GSTIN: ${organizerData.gstin}`
+                        : 'GST registration pending'}{' '}
+                      • Mumbai
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                      {organizerData?.rating && organizerData.rating > 0
+                        ? `Host rating ${organizerData.rating.toFixed(1)}`
+                        : 'New host (unrated)'}{' '}
+                      • {organizerData?.totalEventsHosted ?? 0} shifts hosted
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </Card>
 
-            {/* Business Compliance & Billing */}
-            <Card variant="outlined">
-              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Billing & Tax Compliance
-              </Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: spacing.md }}>
-                Tax invoices and input tax credits (ITC) are generated under this profile.
-              </Text>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radii.lg,
+                  padding: spacing.lg,
+                  backgroundColor: colors.surface,
+                  gap: spacing.sm,
+                }}
+              >
+                <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
+                  Billing & Tax Compliance
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  Tax invoices and input tax credits (ITC) are generated under this profile.
+                </Text>
 
-              <View style={{ gap: spacing.sm }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>GSTIN Status:</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: organizerData?.verificationStatus === 'verified' && organizerData?.gstin ? colors.success : organizerData?.gstin ? colors.warning : colors.textMuted }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>GSTIN status</Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: '600',
+                      color:
+                        organizerData?.verificationStatus === 'verified' && organizerData?.gstin
+                          ? colors.success
+                          : organizerData?.gstin
+                            ? colors.warning
+                            : colors.textMuted,
+                    }}
+                  >
                     {organizerData?.verificationStatus === 'verified' && organizerData?.gstin
-                      ? 'Verified GST Registered'
+                      ? 'Verified GST registered'
                       : organizerData?.gstin
-                      ? 'Submitted (Under Review)'
-                      : 'Not Provided'}
+                        ? 'Submitted (under review)'
+                        : 'Not provided'}
                   </Text>
                 </View>
 
                 {organizerData?.billingAddress ? (
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>Billing Address:</Text>
-                    <Text style={{ fontSize: 13, color: colors.textPrimary, flex: 1, textAlign: 'right', marginLeft: 16 }}>
+                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>Billing address</Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: colors.textPrimary,
+                        flex: 1,
+                        textAlign: 'right',
+                        marginLeft: 16,
+                      }}
+                      numberOfLines={3}
+                    >
                       {organizerData.billingAddress}
                     </Text>
                   </View>
                 ) : null}
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>Contact Phone:</Text>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>Contact phone</Text>
                   <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '500' }}>
-                    {organizerData?.businessContactPhone || userProfile?.phone || 'Verified'}
+                    {organizerData?.businessContactPhone || userProfile?.phone || '—'}
                   </Text>
+                </View>
+
+                <Divider />
+
+                <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Edit Profile" variant="primary" size="sm" onPress={handleOpenEdit} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      title="View Invoices"
+                      variant="outline"
+                      size="sm"
+                      onPress={() => router.push('/(tabs)/finances')}
+                    />
+                  </View>
                 </View>
               </View>
 
-              <View style={{ marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: 'row', gap: spacing.sm }}>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="Edit Profile"
-                    variant="primary"
-                    size="sm"
-                    onPress={handleOpenEdit}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Button
-                    title="View Invoices"
-                    variant="outline"
-                    size="sm"
-                    onPress={() => router.push('/(tabs)/finances')}
-                  />
-                </View>
-              </View>
-            </Card>
+              <Toggle
+                label="Dark Mode"
+                description="Low-light venue production booths"
+                value={isDark}
+                onValueChange={toggleTheme}
+              />
 
-            {/* App Preferences */}
-            <Card variant="outlined">
-              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Preferences
-              </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ fontSize: 14, color: colors.textPrimary, fontWeight: '500' }}>
-                    Dark Mode
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                    Optimized for low-light venue production booths
-                  </Text>
-                </View>
-                <Switch
-                  value={isDark}
-                  onValueChange={toggleTheme}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </Card>
-
-            {/* Support & Legal */}
-            <Card variant="outlined">
-              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Support & Legal
-              </Text>
-              <TouchableOpacity
-                onPress={() => handleOpenUrl('https://opskil.com/terms')}
-                style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radii.lg,
+                  padding: spacing.lg,
+                  backgroundColor: colors.surface,
+                  gap: spacing.sm,
+                }}
               >
-                <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '600' }}>
-                  Organizer Terms of Service & Staffing Policies ↗
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleOpenUrl('https://opskil.com/privacy')}
-                style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}
-              >
-                <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '600' }}>
-                  Privacy & Data Security Policy ↗
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleOpenUrl('mailto:organizer-support@opskil.com')}
-                style={{ paddingVertical: 10 }}
-              >
-                <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '600' }}>
-                  Dedicated Organizer Support Desk ✉
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                  organizer-support@opskil.com • Dedicated account manager support
-                </Text>
-              </TouchableOpacity>
-            </Card>
-
-            {/* Account Management */}
-            <Card variant="outlined">
-              <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Account Management
-              </Text>
-              <View style={{ gap: spacing.sm }}>
+                <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Support & Legal</Text>
                 <Button
-                  title="Sign Out"
-                  variant="outline"
-                  size="md"
-                  onPress={handleSignOut}
+                  title="Organizer Terms of Service"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => handleOpenUrl('https://opskil.com/terms')}
                 />
+                <Button
+                  title="Privacy & Data Security Policy"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => handleOpenUrl('https://opskil.com/privacy')}
+                />
+                <Button
+                  title="Organizer Support"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => handleOpenUrl('mailto:organizer-support@opskil.com')}
+                />
+              </View>
+
+              <View style={{ gap: spacing.sm }}>
+                <Button title="Sign Out" variant="outline" size="md" onPress={handleSignOut} />
                 <Button
                   title="Request Organization Deletion"
                   variant="danger"
@@ -439,113 +468,135 @@ export default function OrganizerProfileScreen() {
                   onPress={handleDeleteAccount}
                 />
               </View>
-            </Card>
 
-            <View style={{ alignItems: 'center', marginTop: spacing.md, paddingBottom: spacing.xl }}>
-              <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                Opskl Organizer v1.0.0 • Production Release Candidate
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
-                App ID: com.opskil.organizer • © 2026 Opskl Technologies Pvt. Ltd.
-              </Text>
-            </View>
-          </>
-        )}
-      </ScrollView>
+              <View style={{ alignItems: 'center', marginTop: spacing.md, paddingBottom: spacing.xl }}>
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                  Opskl Organizer v1.0.0 • Production Release Candidate
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                  App ID: com.opskil.organizer • © 2026 Opskl Technologies Pvt. Ltd.
+                </Text>
+              </View>
+            </>
+          )}
+        </ScrollView>
+      )}
 
       <Modal
         visible={editModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setEditModalVisible(false)}
+        onRequestClose={() => setEditModalVisible(false)} accessibilityViewIsModal
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-          <View
-            style={{
-              paddingHorizontal: spacing.lg,
-              paddingVertical: spacing.md,
-              backgroundColor: colors.surface,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.border,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Text style={[typography.h3, { color: colors.textPrimary }]}>Edit Organization Profile</Text>
-            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <Text style={{ fontSize: 15, color: colors.textSecondary }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+        <Screen edges={['top', 'bottom']}>
+          <ScreenHeader
+            title="Edit Organization Profile"
+            onBack={() => setEditModalVisible(false)}
+          />
 
-          <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+          <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}>
             {editError ? (
-              <View
-                style={{
-                  backgroundColor: colors.surfaceMuted,
-                  borderLeftWidth: 3,
-                  borderLeftColor: colors.danger,
-                  padding: spacing.md,
-                  borderRadius: radii.sm,
-                }}
-              >
-                <Text style={{ color: colors.danger, fontSize: 13 }}>{editError}</Text>
-              </View>
+              <InlineBanner variant="error" message={editError} />
             ) : null}
 
-            <Input
-              label="Organization / Business Legal Name"
-              value={formBusinessName}
-              onChangeText={setFormBusinessName}
-              placeholder="e.g. Apex Events Pvt Ltd"
-            />
+            <FormField label="Organization / Business Legal Name">
+              <Input
+                value={formBusinessName}
+                onChangeText={setFormBusinessName}
+                placeholder="e.g. Apex Events Pvt Ltd"
+              />
+            </FormField>
 
-            <Input
+            <FormField
               label="Indian GSTIN (Optional)"
-              value={formGstin}
-              onChangeText={setFormGstin}
-              placeholder="e.g. 27AABCA1234F1Z5"
-              autoCapitalize="characters"
-              maxLength={15}
-            />
-
-            <Input
-              label="Billing / Registered Office Address"
-              value={formBillingAddress}
-              onChangeText={setFormBillingAddress}
-              placeholder="e.g. Unit 402, Trade Centre, BKC, Mumbai 400051"
-              multiline
-              numberOfLines={2}
-            />
-
-            <Input
-              label="Operational Contact Phone"
-              value={formContactPhone}
-              onChangeText={setFormContactPhone}
-              placeholder="e.g. 9820198201"
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-
-            <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-              <Button
-                title={saving ? 'Saving...' : 'Save Organization Details'}
-                variant="primary"
-                size="lg"
-                onPress={handleSaveProfile}
-                disabled={saving}
+              helperText="15-character GSTIN. Gallery / camera PDF pick is not enabled in this build."
+            >
+              <Input
+                value={formGstin}
+                onChangeText={setFormGstin}
+                placeholder="e.g. 27AABCA1234F1Z5"
+                autoCapitalize="characters"
+                maxLength={15}
               />
-              <Button
-                title="Cancel"
-                variant="outline"
-                size="md"
-                onPress={() => setEditModalVisible(false)}
-                disabled={saving}
+            </FormField>
+
+            <DocumentUpload
+              label="GSTIN text submission"
+              fileName={
+                formGstin.trim().length === 15
+                  ? `GSTIN ${formGstin.trim().toUpperCase()} (text only)`
+                  : null
+              }
+              helperText="No gallery file is attached. Saving submits the GSTIN number above as text for admin review — same honesty pattern as worker KYC."
+              onPick={() => {
+                if (formGstin.trim().length !== 15) {
+                  OpsklAlert.alert(
+                    'Enter GSTIN first',
+                    'Type a valid 15-character GSTIN above, then acknowledge text submission.'
+                  );
+                  return;
+                }
+                setGstinAcknowledged(true);
+                OpsklAlert.alert(
+                  'GSTIN text ready',
+                  'No PDF will be uploaded. The GSTIN number will be submitted as text evidence for admin review.'
+                );
+              }}
+              onClear={
+                gstinAcknowledged
+                  ? () => {
+                      setGstinAcknowledged(false);
+                    }
+                  : undefined
+              }
+            />
+
+            {gstinAcknowledged && formGstin.trim().length === 15 ? (
+              <InlineBanner
+                variant="info"
+                title="Text submission acknowledged"
+                message="Admin will review the GSTIN number. A scanned certificate PDF cannot be attached from this screen."
               />
-            </View>
-          </ScrollView>
-        </SafeAreaView>
+            ) : null}
+
+            <FormField label="Billing / Registered Office Address">
+              <Input
+                value={formBillingAddress}
+                onChangeText={setFormBillingAddress}
+                placeholder="e.g. Unit 402, Trade Centre, BKC, Mumbai 400051"
+                multiline
+                numberOfLines={2}
+              />
+            </FormField>
+
+            <FormField label="Operational Contact Phone">
+              <Input
+                value={formContactPhone}
+                onChangeText={setFormContactPhone}
+                placeholder="e.g. 9820198201"
+                keyboardType="phone-pad"
+                maxLength={10}
+              />
+            </FormField>
+
+            <Button
+              title={saving ? 'Saving…' : 'Save Organization Details'}
+              variant="primary"
+              size="lg"
+              onPress={handleSaveProfile}
+              disabled={saving}
+              loading={saving}
+            />
+            <Button
+              title="Cancel"
+              variant="outline"
+              size="md"
+              onPress={() => setEditModalVisible(false)}
+              disabled={saving}
+            />
+          </KeyboardAwareContainer>
+        </Screen>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }

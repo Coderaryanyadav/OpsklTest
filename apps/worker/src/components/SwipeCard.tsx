@@ -241,8 +241,8 @@ export function SwipeCard({
 
           {/* Header Row: Category Badge, Verified Organizer & Slots */}
           <View style={styles.topRow}>
-            <View style={styles.categoryPill}>
-              <Text style={[styles.categoryText, { color: colors.primary }]}>
+            <View style={[styles.categoryPill, { backgroundColor: colors.surfaceSecondary }]}>
+              <Text style={[styles.categoryText, { color: colors.textPrimary }]}>
                 {job.category.toUpperCase()}
               </Text>
             </View>
@@ -260,7 +260,7 @@ export function SwipeCard({
           </View>
 
           {/* Hero Wage Section */}
-          <View style={styles.wageSection}>
+          <View style={[styles.wageSection, { borderBottomColor: colors.border }]}>
             <View>
               <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
                 Estimated Shift Earnings
@@ -305,7 +305,7 @@ export function SwipeCard({
             <View style={styles.metaRow}>
               <MapPin size={15} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 8, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.venueTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                <Text style={[styles.venueTitle, { color: colors.textPrimary }]} numberOfLines={2}>
                   {job.venueName}
                 </Text>
                 <View style={styles.zoneDistanceRow}>
@@ -338,7 +338,7 @@ export function SwipeCard({
             {(job.duties || []).slice(0, 2).map((duty, idx) => (
               <View key={idx} style={styles.dutyItem}>
                 <Text style={[styles.bullet, { color: colors.primary }]}>•</Text>
-                <Text style={[styles.dutyText, { color: colors.textSecondary }]} numberOfLines={1}>
+                <Text style={[styles.dutyText, { color: colors.textSecondary }]} numberOfLines={2}>
                   {duty}
                 </Text>
               </View>
@@ -487,7 +487,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: 'rgba(15, 118, 110, 0.1)',
   },
   categoryText: {
     fontSize: 11,
@@ -506,7 +505,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(148, 163, 184, 0.2)',
   },
   wageRow: {
     flexDirection: 'row',

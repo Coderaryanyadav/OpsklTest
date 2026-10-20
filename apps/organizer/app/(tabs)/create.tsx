@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Switch,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Input,
   Button,
-  Card,
   Badge,
   WageText,
   KeyboardAwareContainer,
   useAuth,
-  OpsklAlert as Alert,
+  OpsklAlert,
+  Screen,
+  Stepper,
+  FormField,
+  WageInput,
+  NumericInput,
+  DateInput,
+  TimeInput,
+  Select,
+  FilterPills,
+  InlineBanner,
+  FinancialSummary,
+  Toggle,
+  Divider,
 } from '@opskil/design-system';
 import {
   ShiftCategory,
@@ -29,13 +34,9 @@ import {
   supabase,
 } from '@opskil/shared';
 import { ShiftCreateSchema } from '@opskil/validation';
-import {
-  Calendar,
-  MapPin,
-  User,
-  ShieldCheck,
-} from 'lucide-react-native';
+import { Calendar, MapPin, User, ShieldCheck } from 'lucide-react-native';
 
+const DRAFT_KEY = '@opskil_organizer_shift_draft';
 
 const CATEGORIES: { label: string; value: ShiftCategory }[] = [
   { label: 'Conference', value: 'conference' },
@@ -67,28 +68,35 @@ const ZONE_COORDINATES: Record<string, { lat: number; lng: number }> = {
 };
 
 const WIZARD_STEPS = [
-  { step: 1, title: 'Role & Category', subtitle: 'Define shift title, category and headcount' },
-  { step: 2, title: 'Schedule & Venue', subtitle: 'Date, timings, venue address and reporting' },
-  { step: 3, title: 'Duties & Eligibility', subtitle: 'Responsibilities, skills and dress code' },
-  { step: 4, title: 'Wages & Terms', subtitle: 'Hourly rates, breaks, meals and policies' },
-  { step: 5, title: 'Review & Publish', subtitle: 'Verify details and confirm financial budget' },
+  { id: 1, label: 'Role' },
+  { id: 2, label: 'Venue' },
+  { id: 3, label: 'Duties' },
+  { id: 4, label: 'Wages' },
+  { id: 5, label: 'Publish' },
+];
+
+const STEP_META = [
+  { title: 'Role & Category', subtitle: 'Define shift title, category and headcount' },
+  { title: 'Schedule & Venue', subtitle: 'Date, timings, venue address and reporting' },
+  { title: 'Duties & Eligibility', subtitle: 'Responsibilities, skills and dress code' },
+  { title: 'Wages & Terms', subtitle: 'Hourly rates, breaks, meals and policies' },
+  { title: 'Review & Publish', subtitle: 'Verify details and confirm financial budget' },
 ];
 
 export default function OrganizerCreateShiftScreen() {
   const router = useRouter();
   const { session, user } = useAuth();
-  const { colors, spacing, typography } = useOpsklTheme();
+  const { colors, spacing, typography, radii } = useOpsklTheme();
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
 
-  // Step 1: Role & Category
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ShiftCategory>('conference');
   const [slotsTotal, setSlotsTotal] = useState('');
 
-  // Step 2: Schedule & Venue
   const todayStr = getTodayDateIST();
   const [date, setDate] = useState(todayStr);
   const [startTime, setStartTime] = useState('');
@@ -102,13 +110,11 @@ export default function OrganizerCreateShiftScreen() {
   const [supervisorName, setSupervisorName] = useState('');
   const [supervisorPhone, setSupervisorPhone] = useState('');
 
-  // Step 3: Duties, Skills & Eligibility
   const [duties, setDuties] = useState('');
   const [requiredSkills, setRequiredSkills] = useState('');
   const [eligibilityCriteria, setEligibilityCriteria] = useState('');
   const [dressCode, setDressCode] = useState('');
 
-  // Step 4: Wages, Benefits & Terms
   const [hourlyRate, setHourlyRate] = useState('');
   const [breaksMinutes, setBreaksMinutes] = useState('');
   const [applicationDeadline, setApplicationDeadline] = useState('');
@@ -118,7 +124,6 @@ export default function OrganizerCreateShiftScreen() {
   const [overtimePolicy, setOvertimePolicy] = useState('');
   const [cancellationPolicy, setCancellationPolicy] = useState('');
 
-  // Calculations
   const parsedRate = parseFloat(hourlyRate) || 0;
   const parsedHours = parseFloat(durationHours) || 0;
   const parsedSlots = parseInt(slotsTotal, 10) || 0;
@@ -129,10 +134,79 @@ export default function OrganizerCreateShiftScreen() {
   const gstFee = financials.gstAmount;
   const totalDeposit = financials.totalPayableByOrganizer;
 
+  const buildDraftPayload = useCallback(
+    () => ({
+      title,
+      category,
+      slotsTotal,
+      date,
+      startTime,
+      endTime,
+      durationHours,
+      venueName,
+      venueAddress,
+      landmark,
+      zone,
+      reportingInstructions,
+      supervisorName,
+      supervisorPhone,
+      duties,
+      requiredSkills,
+      eligibilityCriteria,
+      dressCode,
+      hourlyRate,
+      breaksMinutes,
+      applicationDeadline,
+      paymentDeadline,
+      mealProvided,
+      transportProvided,
+      overtimePolicy,
+      cancellationPolicy,
+      step,
+    }),
+    [
+      title,
+      category,
+      slotsTotal,
+      date,
+      startTime,
+      endTime,
+      durationHours,
+      venueName,
+      venueAddress,
+      landmark,
+      zone,
+      reportingInstructions,
+      supervisorName,
+      supervisorPhone,
+      duties,
+      requiredSkills,
+      eligibilityCriteria,
+      dressCode,
+      hourlyRate,
+      breaksMinutes,
+      applicationDeadline,
+      paymentDeadline,
+      mealProvided,
+      transportProvided,
+      overtimePolicy,
+      cancellationPolicy,
+      step,
+    ]
+  );
+
+  const persistDraft = useCallback(async () => {
+    try {
+      await universalStorage.setItem(DRAFT_KEY, JSON.stringify(buildDraftPayload()));
+    } catch {
+      // Non-critical local draft failure
+    }
+  }, [buildDraftPayload]);
+
   useEffect(() => {
     async function restoreDraft() {
       try {
-        const draftJson = await universalStorage.getItem('@opskil_organizer_shift_draft');
+        const draftJson = await universalStorage.getItem(DRAFT_KEY);
         if (draftJson) {
           const draft = JSON.parse(draftJson);
           if (draft.title) setTitle(draft.title);
@@ -161,6 +235,8 @@ export default function OrganizerCreateShiftScreen() {
           if (draft.transportProvided !== undefined) setTransportProvided(Boolean(draft.transportProvided));
           if (draft.overtimePolicy) setOvertimePolicy(draft.overtimePolicy);
           if (draft.cancellationPolicy) setCancellationPolicy(draft.cancellationPolicy);
+          if (draft.step && draft.step >= 1 && draft.step <= 5) setStep(draft.step);
+          setDraftRestored(true);
         }
       } catch {
         // Non-critical restore failure
@@ -175,79 +251,83 @@ export default function OrganizerCreateShiftScreen() {
       if (title.trim().length < 5 || title.trim().length > 80) {
         const msg = 'Shift title must be between 5 and 80 characters long.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
       if (parsedSlots < 1 || parsedSlots > 50) {
         const msg = 'Headcount must be between 1 and 50 workers.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 2) {
       if (date < todayStr) {
         const msg = 'Shift date cannot be in the past. Please select today or a future date in IST.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
       if (!venueName.trim() || !venueAddress.trim()) {
         const msg = 'Please specify both venue name and full address.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
       if (parsedHours < 1 || parsedHours > 14) {
         const msg = 'Shift duration must be between 1 and 14 hours.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
       if (!supervisorName.trim() || !supervisorPhone.trim()) {
         const msg = 'On-site supervisor contact information is required.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 3) {
       if (duties.trim().length < 5) {
         const msg = 'Please list shift duties with at least 5 characters.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
     } else if (currentStep === 4) {
       if (parsedRate < 100) {
         const msg = 'Minimum wage is ₹100 per hour.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
       const bMins = parseInt(breaksMinutes, 10);
       if (!isNaN(bMins) && (bMins < 0 || bMins > 120)) {
         const msg = 'Break duration must be between 0 and 120 minutes.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
-      if (!isNaN(bMins) && bMins >= (parsedHours * 60)) {
+      if (!isNaN(bMins) && bMins >= parsedHours * 60) {
         const msg = 'Break duration cannot exceed or equal total shift duration.';
         setSubmitError(msg);
-        Alert.alert('Validation Error', msg);
+        OpsklAlert.alert('Validation Error', msg);
         return false;
       }
     }
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateStep(step)) {
-      setStep((prev) => Math.min(prev + 1, 5));
+      const next = Math.min(step + 1, 5);
+      setStep(next);
+      await persistDraft();
     }
   };
 
-  const handleBack = () => {
-    setStep((prev) => Math.max(prev - 1, 1));
+  const handleBack = async () => {
+    const prev = Math.max(step - 1, 1);
+    setStep(prev);
+    await persistDraft();
   };
 
   const handleSubmit = async (status: 'open' | 'draft') => {
@@ -310,7 +390,7 @@ export default function OrganizerCreateShiftScreen() {
       setSubmitting(false);
       const issue = validationResult.error.issues[0]?.message || 'Validation failed';
       setSubmitError(issue);
-      Alert.alert('Validation Error', issue);
+      OpsklAlert.alert('Validation Error', issue);
       return;
     }
 
@@ -341,11 +421,11 @@ export default function OrganizerCreateShiftScreen() {
 
     if (result.success) {
       try {
-        await universalStorage.removeItem('@opskil_organizer_shift_draft');
+        await universalStorage.removeItem(DRAFT_KEY);
       } catch {
         // Non-critical
       }
-      Alert.alert(
+      OpsklAlert.alert(
         status === 'draft' ? 'Draft Saved' : 'Shift Published Live',
         status === 'draft'
           ? 'Your shift has been saved to your drafts.'
@@ -357,72 +437,64 @@ export default function OrganizerCreateShiftScreen() {
           },
         ]
       );
-      // Fallback redirect after 1.5s
       setTimeout(() => {
         router.replace('/(tabs)' as any);
       }, 1500);
     } else {
       if (result.errorCode === 'ORGANIZER_NOT_VERIFIED') {
-        const msg = 'Only verified business hosts can post live shifts. Please visit Profile > Billing & Tax Compliance to submit your GSTIN or business ID for verification.';
+        const msg =
+          'Only verified business hosts can post live shifts. Visit Profile → Billing & Tax Compliance to submit your GSTIN for verification. You can still save a draft.';
         setSubmitError(msg);
-        Alert.alert(
-          'Verification Required',
-          msg,
-          [
-            { text: 'Later', style: 'cancel' },
-            { text: 'Go to Profile', onPress: () => router.push('/(tabs)/profile' as any) },
-          ]
-        );
+        OpsklAlert.alert('Verification Required', msg, [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Go to Profile', onPress: () => router.push('/(tabs)/profile' as any) },
+        ]);
       } else {
         const msg = result.error || 'Failed to create shift.';
         setSubmitError(msg);
-        Alert.alert('Submission Error', msg);
+        OpsklAlert.alert('Submission Error', msg);
       }
     }
   };
 
-  const progressPercent = Math.round((step / 5) * 100);
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      {/* Wizard Header with Progress */}
+    <Screen edges={['top']}>
       <View
         style={[
           styles.header,
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.md,
+            paddingBottom: spacing.sm,
           },
         ]}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              {WIZARD_STEPS[step - 1].title}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, marginRight: spacing.sm }}>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+              {STEP_META[step - 1].title}
             </Text>
             <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-              Step {step} of 5 • {WIZARD_STEPS[step - 1].subtitle}
+              Step {step} of 5 • {STEP_META[step - 1].subtitle}
             </Text>
           </View>
-          <Badge label={`STEP ${step}/5`} variant="primary" size="sm" />
+          <Badge label={`${step}/5`} variant="primary" size="sm" />
         </View>
 
-        {/* Progress Track */}
-        <View style={[styles.progressBarBackground, { backgroundColor: colors.surfaceMuted, marginTop: 12 }]}>
-          <View
-            style={[
-              styles.progressBarFill,
-              {
-                width: `${progressPercent}%`,
-                backgroundColor: colors.primary,
-              },
-            ]}
+        <Stepper steps={WIZARD_STEPS} currentStepIndex={step - 1} style={{ marginTop: spacing.xs }} />
+
+        {draftRestored ? (
+          <InlineBanner
+            variant="info"
+            message="Local draft restored. Continue editing or publish when ready."
+            onDismiss={() => setDraftRestored(false)}
           />
-        </View>
+        ) : null}
       </View>
 
-      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}>
-        {/* STEP 1: ROLE & CATEGORY */}
+      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}>
         {step === 1 && (
           <View style={{ gap: spacing.md }}>
             <Input
@@ -430,94 +502,63 @@ export default function OrganizerCreateShiftScreen() {
               value={title}
               onChangeText={setTitle}
               placeholder="e.g. VIP Registration Host & Usher"
-              helperText="Clear, descriptive role title visible to applicants"
+              helperText="Clear, descriptive role title visible to applicants (5–80 characters)"
             />
 
-            <View>
-              <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>
-                Event Category
-              </Text>
-              <View style={styles.categoryGrid}>
-                {CATEGORIES.map((cat) => {
-                  const isSelected = category === cat.value;
-                  return (
-                    <Pressable
-                      key={cat.value}
-                      onPress={() => setCategory(cat.value)}
-                      style={[
-                        styles.categoryPill,
-                        {
-                          backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
-                          borderColor: isSelected ? colors.primary : colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryPillText,
-                          { color: isSelected ? colors.textInverse : colors.textPrimary },
-                        ]}
-                      >
-                        {cat.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+            <FormField label="Event Category">
+              <FilterPills
+                items={CATEGORIES.map((c) => ({ id: c.value, label: c.label }))}
+                selectedId={category}
+                onSelect={(id) => setCategory(id as ShiftCategory)}
+                contentContainerStyle={{ paddingHorizontal: 0 }}
+              />
+            </FormField>
 
-            <Input
-              label="Headcount Required (Positions)"
+            <NumericInput
+              label="Headcount Required"
               value={slotsTotal}
               onChangeText={setSlotsTotal}
-              keyboardType="number-pad"
               placeholder="e.g. 8"
-              helperText="Number of verified workers needed for this shift"
+              helperText="Number of verified workers needed (1–50)"
             />
           </View>
         )}
 
-        {/* STEP 2: SCHEDULE & VENUE */}
         {step === 2 && (
           <View style={{ gap: spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: spacing.md }}>
-              <View style={{ flex: 1 }}>
-                <Input
-                  label="Event Date (YYYY-MM-DD)"
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="2026-10-15"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Input
-                  label="Duration (Hours)"
-                  value={durationHours}
-                  onChangeText={setDurationHours}
-                  keyboardType="numeric"
-                  placeholder="9"
-                />
-              </View>
-            </View>
+            <DateInput
+              label="Event Date"
+              value={date}
+              onChangeText={setDate}
+              placeholder="YYYY-MM-DD"
+            />
 
             <View style={{ flexDirection: 'row', gap: spacing.md }}>
               <View style={{ flex: 1 }}>
-                <Input
-                  label="Start Time (HH:MM)"
+                <TimeInput
+                  label="Start Time"
                   value={startTime}
                   onChangeText={setStartTime}
                   placeholder="09:00"
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Input
-                  label="End Time (HH:MM)"
+                <TimeInput
+                  label="End Time"
                   value={endTime}
                   onChangeText={setEndTime}
                   placeholder="18:00"
                 />
               </View>
             </View>
+
+            <NumericInput
+              label="Duration (Hours)"
+              value={durationHours}
+              onChangeText={setDurationHours}
+              placeholder="9"
+              helperText="Between 1 and 14 hours"
+            />
 
             <Input
               label="Venue Name"
@@ -542,38 +583,12 @@ export default function OrganizerCreateShiftScreen() {
               placeholder="e.g. Opposite Bharat Diamond Bourse"
             />
 
-            <View>
-              <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>
-                Mumbai Locality Zone
-              </Text>
-              <View style={styles.categoryGrid}>
-                {MUMBAI_ZONES.map((z) => {
-                  const isSelected = zone === z;
-                  return (
-                    <Pressable
-                      key={z}
-                      onPress={() => setZone(z)}
-                      style={[
-                        styles.categoryPill,
-                        {
-                          backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
-                          borderColor: isSelected ? colors.primary : colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryPillText,
-                          { color: isSelected ? colors.textInverse : colors.textPrimary, fontSize: 12 },
-                        ]}
-                      >
-                        {z}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+            <Select
+              label="Mumbai Locality Zone"
+              options={MUMBAI_ZONES.map((z) => ({ value: z, label: z }))}
+              value={zone}
+              onChange={setZone}
+            />
 
             <Input
               label="Reporting Instructions for Workers"
@@ -584,29 +599,22 @@ export default function OrganizerCreateShiftScreen() {
               numberOfLines={2}
             />
 
-            <View style={{ flexDirection: 'row', gap: spacing.md }}>
-              <View style={{ flex: 1 }}>
-                <Input
-                  label="Supervisor Name"
-                  value={supervisorName}
-                  onChangeText={setSupervisorName}
-                  placeholder="e.g. Rohit Verma"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Input
-                  label="Supervisor Phone"
-                  value={supervisorPhone}
-                  onChangeText={setSupervisorPhone}
-                  keyboardType="phone-pad"
-                  placeholder="e.g. 9820198201"
-                />
-              </View>
-            </View>
+            <Input
+              label="Supervisor Name"
+              value={supervisorName}
+              onChangeText={setSupervisorName}
+              placeholder="e.g. Rohit Verma"
+            />
+            <Input
+              label="Supervisor Phone"
+              value={supervisorPhone}
+              onChangeText={setSupervisorPhone}
+              keyboardType="phone-pad"
+              placeholder="e.g. 9820198201"
+            />
           </View>
         )}
 
-        {/* STEP 3: DUTIES, SKILLS & ELIGIBILITY */}
         {step === 3 && (
           <View style={{ gap: spacing.md }}>
             <Input
@@ -618,22 +626,18 @@ export default function OrganizerCreateShiftScreen() {
               numberOfLines={4}
               helperText="Workers review these duties before applying"
             />
-
             <Input
               label="Required Skills & Capabilities"
               value={requiredSkills}
               onChangeText={setRequiredSkills}
               placeholder="e.g. Customer Service, QR Scanning, Hindi/English"
-              helperText="Keywords matched against worker profiles"
             />
-
             <Input
               label="Eligibility & Age Requirements"
               value={eligibilityCriteria}
               onChangeText={setEligibilityCriteria}
               placeholder="e.g. Must be 18+ years old. Physical stamina required."
             />
-
             <Input
               label="Dress Code & Appearance Guidelines"
               value={dressCode}
@@ -645,86 +649,72 @@ export default function OrganizerCreateShiftScreen() {
           </View>
         )}
 
-        {/* STEP 4: WAGES, BREAKS & PAYMENT TERMS */}
         {step === 4 && (
           <View style={{ gap: spacing.md }}>
-            <Input
-              label="Hourly Wage per Worker (₹ / hr)"
+            <WageInput
+              label="Hourly Wage per Worker"
               value={hourlyRate}
               onChangeText={setHourlyRate}
-              keyboardType="numeric"
               placeholder="175"
-              helperText="Wages are deposited into direct settlement upon shift sign-off"
+              helperText="Minimum ₹100/hr. Shown separately from total estimated pay below."
             />
 
-            {/* Live Interactive Billing Inspector — Strict Monochrome */}
-            <Card
-              variant="elevated"
+            <View
               style={{
-                backgroundColor: colors.surfaceMuted,
-                borderColor: colors.border,
                 borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                backgroundColor: colors.surfaceMuted,
                 padding: spacing.md,
-                gap: 8,
+                gap: spacing.sm,
               }}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Billing Breakdown
-                </Text>
-                <Badge label="ESTIMATED COST" variant="neutral" size="sm" />
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Wage per Worker:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Pay per worker
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Hourly wage</Text>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-                  {formatINR(perWorkerPay)} ({parsedHours}h @ {formatINR(parsedRate)}/h)
+                  {formatINR(parsedRate)}/hr
                 </Text>
               </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Total Crew Wages ({parsedSlots} workers):</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-                  {formatINR(totalCrewBudget)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Platform Facilitation Fee (10%):</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {formatINR(platformFee)}
+                  Total estimated pay ({parsedHours || '—'}h)
                 </Text>
+                <WageText style={{ fontSize: 16 }}>{formatINR(perWorkerPay)}</WageText>
               </View>
+            </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>GST on Facilitation Fee (18%):</Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {formatINR(gstFee)}
-                </Text>
-              </View>
+            <FinancialSummary
+              title="Crew budget estimate"
+              items={[
+                {
+                  label: `Worker wages (${parsedSlots} × ${formatINR(perWorkerPay)})`,
+                  amountLabel: formatINR(totalCrewBudget),
+                },
+                {
+                  label: 'Platform fee (10%)',
+                  amountLabel: formatINR(platformFee),
+                  emphasis: 'muted',
+                },
+                {
+                  label: 'GST on fee (18%)',
+                  amountLabel: formatINR(gstFee),
+                  emphasis: 'muted',
+                },
+              ]}
+              totalLabel="Total estimated escrow"
+              totalAmountLabel={formatINR(totalDeposit)}
+              footnote="Wages are held in escrow and disbursed after attendance sign-off."
+            />
 
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 2 }} />
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>Total Estimated Escrow:</Text>
-                <WageText style={{ fontSize: 18 }}>{formatINR(totalDeposit)}</WageText>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                <ShieldCheck size={13} color={colors.primary} strokeWidth={2.4} />
-                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500', flex: 1 }}>
-                  Wages are held in escrow and disbursed directly to workers upon attendance sign-off.
-                </Text>
-              </View>
-            </Card>
-
-            <Input
+            <NumericInput
               label="Rest Breaks (Minutes)"
               value={breaksMinutes}
               onChangeText={setBreaksMinutes}
-              keyboardType="number-pad"
               placeholder="30"
-              helperText="Scheduled rest breaks up to 120 minutes are paid on-site rest periods (0-120 mins)."
+              helperText="0–120 minutes; cannot exceed shift duration"
             />
 
             <Input
@@ -732,51 +722,26 @@ export default function OrganizerCreateShiftScreen() {
               value={applicationDeadline}
               onChangeText={setApplicationDeadline}
               placeholder="YYYY-MM-DDTHH:MM"
-              helperText="Date & time when worker applications close (defaults to shift start)."
             />
-
             <Input
               label="Payment Deadline (Optional)"
               value={paymentDeadline}
               onChangeText={setPaymentDeadline}
               placeholder="YYYY-MM-DDTHH:MM"
-              helperText="Date & time when shift wages are finalized."
             />
 
-            {/* Switches for meals & transport */}
-            <Card variant="outlined" style={{ gap: spacing.md, padding: spacing.md }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>
-                    Meal Provided on-site
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>Lunch or dinner provided during break</Text>
-                </View>
-                <Switch
-                  value={mealProvided}
-                  onValueChange={setMealProvided}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-
-              <View style={{ height: 1, backgroundColor: colors.border }} />
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>
-                    Travel / Cab Allowance
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>Reimbursement or transport arranged</Text>
-                </View>
-                <Switch
-                  value={transportProvided}
-                  onValueChange={setTransportProvided}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </Card>
+            <Toggle
+              label="Meal provided on-site"
+              description="Lunch or dinner during break"
+              value={mealProvided}
+              onValueChange={setMealProvided}
+            />
+            <Toggle
+              label="Travel / cab allowance"
+              description="Reimbursement or transport arranged"
+              value={transportProvided}
+              onValueChange={setTransportProvided}
+            />
 
             <Input
               label="Overtime Policy"
@@ -784,7 +749,6 @@ export default function OrganizerCreateShiftScreen() {
               onChangeText={setOvertimePolicy}
               placeholder="e.g. ₹190/hr for additional show hours if requested on-site."
             />
-
             <Input
               label="Cancellation Policy"
               value={cancellationPolicy}
@@ -796,35 +760,51 @@ export default function OrganizerCreateShiftScreen() {
           </View>
         )}
 
-        {/* STEP 5: FINAL REVIEW & PUBLICATION */}
         {step === 5 && (
           <View style={{ gap: spacing.md }}>
-            {/* Shift Role Card */}
-            <Card variant="elevated">
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.md,
+                backgroundColor: colors.surface,
+              }}
+            >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={[typography.h3, { color: colors.textPrimary }]}>{title}</Text>
+                  <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={2}>
+                    {title || 'Untitled shift'}
+                  </Text>
                   <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
-                    Category: {category.toUpperCase()} • {parsedSlots} positions
+                    {category.toUpperCase()} • {parsedSlots} positions
                   </Text>
                 </View>
-                <Badge label="READY TO PUBLISH" variant="success" size="sm" />
+                <Badge label="READY" variant="success" size="sm" />
               </View>
-            </Card>
+            </View>
 
-            {/* Schedule & Venue Card */}
-            <Card variant="outlined" style={{ gap: 8 }}>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.md,
+                gap: 8,
+                backgroundColor: colors.surface,
+              }}
+            >
               <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Event & Venue</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Calendar size={14} color={colors.primary} strokeWidth={2.2} />
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {date} • {startTime} - {endTime} ({parsedHours} hours)
+                  {date} • {startTime || '—'} – {endTime || '—'} ({parsedHours}h)
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
                 <MapPin size={14} color={colors.primary} strokeWidth={2.2} style={{ marginTop: 2 }} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPrimary }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPrimary }} numberOfLines={2}>
                     {venueName}, {zone}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 1 }}>{venueAddress}</Text>
@@ -836,96 +816,55 @@ export default function OrganizerCreateShiftScreen() {
                   Supervisor: {supervisorName} ({supervisorPhone})
                 </Text>
               </View>
-            </Card>
+            </View>
 
-            {/* Comprehensive Financial Budget Card — Strict Monochrome */}
-            <Card
-              variant="outlined"
+            <View
               style={{
-                borderColor: colors.border,
                 borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: radii.md,
+                padding: spacing.md,
+                gap: spacing.sm,
                 backgroundColor: colors.surfaceMuted,
-                gap: 8,
               }}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
-                  Financial Summary & Budget
-                </Text>
-                <Badge label="BUDGET SUMMARY" variant="neutral" size="sm" />
-              </View>
-
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Wage vs estimated pay
+              </Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  Total Worker Wages ({parsedSlots} × {formatINR(perWorkerPay)}):
-                </Text>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textPrimary }}>
-                  {formatINR(totalCrewBudget)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Platform Facilitation Fee (10%):</Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {formatINR(platformFee)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>GST on Facilitation Fee (18%):</Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {formatINR(gstFee)}
-                </Text>
-              </View>
-
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Hourly wage</Text>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-                  Total Organizer Liability:
+                  {formatINR(parsedRate)}/hr
                 </Text>
-                <WageText style={{ fontSize: 20 }}>{formatINR(totalDeposit)}</WageText>
               </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Total estimated pay / worker</Text>
+                <WageText style={{ fontSize: 16 }}>{formatINR(perWorkerPay)}</WageText>
+              </View>
+              <Divider />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <ShieldCheck size={13} color={colors.textPrimary} strokeWidth={2.4} />
-                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500', flex: 1 }}>
-                  Wages are held in escrow and released directly to crew upon supervisor attendance verification.
+                <Text style={{ fontSize: 11, color: colors.textSecondary, flex: 1 }}>
+                  Crew escrow total: {formatINR(totalDeposit)} (wages + fees + GST)
                 </Text>
               </View>
-            </Card>
+            </View>
 
-            {/* Conditions Card */}
-            <Card variant="outlined" style={{ gap: 6 }}>
-              <Text style={[typography.subtitle, { color: colors.textPrimary }]}>Conditions</Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                ☕ Breaks: {breaksMinutes} mins • Meals: {mealProvided ? 'Yes' : 'No'} • Travel: {transportProvided ? 'Yes' : 'No'}
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                👔 Dress Code: {dressCode}
-              </Text>
-            </Card>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+              Breaks: {breaksMinutes || '—'} mins • Meals: {mealProvided ? 'Yes' : 'No'} • Travel:{' '}
+              {transportProvided ? 'Yes' : 'No'}
+            </Text>
+            {dressCode ? (
+              <Text style={{ fontSize: 12, color: colors.textSecondary }}>Dress code: {dressCode}</Text>
+            ) : null}
 
             {submitError ? (
-              <Card
-                variant="outlined"
-                style={{
-                  backgroundColor: '#111111',
-                  borderColor: '#FFFFFF',
-                  padding: 14,
-                  marginTop: spacing.sm,
-                }}
-              >
-                <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
-                  ⚠️ {submitError}
-                </Text>
-              </Card>
+              <InlineBanner variant="error" title="Cannot publish" message={submitError} />
             ) : null}
           </View>
         )}
       </KeyboardAwareContainer>
 
-      {/* Floating Bottom Navigation Bar */}
       <View
         style={[
           styles.bottomBar,
@@ -937,23 +876,13 @@ export default function OrganizerCreateShiftScreen() {
       >
         {step > 1 ? (
           <View style={{ flex: 1 }}>
-            <Button
-              title="← Back"
-              variant="outline"
-              size="md"
-              onPress={handleBack}
-            />
+            <Button title="Back" variant="outline" size="md" onPress={handleBack} />
           </View>
         ) : null}
 
         {step < 5 ? (
           <View style={{ flex: 2 }}>
-            <Button
-              title="Continue →"
-              variant="primary"
-              size="md"
-              onPress={handleNext}
-            />
+            <Button title="Continue" variant="primary" size="md" onPress={handleNext} />
           </View>
         ) : (
           <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
@@ -978,49 +907,17 @@ export default function OrganizerCreateShiftScreen() {
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-  },
-  progressBarBackground: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  categoryPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  categoryPillText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   bottomBar: {
     position: 'absolute',

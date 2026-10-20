@@ -46,6 +46,7 @@ export interface OpsklThemeColors {
   warning: string;
   warningLight: string;
   danger: string;
+  dangerHover: string;
   dangerLight: string;
   info: string;
   infoLight: string;
@@ -81,6 +82,7 @@ export const lightColors: OpsklThemeColors = {
   warning: '#B45309',
   warningLight: '#FFFBEB',
   danger: '#DC2626',
+  dangerHover: '#991B1B',
   dangerLight: '#FEF2F2',
   info: '#111111',
   infoLight: '#F5F5F5',
@@ -103,7 +105,8 @@ export const darkColors: OpsklThemeColors = {
   textPrimary: '#FFFFFF',
   textBody: '#F5F5F5',
   textSecondary: '#A3A3A3',
-  textMuted: '#737373',
+  /** Lightened for WCAG AA on near-black surfaces (~#A3A3A3). */
+  textMuted: '#A3A3A3',
   textInverse: '#000000',
   border: '#262626',
   borderStrong: '#404040',
@@ -116,6 +119,7 @@ export const darkColors: OpsklThemeColors = {
   warning: '#F59E0B',
   warningLight: '#451A03',
   danger: '#EF4444',
+  dangerHover: '#DC2626',
   dangerLight: '#450A0A',
   info: '#E5E5E5',
   infoLight: '#1F1F1F',

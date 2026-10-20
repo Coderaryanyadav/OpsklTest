@@ -1,17 +1,25 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Pressable, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   useOpsklTheme,
+  Screen,
   ScreenHeader,
   Input,
   Button,
-  Card,
   Badge,
   EmptyState,
   KeyboardAwareContainer,
   useAuth,
+  FormField,
+  Checkbox,
+  DocumentUpload,
+  InlineBanner,
+  SegmentedControl,
+  FilterPills,
+  Divider,
+  LoadingView,
+  OpsklAlert,
 } from '@opskil/design-system';
 import {
   updateWorkerProfile,
@@ -278,10 +286,10 @@ export default function WorkerOnboardingScreen() {
       await refreshProfile();
 
       const target = redirect || '/(tabs)';
-      Alert.alert(
+      OpsklAlert.alert(
         kycSubmitted ? 'Profile & Verification Submitted' : 'Profile Saved',
         kycSubmitted
-          ? 'Your worker profile is complete and your verification documents are queued for admin review. You can browse shifts while approval is in progress.'
+          ? 'Your worker profile is complete and your verification details are queued for admin review. You can browse shifts while approval is in progress.'
           : 'Your worker profile has been successfully saved. You can now browse verified event shifts across Mumbai.',
         [
           {
@@ -291,7 +299,7 @@ export default function WorkerOnboardingScreen() {
         ]
       );
     } catch (err: any) {
-      Alert.alert('Profile Setup Error', err.message || 'Unable to update profile. Please check your connection and retry.');
+      OpsklAlert.alert('Profile Setup Error', err.message || 'Unable to update profile. Please check your connection and retry.');
     } finally {
       setLoading(false);
     }
@@ -299,15 +307,14 @@ export default function WorkerOnboardingScreen() {
 
   if (loadingInitial) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={{ marginTop: 12, color: colors.textSecondary, fontSize: 13 }}>Loading worker details…</Text>
-      </SafeAreaView>
+      <Screen edges={['top', 'bottom']}>
+        <LoadingView message="Loading worker details…" />
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <Screen edges={['top', 'bottom']}>
       <ScreenHeader
         title="Worker Profile & Onboarding"
         onBack={() => {
@@ -335,80 +342,36 @@ export default function WorkerOnboardingScreen() {
           />
         </View>
       ) : (
-        <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, gap: spacing.md }}>
-          {/* Status Banners: Pending, Approved, or Rejected */}
+        <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}>
           {existingCase?.status === 'rejected' ? (
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                padding: spacing.md,
-                borderRadius: radii.md,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderLeftWidth: 4,
-                borderLeftColor: colors.primary,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <Badge label="RE-SUBMISSION REQUIRED" variant="danger" size="sm" />
-              </View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
-                Previous Verification Needs Correction
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginTop: 2 }}>
-                Reason: {existingCase.rejectionReason || 'Document details were unclear or unverified.'}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 4 }}>
-                Please review your legal name, document number, and upload an updated document below.
-              </Text>
-            </View>
+            <InlineBanner
+              variant="error"
+              title="Re-submission required"
+              message={`Reason: ${existingCase.rejectionReason || 'Document details were unclear or unverified.'} Update your legal name and document number below, then save again.`}
+            />
           ) : null}
 
           {existingCase?.status === 'pending' ? (
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                padding: spacing.md,
-                borderRadius: radii.md,
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderLeftWidth: 4,
-                borderLeftColor: colors.primary,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <Badge label="IN REVIEW" variant="warning" size="sm" />
-              </View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
-                KYC Verification In Progress
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginTop: 2 }}>
-                Your {existingCase.documentType.toUpperCase()} ({existingCase.documentMaskedId}) is under review by Opskl Trust & Safety.
-              </Text>
-            </View>
+            <InlineBanner
+              variant="warning"
+              title="KYC verification in progress"
+              message={`Your ${existingCase.documentType.toUpperCase()} (${existingCase.documentMaskedId}) is under review by Opskl Trust & Safety.`}
+            />
           ) : null}
 
-          {/* Value Prop Banner */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              padding: spacing.md,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <View style={{ gap: spacing.xs }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Badge label="MUMBAI EVENT CREW" variant="primary" size="sm" />
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Save & Resume Supported</Text>
             </View>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginTop: 4 }}>
-              Complete your profile once to receive direct shift invitations, GPS-verified check-ins, and same-day UPI wage disbursements.
+            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
+              Complete your profile once for shift invitations, GPS check-ins, and UPI wage disbursements.
             </Text>
           </View>
 
-          {/* Section 1: Legal Identity & Eligibility */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               1. Legal Identity & Eligibility
             </Text>
@@ -449,45 +412,22 @@ export default function WorkerOnboardingScreen() {
               helperText="For eligibility verification."
             />
 
-            {/* Age Confirmation Checkbox */}
-            <Pressable
-              onPress={() => {
-                setIsAgeConfirmed(!isAgeConfirmed);
+            <Checkbox
+              checked={isAgeConfirmed}
+              onChange={(checked) => {
+                setIsAgeConfirmed(checked);
                 if (errors.age) setErrors((prev) => ({ ...prev, age: '' }));
               }}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: isAgeConfirmed }}
-              style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.sm }}
-            >
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 4,
-                  borderWidth: 1.5,
-                  borderColor: isAgeConfirmed ? colors.primary : colors.border,
-                  backgroundColor: isAgeConfirmed ? colors.primary : colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: spacing.sm,
-                  marginTop: 2,
-                }}
-              >
-                {isAgeConfirmed ? (
-                  <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>
-                ) : null}
-              </View>
-              <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-                I confirm that I am at least 18 years old and legally eligible to work event shifts in India.
-              </Text>
-            </Pressable>
+              label="I confirm that I am at least 18 years old and legally eligible to work event shifts in India."
+            />
             {errors.age ? (
               <Text style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>{errors.age}</Text>
             ) : null}
-          </Card>
+          </View>
 
-          {/* Section 2: Shift Preferences & Travel Radius */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               2. Work Radius & Preferred Localities
             </Text>
@@ -495,38 +435,14 @@ export default function WorkerOnboardingScreen() {
               Set your travel distance and key event hubs in Mumbai.
             </Text>
 
-            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>
-              Maximum Commute Radius
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md }}>
-              {RADIUS_OPTIONS.map((opt) => {
-                const isSelected = selectedRadius === opt.value;
-                return (
-                  <Pressable
-                    key={opt.value}
-                    onPress={() => setSelectedRadius(opt.value)}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: radii.full,
-                      backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
-                      borderWidth: 1,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: isSelected ? '700' : '500',
-                        color: isSelected ? colors.textInverse : colors.textPrimary,
-                      }}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <FormField label="Maximum Commute Radius">
+              <FilterPills
+                items={RADIUS_OPTIONS.map((opt) => ({ id: opt.value, label: opt.label }))}
+                selectedId={selectedRadius}
+                onSelect={setSelectedRadius}
+                contentContainerStyle={{ paddingHorizontal: 0 }}
+              />
+            </FormField>
 
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginBottom: 8 }}>
               Preferred Shift Areas (Select all that apply)
@@ -538,13 +454,17 @@ export default function WorkerOnboardingScreen() {
                   <Pressable
                     key={loc}
                     onPress={() => toggleLocality(loc)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     style={{
+                      minHeight: 36,
                       paddingHorizontal: 12,
-                      paddingVertical: 6,
+                      paddingVertical: 8,
                       borderRadius: radii.full,
                       backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                       borderWidth: 1,
                       borderColor: isSelected ? colors.primary : colors.border,
+                      justifyContent: 'center',
                     }}
                   >
                     <Text
@@ -564,10 +484,11 @@ export default function WorkerOnboardingScreen() {
             {errors.localities ? (
               <Text style={{ color: colors.danger, fontSize: 12, marginTop: 8 }}>{errors.localities}</Text>
             ) : null}
-          </Card>
+          </View>
 
-          {/* Section 3: Skills & Languages */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               3. Event Roles, Skills & Languages
             </Text>
@@ -585,13 +506,17 @@ export default function WorkerOnboardingScreen() {
                   <Pressable
                     key={skill}
                     onPress={() => toggleSkill(skill)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     style={{
+                      minHeight: 36,
                       paddingHorizontal: 12,
-                      paddingVertical: 6,
+                      paddingVertical: 8,
                       borderRadius: radii.full,
                       backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                       borderWidth: 1,
                       borderColor: isSelected ? colors.primary : colors.border,
+                      justifyContent: 'center',
                     }}
                   >
                     <Text
@@ -622,13 +547,17 @@ export default function WorkerOnboardingScreen() {
                   <Pressable
                     key={lang}
                     onPress={() => toggleLanguage(lang)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
                     style={{
+                      minHeight: 36,
                       paddingHorizontal: 12,
-                      paddingVertical: 6,
+                      paddingVertical: 8,
                       borderRadius: radii.full,
                       backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                       borderWidth: 1,
                       borderColor: isSelected ? colors.primary : colors.border,
+                      justifyContent: 'center',
                     }}
                   >
                     <Text
@@ -645,10 +574,11 @@ export default function WorkerOnboardingScreen() {
                 );
               })}
             </View>
-          </Card>
+          </View>
 
-          {/* Section 4: Emergency Contact */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               4. Emergency Contact
             </Text>
@@ -675,10 +605,11 @@ export default function WorkerOnboardingScreen() {
               error={errors.emergencyPhone}
               helperText="Only contacted during urgent medical or safety incidents."
             />
-          </Card>
+          </View>
 
-          {/* Section 5: Payout Settlement (UPI) */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               5. Shift Wage Disbursement (UPI)
             </Text>
@@ -697,41 +628,27 @@ export default function WorkerOnboardingScreen() {
               error={errors.upiId}
               helperText="Must support instant UPI transfers (Google Pay, PhonePe, Paytm, BHIM)."
             />
-          </Card>
+          </View>
 
-          {/* Section 6: Government Identity Verification (KYC) */}
-          <Card variant="outlined">
+          <Divider />
+
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               6. Government ID Verification (KYC)
             </Text>
             <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: spacing.sm }}>
-              Uploaded securely to private Supabase Storage and reviewed by Opskl Trust & Safety.
+              Submit verification details for Opskl Trust & Safety review. A camera-roll photo is not attached unless you later add document upload support.
             </Text>
 
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: spacing.sm }}>
-              {(['aadhaar', 'pan'] as const).map((type) => {
-                const isSelected = documentType === type;
-                return (
-                  <Pressable
-                    key={type}
-                    onPress={() => setDocumentType(type)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 10,
-                      alignItems: 'center',
-                      borderRadius: radii.md,
-                      borderWidth: 1,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      backgroundColor: isSelected ? colors.surfaceMuted : colors.surface,
-                    }}
-                  >
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, textTransform: 'uppercase' }}>
-                      {type === 'aadhaar' ? 'Aadhaar Card' : 'PAN Card'}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            <SegmentedControl
+              options={[
+                { value: 'aadhaar', label: 'Aadhaar Card' },
+                { value: 'pan', label: 'PAN Card' },
+              ]}
+              value={documentType}
+              onChange={setDocumentType}
+              style={{ marginBottom: spacing.md }}
+            />
 
             <Input
               label={documentType === 'aadhaar' ? 'Aadhaar Number (12 digits)' : 'PAN Card Number (10 characters)'}
@@ -740,50 +657,45 @@ export default function WorkerOnboardingScreen() {
                 setDocumentNumber(t);
                 if (errors.documentNumber) setErrors((prev) => ({ ...prev, documentNumber: '' }));
               }}
-              placeholder={documentType === 'aadhaar' ? 'e.g. 1234 5678 9012' : 'e.g. ABCDE1234F'}
+              placeholder={documentType === 'aadhaar' ? '12-digit Aadhaar' : '10-character PAN'}
               autoCapitalize="characters"
+              secureTextEntry
+              textContentType="none"
+              autoComplete="off"
               error={errors.documentNumber}
-              helperText="Masked upon transmission. Never stored unencrypted."
+              helperText="Entered privately on this device. Values are masked in the field and not shown on Profile. Optional — save without KYC and submit later."
             />
-          </Card>
 
-          {/* Terms Agreement */}
-          <Pressable
-            onPress={() => {
-              setAgreedToTerms(!agreedToTerms);
+            <DocumentUpload
+              label="Verification submission"
+              fileName={
+                documentNumber.trim()
+                  ? `${documentType.toUpperCase()} details ready to submit`
+                  : null
+              }
+              helperText="No gallery file is attached. Saving the profile submits the document number above for admin review."
+              onPick={() => {
+                OpsklAlert.alert(
+                  'Submit Verification Details',
+                  'Enter your Aadhaar or PAN number above, then tap Save Profile. Opskl will queue a verification case for admin review. In-app camera/gallery upload is not enabled in this build.'
+                );
+              }}
+              onClear={documentNumber.trim() ? () => setDocumentNumber('') : undefined}
+            />
+          </View>
+
+          <Checkbox
+            checked={agreedToTerms}
+            onChange={(checked) => {
+              setAgreedToTerms(checked);
               if (errors.terms) setErrors((prev) => ({ ...prev, terms: '' }));
             }}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: agreedToTerms }}
-            style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: spacing.xs }}
-          >
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 4,
-                borderWidth: 1.5,
-                borderColor: agreedToTerms ? colors.primary : colors.border,
-                backgroundColor: agreedToTerms ? colors.primary : colors.surface,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: spacing.sm,
-                marginTop: 2,
-              }}
-            >
-              {agreedToTerms ? (
-                <Text style={{ color: colors.textInverse, fontSize: 12, fontWeight: '900' }}>✓</Text>
-              ) : null}
-            </View>
-            <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              I agree to the Opskl Independent Worker Terms of Service, Platform Safety Guidelines, and Privacy Policy.
-            </Text>
-          </Pressable>
+            label="I agree to the Opskl Independent Worker Terms of Service, Platform Safety Guidelines, and Privacy Policy."
+          />
           {errors.terms ? (
-            <Text style={{ color: colors.danger, fontSize: 12, marginTop: -4 }}>{errors.terms}</Text>
+            <Text style={{ color: colors.danger, fontSize: 12 }}>{errors.terms}</Text>
           ) : null}
 
-          {/* Save Action */}
           <View style={{ marginTop: spacing.md, paddingBottom: spacing.xxl }}>
             <Button
               title="Save Profile & Continue"
@@ -795,6 +707,6 @@ export default function WorkerOnboardingScreen() {
           </View>
         </KeyboardAwareContainer>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }

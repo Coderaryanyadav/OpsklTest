@@ -30,36 +30,36 @@ export const Badge: React.FC<BadgeProps> = ({
           bg: colors.successLight,
           text: colors.success,
           dot: colors.success,
-          border: '#DCFCE7',
+          border: colors.successLight,
         };
       case 'warning':
         return {
           bg: colors.warningLight,
           text: colors.warning,
           dot: colors.warning,
-          border: '#FEF3C7',
+          border: colors.warningLight,
         };
       case 'danger':
         return {
           bg: colors.dangerLight,
           text: colors.danger,
           dot: colors.danger,
-          border: '#FEE2E2',
+          border: colors.dangerLight,
         };
       case 'info':
       case 'primary':
         return {
-          bg: colors.surfaceSecondary,
-          text: colors.textPrimary,
-          dot: colors.textPrimary,
+          bg: colors.infoLight,
+          text: colors.info,
+          dot: colors.info,
           border: colors.border,
         };
       case 'neutral':
       default:
         return {
-          bg: colors.surfaceSecondary,
-          text: colors.textSecondary,
-          dot: colors.textSecondary,
+          bg: colors.neutralStatusLight,
+          text: colors.neutralStatus,
+          dot: colors.neutralStatus,
           border: colors.border,
         };
     }
@@ -70,6 +70,8 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <View
+      accessibilityRole="text"
+      accessibilityLabel={label}
       style={[
         {
           flexDirection: 'row',

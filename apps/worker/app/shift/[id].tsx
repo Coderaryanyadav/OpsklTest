@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   useOpsklTheme,
+  Screen,
   ScreenHeader,
-  Card,
-  Badge,
   Button,
   WageText,
   EmptyState,
   useAuth,
+  ErrorRetry,
+  StatusIndicator,
+  Divider,
+  LoadingView,
+  InlineBanner,
 } from '@opskil/design-system';
 import {
   formatINR,
@@ -26,13 +29,13 @@ import {
   Job,
   supabase,
 } from '@opskil/shared';
-import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock, AlertTriangle, AlertCircle } from 'lucide-react-native';
+import { Calendar, MapPin, FileText, Utensils, Car, Coffee, Clock } from 'lucide-react-native';
 
 export default function WorkerShiftDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
-  const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { colors, spacing, typography } = useOpsklTheme();
 
   const [shift, setShift] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,7 @@ export default function WorkerShiftDetailScreen() {
   const [isBooked, setIsBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [conflictCheck, setConflictCheck] = useState<ShiftConflictCheck | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function loadShift() {
@@ -96,7 +100,7 @@ export default function WorkerShiftDetailScreen() {
       }
     }
     loadShift();
-  }, [id, session?.user?.id]);
+  }, [id, session?.user?.id, reloadKey]);
 
   const handleApply = async () => {
     if (!shift) return;
@@ -160,28 +164,34 @@ export default function WorkerShiftDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[typography.body, { marginTop: 12, color: colors.textSecondary }]}>
-          Loading verified shift details…
-        </Text>
-      </SafeAreaView>
+      <Screen edges={['top', 'bottom']}>
+        <LoadingView message="Loading verified shift details…" />
+      </Screen>
     );
   }
 
   if (error || !shift) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <Screen edges={['top', 'bottom']}>
         <ScreenHeader title="Shift Details" onBack={() => router.back()} />
         <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
-          <EmptyState
-            title="Shift Unavailable"
-            description={error || 'This shift is no longer open for new applications or does not exist.'}
-            actionLabel="Return to Discovery"
-            onAction={() => router.back()}
-          />
+          {error && error !== 'Shift not found or has been concluded.' ? (
+            <ErrorRetry
+              variant="block"
+              title="Could Not Load Shift"
+              message={error}
+              onRetry={() => setReloadKey((k) => k + 1)}
+            />
+          ) : (
+            <EmptyState
+              title="Shift Unavailable"
+              description={error || 'This shift is no longer open for new applications or does not exist.'}
+              actionLabel="Return to Discovery"
+              onAction={() => router.back()}
+            />
+          )}
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -189,42 +199,29 @@ export default function WorkerShiftDetailScreen() {
   const slotsRemaining = Math.max(0, shift.slotsTotal - shift.slotsFilled);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']}>
       <ScreenHeader
         title={shift.title}
         subtitle={`${shift.category.toUpperCase()} • ${shift.zone}`}
         onBack={() => router.back()}
         rightAction={
           isBooked ? (
-            <Badge label="CONFIRMED ON ROSTER" variant="success" size="sm" />
+            <StatusIndicator label="Confirmed on roster" tone="success" />
           ) : applied ? (
-            <Badge label="APPLICATION SUBMITTED" variant="warning" size="sm" />
+            <StatusIndicator label="Application submitted" tone="warning" />
           ) : (
-            <Badge
-              label={`${shift.durationHours}h Shift`}
-              variant="neutral"
-              size="sm"
-            />
+            <StatusIndicator label={`${shift.durationHours}h shift`} tone="neutral" />
           )
         }
       />
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Wage Card */}
-        <Card
-          variant="elevated"
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: radii.xl,
-            borderColor: colors.borderFocus,
-            borderWidth: 1.5,
-          }}
-        >
+        <View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }]}>
                 Estimated Shift Earnings
               </Text>
@@ -233,25 +230,17 @@ export default function WorkerShiftDetailScreen() {
                 {formatINR(shift.hourlyRate)}/hr • {shift.durationHours} scheduled hours
               </Text>
             </View>
-            <Badge label="UPI DISBURSEMENT" variant="neutral" size="sm" />
+            <StatusIndicator label="UPI disbursement" tone="neutral" />
           </View>
 
-          <View
-            style={{
-              marginTop: spacing.md,
-              padding: spacing.sm,
-              backgroundColor: colors.surfaceMuted,
-              borderRadius: radii.md,
-            }}
-          >
-            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              Shift wages are calculated from verified attendance hours. Once supervisor reviews attendance and approves hours, payout processing begins through bank rails to your verified UPI handle.
-            </Text>
-          </View>
-        </Card>
+          <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginTop: spacing.md }}>
+            Wages are calculated from verified attendance hours. After supervisor approval, payout processing begins to your verified UPI handle.
+          </Text>
+        </View>
 
-        {/* Organizer Card */}
-        <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+        <Divider />
+
+        <View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.caption, { color: colors.textMuted, textTransform: 'uppercase' }]}>
@@ -267,13 +256,14 @@ export default function WorkerShiftDetailScreen() {
               )}
             </View>
             {shift.organizer?.verificationStatus === 'verified' && (
-              <Badge label="Verified Host" variant="neutral" size="sm" />
+              <StatusIndicator label="Verified host" tone="success" />
             )}
           </View>
-        </Card>
+        </View>
 
-        {/* Schedule & Venue Card */}
-        <Card variant="outlined" style={{ borderRadius: radii.xl, gap: spacing.md }}>
+        <Divider />
+
+        <View style={{ gap: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <Calendar size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
             <View style={{ flex: 1 }}>
@@ -285,8 +275,6 @@ export default function WorkerShiftDetailScreen() {
               </Text>
             </View>
           </View>
-
-          <View style={{ height: 1, backgroundColor: colors.border }} />
 
           <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
             <MapPin size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
@@ -306,26 +294,24 @@ export default function WorkerShiftDetailScreen() {
           </View>
 
           {shift.reportingInstructions ? (
-            <>
-              <View style={{ height: 1, backgroundColor: colors.border }} />
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <FileText size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                    Reporting Instructions
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
-                    {shift.reportingInstructions}
-                  </Text>
-                </View>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <FileText size={18} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 10, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  Reporting Instructions
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                  {shift.reportingInstructions}
+                </Text>
               </View>
-            </>
+            </View>
           ) : null}
-        </Card>
+        </View>
 
-        {/* Duties */}
+        <Divider />
+
         {shift.duties && shift.duties.length > 0 && (
-          <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
               Responsibilities
             </Text>
@@ -339,11 +325,10 @@ export default function WorkerShiftDetailScreen() {
                 </Text>
               </View>
             ))}
-          </Card>
+          </View>
         )}
 
-        {/* Working Conditions & Perks */}
-        <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+        <View>
           <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
             Conditions & Logistics
           </Text>
@@ -376,101 +361,62 @@ export default function WorkerShiftDetailScreen() {
             ) : null}
             {shift.applicationDeadline ? (
               <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>
-                ⏳ Application Deadline: {formatDeadline(shift.applicationDeadline)}
+                Application Deadline: {formatDeadline(shift.applicationDeadline)}
               </Text>
             ) : null}
           </View>
-        </Card>
+        </View>
 
-        {/* Dress Code */}
         {shift.dressCode ? (
-          <Card variant="outlined" style={{ borderRadius: radii.xl }}>
+          <View>
             <Text style={[typography.subtitle, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
               Dress Code & Presentation
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19 }}>
               {shift.dressCode}
             </Text>
-          </Card>
+          </View>
         ) : null}
 
-        {/* Staffing Status */}
-        <View
-          style={{
-            padding: spacing.md,
-            backgroundColor: colors.surfaceMuted,
-            borderRadius: radii.lg,
-            borderLeftWidth: 3,
-            borderLeftColor: colors.primary,
-          }}
-        >
-          <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-            ℹ️ <Text style={{ fontWeight: '700' }}>Shift Status:</Text>{' '}
-            {isBooked
-              ? 'You are confirmed on the crew roster for this shift!'
+        <InlineBanner
+          variant="info"
+          title="Shift status"
+          message={
+            isBooked
+              ? 'You are confirmed on the crew roster for this shift.'
               : applied
               ? 'Your application has been received and is under organizer review.'
-              : `${slotsRemaining} of ${shift.slotsTotal} spots remaining. Expressing interest submits your profile for organizer review.`}
-          </Text>
-        </View>
+              : `${slotsRemaining} of ${shift.slotsTotal} spots remaining. Expressing interest submits your profile for organizer review.`
+          }
+        />
 
-        {/* Conflict / Travel Warnings */}
         {conflictCheck?.hasConflict && (
-          <View
-            style={{
-              padding: spacing.md,
-              backgroundColor: colors.surfaceMuted,
-              borderRadius: radii.lg,
-              borderLeftWidth: 3,
-              borderLeftColor: colors.danger,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <AlertCircle size={15} color={colors.danger} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.danger }}>
-                Schedule Overlap Conflict
-              </Text>
-            </View>
-            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              {conflictCheck.message}
-            </Text>
-          </View>
+          <InlineBanner
+            variant="error"
+            title="Schedule overlap conflict"
+            message={conflictCheck.message || 'You have another confirmed shift in this time window.'}
+          />
         )}
 
         {conflictCheck?.hasTravelWarning && (
-          <View
-            style={{
-              padding: spacing.md,
-              backgroundColor: colors.surfaceMuted,
-              borderRadius: radii.lg,
-              borderLeftWidth: 3,
-              borderLeftColor: colors.warning,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <AlertTriangle size={15} color={colors.warning} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.warning }}>
-                Transit Commute Alert
-              </Text>
-            </View>
-            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>
-              {conflictCheck.message}
-            </Text>
-          </View>
+          <InlineBanner
+            variant="warning"
+            title="Transit commute alert"
+            message={conflictCheck.message || 'Tight commute between nearby shifts.'}
+          />
         )}
 
-        {/* Primary Action Button */}
         <View style={{ marginTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.xs }}>
           {isBooked ? (
             <Button
-              title="✓ Confirmed on Roster • View in My Shifts"
+              title="Confirmed on Roster • View in My Shifts"
               variant="primary"
               size="lg"
               onPress={() => router.push('/(tabs)/my-shifts')}
             />
           ) : applied ? (
             <Button
-              title="✓ Already Applied • View My Shifts"
+              title="Already Applied • View My Shifts"
               variant="secondary"
               size="lg"
               onPress={() => router.push('/(tabs)/my-shifts')}
@@ -494,6 +440,6 @@ export default function WorkerShiftDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }

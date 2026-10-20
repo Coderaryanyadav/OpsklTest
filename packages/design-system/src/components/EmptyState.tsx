@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 import { Button } from './Button';
@@ -25,15 +25,35 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const resolvedActionTitle = actionTitle || actionLabel;
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceMuted }]}>
-        {icon ? (
-          icon
-        ) : (
-          <Search size={32} color={colors.textMuted} strokeWidth={2} />
-        )}
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: spacing.xxxl,
+      }}
+      accessibilityRole="summary"
+      accessibilityLabel={`${title}. ${description}`}
+    >
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: spacing.xl,
+          backgroundColor: colors.surfaceMuted,
+        }}
+      >
+        {icon ? icon : <Search size={32} color={colors.textMuted} strokeWidth={2} />}
       </View>
-      <Text style={[typography.h2, { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.xs }]}>
+      <Text
+        style={[
+          typography.h2,
+          { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.xs },
+        ]}
+      >
         {title}
       </Text>
       <Text
@@ -64,23 +84,3 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  icon: {
-    fontSize: 32,
-  },
-});

@@ -288,8 +288,9 @@ describe('🔥 BRUTAL PLATFORM LAUNCH-READINESS VERIFICATION SUITE', () => {
       const content = fs.readFileSync(shiftDetailPath, 'utf8');
 
       expect(content).toContain('fetchWorkerJobStatus');
-      expect(content).toContain('CONFIRMED ON ROSTER');
-      expect(content).toContain('APPLICATION SUBMITTED');
+      // Redesign uses StatusIndicator sentence-case labels (not ALL CAPS badges)
+      expect(content).toMatch(/Confirmed on [Rr]oster/);
+      expect(content).toMatch(/Application [Ss]ubmitted/);
       expect(content).toContain('/(tabs)/my-shifts');
     });
 
@@ -306,7 +307,7 @@ describe('🔥 BRUTAL PLATFORM LAUNCH-READINESS VERIFICATION SUITE', () => {
       const content = fs.readFileSync(sidebarPath, 'utf8');
 
       expect(content).toContain('LogOut');
-      expect(content).toContain('Sign Out');
+      expect(content).toMatch(/Sign [Oo]ut/);
       expect(content).toContain('onSignOut');
     });
 
@@ -325,8 +326,9 @@ describe('🔥 BRUTAL PLATFORM LAUNCH-READINESS VERIFICATION SUITE', () => {
 
       const orgIndexPath = path.join(rootDir, 'apps/organizer/app/(tabs)/index.tsx');
       const orgContent = fs.readFileSync(orgIndexPath, 'utf8');
-      expect(orgContent).toContain('width: 44');
-      expect(orgContent).toContain('height: 44');
+      // Redesign uses design-system touchTarget.min (44) instead of hard-coded literals
+      expect(orgContent).toMatch(/touchTarget\.min|width:\s*44/);
+      expect(orgContent).toMatch(/touchTarget\.min|height:\s*44/);
     });
   });
 });

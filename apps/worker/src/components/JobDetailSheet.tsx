@@ -21,7 +21,7 @@ import {
   formatDistance,
   formatDeadline,
 } from '@opskil/shared';
-import { Calendar, MapPin, Utensils, Car, Coffee, Zap, X, Check, Info } from 'lucide-react-native';
+import { Calendar, MapPin, Utensils, Car, Coffee, Zap, X, Check, Info, Clock } from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
 export interface JobDetailSheetProps {
@@ -41,7 +41,7 @@ export function JobDetailSheet({
   onApply,
   onPass,
 }: JobDetailSheetProps) {
-  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
 
   if (!job) return null;
 
@@ -54,6 +54,7 @@ export function JobDetailSheet({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      accessibilityViewIsModal
     >
       <SafeAreaView
         style={[styles.sheetContainer, { backgroundColor: colors.background }]}
@@ -68,7 +69,7 @@ export function JobDetailSheet({
                 <Badge label="Verified Host" variant="success" size="sm" />
               )}
             </View>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 4 }]} numberOfLines={1}>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 4 }]} numberOfLines={2}>
               {job.title}
             </Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary }}>
@@ -82,7 +83,7 @@ export function JobDetailSheet({
             style={({ pressed }) => [
               styles.closeButton,
               {
-                backgroundColor: isDark ? '#1C1C1E' : '#F5F5F5',
+                backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.full,
                 opacity: pressed ? 0.7 : 1,
               },
@@ -213,7 +214,7 @@ export function JobDetailSheet({
               </View>
               {job.overtimePolicy && (
                 <View style={styles.conditionRow}>
-                  <Text style={styles.conditionIcon}>⏱️</Text>
+                  <Clock size={15} color={colors.primary} strokeWidth={2} style={{ marginRight: 8 }} />
                   <Text style={[styles.conditionText, { color: colors.textPrimary }]}>
                     Overtime Terms: {job.overtimePolicy}
                   </Text>

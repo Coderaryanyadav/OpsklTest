@@ -28,10 +28,12 @@ export const Input: React.FC<InputProps> = ({
   style,
   onFocus,
   onBlur,
+  editable = true,
   ...rest
 }) => {
   const { colors, radii, spacing, typography } = useOpsklTheme();
   const [isFocused, setIsFocused] = useState(false);
+  const isDisabled = editable === false;
 
   const borderColor = error
     ? colors.danger
@@ -58,12 +60,13 @@ export const Input: React.FC<InputProps> = ({
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: colors.surface,
+          backgroundColor: isDisabled ? colors.surfaceMuted : colors.surface,
           borderWidth: isFocused || error ? 1.5 : 1,
           borderColor,
           borderRadius: radii.md,
           paddingHorizontal: spacing.md,
           minHeight: 48,
+          opacity: isDisabled ? 0.7 : 1,
         }}
       >
         {prefix ? (
@@ -90,6 +93,7 @@ export const Input: React.FC<InputProps> = ({
             },
             style,
           ]}
+          editable={editable}
           placeholderTextColor={colors.textMuted}
           onFocus={(e) => {
             setIsFocused(true);
@@ -100,6 +104,7 @@ export const Input: React.FC<InputProps> = ({
             onBlur?.(e);
           }}
           {...rest}
+          accessibilityLabel={rest.accessibilityLabel ?? label ?? rest.placeholder}
         />
 
         {suffix ? (
@@ -123,6 +128,8 @@ export const Input: React.FC<InputProps> = ({
             marginTop: spacing.xxs,
             fontWeight: '500',
           }}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
         >
           {error}
         </Text>

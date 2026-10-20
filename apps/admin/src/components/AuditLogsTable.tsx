@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { AuditLog } from '@opskil/shared';
+import { EmptyRow, Pagination, TableShell, maskId, useClientPagination } from './ui';
 
 interface AuditLogsTableProps {
   auditLogs: AuditLog[];
@@ -16,72 +17,54 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({ auditLogs }) => 
     return (
       log.action.toLowerCase().includes(q) ||
       (log.actorEmail || '').toLowerCase().includes(q) ||
-      log.entityType.toLowerCase().includes(q)
+      log.entityType.toLowerCase().includes(q) ||
+      log.entityId.toLowerCase().includes(q)
     );
   });
 
+  const { page, pageCount, pageRows, setPage, summary } = useClientPagination(filteredLogs, 15);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div className="admin-toolbar">
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: '#111111' }}>
-            Immutable Administrative Audit Trail
-          </h1>
-          <p style={{ fontSize: 13, color: '#737373', marginTop: 2 }}>
-            Cryptographically sealed and tamper-evident record of all administrative operations, adjudications, and access logs.
+          <h2 className="admin-section-title">Administrative audit trail</h2>
+          <p className="admin-section-desc">
+            Record of administrative operations, adjudications, and access events from the database.
           </p>
         </div>
 
         <input
-          type="text"
-          placeholder="Filter audit logs..."
+          type="search"
+          className="admin-input admin-input-sm"
+          placeholder="Filter by action, actor, entity…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: '8px 14px',
-            borderRadius: 8,
-            border: '1px solid #E5E5E5',
-            fontSize: 13,
-            width: 260,
-            outline: 'none',
-            backgroundColor: '#FFFFFF',
-            color: '#111111',
-          }}
+          style={{ width: 260 }}
+          aria-label="Filter audit logs"
         />
       </div>
 
-      {/* Audit Log Table */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E5E5E5',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-        }}
+      <TableShell
+        footer={<Pagination page={page} pageCount={pageCount} onChange={setPage} summary={summary} />}
       >
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+        <table className="admin-table">
           <thead>
-            <tr style={{ backgroundColor: '#FAFAFA', borderBottom: '1px solid #E5E5E5', color: '#737373', fontWeight: 600 }}>
-              <th style={{ padding: '12px 16px' }}>Timestamp (IST)</th>
-              <th style={{ padding: '12px 16px' }}>Action</th>
-              <th style={{ padding: '12px 16px' }}>Target Entity</th>
-              <th style={{ padding: '12px 16px' }}>Admin User</th>
-              <th style={{ padding: '12px 16px' }}>Audit Payload & Changes</th>
+            <tr>
+              <th>Timestamp (IST)</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Admin</th>
+              <th>Changes</th>
             </tr>
           </thead>
           <tbody>
-            {filteredLogs.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: '#737373' }}>
-                  No audit logs recorded matching search criteria.
-                </td>
-              </tr>
+            {pageRows.length === 0 ? (
+              <EmptyRow colSpan={5} title="No logs" message="No audit logs match the search criteria." />
             ) : (
-              filteredLogs.map((log) => (
-                <tr key={log.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
-                  <td style={{ padding: '12px 16px', color: '#737373', whiteSpace: 'nowrap' }}>
+              pageRows.map((log) => (
+                <tr key={log.id}>
+                  <td style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                     {new Date(log.createdAt).toLocaleString('en-IN', {
                       timeZone: 'Asia/Kolkata',
                       day: '2-digit',
@@ -92,39 +75,26 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({ auditLogs }) => 
                       second: '2-digit',
                     })}
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        backgroundColor: '#F5F5F5',
-                        color: '#111111',
-                        border: '1px solid #E5E5E5',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                      }}
-                    >
+                  <td>
+                    <span className="admin-status admin-status--neutral" style={{ fontFamily: 'monospace' }}>
                       {log.action}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', color: '#111111' }}>
-                    {log.entityType} ({log.entityId.substring(0, 8)})
+                  <td>
+                    {log.entityType} ({maskId(log.entityId)})
                   </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ fontWeight: 600, color: '#111111' }}>
-                      {log.actorEmail || 'admin-system'}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#737373' }}>IP: {log.ipAddress || '127.0.0.1'}</div>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{log.actorEmail || 'admin-system'}</div>
+                    {log.ipAddress && <div className="cell-muted">IP: {log.ipAddress}</div>}
                   </td>
-                  <td style={{ padding: '12px 16px', maxWidth: 300 }}>
+                  <td style={{ maxWidth: 300 }}>
                     <pre
                       style={{
                         margin: 0,
                         fontSize: 11,
-                        color: '#111111',
-                        backgroundColor: '#FAFAFA',
-                        border: '1px solid #E5E5E5',
+                        color: 'var(--text-main)',
+                        backgroundColor: 'var(--surface-muted)',
+                        border: '1px solid var(--border-color)',
                         padding: '4px 8px',
                         borderRadius: 6,
                         overflowX: 'auto',
@@ -140,7 +110,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({ auditLogs }) => 
             )}
           </tbody>
         </table>
-      </div>
+      </TableShell>
     </div>
   );
 };

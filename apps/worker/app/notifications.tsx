@@ -5,19 +5,22 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Card,
   Badge,
-  Button,
   EmptyState,
   useAuth,
   usePushNotifications,
+  Screen,
+  ScreenHeader,
+  ErrorRetry,
+  SegmentedControl,
+  InlineBanner,
+  LoadingView,
 } from '@opskil/design-system';
 import {
   Notification,
@@ -33,7 +36,7 @@ import {
 type ActiveTab = 'inbox' | 'preferences';
 
 export default function WorkerNotificationsScreen() {
-  const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { colors, spacing, typography } = useOpsklTheme();
   const router = useRouter();
   const { session } = useAuth();
   const { permissionGranted, requestPermission } = usePushNotifications();
@@ -43,6 +46,7 @@ export default function WorkerNotificationsScreen() {
   const [preferences, setPreferences] = useState<UserNotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [primingDismissed, setPrimingDismissed] = useState(false);
 
   const userId = session?.user?.id;
@@ -53,17 +57,20 @@ export default function WorkerNotificationsScreen() {
       setPreferences(null);
       setLoading(false);
       setRefreshing(false);
+      setLoadError(null);
       return;
     }
     try {
+      setLoadError(null);
       const [notifs, prefs] = await Promise.all([
         fetchUserNotifications(userId),
         fetchUserNotificationPreferences(userId),
       ]);
       setNotifications(notifs);
       setPreferences(prefs);
-    } catch {
-      // Fallback in services
+    } catch (err: any) {
+      setLoadError(err?.message || 'Could not load notifications. Pull to refresh or retry.');
+      setNotifications([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -122,98 +129,36 @@ export default function WorkerNotificationsScreen() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      {/* Top Header */}
-      <View
-        style={{
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.md,
-          backgroundColor: colors.surface,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={{ fontSize: 22, color: colors.textPrimary }}>←</Text>
-          </TouchableOpacity>
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>Notifications</Text>
-              {unreadCount > 0 && (
-                <Badge label={`${unreadCount} NEW`} variant="primary" size="sm" />
-              )}
-            </View>
-            <Text style={[typography.caption, { color: colors.textMuted }]}>
-              Live shift and payout alerts
-            </Text>
-          </View>
-        </View>
+    <Screen edges={['top']}>
+      <ScreenHeader
+        title="Notifications"
+        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Live shift and payout alerts'}
+        onBack={() => router.back()}
+        rightAction={
+          activeTab === 'inbox' && unreadCount > 0 ? (
+            <TouchableOpacity
+              onPress={handleMarkAllRead}
+              accessibilityRole="button"
+              accessibilityLabel="Mark all notifications as read"
+              style={{ minHeight: 44, justifyContent: 'center' }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
+                Mark all read
+              </Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
-        {activeTab === 'inbox' && unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
-              Mark all read
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Tab Switcher */}
-      <View
-        style={{
-          flexDirection: 'row',
-          marginHorizontal: spacing.lg,
-          marginTop: spacing.md,
-          backgroundColor: colors.surfaceMuted,
-          borderRadius: radii.md,
-          padding: 4,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => setActiveTab('inbox')}
-          style={{
-            flex: 1,
-            paddingVertical: spacing.sm,
-            alignItems: 'center',
-            backgroundColor: activeTab === 'inbox' ? colors.surface : 'transparent',
-            borderRadius: radii.sm,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '700',
-              color: activeTab === 'inbox' ? colors.primary : colors.textSecondary,
-            }}
-          >
-            Inbox ({notifications.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveTab('preferences')}
-          style={{
-            flex: 1,
-            paddingVertical: spacing.sm,
-            alignItems: 'center',
-            backgroundColor: activeTab === 'preferences' ? colors.surface : 'transparent',
-            borderRadius: radii.sm,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '700',
-              color: activeTab === 'preferences' ? colors.primary : colors.textSecondary,
-            }}
-          >
-            Preferences
-          </Text>
-        </TouchableOpacity>
+      <View style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}>
+        <SegmentedControl
+          options={[
+            { value: 'inbox', label: `Inbox (${notifications.length})` },
+            { value: 'preferences', label: 'Preferences' },
+          ]}
+          value={activeTab}
+          onChange={setActiveTab}
+        />
       </View>
 
       {!userId ? (
@@ -226,57 +171,37 @@ export default function WorkerNotificationsScreen() {
           />
         </View>
       ) : loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <LoadingView message="Loading notifications…" />
+      ) : loadError ? (
+        <View style={{ flex: 1, padding: spacing.xl }}>
+          <ErrorRetry
+            variant="block"
+            title="Could Not Load Notifications"
+            message={loadError}
+            onRetry={loadData}
+          />
         </View>
       ) : activeTab === 'inbox' ? (
-        /* INBOX TAB */
         <ScrollView
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Permission Priming Banner */}
           {!permissionGranted && !primingDismissed && (
-            <Card
-              variant="elevated"
-              style={{
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
-                padding: spacing.md,
-              }}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <View style={{ flex: 1, marginRight: spacing.sm }}>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary }}>
-                    Turn on Instant Shift Alerts 🔔
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
-                    Receive immediate shift confirmations, T-2h reporting reminders, and instant UPI bank credit alerts.
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setPrimingDismissed(true)}>
-                  <Text style={{ fontSize: 16, color: colors.textMuted }}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
-                <Button
-                  title="Enable Push Alerts"
-                  variant="primary"
-                  size="sm"
-                  onPress={() => requestPermission(userId)}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </Card>
+            <InlineBanner
+              variant="info"
+              title="Turn on shift alerts"
+              message="Receive shift confirmations, reporting reminders, and UPI credit alerts."
+              actionLabel="Enable Push Alerts"
+              onAction={() => requestPermission(userId)}
+              onDismiss={() => setPrimingDismissed(true)}
+            />
           )}
 
           {notifications.length === 0 ? (
-            <Card variant="outlined" style={{ padding: spacing.xl, alignItems: 'center' }}>
-              <Text style={[typography.body, { color: colors.textMuted }]}>
-                No notifications yet. You will receive updates when you apply or get selected for shifts.
-              </Text>
-            </Card>
+            <EmptyState
+              title="No notifications yet"
+              description="You will receive updates when you apply or get selected for shifts."
+            />
           ) : (
             notifications.map((item) => (
               <TouchableOpacity
@@ -484,6 +409,6 @@ export default function WorkerNotificationsScreen() {
           </Card>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }

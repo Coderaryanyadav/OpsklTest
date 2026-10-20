@@ -28,7 +28,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   style,
   testID,
 }) => {
-  const { radii, isDark } = useOpsklTheme();
+  const { radii, colors, isDark } = useOpsklTheme();
   const opacityAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   }, [opacityAnim]);
 
   const baseRadius = borderRadius !== undefined ? borderRadius : radii.sm;
-  const skeletonColor = isDark ? '#262626' : '#E5E5E5';
+  const skeletonColor = isDark ? colors.surfaceTertiary : colors.border;
 
   return (
     <Animated.View

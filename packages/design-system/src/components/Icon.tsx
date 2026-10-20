@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ViewStyle } from 'react-native';
+import { iconSizes } from '../tokens/layout';
 import {
   Home,
   Compass,
@@ -72,15 +73,15 @@ export interface OpsklIconProps {
 }
 
 const SIZE_MAP = {
-  sm: 16,
-  md: 20,
-  lg: 24,
+  sm: iconSizes.sm,
+  md: iconSizes.md,
+  lg: iconSizes.lg,
 };
 
 export const OpsklIcon: React.FC<OpsklIconProps> = ({
   name,
   size = 'md',
-  color = '#101D36',
+  color = '#111111',
   strokeWidth = 2,
   style,
   accessibilityLabel,

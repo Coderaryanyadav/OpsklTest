@@ -3,6 +3,16 @@ import { useColorScheme } from 'react-native';
 import { lightColors, darkColors, OpsklThemeColors } from '../tokens/colors';
 import { spacing, radii, shadows } from '../tokens/spacing';
 import { typography } from '../tokens/typography';
+import { motion } from '../tokens/motion';
+import {
+  fontWeights,
+  iconSizes,
+  touchTarget,
+  componentSizes,
+  navigation,
+  safeArea,
+  breakpoints,
+} from '../tokens/layout';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -14,6 +24,14 @@ export interface ThemeContextValue {
   radii: typeof radii;
   shadows: typeof shadows;
   typography: typeof typography;
+  motion: typeof motion;
+  fontWeights: typeof fontWeights;
+  iconSizes: typeof iconSizes;
+  touchTarget: typeof touchTarget;
+  componentSizes: typeof componentSizes;
+  navigation: typeof navigation;
+  safeArea: typeof safeArea;
+  breakpoints: typeof breakpoints;
   setMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
 }
@@ -54,6 +72,14 @@ export const OpsklThemeProvider: React.FC<ThemeProviderProps> = ({
       radii,
       shadows,
       typography,
+      motion,
+      fontWeights,
+      iconSizes,
+      touchTarget,
+      componentSizes,
+      navigation,
+      safeArea,
+      breakpoints,
       setMode,
       toggleTheme,
     }),
@@ -75,6 +101,14 @@ export function useOpsklTheme(): ThemeContextValue {
       radii,
       shadows,
       typography,
+      motion,
+      fontWeights,
+      iconSizes,
+      touchTarget,
+      componentSizes,
+      navigation,
+      safeArea,
+      breakpoints,
       setMode: () => {},
       toggleTheme: () => {},
     };

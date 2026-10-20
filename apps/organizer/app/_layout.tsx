@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import { Alert, View, Text, TouchableOpacity } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   OpsklThemeProvider,
@@ -12,8 +11,12 @@ import {
   AuthProvider,
   useAuth,
   EmptyState,
+  OpsklAlert,
+  Screen,
+  Button,
 } from '@opskil/design-system';
 import { universalStorage, supabase } from '@opskil/shared';
+import { Building2, Trash2 } from 'lucide-react-native';
 
 export { OpsklErrorBoundary as ErrorBoundary } from '@opskil/design-system';
 
@@ -38,7 +41,6 @@ function RootNavigator() {
   useEffect(() => {
     if (loading) return;
 
-    // Splash screen hides once auth initialization finishes
     SplashScreen.hideAsync().catch(() => {});
 
     async function evaluateRouting() {
@@ -46,7 +48,6 @@ function RootNavigator() {
         const topSegment = (segments as any)[0] || '';
         const subSegment = (segments as any)[1] || '';
 
-        // Case 1: Unauthenticated visitor accessing protected tabs or actions
         if (!session) {
           const protectedTabs = ['create', 'roster', 'finances', 'profile'];
           if (topSegment === '(tabs)' && protectedTabs.includes(subSegment)) {
@@ -54,7 +55,6 @@ function RootNavigator() {
             return;
           }
 
-          // Check if first-time launch needs welcome tour
           const welcomeSeen = await universalStorage.getItem('@opskil_organizer_welcome_seen');
           if (!welcomeSeen && topSegment !== 'welcome' && topSegment !== 'auth') {
             router.replace('/welcome' as any);
@@ -62,8 +62,10 @@ function RootNavigator() {
           }
         }
 
-        // Case 2: Authenticated organizer on welcome or login screen
-        const isAccessReady = authState === 'READY' || authState === 'VERIFICATION_PENDING' || authState === 'VERIFICATION_ACTION_REQUIRED';
+        const isAccessReady =
+          authState === 'READY' ||
+          authState === 'VERIFICATION_PENDING' ||
+          authState === 'VERIFICATION_ACTION_REQUIRED';
         if (session && isAccessReady && (topSegment === 'welcome' || topSegment === 'auth')) {
           router.replace('/(tabs)' as any);
           return;
@@ -76,13 +78,16 @@ function RootNavigator() {
     evaluateRouting();
   }, [loading, session, authState, segments]);
 
-  // Handle role mismatch (e.g. Worker credentials in Organizer app)
   if (!loading && roleMismatch) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+      <Screen
+        edges={['top', 'bottom', 'left', 'right']}
+        contentStyle={{ justifyContent: 'center', padding: spacing.xl }}
+      >
         <EmptyState
+          icon={<Building2 size={32} color={colors.textMuted} strokeWidth={2} />}
           title="Worker Account Detected"
-          description="You are currently signed in with a Worker account. You can enable your Organizer business workspace with one tap, or switch back to the Opskl Worker app."
+          description="You are signed in with a Worker account. Enable your Organizer business workspace, or sign out to use a different account."
           actionLabel="Switch to Organizer Workspace"
           onAction={async () => {
             try {
@@ -95,37 +100,37 @@ function RootNavigator() {
                 await refreshProfile();
                 router.replace('/(tabs)' as any);
               } else {
-                Alert.alert('Role Switch Failed', res?.error || 'Could not switch to organizer profile.');
+                OpsklAlert.alert('Role Switch Failed', res?.error || 'Could not switch to organizer profile.');
               }
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Role transition failed.');
+              OpsklAlert.alert('Error', err?.message || 'Role transition failed.');
             }
           }}
         />
-        <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
-          <TouchableOpacity
-            onPress={async () => {
-              await logout();
-              router.replace('/auth/login' as any);
-            }}
-            style={{ padding: spacing.sm }}
-          >
-            <Text style={{ color: colors.textMuted, fontSize: 13, textDecorationLine: 'underline' }}>
-              Sign Out & Use Different Account
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        <Button
+          title="Sign Out & Use Different Account"
+          variant="ghost"
+          size="sm"
+          onPress={async () => {
+            await logout();
+            router.replace('/auth/login' as any);
+          }}
+          style={{ marginTop: spacing.md }}
+        />
+      </Screen>
     );
   }
 
-  // Handle deactivated account
   if (!loading && isDeactivated) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl }}>
+      <Screen
+        edges={['top', 'bottom', 'left', 'right']}
+        contentStyle={{ justifyContent: 'center', padding: spacing.xl }}
+      >
         <EmptyState
+          icon={<Trash2 size={32} color={colors.textMuted} strokeWidth={2} />}
           title="Account Scheduled for Deletion"
-          description="Your account is currently deactivated and pending permanent deletion. Would you like to cancel deletion and restore your account?"
+          description="Your account is deactivated and pending permanent deletion. Restore it to keep managing shifts on Opskl."
           actionLabel="Restore My Account"
           onAction={async () => {
             const res = await cancelAccountDeletion();
@@ -133,11 +138,11 @@ function RootNavigator() {
               await refreshProfile();
               router.replace('/(tabs)' as any);
             } else {
-              Alert.alert('Restoration Failed', res.error || 'Failed to cancel deletion.');
+              OpsklAlert.alert('Restoration Failed', res.error || 'Failed to cancel deletion.');
             }
           }}
         />
-      </SafeAreaView>
+      </Screen>
     );
   }
 

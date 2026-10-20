@@ -17,6 +17,8 @@ import {
   Card,
   WageText,
   ShiftCardSkeleton,
+  ErrorRetry,
+  InlineBanner,
 } from '@opskil/design-system';
 import { Job, formatINR, formatISTDate, formatTimeRange, formatDistance, fetchUnreadNotificationsCount } from '@opskil/shared';
 import { useAuth } from '@opskil/design-system';
@@ -25,13 +27,13 @@ import { SwipeCard } from '../../src/components/SwipeCard';
 import { CardActionControls } from '../../src/components/CardActionControls';
 import { JobDetailSheet } from '../../src/components/JobDetailSheet';
 import { FilterSheet } from '../../src/components/FilterSheet';
-import { Bell, List, Layers, MapPin, SlidersHorizontal, AlertTriangle, Search, RefreshCw } from 'lucide-react-native';
+import { Bell, List, Layers, MapPin, SlidersHorizontal, Search, RefreshCw } from 'lucide-react-native';
 import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/location';
 
 export default function WorkerDiscoverScreen() {
   const router = useRouter();
   const { session, workerProfile } = useAuth();
-  const { colors, spacing, radii, typography, isDark } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
 
   const [activeZone, setActiveZone] = useState<LocalityZone>(MUMBAI_ZONES[0]);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
@@ -213,13 +215,19 @@ export default function WorkerDiscoverScreen() {
               variant={workerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
               size="sm"
             />
-            <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={2}>
               {workerProfile.verificationStatus === 'pending'
                 ? 'Admin approval in progress. Shift applications unlock once approved.'
                 : 'Submit KYC documents under Profile to unlock applications.'}
             </Text>
           </View>
-          <Pressable onPress={() => router.push('/(tabs)/profile' as any)} hitSlop={8}>
+          <Pressable
+            onPress={() => router.push('/(tabs)/profile' as any)}
+            hitSlop={8}
+            accessibilityRole="link"
+            accessibilityLabel="Open profile to submit KYC"
+            style={{ minHeight: 44, justifyContent: 'center' }}
+          >
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textDecorationLine: 'underline' }}>
               Profile
             </Text>
@@ -229,75 +237,44 @@ export default function WorkerDiscoverScreen() {
 
       {/* Failure Recovery Alert Banner (Protects against false-positive swipe success) */}
       {failedApplication && (
-        <View style={[styles.failedBanner, { backgroundColor: isDark ? '#451A1A' : '#FEF2F2' }]}>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-            <AlertTriangle size={18} color="#DC2626" strokeWidth={2.2} style={{ marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.failedBannerTitle}>
-                {failedApplication.errorCode === 'AUTH_REQUIRED'
-                  ? 'Sign In Required'
-                  : failedApplication.errorCode === 'KYC_REQUIRED'
-                  ? 'KYC Approval Required'
-                  : 'Application Incomplete'}
-              </Text>
-              <Text style={styles.failedBannerText}>
-                {failedApplication.errorMessage}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.failedBannerActions}>
-            <Pressable
-              onPress={onRestoreFailedCard}
-              style={[styles.bannerBtn, styles.restoreBtn]}
-              accessibilityRole="button"
-              accessibilityLabel="Restore card to deck"
-            >
-              <Text style={styles.restoreBtnText}>Restore</Text>
-            </Pressable>
-            {failedApplication.errorCode === 'AUTH_REQUIRED' ? (
-              <Pressable
-                onPress={() => {
-                  const targetJobId = failedApplication.job.id;
-                  onRestoreFailedCard();
-                  router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${targetJobId}`)}` as any);
-                }}
-                style={[styles.bannerBtn, { backgroundColor: colors.primary }]}
-                accessibilityRole="button"
-                accessibilityLabel="Sign in to apply"
-              >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>Sign In</Text>
-              </Pressable>
-            ) : failedApplication.errorCode === 'KYC_REQUIRED' ? (
-              <Pressable
-                onPress={() => {
-                  onRestoreFailedCard();
-                  router.push('/(tabs)/profile' as any);
-                }}
-                style={[styles.bannerBtn, { backgroundColor: colors.primary }]}
-                accessibilityRole="button"
-                accessibilityLabel="View KYC status"
-              >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>View KYC</Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={onRetryFailedApplication}
-                style={[styles.bannerBtn, styles.retryBtn]}
-                accessibilityRole="button"
-                accessibilityLabel="Retry application submission"
-              >
-                <Text style={styles.retryBtnText}>Retry</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
+        <InlineBanner
+          variant="error"
+          title={
+            failedApplication.errorCode === 'AUTH_REQUIRED'
+              ? 'Sign In Required'
+              : failedApplication.errorCode === 'KYC_REQUIRED'
+              ? 'KYC Approval Required'
+              : 'Application Incomplete'
+          }
+          message={failedApplication.errorMessage}
+          actionLabel={
+            failedApplication.errorCode === 'AUTH_REQUIRED'
+              ? 'Sign In'
+              : failedApplication.errorCode === 'KYC_REQUIRED'
+              ? 'View KYC'
+              : 'Retry'
+          }
+          onAction={() => {
+            if (failedApplication.errorCode === 'AUTH_REQUIRED') {
+              const targetJobId = failedApplication.job.id;
+              onRestoreFailedCard();
+              router.push(`/auth/login?redirect=${encodeURIComponent(`/shift/${targetJobId}`)}` as any);
+            } else if (failedApplication.errorCode === 'KYC_REQUIRED') {
+              onRestoreFailedCard();
+              router.push('/(tabs)/profile' as any);
+            } else {
+              onRetryFailedApplication();
+            }
+          }}
+          onDismiss={onRestoreFailedCard}
+        />
       )}
 
       {/* In-flight Submission Indicator */}
       {inFlightApplication && (
         <View style={[styles.inFlightBar, { backgroundColor: colors.primary }]}>
-          <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-          <Text style={styles.inFlightText}>
+          <ActivityIndicator size="small" color={colors.textInverse} style={{ marginRight: 8 }} />
+          <Text style={[styles.inFlightText, { color: colors.textInverse }]}>
             Submitting application for {inFlightApplication.title}...
           </Text>
         </View>
@@ -312,17 +289,14 @@ export default function WorkerDiscoverScreen() {
           </Text>
         </View>
       ) : error ? (
-        <View style={styles.centerContainer}>
-          <AlertTriangle size={36} color={colors.danger} strokeWidth={2} />
-          <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.sm }]}>
-            Connection Error
-          </Text>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginHorizontal: 32, marginTop: 4 }}>
-            {error}
-          </Text>
-          <View style={{ marginTop: spacing.md }}>
-            <Button title="Retry Connection" variant="primary" size="md" onPress={onRefresh} />
-          </View>
+        <View style={[styles.centerContainer, { padding: spacing.xl }]}>
+          <ErrorRetry
+            variant="block"
+            title="Connection Error"
+            message={error}
+            onRetry={onRefresh}
+            retryLabel="Retry Connection"
+          />
         </View>
       ) : cards.length === 0 ? (
         /* Redesigned Compact Reassurance Empty State */
@@ -449,9 +423,14 @@ export default function WorkerDiscoverScreen() {
               Showing {cards.length} verified shifts • Swipe right to apply, left to pass
             </Text>
             {passedHistory.length > 0 && (
-              <Pressable onPress={onUndo}>
+              <Pressable
+                onPress={onUndo}
+                accessibilityRole="button"
+                accessibilityLabel={`Undo last pass, ${passedHistory.length} available`}
+                style={{ minHeight: 44, justifyContent: 'center' }}
+              >
                 <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '700' }}>
-                  ↺ Undo ({passedHistory.length})
+                  Undo ({passedHistory.length})
                 </Text>
               </Pressable>
             )}
@@ -512,7 +491,7 @@ export default function WorkerDiscoverScreen() {
               {cards.length} shifts open in {activeZone.label}
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
-              Escrow-Protected Payouts
+              UPI on verified checkout
             </Text>
           </View>
 
@@ -540,7 +519,7 @@ export default function WorkerDiscoverScreen() {
                   <Badge label={shift.category.toUpperCase()} variant="primary" size="sm" />
                 </View>
 
-                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={1}>
+                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={2}>
                   {shift.title}
                 </Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
@@ -549,13 +528,13 @@ export default function WorkerDiscoverScreen() {
 
                 <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: spacing.sm, marginTop: spacing.md, gap: 4 }}>
                   <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '600' }}>
-                    📍 {shift.venueName}
+                    {shift.venueName}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.textMuted }}>
                     {shift.zone} • {formatDistance(dist)}
                   </Text>
                   <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    ⏰ {formatISTDate(shift.date)} • {formatTimeRange(shift.startTime, shift.endTime)}
+                    {formatISTDate(shift.date)} • {formatTimeRange(shift.startTime, shift.endTime)}
                   </Text>
                 </View>
 
@@ -658,51 +637,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderWidth: 1,
   },
-  failedBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EF4444',
-  },
-  failedBannerTitle: {
-    color: '#EF4444',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  failedBannerText: {
-    color: '#B91C1C',
-    fontSize: 12,
-    marginTop: 1,
-  },
-  failedBannerActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginLeft: 8,
-  },
-  bannerBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  restoreBtn: {
-    backgroundColor: '#E5E5E5',
-  },
-  restoreBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#111111',
-  },
-  retryBtn: {
-    backgroundColor: '#DC2626',
-  },
-  retryBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
   inFlightBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -711,7 +645,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   inFlightText: {
-    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },

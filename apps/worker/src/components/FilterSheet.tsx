@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -71,6 +71,15 @@ export function FilterSheet({
     currentFilters.requiredSkill || 'All Skills'
   );
 
+  // Keep local draft in sync when parent filters/zone change (M4)
+  useEffect(() => {
+    if (!visible) return;
+    setCategory(currentFilters.category || 'all');
+    setMinWage(currentFilters.minWage || 0);
+    setSelectedZone(currentZone || MUMBAI_ZONES[0]);
+    setRequiredSkill(currentFilters.requiredSkill || 'All Skills');
+  }, [visible, currentFilters, currentZone]);
+
   const handleApply = () => {
     onApplyFilters(
       {
@@ -98,6 +107,7 @@ export function FilterSheet({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      accessibilityViewIsModal
       onRequestClose={onClose}
     >
       <SafeAreaView
@@ -140,12 +150,16 @@ export function FilterSheet({
                   <Pressable
                     key={zone.id}
                     onPress={() => setSelectedZone(zone)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`Locality ${zone.label}`}
                     style={[
                       styles.chip,
                       {
                         backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                         borderColor: isSelected ? colors.primary : colors.border,
                         borderRadius: radii.full,
+                        minHeight: 44,
                       },
                     ]}
                   >
@@ -181,12 +195,16 @@ export function FilterSheet({
                   <Pressable
                     key={cat.value}
                     onPress={() => setCategory(cat.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`Category ${cat.label}`}
                     style={[
                       styles.chip,
                       {
                         backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                         borderColor: isSelected ? colors.primary : colors.border,
                         borderRadius: radii.full,
+                        minHeight: 44,
                       },
                     ]}
                   >
@@ -222,12 +240,16 @@ export function FilterSheet({
                   <Pressable
                     key={tier.value}
                     onPress={() => setMinWage(tier.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`Minimum pay ${tier.label}`}
                     style={[
                       styles.chip,
                       {
                         backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                         borderColor: isSelected ? colors.primary : colors.border,
                         borderRadius: radii.full,
+                        minHeight: 44,
                       },
                     ]}
                   >
@@ -263,12 +285,16 @@ export function FilterSheet({
                   <Pressable
                     key={skill}
                     onPress={() => setRequiredSkill(skill)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`Skill ${skill}`}
                     style={[
                       styles.chip,
                       {
                         backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                         borderColor: isSelected ? colors.primary : colors.border,
                         borderRadius: radii.full,
+                        minHeight: 44,
                       },
                     ]}
                   >

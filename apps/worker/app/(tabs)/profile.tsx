@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Switch, Linking, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useOpsklTheme, Card, Badge, Button, useAuth } from '@opskil/design-system';
+import {
+  useOpsklTheme,
+  Card,
+  Badge,
+  Button,
+  useAuth,
+  ErrorRetry,
+} from '@opskil/design-system';
 import {
   fetchWorkerProfile,
   WorkerProfile,
@@ -22,28 +29,33 @@ export default function WorkerProfileScreen() {
   const [workerData, setWorkerData] = useState<WorkerProfile | null>(null);
   const [verificationCase, setVerificationCase] = useState<VerificationCase | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const userId = session?.user?.id;
 
-  useEffect(() => {
-    async function loadProfile() {
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const [wData, vCase] = await Promise.all([
-          fetchWorkerProfile(userId),
-          fetchLatestVerificationCase(userId),
-        ]);
-        setWorkerData(wData);
-        setVerificationCase(vCase);
-      } catch (err) {
-        console.error('Failed to load worker profile', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadProfile = async () => {
+    if (!userId) {
+      setLoading(false);
+      setLoadError(null);
+      return;
     }
+    try {
+      setLoadError(null);
+      const [wData, vCase] = await Promise.all([
+        fetchWorkerProfile(userId),
+        fetchLatestVerificationCase(userId),
+      ]);
+      setWorkerData(wData);
+      setVerificationCase(vCase);
+    } catch (err: any) {
+      console.error('Failed to load worker profile', err);
+      setLoadError(err?.message || 'Could not load profile. Please retry.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadProfile();
   }, [userId]);
 
@@ -128,19 +140,18 @@ export default function WorkerProfileScreen() {
 
   const handleOpenAppeal = () => {
     Alert.alert(
-      'Trust & Reliability Protection',
-      'Opskl guarantees transparent reliability scoring.\n\n• Zero auto-penalties for technical GPS drops or network dropouts.\n• Disputed attendance cases are shielded from penalty until formally reviewed.\n\nIf you believe any attendance record or rating is inaccurate, our ops team will audit your shift logs within 24 hours.',
+      'Contact Support About Trust Score',
+      'Opskl does not auto-create appeal tickets in-app. If you believe an attendance record or rating is inaccurate, email support with your shift details and we will review the logs.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Request Support Review',
+          text: 'Email support@opskil.com',
           onPress: () => {
-            Alert.alert(
-              'Audit Review Requested',
-              'Your trust score appeal has been logged. Support Ticket #TR-' +
-                Math.floor(100000 + Math.random() * 900000) +
-                ' created. Our operations desk will review on-site logs.'
+            const subject = encodeURIComponent('Trust score review request');
+            const body = encodeURIComponent(
+              `Worker ID: ${userId || 'unknown'}\nName: ${displayName}\n\nPlease describe the shift date, venue, and what looks incorrect:\n`
             );
+            handleOpenUrl(`mailto:support@opskil.com?subject=${subject}&body=${body}`);
           },
         },
       ]
@@ -168,6 +179,16 @@ export default function WorkerProfileScreen() {
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={{ marginTop: 8, color: colors.textMuted }}>Loading profile…</Text>
           </View>
+        ) : loadError ? (
+          <ErrorRetry
+            variant="block"
+            title="Could Not Load Profile"
+            message={loadError}
+            onRetry={() => {
+              setLoading(true);
+              loadProfile();
+            }}
+          />
         ) : !userId ? (
           <>
             {/* Guest Worker Card */}

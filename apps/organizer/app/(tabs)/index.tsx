@@ -1,23 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   RefreshControl,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
-  Card,
-  Badge,
   Button,
   ShiftCardSkeleton,
   useAuth,
+  Screen,
+  EmptyState,
+  ErrorRetry,
+  InlineBanner,
+  MetricCard,
+  StatusIndicator,
+  OpsklAlert,
+  Divider,
 } from '@opskil/design-system';
 import {
   Job,
@@ -32,10 +36,12 @@ import {
 } from '@opskil/shared';
 import { Bell, MapPin, Calendar, Users, ArrowRight } from 'lucide-react-native';
 
+type ShiftFilter = 'all' | 'open';
+
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { colors, spacing, radii, typography } = useOpsklTheme();
+  const { colors, spacing, radii, typography, touchTarget } = useOpsklTheme();
 
   const organizerId = session?.user?.id;
 
@@ -54,6 +60,7 @@ export default function OrganizerDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shiftFilter, setShiftFilter] = useState<ShiftFilter>('all');
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
@@ -71,6 +78,7 @@ export default function OrganizerDashboardScreen() {
       });
       setLoading(false);
       setRefreshing(false);
+      setError(null);
       return;
     }
 
@@ -88,7 +96,6 @@ export default function OrganizerDashboardScreen() {
     } catch (err: any) {
       console.error('Failed to load organizer data', err);
       setError(err?.message || 'Could not load organizer dashboard data.');
-      // Never silently mask a production database/RLS failure into demo fixtures
       setShifts([]);
     } finally {
       setLoading(false);
@@ -111,7 +118,7 @@ export default function OrganizerDashboardScreen() {
 
     const effectiveOrgId = organizerId || session?.user?.id;
     if (!effectiveOrgId) {
-      Alert.alert('Authentication Required', 'Please sign in to manage shift status.');
+      OpsklAlert.alert('Authentication Required', 'Please sign in to manage shift status.');
       return;
     }
     const res = await updateJobStatus(shift.id, effectiveOrgId, newStatus);
@@ -119,44 +126,69 @@ export default function OrganizerDashboardScreen() {
       setShifts((prev) =>
         prev.map((s) => (s.id === shift.id ? { ...s, status: newStatus } : s))
       );
-      Alert.alert(
+      OpsklAlert.alert(
         isPaused ? 'Shift Resumed' : 'Shift Paused',
         isPaused
           ? 'Workers can now see and apply for this shift again.'
           : 'Shift has been paused from public marketplace discovery.'
       );
     } else {
-      Alert.alert('Error', res.error || 'Failed to update shift status');
+      OpsklAlert.alert('Error', res.error || 'Failed to update shift status');
     }
   };
 
+  const visibleShifts = useMemo(() => {
+    if (shiftFilter === 'open') {
+      return shifts.filter((s) => s.status !== 'paused' && s.slotsFilled < s.slotsTotal);
+    }
+    return shifts;
+  }, [shifts, shiftFilter]);
+
+  const statusTone = (status?: string): 'success' | 'warning' | 'neutral' | 'danger' => {
+    if (status === 'verified') return 'success';
+    if (status === 'pending') return 'warning';
+    if (status === 'rejected') return 'danger';
+    return 'neutral';
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      {/* Top Header */}
+    <Screen edges={['top']}>
       <View
         style={[
           styles.headerBar,
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.md,
+            paddingBottom: spacing.md,
           },
         ]}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, marginRight: spacing.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[styles.brandTitle, { color: colors.primary }]}>
-                OPSKL ORGANIZER
-              </Text>
-              {organizerProfile?.verificationStatus === 'verified' ? (
-                <Badge label="VERIFIED ORG" variant="success" size="sm" />
-              ) : organizerProfile?.verificationStatus === 'pending' ? (
-                <Badge label="VERIFICATION PENDING" variant="warning" size="sm" />
-              ) : organizerProfile?.verificationStatus === 'unverified' ? (
-                <Badge label="UNVERIFIED" variant="neutral" size="sm" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <Text style={[styles.brandTitle, { color: colors.primary }]}>OPSKL ORGANIZER</Text>
+              {organizerProfile?.verificationStatus ? (
+                <StatusIndicator
+                  label={
+                    organizerProfile.verificationStatus === 'verified'
+                      ? 'Verified'
+                      : organizerProfile.verificationStatus === 'pending'
+                        ? 'Pending'
+                        : organizerProfile.verificationStatus === 'rejected'
+                          ? 'Rejected'
+                          : 'Unverified'
+                  }
+                  tone={statusTone(organizerProfile.verificationStatus)}
+                  size="sm"
+                />
               ) : null}
             </View>
-            <Text style={[typography.h2, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={1}>
+            <Text
+              style={[typography.h2, { color: colors.textPrimary, marginTop: 4 }]}
+              numberOfLines={2}
+            >
               {organizerProfile?.businessName || (organizerId ? 'My Organization' : 'Guest Organizer')}
             </Text>
           </View>
@@ -166,10 +198,8 @@ export default function OrganizerDashboardScreen() {
               onPress={() => router.push('/notifications')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
-                width: 44,
-                height: 44,
-                minWidth: 44,
-                minHeight: 44,
+                width: touchTarget.min,
+                height: touchTarget.min,
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: colors.surfaceMuted,
@@ -178,6 +208,7 @@ export default function OrganizerDashboardScreen() {
                 borderColor: colors.border,
               }}
               accessibilityLabel="Open crew alerts"
+              accessibilityRole="button"
             >
               <Bell size={18} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
@@ -192,108 +223,47 @@ export default function OrganizerDashboardScreen() {
           </View>
         </View>
 
-        {/* Guest Organizer Mode Banner */}
         {!organizerId && (
-          <Card
-            variant="elevated"
-            style={{
-              marginTop: spacing.md,
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderWidth: 1,
-              borderRadius: radii.md,
-              padding: spacing.md,
-            }}
-          >
-            <Text style={[typography.subtitle, { color: colors.textPrimary, fontWeight: '700' }]}>
-              Sign In to Manage Shifts & Crew
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
-              Sign in with your organization account to review candidate applications, confirm shift rosters, and manage supervisor attendance sign-offs.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
-              <Button
-                title="Sign In as Organizer"
-                variant="primary"
-                size="sm"
-                fullWidth={false}
-                onPress={() => router.push('/auth/login?redirect=/(tabs)' as any)}
-              />
-              <Button
-                title="Create a Shift"
-                variant="outline"
-                size="sm"
-                fullWidth={false}
-                onPress={() => router.push('/(tabs)/create' as any)}
-              />
-            </View>
-          </Card>
+          <InlineBanner
+            variant="info"
+            title="Sign in to manage shifts & crew"
+            message="Use your organization account to review applications, confirm rosters, and approve attendance."
+            style={{ marginTop: spacing.md }}
+            actionLabel="Sign In"
+            onAction={() => router.push('/auth/login?redirect=/(tabs)' as any)}
+          />
         )}
 
-        {/* Organizer Verification Status Banner */}
         {organizerId && organizerProfile && organizerProfile.verificationStatus !== 'verified' && (
-          <View
-            style={{
-              marginTop: spacing.md,
-              backgroundColor: colors.surfaceMuted,
-              paddingHorizontal: spacing.md,
-              paddingVertical: 10,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: colors.border,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 10,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <Badge
-                  label={organizerProfile.verificationStatus === 'pending' ? 'KYC PENDING APPROVAL' : 'VERIFICATION REQUIRED'}
-                  variant={organizerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
-                  size="sm"
-                />
-              </View>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
-                {organizerProfile.verificationStatus === 'pending'
-                  ? 'Your business verification is currently under review by Admin. Shift publishing will unlock once approved.'
-                  : 'Submit your business GSTIN and registration documents under Profile to unlock live shift publishing.'}
-              </Text>
-            </View>
-            <Button
-              title="Profile"
-              variant="outline"
-              size="sm"
-              fullWidth={false}
-              onPress={() => router.push('/(tabs)/profile' as any)}
+          <InlineBanner
+            variant={organizerProfile.verificationStatus === 'pending' ? 'warning' : 'info'}
+            title={
+              organizerProfile.verificationStatus === 'pending'
+                ? 'Verification under review'
+                : 'Verification required to publish'
+            }
+            message={
+              organizerProfile.verificationStatus === 'pending'
+                ? 'Admin is reviewing your business verification. Live publishing unlocks once approved.'
+                : 'Submit GSTIN under Profile to unlock live shift publishing. Drafts can still be saved.'
+            }
+            style={{ marginTop: spacing.md }}
+            actionLabel="Profile"
+            onAction={() => router.push('/(tabs)/profile' as any)}
+          />
+        )}
+
+        {error ? (
+          <View style={{ marginTop: spacing.md }}>
+            <ErrorRetry
+              title="Dashboard unavailable"
+              message={error}
+              onRetry={loadData}
             />
           </View>
-        )}
+        ) : null}
 
-        {error && (
-          <View
-            style={{
-              marginTop: spacing.md,
-              padding: spacing.sm,
-              backgroundColor: colors.surfaceMuted,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: colors.danger,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text style={{ fontSize: 13, color: colors.danger, flex: 1, marginRight: spacing.sm }}>
-              ⚠️ {error}
-            </Text>
-            <Button title="Retry" variant="outline" size="sm" onPress={loadData} fullWidth={false} />
-          </View>
-        )}
-
-        {/* Actionable Operational Task Banner */}
-        {metrics.newApplications > 0 && (
+        {metrics.newApplications > 0 && !error && (
           <TouchableOpacity
             onPress={() => router.push('/(tabs)/roster' as any)}
             style={[
@@ -302,12 +272,10 @@ export default function OrganizerDashboardScreen() {
                 backgroundColor: colors.surfaceMuted,
                 borderColor: colors.border,
                 borderRadius: radii.md,
-                padding: spacing.sm + 4,
+                padding: spacing.md,
                 marginTop: spacing.md,
                 borderWidth: 1,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                minHeight: touchTarget.min,
               },
             ]}
             accessibilityRole="button"
@@ -317,10 +285,11 @@ export default function OrganizerDashboardScreen() {
               <Users size={18} color={colors.textPrimary} strokeWidth={2} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  {metrics.newApplications} Candidate Application{metrics.newApplications === 1 ? '' : 's'} Waiting
+                  {metrics.newApplications} Candidate Application
+                  {metrics.newApplications === 1 ? '' : 's'} Waiting
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                  Review qualifications, verified experience, and confirm bookings.
+                  Review qualifications and confirm bookings.
                 </Text>
               </View>
             </View>
@@ -328,176 +297,102 @@ export default function OrganizerDashboardScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Operational Overview 2-Column Responsive KPI Grid */}
-        <View style={styles.metricsGrid}>
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/roster' as any)}
-            style={[
-              styles.metricCard,
-              {
-                backgroundColor: colors.surfaceTertiary,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: radii.md,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="View applicant roster"
-          >
-            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>New Applicants</Text>
-            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-              {metrics.newApplications}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/roster' as any)}
-            style={[
-              styles.metricCard,
-              {
-                backgroundColor: colors.surfaceTertiary,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: radii.md,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="View confirmed crew"
-          >
-            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Confirmed Crew</Text>
-            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-              {metrics.confirmedWorkers}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {}}
-            style={[
-              styles.metricCard,
-              {
-                backgroundColor: colors.surfaceTertiary,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: radii.md,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="View open positions"
-          >
-            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Open Positions</Text>
-            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-              {metrics.openPositions}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/finances' as any)}
-            style={[
-              styles.metricCard,
-              {
-                backgroundColor: colors.surfaceTertiary,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: radii.md,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="View staffing spend and finances"
-          >
-            <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Staffing Spend</Text>
-            <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
-              {formatINR(metrics.totalStaffingSpend)}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {!error && (
+          <View style={styles.metricsGrid}>
+            <MetricCard
+              label="New Applicants"
+              value={metrics.newApplications}
+              onPress={() => router.push('/(tabs)/roster' as any)}
+              style={styles.metricHalf}
+            />
+            <MetricCard
+              label="Confirmed Crew"
+              value={metrics.confirmedWorkers}
+              onPress={() => router.push('/(tabs)/roster' as any)}
+              style={styles.metricHalf}
+            />
+            <MetricCard
+              label="Open Positions"
+              value={metrics.openPositions}
+              subtitle={shiftFilter === 'open' ? 'Filtering open shifts' : 'Tap to filter list'}
+              onPress={() => setShiftFilter((prev) => (prev === 'open' ? 'all' : 'open'))}
+              style={styles.metricHalf}
+            />
+            <MetricCard
+              label="Staffing Spend"
+              value={formatINR(metrics.totalStaffingSpend)}
+              onPress={() => router.push('/(tabs)/finances' as any)}
+              style={styles.metricHalf}
+            />
+          </View>
+        )}
       </View>
 
-      {/* Main Shift Listings Feed */}
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>Live Event Shifts</Text>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>
+            {shiftFilter === 'open' ? 'Open Positions' : 'Live Event Shifts'}
+          </Text>
           <Text style={{ fontSize: 12, color: colors.textMuted }}>
-            {shifts.length} active shift{shifts.length === 1 ? '' : 's'}
+            {visibleShifts.length} shift{visibleShifts.length === 1 ? '' : 's'}
+            {shiftFilter === 'open' ? ' with openings' : ''}
           </Text>
         </View>
+
+        {shiftFilter === 'open' && (
+          <Button
+            title="Show all shifts"
+            variant="ghost"
+            size="sm"
+            fullWidth={false}
+            onPress={() => setShiftFilter('all')}
+          />
+        )}
 
         {loading ? (
           <View style={{ gap: spacing.md, marginTop: spacing.xs }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
           </View>
-        ) : shifts.length === 0 ? (
-          /* First-Shift Onboarding State */
-          <View
-            style={[
-              styles.onboardingCard,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                borderRadius: radii.xl,
-                padding: spacing.xl,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.onboardingIconWrap,
-                {
-                  backgroundColor: colors.surfaceMuted,
-                  borderRadius: radii.full,
-                },
-              ]}
-            >
-              <Calendar size={32} color={colors.textPrimary} strokeWidth={1.8} />
-            </View>
-
-            <Text
-              style={[
-                typography.h3,
-                {
-                  color: colors.textPrimary,
-                  marginTop: spacing.md,
-                  textAlign: 'center',
-                  fontWeight: '700',
-                },
-              ]}
-            >
-              Publish Your First Event Shift
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 13,
-                color: colors.textSecondary,
-                textAlign: 'center',
-                marginTop: 6,
-                lineHeight: 20,
-                maxWidth: 300,
-              }}
-            >
-              Define your venue, call time, and crew headcount in 5 simple steps. Pre-screened event crew in Mumbai will receive instant shift notifications.
-            </Text>
-
-            <View style={{ width: '100%', marginTop: spacing.xl, gap: 10 }}>
-              <Button
-                title="+ Create and Publish Shift"
-                variant="primary"
-                size="lg"
-                onPress={() => router.push('/(tabs)/create' as any)}
-              />
-              <Button
-                title="View Organization Profile"
-                variant="outline"
-                size="md"
-                onPress={() => router.push('/(tabs)/profile' as any)}
-              />
-            </View>
-          </View>
+        ) : error ? null : visibleShifts.length === 0 ? (
+          <EmptyState
+            icon={<Calendar size={32} color={colors.textMuted} strokeWidth={1.8} />}
+            title={
+              shiftFilter === 'open'
+                ? 'No open positions right now'
+                : organizerId
+                  ? 'Publish your first event shift'
+                  : 'No shifts to preview'
+            }
+            description={
+              shiftFilter === 'open'
+                ? 'All listed shifts are full or paused. Clear the filter to see every shift.'
+                : organizerId
+                  ? 'Define venue, call time, and headcount. Verified Mumbai crew will see your posting when you publish.'
+                  : 'Sign in to create and manage organization shifts.'
+            }
+            actionLabel={
+              shiftFilter === 'open'
+                ? 'Clear filter'
+                : organizerId
+                  ? '+ Create and Publish Shift'
+                  : 'Sign In as Organizer'
+            }
+            onAction={() => {
+              if (shiftFilter === 'open') {
+                setShiftFilter('all');
+              } else if (organizerId) {
+                router.push('/(tabs)/create' as any);
+              } else {
+                router.push('/auth/login?redirect=/(tabs)/create' as any);
+              }
+            }}
+          />
         ) : (
-          shifts.map((shift) => {
+          visibleShifts.map((shift) => {
             const fillPercent = Math.min(
               100,
               Math.round((shift.slotsFilled / shift.slotsTotal) * 100)
@@ -505,16 +400,22 @@ export default function OrganizerDashboardScreen() {
             const isFull = shift.slotsFilled >= shift.slotsTotal;
             const isPaused = shift.status === 'paused';
 
-            let statusVariant: 'success' | 'warning' | 'primary' | 'neutral' | 'danger' = 'primary';
-            if (isFull) statusVariant = 'success';
-            else if (isPaused) statusVariant = 'neutral';
-            else if (shift.slotsFilled > 0) statusVariant = 'warning';
+            let statusToneValue: 'success' | 'warning' | 'primary' | 'neutral' | 'danger' = 'primary';
+            if (isFull) statusToneValue = 'success';
+            else if (isPaused) statusToneValue = 'neutral';
+            else if (shift.slotsFilled > 0) statusToneValue = 'warning';
 
             return (
-              <Card
+              <View
                 key={shift.id}
-                variant="elevated"
-                style={{ borderRadius: radii.xl, padding: spacing.lg }}
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: radii.lg,
+                  backgroundColor: colors.surface,
+                  padding: spacing.lg,
+                  gap: spacing.sm,
+                }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Pressable
@@ -522,33 +423,44 @@ export default function OrganizerDashboardScreen() {
                     onPress={() => router.push(`/shift/${shift.id}` as any)}
                     accessibilityRole="link"
                   >
-                    <Text style={[typography.h3, { color: colors.textPrimary }]} numberOfLines={1}>
+                    <Text
+                      style={[typography.h3, { color: colors.textPrimary }]}
+                      numberOfLines={2}
+                    >
                       {shift.title}
                     </Text>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 2 }}>
+                    <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
                       {shift.category.toUpperCase()} • {formatINR(shift.hourlyRate)}/hr ({shift.durationHours}h)
                     </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                      Est. pay / worker: {formatINR(shift.hourlyRate * shift.durationHours)}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
                       <MapPin size={12} color={colors.primary} strokeWidth={2} />
-                      <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                      <Text style={{ fontSize: 12, color: colors.textMuted, flex: 1 }} numberOfLines={2}>
                         {shift.venueName} • {formatISTDate(shift.date)}
                       </Text>
                     </View>
                   </Pressable>
 
-                  <Badge
-                    label={isPaused ? 'PAUSED' : `${shift.slotsFilled}/${shift.slotsTotal} FILLED`}
-                    variant={statusVariant}
+                  <StatusIndicator
+                    label={isPaused ? 'Paused' : `${shift.slotsFilled}/${shift.slotsTotal} filled`}
+                    tone={statusToneValue}
                     size="sm"
                   />
                 </View>
 
-                {/* Fulfillment Progress Bar */}
-                <View style={{ marginTop: spacing.md }}>
+                <View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                     <Text style={{ fontSize: 11, color: colors.textMuted }}>Fulfillment</Text>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: isFull ? colors.success : colors.textPrimary }}>
-                      {fillPercent}% ({shift.slotsTotal - shift.slotsFilled} open)
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: isFull ? colors.success : colors.textPrimary,
+                      }}
+                    >
+                      {fillPercent}% ({Math.max(0, shift.slotsTotal - shift.slotsFilled)} open)
                     </Text>
                   </View>
                   <View
@@ -563,23 +475,24 @@ export default function OrganizerDashboardScreen() {
                       style={{
                         height: '100%',
                         width: `${fillPercent}%`,
-                        backgroundColor: isFull ? colors.success : isPaused ? colors.textMuted : colors.primary,
+                        backgroundColor: isFull
+                          ? colors.success
+                          : isPaused
+                            ? colors.textMuted
+                            : colors.primary,
                         borderRadius: radii.full,
                       }}
                     />
                   </View>
                 </View>
 
-                {/* Bottom Actions Row */}
+                <Divider />
+
                 <View
                   style={{
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginTop: spacing.md,
-                    paddingTop: spacing.sm,
-                    borderTopWidth: 1,
-                    borderTopColor: colors.border,
                   }}
                 >
                   <Button
@@ -589,7 +502,6 @@ export default function OrganizerDashboardScreen() {
                     fullWidth={false}
                     onPress={() => handleTogglePause(shift)}
                   />
-
                   <Button
                     title="Review Applicants"
                     variant="outline"
@@ -598,64 +510,38 @@ export default function OrganizerDashboardScreen() {
                     onPress={() => router.push('/(tabs)/roster' as any)}
                   />
                 </View>
-              </Card>
+              </View>
             );
           })
         )}
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   headerBar: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   brandTitle: {
     fontSize: 13,
     fontWeight: '800',
-    marginRight: 6,
     letterSpacing: 0.5,
   },
   actionBanner: {
-    marginVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   metricsGrid: {
-    marginTop: 12,
+    marginTop: 14,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
-  metricCard: {
-    width: '48%',
+  metricHalf: {
+    width: '47%',
     flexGrow: 1,
-    padding: 10,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  metricLabel: {
-    fontSize: 10,
-    textTransform: 'uppercase',
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 3,
-  },
-  onboardingCard: {
-    borderWidth: 1,
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  onboardingIconWrap: {
-    width: 60,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: 140,
   },
 });

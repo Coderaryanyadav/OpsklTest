@@ -14,6 +14,14 @@ playwright-report/
 dist/
 web-build/
 
+# Accidental TypeScript emit beside Expo Router sources
+apps/worker/app/**/*.js
+apps/worker/src/**/*.js
+apps/worker/__tests__/**/*.js
+apps/organizer/app/**/*.js
+apps/organizer/src/**/*.js
+apps/organizer/__tests__/**/*.js
+
 # Next.js
 .next/
 out/

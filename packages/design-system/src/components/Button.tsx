@@ -64,7 +64,7 @@ export const Button: React.FC<ButtonProps> = ({
         borderWidth = 1;
         break;
       case 'danger':
-        bg = pressed ? '#991B1B' : colors.danger;
+        bg = pressed ? colors.dangerHover : colors.danger;
         break;
       case 'ghost':
         bg = pressed ? colors.primaryLight : 'transparent';
@@ -112,8 +112,8 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const fontSize =
-    size === 'sm' ? typography.caption.fontSize : size === 'lg' ? typography.subtitle.fontSize : typography.bodyBold.fontSize;
+  const buttonType =
+    size === 'sm' ? typography.buttonSm : size === 'lg' ? typography.buttonLg : typography.button;
 
   return (
     <Pressable
@@ -144,8 +144,10 @@ export const Button: React.FC<ButtonProps> = ({
             style={[
               {
                 color: getTextColor(),
-                fontSize,
-                fontWeight: '600',
+                fontSize: buttonType.fontSize,
+                lineHeight: buttonType.lineHeight,
+                fontWeight: buttonType.fontWeight,
+                letterSpacing: buttonType.letterSpacing,
               },
               textStyle,
             ]}

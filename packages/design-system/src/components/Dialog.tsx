@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Modal,
   View,
@@ -40,8 +41,9 @@ export const Dialog: React.FC<DialogProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onCancel}
+      accessibilityViewIsModal
     >
-      <TouchableWithoutFeedback onPress={onCancel}>
+      <TouchableWithoutFeedback onPress={onCancel} accessibilityRole="button" accessibilityLabel="Dismiss dialog">
         <View
           style={{
             flex: 1,
@@ -61,12 +63,14 @@ export const Dialog: React.FC<DialogProps> = ({
                   borderRadius: radii.xl,
                   padding: spacing.xl,
                   borderWidth: 1,
-                  borderColor: isDark ? colors.border : 'transparent',
+                  borderColor: isDark ? colors.border : colors.border,
                 },
                 style,
               ]}
+              accessibilityRole="alert"
+              accessibilityLabel={title}
             >
-              <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
+              <Text style={[typography.title2, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
                 {title}
               </Text>
               <Text

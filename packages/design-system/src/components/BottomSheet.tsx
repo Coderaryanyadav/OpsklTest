@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Modal,
   View,
@@ -33,8 +34,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      accessibilityViewIsModal
     >
-      <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback onPress={onClose} accessibilityRole="button" accessibilityLabel="Dismiss sheet">
         <View
           style={{
             flex: 1,
@@ -58,6 +60,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 },
                 containerStyle,
               ]}
+              accessibilityRole="summary"
             >
               {/* Handle indicator */}
               <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
@@ -79,16 +82,19 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: spacing.md,
+                    minHeight: 44,
                   }}
                 >
-                  <Text style={[typography.h3, { color: colors.textPrimary }]}>{title}</Text>
+                  <Text style={[typography.h3, { color: colors.textPrimary, flex: 1 }]}>
+                    {title}
+                  </Text>
                   <Pressable
                     onPress={onClose}
-                    hitSlop={12}
+                    hitSlop={8}
                     style={({ pressed }) => [
                       {
-                        width: 32,
-                        height: 32,
+                        width: 44,
+                        height: 44,
                         borderRadius: radii.full,
                         alignItems: 'center',
                         justifyContent: 'center',

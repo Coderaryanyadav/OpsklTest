@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  TextInput,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,13 @@ import {
   WageText,
   Button,
   ShiftCardSkeleton,
+  ErrorRetry,
+  FinancialSummary,
+  FilterPills,
+  OpsklAlert,
+  Input,
+  KeyboardAwareContainer,
+  StatusIndicator,
 } from '@opskil/design-system';
 import {
   formatINR,
@@ -46,6 +52,7 @@ export default function WorkerEarningsScreen() {
   const [summary, setSummary] = useState<WorkerEarningsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<LedgerFilter>('all');
 
   // Modals
@@ -61,7 +68,7 @@ export default function WorkerEarningsScreen() {
 
   const handleInitiatePayout = async (record: PaymentRecord) => {
     if (!record.bookingId) {
-      alert('Missing booking reference for this payout record.');
+      OpsklAlert.alert('Missing Reference', 'Missing booking reference for this payout record.');
       return;
     }
     const targetUpi = record.upiId || summary?.defaultUpiId;
@@ -79,14 +86,17 @@ export default function WorkerEarningsScreen() {
       );
 
       if (res.success) {
-        alert('Payout initiated! Funds are being processed via UPI IMPS to ' + targetUpi);
+        OpsklAlert.alert('Payout Initiated', `Funds are being processed via UPI IMPS to ${targetUpi}`);
         await loadData();
         setSelectedRecord(null);
       } else {
-        alert(res.error || 'Failed to initiate payout. Please ensure shift attendance has been completed and signed off.');
+        OpsklAlert.alert(
+          'Payout Failed',
+          res.error || 'Failed to initiate payout. Please ensure shift attendance has been completed and signed off.'
+        );
       }
     } catch (err: any) {
-      alert(err?.message || 'Network error initiating payout.');
+      OpsklAlert.alert('Network Error', err?.message || 'Network error initiating payout.');
     } finally {
       setInitiatingPayout(false);
     }
@@ -96,16 +106,19 @@ export default function WorkerEarningsScreen() {
     if (!workerId) {
       setLoading(false);
       setRefreshing(false);
+      setLoadError(null);
       return;
     }
     try {
+      setLoadError(null);
       const data = await fetchWorkerEarningsSummary(workerId);
       setSummary(data);
       if (data?.defaultUpiId) {
         setUpiInput(data.defaultUpiId);
       }
-    } catch {
-      // Fallback handled in service
+    } catch (err: any) {
+      setLoadError(err?.message || 'Could not load earnings. Pull to refresh or retry.');
+      setSummary(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -267,14 +280,21 @@ export default function WorkerEarningsScreen() {
           <ShiftCardSkeleton />
           <ShiftCardSkeleton />
         </View>
+      ) : loadError ? (
+        <View style={{ flex: 1, padding: spacing.xl }}>
+          <ErrorRetry
+            variant="block"
+            title="Could Not Load Earnings"
+            message={loadError}
+            onRetry={loadData}
+          />
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          {/* Main Balance Hero Card with Enterprise SaaS Blue/White Restraint */}
-          <Card
-            variant="elevated"
+          <View
             style={{
               backgroundColor: colors.surface,
               borderColor: colors.border,
@@ -292,14 +312,13 @@ export default function WorkerEarningsScreen() {
                   {formatINR(summary?.paidEarnings || 0)}
                 </WageText>
               </View>
-              <Badge label="SETTLED" variant="success" size="sm" />
+              <StatusIndicator label="Settled" tone="success" />
             </View>
 
             <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
               Direct transfer to linked UPI handle upon supervisor attendance verification
             </Text>
 
-            {/* UPI Account strip */}
             <TouchableOpacity
               onPress={() => setShowUpiModal(true)}
               style={{
@@ -312,6 +331,7 @@ export default function WorkerEarningsScreen() {
                 alignItems: 'center',
                 borderWidth: 1,
                 borderColor: colors.border,
+                minHeight: 48,
               }}
               accessibilityRole="button"
               accessibilityLabel="Change receiving bank UPI handle"
@@ -332,149 +352,42 @@ export default function WorkerEarningsScreen() {
                 <ChevronRight size={14} color={colors.primary} strokeWidth={2.2} />
               </View>
             </TouchableOpacity>
-          </Card>
-
-          {/* 5 Secondary Earnings Dimensions — Strict Monochrome */}
-          <Text style={[typography.label, { color: colors.textMuted, marginTop: spacing.xs }]}>
-            EARNINGS STATUS BREAKDOWN
-          </Text>
-
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            {/* Confirmed Upcoming */}
-            <Card
-              variant="outlined"
-              style={{
-                flex: 1,
-                minWidth: '47%',
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                padding: spacing.md,
-              }}
-            >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
-                CONFIRMED UPCOMING
-              </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
-                {formatINR(summary?.confirmedUpcomingWages || 0)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                Locked in shift rosters
-              </Text>
-            </Card>
-
-            {/* Completed Awaiting Approval */}
-            <Card
-              variant="outlined"
-              style={{
-                flex: 1,
-                minWidth: '47%',
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                padding: spacing.md,
-              }}
-            >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
-                AWAITING SIGN-OFF
-              </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
-                {formatINR(summary?.completedAwaitingApproval || 0)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                Supervisor hours review
-              </Text>
-            </Card>
-
-            {/* Approved Awaiting Payment */}
-            <Card
-              variant="outlined"
-              style={{
-                flex: 1,
-                minWidth: '47%',
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
-                padding: spacing.md,
-              }}
-            >
-              <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '700' }}>
-                APPROVED IN DISBURSEMENT
-              </Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
-                {formatINR(summary?.approvedAwaitingPayment || 0)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                Payout processing via UPI
-              </Text>
-            </Card>
-
-            {/* Failed or Delayed */}
-            <TouchableOpacity
-              onPress={() => setShowUpiModal(true)}
-              style={{ flex: 1, minWidth: '47%' }}
-              accessibilityRole="button"
-              accessibilityLabel="Update UPI handle for delayed payouts"
-            >
-              <Card
-                variant="outlined"
-                style={{
-                  width: '100%',
-                  backgroundColor: colors.surface,
-                  padding: spacing.md,
-                  borderColor: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.border,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 11,
-                    color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textMuted,
-                    fontWeight: '700',
-                  }}
-                >
-                  FAILED / DELAYED
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: '800',
-                    color: (summary?.failedDelayedPayments || 0) > 0 ? colors.danger : colors.textPrimary,
-                    marginTop: 4,
-                  }}
-                >
-                  {formatINR(summary?.failedDelayedPayments || 0)}
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                  {(summary?.failedDelayedPayments || 0) > 0 ? 'Tap to update UPI' : '0 delayed payouts'}
-                </Text>
-              </Card>
-            </TouchableOpacity>
-
-            {/* Disputed Amounts */}
-            {(summary?.disputedAmounts || 0) > 0 && (
-              <Card
-                variant="outlined"
-                style={{
-                  width: '100%',
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  padding: spacing.md,
-                }}
-              >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <Text style={{ fontSize: 11, color: colors.textPrimary, fontWeight: '700' }}>
-                      DISPUTED WAGES UNDER REVIEW
-                    </Text>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textPrimary, marginTop: 4 }}>
-                      {formatINR(summary?.disputedAmounts || 0)}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                      Arbitration assigned • Held pending resolution
-                    </Text>
-                  </View>
-                  <Badge label="IN DISPUTE" variant="neutral" size="sm" />
-                </View>
-              </Card>
-            )}
           </View>
+
+          <FinancialSummary
+            title="Earnings status breakdown"
+            items={[
+              {
+                label: 'Confirmed upcoming',
+                amountLabel: formatINR(summary?.confirmedUpcomingWages || 0),
+              },
+              {
+                label: 'Awaiting sign-off',
+                amountLabel: formatINR(summary?.completedAwaitingApproval || 0),
+              },
+              {
+                label: 'Approved in disbursement',
+                amountLabel: formatINR(summary?.approvedAwaitingPayment || 0),
+              },
+              {
+                label: 'Failed / delayed',
+                amountLabel: formatINR(summary?.failedDelayedPayments || 0),
+                emphasis: (summary?.failedDelayedPayments || 0) > 0 ? 'strong' : 'muted',
+              },
+              ...((summary?.disputedAmounts || 0) > 0
+                ? [
+                    {
+                      label: 'Disputed wages under review',
+                      amountLabel: formatINR(summary?.disputedAmounts || 0),
+                      emphasis: 'strong' as const,
+                    },
+                  ]
+                : []),
+            ]}
+            totalLabel="Settled to date"
+            totalAmountLabel={formatINR(summary?.paidEarnings || 0)}
+            footnote="Amounts reflect real booking and payment records. No wallet balance is stored in-app."
+          />
 
           {/* Ledger Section */}
           <View style={{ marginTop: spacing.md }}>
@@ -485,49 +398,17 @@ export default function WorkerEarningsScreen() {
               </Text>
             </View>
 
-            {/* Filter Pills */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: spacing.xs, marginVertical: spacing.sm }}
-            >
-              {(['all', 'settled', 'pending', 'failed'] as LedgerFilter[]).map((filter) => {
-                const isSelected = activeFilter === filter;
-                const label =
-                  filter === 'all'
-                    ? 'All Records'
-                    : filter === 'settled'
-                    ? 'Settled'
-                    : filter === 'pending'
-                    ? 'In Transit'
-                    : 'Failed';
-
-                return (
-                  <TouchableOpacity
-                    key={filter}
-                    onPress={() => setActiveFilter(filter)}
-                    style={{
-                      paddingHorizontal: spacing.md,
-                      paddingVertical: spacing.xs + 2,
-                      borderRadius: radii.full,
-                      backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
-                      borderWidth: 1,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: '700',
-                        color: isSelected ? colors.textInverse : colors.textSecondary,
-                      }}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+            <FilterPills
+              items={[
+                { id: 'all', label: 'All Records' },
+                { id: 'settled', label: 'Settled' },
+                { id: 'pending', label: 'In Transit' },
+                { id: 'failed', label: 'Failed' },
+              ]}
+              selectedId={activeFilter}
+              onSelect={(id) => setActiveFilter(id as LedgerFilter)}
+              contentContainerStyle={{ paddingHorizontal: 0, marginVertical: spacing.sm }}
+            />
 
             {/* Ledger List */}
             {filteredRecords.length === 0 ? (
@@ -637,7 +518,10 @@ export default function WorkerEarningsScreen() {
       )}
 
       {/* Record Details Modal */}
-      <Modal visible={!!selectedRecord} transparent animationType="slide">
+      <Modal
+        visible={!!selectedRecord} transparent animationType="slide"
+        accessibilityViewIsModal
+      >
         <View
           style={{
             flex: 1,
@@ -772,10 +656,13 @@ export default function WorkerEarningsScreen() {
       </Modal>
 
       {/* Edit UPI Modal */}
-      <Modal visible={showUpiModal} transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
+      <Modal
+        visible={showUpiModal} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer
+          contentContainerStyle={{
+            flexGrow: 1,
             backgroundColor: 'rgba(0,0,0,0.5)',
             justifyContent: 'center',
             padding: spacing.lg,
@@ -794,33 +681,21 @@ export default function WorkerEarningsScreen() {
               All shift wages are credited directly to this UPI Virtual Payment Address (VPA) via IMPS.
             </Text>
 
-            <TextInput
+            <Input
+              label="UPI Handle"
               value={upiInput}
               onChangeText={(text) => {
                 setUpiInput(text);
                 setUpiError('');
               }}
               placeholder="e.g. mobile@upi or username@okhdfcbank"
-              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
-              style={{
-                borderWidth: 1,
-                borderColor: upiError ? colors.danger : colors.border,
-                borderRadius: radii.md,
-                padding: spacing.md,
-                fontSize: 16,
-                color: colors.textPrimary,
-                backgroundColor: colors.surfaceMuted,
-              }}
+              error={upiError || undefined}
             />
-
-            {upiError ? (
-              <Text style={{ color: colors.danger, fontSize: 12 }}>{upiError}</Text>
-            ) : null}
 
             {upiSuccess ? (
               <Text style={{ color: colors.success, fontSize: 13, fontWeight: '700' }}>
-                ✓ UPI handle verified and updated!
+                UPI handle updated successfully.
               </Text>
             ) : null}
 
@@ -840,7 +715,7 @@ export default function WorkerEarningsScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
     </SafeAreaView>
   );

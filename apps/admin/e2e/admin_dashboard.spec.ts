@@ -1,5 +1,5 @@
 /**
- * Playwright End-to-End Test Suite for Opskl Trust & Operations Dashboard
+ * Playwright End-to-End Test Suite for Opskl Admin Portal
  */
 import { test, expect } from '@playwright/test';
 
@@ -16,77 +16,72 @@ test.describe('Opskl Admin Web Dashboard E2E Operations', () => {
   });
 
   test('renders platform overview and key operational metrics', async ({ page }) => {
-    // Verify brand title and environment banner
     await expect(page.locator('text=OPSKL')).toBeVisible();
-    await expect(page.locator('text=TRUST & OPS CONSOLE')).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: /LIVE|PAUSED/ })).toBeVisible();
 
-    // Verify key metrics panels
-    await expect(page.locator('text=Gross Marketplace Volume (GMV)')).toBeVisible();
-    await expect(page.locator('text=Active Event Shifts')).toBeVisible();
-    await expect(page.locator('text=Verified Worker Roster')).toBeVisible();
-    await expect(page.locator('text=Active Event Organizers')).toBeVisible();
+    await expect(page.locator('text=Marketplace volume')).toBeVisible();
+    await expect(page.locator('text=Active shifts')).toBeVisible();
+    await expect(page.locator('text=Verified workers')).toBeVisible();
+    await expect(page.locator('text=Active organizers')).toBeVisible();
   });
 
   test('navigates to verification queue and verifies compliance view', async ({ page }) => {
-    // Click on Verification Queue
-    await page.click('text=Verification Queue');
-    await expect(page.locator('h1:has-text("Identity & Business Verification Queue")')).toBeVisible();
+    await page.click('text=Verifications');
+    await expect(page.locator('h1:has-text("Verifications")')).toBeVisible();
 
-    // Verify KYC table headers
-    await expect(page.locator('th:has-text("Applicant Profile")')).toBeVisible();
-    await expect(page.locator('th:has-text("Document Type")')).toBeVisible();
-    await expect(page.locator('th:has-text("Masked ID Number")')).toBeVisible();
+    await expect(page.locator('th:has-text("Applicant")')).toBeVisible();
+    await expect(page.locator('th:has-text("Document")')).toBeVisible();
+    await expect(page.locator('th:has-text("Masked ID")')).toBeVisible();
 
-    // Verify either cases exist or clean state message is displayed
-    const reviewButton = page.locator('button:has-text("Review Documents")').first();
-    const emptyState = page.locator('text=No verification cases found matching current filters.');
+    const reviewButton = page.locator('button:has-text("Review")').first();
+    const emptyState = page.locator('text=No verification cases match the current filters.');
     await expect(reviewButton.or(emptyState)).toBeVisible();
 
     if (await reviewButton.isVisible().catch(() => false)) {
       await reviewButton.click();
-      await expect(page.locator('text=Adjudicate Verification Case')).toBeVisible();
-      await expect(page.locator('button:has-text("Approve & Grant Badge")')).toBeVisible();
+      await expect(page.locator('text=Review verification case')).toBeVisible();
+      await expect(page.locator('button:has-text("Approve")')).toBeVisible();
       await page.click('button:has-text("Cancel")');
-      await expect(page.locator('text=Adjudicate Verification Case')).not.toBeVisible();
+      await expect(page.locator('text=Review verification case')).not.toBeVisible();
     }
   });
 
   test('navigates to attendance disputes and verifies adjudication controls', async ({ page }) => {
-    await page.click('text=Attendance Disputes');
-    await expect(page.locator('h1:has-text("Attendance & Wage Disputes")')).toBeVisible();
+    await page.click('text=Disputes');
+    await expect(page.locator('h1:has-text("Disputes")')).toBeVisible();
 
-    await expect(page.locator('th:has-text("Shift & Booking")')).toBeVisible();
-    await expect(page.locator('th:has-text("Raised By")')).toBeVisible();
+    await expect(page.locator('th:has-text("Shift & booking")')).toBeVisible();
+    await expect(page.locator('th:has-text("Raised by")')).toBeVisible();
 
     const investigateBtn = page.locator('button:has-text("Investigate")').first();
-    const emptyState = page.locator('text=No active attendance or wage disputes reported.');
+    const emptyState = page.locator('text=No attendance or wage disputes reported.');
     await expect(investigateBtn.or(emptyState)).toBeVisible();
 
     if (await investigateBtn.isVisible().catch(() => false)) {
       await investigateBtn.click();
-      await expect(page.locator('text=Adjudicate Attendance & Wage Dispute')).toBeVisible();
+      await expect(page.locator('text=Adjudicate dispute')).toBeVisible();
       await page.click('button:has-text("Cancel")');
-      await expect(page.locator('text=Adjudicate Attendance & Wage Dispute')).not.toBeVisible();
+      await expect(page.locator('text=Adjudicate dispute')).not.toBeVisible();
     }
   });
 
   test('navigates to shift moderation and checks living wage compliance table', async ({ page }) => {
-    await page.click('text=Shift Moderation');
-    await expect(page.locator('h1:has-text("Shift Moderation & Minimum Wage Floor")')).toBeVisible();
+    await page.click('text=Shifts');
+    await expect(page.locator('h1:has-text("Shift moderation")')).toBeVisible();
 
-    await expect(page.locator('th:has-text("Shift Title & Host")')).toBeVisible();
-    await expect(page.locator('th:has-text("Wage / Rate")')).toBeVisible();
+    await expect(page.locator('th:has-text("Shift & host")')).toBeVisible();
+    await expect(page.locator('th:has-text("Wage")')).toBeVisible();
 
     const approveBtn = page.locator('button:has-text("Approve")').first();
-    const emptyState = page.locator('text=No shifts currently in moderation queue.');
+    const emptyState = page.locator('text=No shifts currently in the moderation queue.');
     await expect(approveBtn.or(emptyState)).toBeVisible();
   });
 
-  test('inspects immutable administrative audit trail', async ({ page }) => {
-    await page.click('text=Audit Logs');
-    await expect(page.locator('h1:has-text("Immutable Administrative Audit Trail")')).toBeVisible();
+  test('inspects administrative audit trail', async ({ page }) => {
+    await page.click('text=Audit logs');
+    await expect(page.locator('h1:has-text("Audit logs")')).toBeVisible();
     await expect(page.locator('th:has-text("Timestamp (IST)")')).toBeVisible();
     await expect(page.locator('th:has-text("Action")')).toBeVisible();
-    await expect(page.locator('th:has-text("Admin User")')).toBeVisible();
+    await expect(page.locator('th:has-text("Admin")')).toBeVisible();
   });
 });

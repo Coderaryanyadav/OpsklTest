@@ -1,6 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, StyleProp, ViewStyle, Platform } from 'react-native';
-import { spacing } from '../tokens/spacing';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Pressable,
+  StyleProp,
+  ViewStyle,
+  Platform,
+} from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
@@ -28,12 +36,29 @@ export const Toast: React.FC<ToastProps> = ({
   style,
   testID,
 }) => {
-  const { colors } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
 
+  const handleDismiss = () => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(translateY, {
+        toValue: -20,
+        duration: 150,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start(() => {
+      onDismiss();
+    });
+  };
+
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (visible) {
       Animated.parallel([
         Animated.timing(opacity, {
@@ -71,24 +96,8 @@ export const Toast: React.FC<ToastProps> = ({
     return () => {
       if (timer) clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animate only on visibility/duration changes
   }, [visible, duration]);
-
-  const handleDismiss = () => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.timing(translateY, {
-        toValue: -20,
-        duration: 150,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start(() => {
-      onDismiss();
-    });
-  };
 
   if (!visible) return null;
 
@@ -114,6 +123,8 @@ export const Toast: React.FC<ToastProps> = ({
       style={[
         styles.toastWrapper,
         {
+          left: spacing.lg,
+          right: spacing.lg,
           opacity,
           transform: [{ translateY }],
         },
@@ -125,36 +136,71 @@ export const Toast: React.FC<ToastProps> = ({
           {
             backgroundColor: colors.surfaceElevated || colors.surface,
             borderColor: getBorderColor(),
+            borderRadius: radii.sm,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
             shadowColor: colors.primary,
           },
           style,
         ]}
       >
-        <Text style={[styles.message, { color: colors.textPrimary }]} numberOfLines={2}>
+        <Text
+          style={{
+            flex: 1,
+            fontSize: typography.caption.fontSize,
+            lineHeight: typography.caption.lineHeight,
+            fontWeight: '500',
+            color: colors.textPrimary,
+          }}
+          numberOfLines={2}
+        >
           {message}
         </Text>
 
         {actionLabel && onAction ? (
-          <TouchableOpacity
+          <Pressable
             onPress={() => {
               onAction();
               handleDismiss();
             }}
-            style={styles.actionBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{
+              marginLeft: spacing.sm,
+              minHeight: 44,
+              justifyContent: 'center',
+              paddingHorizontal: spacing.xs,
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={actionLabel}
           >
-            <Text style={[styles.actionText, { color: colors.textPrimary }]}>{actionLabel}</Text>
-          </TouchableOpacity>
+            <Text
+              style={{
+                fontSize: typography.caption.fontSize,
+                fontWeight: '700',
+                textDecorationLine: 'underline',
+                color: colors.textPrimary,
+              }}
+            >
+              {actionLabel}
+            </Text>
+          </Pressable>
         ) : null}
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleDismiss}
           accessibilityLabel="Dismiss notification"
-          style={styles.closeBtn}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          style={{
+            marginLeft: spacing.xs,
+            minWidth: 44,
+            minHeight: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          hitSlop={8}
         >
-          <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
-        </TouchableOpacity>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>✕</Text>
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -164,8 +210,6 @@ const styles = StyleSheet.create({
   toastWrapper: {
     position: 'absolute',
     top: 50,
-    left: spacing.lg,
-    right: spacing.lg,
     zIndex: 9999,
     alignItems: 'center',
   },
@@ -174,36 +218,10 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
     borderWidth: 1,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 6,
-  },
-  message: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '500',
-  },
-  actionBtn: {
-    marginLeft: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-  closeBtn: {
-    marginLeft: spacing.xs,
-    padding: spacing.xxs,
-  },
-  closeText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

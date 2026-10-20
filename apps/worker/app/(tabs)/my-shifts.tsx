@@ -24,6 +24,9 @@ import {
   ShiftCardSkeleton,
   useAuth,
   OpsklAlert as Alert,
+  ErrorRetry,
+  StatusIndicator,
+  KeyboardAwareContainer,
 } from '@opskil/design-system';
 import {
   Booking,
@@ -53,9 +56,7 @@ import {
   Check,
   ShieldCheck,
   CheckCircle2,
-  AlertTriangle,
   Navigation,
-  QrCode,
   PhoneCall,
   AlertOctagon,
   MessageSquare,
@@ -105,6 +106,8 @@ export default function WorkerMyShiftsScreen() {
   const [chatInput, setChatInput] = useState<string>('');
   const [loadingChat, setLoadingChat] = useState<boolean>(false);
   const [sendingChat, setSendingChat] = useState<boolean>(false);
+  const [chatLoadError, setChatLoadError] = useState<string | null>(null);
+  const [checkInBusyId, setCheckInBusyId] = useState<string | null>(null);
 
   const [hasInitializedTab, setHasInitializedTab] = useState(false);
 
@@ -202,10 +205,17 @@ export default function WorkerMyShiftsScreen() {
 
   const handleOpenChat = async (booking: Booking) => {
     setChatBooking(booking);
+    setChatLoadError(null);
     setLoadingChat(true);
-    const msgs = await fetchShiftMessages(booking.jobId);
-    setChatMessages(msgs);
-    setLoadingChat(false);
+    try {
+      const msgs = await fetchShiftMessages(booking.jobId);
+      setChatMessages(msgs);
+    } catch (err: any) {
+      setChatMessages([]);
+      setChatLoadError(err?.message || 'Could not load shift messages. Check your connection and retry.');
+    } finally {
+      setLoadingChat(false);
+    }
   };
 
   const handleSendChatMessage = async () => {
@@ -314,6 +324,7 @@ export default function WorkerMyShiftsScreen() {
   };
 
   const handleCheckIn = async (booking: Booking) => {
+    if (checkInBusyId) return;
     if (!booking.checkInCode) {
       Alert.alert(
         'Check-In Credential Required',
@@ -322,6 +333,7 @@ export default function WorkerMyShiftsScreen() {
       return;
     }
 
+    setCheckInBusyId(booking.id);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -348,7 +360,7 @@ export default function WorkerMyShiftsScreen() {
               : b
           )
         );
-        Alert.alert('✓ Check-In Recorded', 'Your on-site arrival has been verified. Shift timer is now active.');
+        Alert.alert('Check-In Recorded', 'Your on-site arrival has been verified. Shift timer is now active.');
       } else {
         if (res.errorCode === 'VENUE_COORDINATES_MISSING') {
           Alert.alert(
@@ -373,7 +385,7 @@ export default function WorkerMyShiftsScreen() {
           Alert.alert('Check-In Failed', res.error || 'Failed to record check-in.');
         }
       }
-    } catch (err: any) {
+    } catch {
       Alert.alert(
         'Check-In Error',
         `Could not retrieve GPS coordinates. Please show your pass code to your supervisor on-site:\n\nPass Code: ${booking.checkInCode}`,
@@ -382,6 +394,8 @@ export default function WorkerMyShiftsScreen() {
           { text: 'Copy Pass Code', onPress: () => handleCopyCode(booking.id, booking.checkInCode) },
         ]
       );
+    } finally {
+      setCheckInBusyId(null);
     }
   };
 
@@ -537,6 +551,7 @@ export default function WorkerMyShiftsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
           contentContainerStyle={{ gap: 8, marginTop: 14, paddingRight: 20 }}
         >
           {(
@@ -552,12 +567,16 @@ export default function WorkerMyShiftsScreen() {
               <Pressable
                 key={tab.id}
                 onPress={() => setActiveTab(tab.id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={tab.label}
                 style={[
                   styles.tabChip,
                   {
                     backgroundColor: isSelected ? colors.primary : colors.surfaceMuted,
                     borderColor: isSelected ? colors.primary : colors.border,
                     borderRadius: radii.full,
+                    minHeight: 44,
                   },
                 ]}
               >
@@ -625,17 +644,13 @@ export default function WorkerMyShiftsScreen() {
             <ShiftCardSkeleton />
           </View>
         ) : error ? (
-          <View style={{ padding: 40, alignItems: 'center' }}>
-            <AlertTriangle size={32} color={colors.danger} strokeWidth={2} />
-            <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 8 }]}>
-              Could Not Load Bookings
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4, marginHorizontal: 24 }}>
-              {error}
-            </Text>
-            <View style={{ marginTop: spacing.md }}>
-              <Button title="Retry" variant="primary" size="md" onPress={loadBookings} />
-            </View>
+          <View style={{ padding: spacing.xl }}>
+            <ErrorRetry
+              variant="block"
+              title="Could Not Load Bookings"
+              message={error}
+              onRetry={loadBookings}
+            />
           </View>
         ) : currentList.length === 0 ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
@@ -678,20 +693,27 @@ export default function WorkerMyShiftsScreen() {
             const isNoShow = booking.status === 'no_show';
             const isCopied = copiedBookingId === booking.id;
 
-            let badgeLabel = 'CONFIRMED';
+            let statusLabel = 'Confirmed';
+            let statusTone: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'primary' = 'neutral';
 
             if (isCheckedIn) {
-              badgeLabel = 'ON-SITE CHECKED IN';
+              statusLabel = 'On-site checked in';
+              statusTone = 'success';
             } else if (isAwaitingReview) {
-              badgeLabel = 'AWAITING SIGN-OFF';
+              statusLabel = 'Awaiting sign-off';
+              statusTone = 'warning';
             } else if (isCompleted) {
-              badgeLabel = 'PAYOUT SETTLED';
+              statusLabel = 'Payout settled';
+              statusTone = 'success';
             } else if (isDisputed) {
-              badgeLabel = 'DISPUTED';
+              statusLabel = 'Disputed';
+              statusTone = 'danger';
             } else if (isCancelled) {
-              badgeLabel = 'CANCELLED';
+              statusLabel = 'Cancelled';
+              statusTone = 'neutral';
             } else if (isNoShow) {
-              badgeLabel = 'NO-SHOW';
+              statusLabel = 'No-show';
+              statusTone = 'danger';
             }
 
             return (
@@ -707,7 +729,7 @@ export default function WorkerMyShiftsScreen() {
               >
                 {/* Header: Status & Wage */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Badge label={badgeLabel} variant="neutral" />
+                  <StatusIndicator label={statusLabel} tone={statusTone} />
                   <View style={{ alignItems: 'flex-end' }}>
                     <WageText>{formatINR(booking.agreedTotalPay)}</WageText>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
@@ -720,7 +742,7 @@ export default function WorkerMyShiftsScreen() {
                 </View>
 
                 {/* Job Title & Host */}
-                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={1}>
+                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={2}>
                   {job?.title || 'Shift Booking'}
                 </Text>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>
@@ -907,12 +929,14 @@ export default function WorkerMyShiftsScreen() {
                                 title="Self Check-In (GPS)"
                                 variant="primary"
                                 size="sm"
+                                loading={checkInBusyId === booking.id}
+                                disabled={Boolean(checkInBusyId)}
                                 onPress={() => handleCheckIn(booking)}
                               />
                             </View>
                             <View style={{ flex: 1 }}>
                               <Button
-                                title="Attendance QR"
+                                title="Pass Code"
                                 variant="outline"
                                 size="sm"
                                 onPress={() => handleOpenQrModal(booking)}
@@ -1038,8 +1062,11 @@ export default function WorkerMyShiftsScreen() {
       </ScrollView>
 
       {/* Cancellation Modal */}
-      <Modal visible={Boolean(cancelBookingId)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
+      <Modal
+        visible={Boolean(cancelBookingId)} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={[styles.modalBackdrop, { flexGrow: 1, justifyContent: 'center' }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Cancel Shift Booking</Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
@@ -1080,12 +1107,15 @@ export default function WorkerMyShiftsScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
       {/* Dispute Modal */}
-      <Modal visible={Boolean(disputeBookingId)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
+      <Modal
+        visible={Boolean(disputeBookingId)} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={[styles.modalBackdrop, { flexGrow: 1, justifyContent: 'center' }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
             <Text style={[typography.h3, { color: colors.textPrimary }]}>Submit Record Dispute</Text>
             <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
@@ -1126,15 +1156,18 @@ export default function WorkerMyShiftsScreen() {
               </View>
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
-      {/* Phase G: 60-Second Dynamic Attendance QR Modal */}
-      <Modal visible={Boolean(qrBooking)} transparent animationType="fade">
+      {/* Attendance Pass Code Modal — honest monospace code (not a scannable QR) */}
+      <Modal
+        visible={Boolean(qrBooking)} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 360, width: '100%', alignItems: 'center' }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: spacing.sm }}>
-              <Badge label="SINGLE-USE 60S PASS" variant="primary" size="sm" />
+              <StatusIndicator label="Single-use 60s pass" tone="primary" />
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Clock size={13} color={qrSecondsLeft <= 10 ? colors.danger : colors.textPrimary} />
                 <Text style={{ fontSize: 13, fontWeight: '800', fontFamily: 'monospace', color: qrSecondsLeft <= 10 ? colors.danger : colors.textPrimary }}>
@@ -1144,41 +1177,51 @@ export default function WorkerMyShiftsScreen() {
             </View>
 
             <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
-              Check-In Attendance QR
+              Attendance Pass Code
             </Text>
-            <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 2, marginBottom: spacing.md }}>
-              Present this code to the on-site organizer check-in desk.
+            <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: 2, marginBottom: spacing.md, lineHeight: 18 }}>
+              Read this code aloud or show it to the on-site organizer check-in desk. This is a pass code, not a camera-scannable QR.
             </Text>
 
-            {/* High-Contrast Monochrome QR Simulation / Payload Block */}
             <View
               style={{
-                width: 220,
-                height: 220,
-                backgroundColor: '#000000',
+                width: '100%',
+                backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.md,
-                padding: 12,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 2,
+                padding: spacing.lg,
+                borderWidth: 1,
                 borderColor: colors.border,
+                alignItems: 'center',
               }}
             >
-              <View style={{ backgroundColor: '#FFFFFF', padding: 12, borderRadius: 8, width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                <QrCode size={110} color="#000000" strokeWidth={2.5} />
-                <Text style={{ fontSize: 9, fontFamily: 'monospace', color: '#000000', marginTop: 8, textAlign: 'center', fontWeight: '700' }} numberOfLines={1}>
-                  {qrToken.substring(0, 24)}…
+              <Text
+                selectable
+                style={{
+                  fontSize: 18,
+                  fontFamily: 'monospace',
+                  fontWeight: '700',
+                  color: colors.textPrimary,
+                  textAlign: 'center',
+                  letterSpacing: 0.5,
+                  lineHeight: 28,
+                }}
+              >
+                {qrToken || qrBooking?.checkInCode || '—'}
+              </Text>
+              {qrBooking?.checkInCode ? (
+                <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: spacing.sm, fontFamily: 'monospace' }}>
+                  Check-in: {qrBooking.checkInCode}
                 </Text>
-              </View>
+              ) : null}
             </View>
 
             {qrSecondsLeft === 0 ? (
               <View style={{ marginTop: spacing.md, width: '100%', alignItems: 'center' }}>
                 <Text style={{ fontSize: 12, color: colors.danger, fontWeight: '700', marginBottom: 8 }}>
-                  ⚠️ QR Token Expired (60s limit reached)
+                  Pass code expired (60s limit reached)
                 </Text>
                 <Button
-                  title="Generate Fresh Token"
+                  title="Generate Fresh Pass Code"
                   variant="primary"
                   size="md"
                   onPress={() => qrBooking && generateAttendanceToken(qrBooking)}
@@ -1187,7 +1230,7 @@ export default function WorkerMyShiftsScreen() {
             ) : (
               <View style={{ marginTop: spacing.md, width: '100%', gap: 8 }}>
                 <Button
-                  title="Copy Token String"
+                  title="Copy Pass Code"
                   variant="outline"
                   size="sm"
                   onPress={() => qrBooking && handleCopyCode(qrBooking.id, qrToken)}
@@ -1205,7 +1248,10 @@ export default function WorkerMyShiftsScreen() {
       </Modal>
 
       {/* Phase J: Worker Emergency SOS Confirmation Modal */}
-      <Modal visible={Boolean(sosBooking)} transparent animationType="fade">
+      <Modal
+        visible={Boolean(sosBooking)} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 360, width: '100%' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -1256,8 +1302,11 @@ export default function WorkerMyShiftsScreen() {
       </Modal>
 
       {/* Arrival & Late-Alert System Modal */}
-      <Modal visible={Boolean(delayBooking)} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
+      <Modal
+        visible={Boolean(delayBooking)} transparent animationType="fade"
+        accessibilityViewIsModal
+      >
+        <KeyboardAwareContainer contentContainerStyle={[styles.modalBackdrop, { flexGrow: 1, justifyContent: 'center' }]}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: radii.xl, maxWidth: 380, width: '100%' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
               <Timer size={18} color={colors.primary} strokeWidth={2.2} />
@@ -1279,19 +1328,21 @@ export default function WorkerMyShiftsScreen() {
                   onPress={() => setDelayMinutes(mins)}
                   style={{
                     flex: 1,
+                    minHeight: 44,
                     paddingVertical: 8,
                     borderRadius: radii.sm,
                     borderWidth: 1,
                     borderColor: delayMinutes === mins ? colors.primary : colors.border,
                     backgroundColor: delayMinutes === mins ? colors.primary : colors.surfaceMuted,
                     alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12,
                       fontWeight: '700',
-                      color: delayMinutes === mins ? '#FFFFFF' : colors.textPrimary,
+                      color: delayMinutes === mins ? colors.textInverse : colors.textPrimary,
                     }}
                   >
                     +{mins}m
@@ -1323,12 +1374,18 @@ export default function WorkerMyShiftsScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
 
       {/* Shift-Specific Messaging Modal */}
-      <Modal visible={Boolean(chatBooking)} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
+      <Modal
+        visible={Boolean(chatBooking)}
+        transparent
+        animationType="slide"
+        accessibilityViewIsModal
+        onRequestClose={() => setChatBooking(null)}
+      >
+        <KeyboardAwareContainer contentContainerStyle={[styles.modalBackdrop, { flexGrow: 1, justifyContent: 'center' }]}>
           <View
             style={[
               styles.modalContent,
@@ -1341,28 +1398,28 @@ export default function WorkerMyShiftsScreen() {
                 display: 'flex',
               },
             ]}
+            accessibilityRole="summary"
+            accessibilityLabel="Shift team chat"
           >
-            {/* Chat Header */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm }}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, paddingRight: spacing.sm }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <MessageSquare size={16} color={colors.primary} />
                   <Text style={[typography.h3, { color: colors.textPrimary }]}>
                     Shift Team Chat
                   </Text>
                 </View>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }} numberOfLines={2}>
                   {chatBooking?.job?.title || 'Shift Coordination'}
                 </Text>
               </View>
-              <Badge label="PRIVATE & ENCRYPTED" variant="neutral" size="sm" />
+              <StatusIndicator label="Shift channel" tone="neutral" />
             </View>
 
             <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm, lineHeight: 15 }}>
-              Host reporting guidelines & uniform updates. Phone numbers remain confidential.
+              Host reporting guidelines & uniform updates. Messages are visible to shift participants and Opskl support — not end-to-end encrypted.
             </Text>
 
-            {/* Messages Scroll Area */}
             <ScrollView
               style={{
                 flexGrow: 1,
@@ -1375,6 +1432,7 @@ export default function WorkerMyShiftsScreen() {
                 borderColor: colors.border,
               }}
               contentContainerStyle={{ gap: 8 }}
+              keyboardShouldPersistTaps="handled"
             >
               {loadingChat ? (
                 <View style={{ padding: 20, alignItems: 'center' }}>
@@ -1383,6 +1441,12 @@ export default function WorkerMyShiftsScreen() {
                     Loading shift channel…
                   </Text>
                 </View>
+              ) : chatLoadError ? (
+                <ErrorRetry
+                  title="Could Not Load Chat"
+                  message={chatLoadError}
+                  onRetry={() => chatBooking && handleOpenChat(chatBooking)}
+                />
               ) : chatMessages.length === 0 ? (
                 <View style={{ padding: 20, alignItems: 'center' }}>
                   <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>
@@ -1402,7 +1466,7 @@ export default function WorkerMyShiftsScreen() {
                     }}
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                         <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
                           {msg.senderName}
                         </Text>
@@ -1418,8 +1482,11 @@ export default function WorkerMyShiftsScreen() {
                       <Pressable
                         onPress={() => handleReportMessage(msg.id)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Report message from ${msg.senderName}`}
+                        style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Flag size={11} color={colors.textMuted} />
+                        <Flag size={14} color={colors.textMuted} />
                       </Pressable>
                     </View>
                     <Text style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 18 }}>
@@ -1433,13 +1500,13 @@ export default function WorkerMyShiftsScreen() {
               )}
             </ScrollView>
 
-            {/* Input Bar */}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.sm, alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <Input
                   value={chatInput}
                   onChangeText={setChatInput}
                   placeholder="Type reporting question or update..."
+                  accessibilityLabel="Chat message"
                 />
               </View>
               <Button
@@ -1448,6 +1515,7 @@ export default function WorkerMyShiftsScreen() {
                 size="md"
                 fullWidth={false}
                 loading={sendingChat}
+                disabled={sendingChat || !chatInput.trim()}
                 onPress={handleSendChatMessage}
               />
             </View>
@@ -1457,11 +1525,14 @@ export default function WorkerMyShiftsScreen() {
                 title="Close Chat"
                 variant="outline"
                 size="sm"
-                onPress={() => setChatBooking(null)}
+                onPress={() => {
+                  setChatBooking(null);
+                  setChatLoadError(null);
+                }}
               />
             </View>
           </View>
-        </View>
+        </KeyboardAwareContainer>
       </Modal>
     </SafeAreaView>
   );
