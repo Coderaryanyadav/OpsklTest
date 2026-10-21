@@ -45,6 +45,8 @@ import {
   Gavel,
   Calculator,
   Info,
+  Sparkles,
+  Train,
 } from 'lucide-react-native';
 
 const DRAFT_KEY = '@opskil_organizer_shift_draft';
@@ -80,6 +82,92 @@ const STEP_META = [
   { title: 'Schedule & Venue Roster', subtitle: 'Step 2 of 4 • Date, timings, venue location and lead' },
   { title: 'Wage & Fee Estimate', subtitle: 'Step 3 of 4 • Worker pay, welfare, amenities and fee breakdown' },
   { title: 'Briefing & Final Publish', subtitle: 'Step 4 of 4 • Verification review and live dispatch' },
+];
+
+const ROLE_PRESETS = [
+  {
+    name: 'VIP Guest Relations',
+    title: 'Lead Guest Relations & VIP Concierge',
+    category: 'corporate' as ShiftCategory,
+    slots: '4',
+    duties: 'VIP reception, escorting dignitaries to executive lounges, delegate welcome concierges, badge distribution.',
+    skills: 'Hospitality, Fluent English, High Grooming, Guest Relations',
+    criteria: 'Must be 18+ years old. Professional presentation required.',
+    defaultRate: '2600',
+    dressCode: 'Formal Western Black Suit or Plain Black Saree. Polished formal footwear.',
+    instructions: 'Report at VIP Lounge Gate 4 by 09:30 AM IST for briefing.',
+  },
+  {
+    name: 'Exhibition Registration',
+    title: 'Exhibition Registration & Access Control',
+    category: 'exhibition' as ShiftCategory,
+    slots: '8',
+    duties: 'RFID event badge check, registration terminal management, turnstile access pass validation, attendee crowd orientation.',
+    skills: 'Tech-Savvy, Customer Service, Crowd Orientation, Punctuality',
+    criteria: 'Must be 18+ years old. Fast learning on tablet checkpost.',
+    defaultRate: '2200',
+    dressCode: 'Black trousers and white collared shirt. Comfortable flat formal shoes.',
+    instructions: 'Report at Visitor Registration Lobby at Hall 1 entrance.',
+  },
+  {
+    name: 'Conference Floor Usher',
+    title: 'Conference Hall Usher & Mic Runner',
+    category: 'conference' as ShiftCategory,
+    slots: '6',
+    duties: 'Auditorium ushering, Q&A cordless microphone management, speaker water replenishment, session signage management.',
+    skills: 'Alertness, Polite English & Hindi, Swift Movement',
+    criteria: 'Must be 18+ years old. Physical stamina for auditorium shifts.',
+    defaultRate: '2000',
+    dressCode: 'All-black formal business attire. Non-squeaking rubber sole formal shoes.',
+    instructions: 'Report at Main Convention Center security reception.',
+  },
+  {
+    name: 'Brand Activation Lead',
+    title: 'Promotional Brand Ambassador & Sampling Lead',
+    category: 'activation' as ShiftCategory,
+    slots: '5',
+    duties: 'Brand experiential sampling, visitor engagement, lead capture via Opskl mobile app, merchandise giveaway coordination.',
+    skills: 'High Energy, Outgoing Personality, Sales Acumen',
+    criteria: 'Must be 18+ years old. Enthusiastic communicator.',
+    defaultRate: '2400',
+    dressCode: 'Client branded polo shirt (provided at site) with smart black trousers.',
+    instructions: 'Report at Atrium Activation Booth 12.',
+  },
+];
+
+const VENUE_PRESETS = [
+  {
+    name: 'Jio World Convention Centre, Gate 4',
+    address: 'G Block BKC, Bandra Kurla Complex, Mumbai 400098',
+    landmark: 'Gate 4 Security Concourse',
+    zone: 'Bandra Kurla Complex (BKC)',
+    tag: 'JWC BKC',
+    transit: 'BKC Connector • 8 mins to Bandra/Kurla stn • Metro 3 corridor',
+  },
+  {
+    name: 'NESCO Exhibition Centre, Hall 1',
+    address: 'Western Express Highway, Goregaon East, Mumbai 400063',
+    landmark: 'Hall 1 VIP Concourse',
+    zone: 'Goregaon & NESCO',
+    tag: 'NESCO Goregaon',
+    transit: 'Direct WEH access • 5 mins to Ram Mandir stn • Western Line',
+  },
+  {
+    name: 'Dome SVP Stadium, Worli',
+    address: 'Lala Lajpatrai Marg, Lotus Colony, Worli, Mumbai 400018',
+    landmark: 'Main Gate Concourse',
+    zone: 'Worli & South Mumbai',
+    tag: 'Dome Worli',
+    transit: 'Bandra-Worli Sea Link • 12 mins from Lower Parel commercial hub',
+  },
+  {
+    name: 'Taj Lands End, Bandra',
+    address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
+    landmark: 'Ballroom Foyer',
+    zone: 'Andheri & Western Suburbs',
+    tag: 'Taj Bandra',
+    transit: 'Bandstand coastal corridor • 10 mins to Bandra suburban hub',
+  },
 ];
 
 export default function OrganizerCreateShiftScreen() {
@@ -141,6 +229,7 @@ export default function OrganizerCreateShiftScreen() {
   const platformFee = financials.platformFeeAmount;
   const gstFee = financials.gstAmount;
   const totalEscrowRequired = financials.totalPayableByOrganizer;
+  const selectedVenuePreset = VENUE_PRESETS.find((v) => v.name === venueName);
 
   // Restore Draft on mount
   useEffect(() => {
@@ -513,6 +602,54 @@ export default function OrganizerCreateShiftScreen() {
         {/* Step 1: Role & Responsibilities */}
         {step === 1 && (
           <View style={{ gap: spacing.md }}>
+            {/* Quick 1-Tap Role Presets */}
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={14} color={colors.primary} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                  Quick Role Templates (1-Tap Setup)
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {ROLE_PRESETS.map((preset) => (
+                  <TouchableOpacity
+                    key={preset.name}
+                    onPress={() => {
+                      setTitle(preset.title);
+                      setCategory(preset.category);
+                      setSlotsTotal(preset.slots);
+                      setDuties(preset.duties);
+                      setRequiredSkills(preset.skills);
+                      setEligibilityCriteria(preset.criteria);
+                      setShiftRate(preset.defaultRate);
+                      const parsed = parseFloat(preset.defaultRate) || 0;
+                      setHourlyRate((parsed / (parsedHours || 1)).toFixed(2));
+                      setDressCode(preset.dressCode);
+                      setReportingInstructions(preset.instructions);
+                    }}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: radii.md,
+                      backgroundColor: title === preset.title ? colors.primary : colors.surfaceMuted,
+                      borderWidth: 1,
+                      borderColor: title === preset.title ? colors.primary : colors.borderMuted,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: title === preset.title ? colors.textInverse : colors.textPrimary,
+                      }}
+                    >
+                      {preset.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             <Input
               label="Shift Title"
               value={title}
@@ -625,36 +762,7 @@ export default function OrganizerCreateShiftScreen() {
                 Popular Mumbai Event Venues (Quick Autofill)
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                {[
-                  {
-                    name: 'Jio World Convention Centre, Gate 4',
-                    address: 'G Block BKC, Bandra Kurla Complex, Mumbai 400098',
-                    landmark: 'Gate 4 Security Concourse',
-                    zone: 'Bandra Kurla Complex (BKC)',
-                    tag: 'JWC BKC',
-                  },
-                  {
-                    name: 'NESCO Exhibition Centre, Hall 1',
-                    address: 'Western Express Highway, Goregaon East, Mumbai 400063',
-                    landmark: 'Hall 1 VIP Concourse',
-                    zone: 'Goregaon & NESCO',
-                    tag: 'NESCO Goregaon',
-                  },
-                  {
-                    name: 'Dome SVP Stadium, Worli',
-                    address: 'Lala Lajpatrai Marg, Lotus Colony, Worli, Mumbai 400018',
-                    landmark: 'Main Gate Concourse',
-                    zone: 'Worli & South Mumbai',
-                    tag: 'Dome Worli',
-                  },
-                  {
-                    name: 'Taj Lands End, Bandra',
-                    address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
-                    landmark: 'Ballroom Foyer',
-                    zone: 'Andheri & Western Suburbs',
-                    tag: 'Taj Bandra',
-                  },
-                ].map((v) => (
+                {VENUE_PRESETS.map((v) => (
                   <TouchableOpacity
                     key={v.tag}
                     onPress={() => {
@@ -684,6 +792,29 @@ export default function OrganizerCreateShiftScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+
+              {/* Transit & Geolocation Connectivity Card for Selected Venue */}
+              {selectedVenuePreset && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: 10,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.surfaceMuted,
+                    borderWidth: 1,
+                    borderColor: colors.borderMuted,
+                    marginTop: 2,
+                  }}
+                >
+                  <Train size={15} color={colors.primary} />
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, flex: 1, lineHeight: 16 }}>
+                    <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Transit Access: </Text>
+                    {selectedVenuePreset.transit}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <Input
@@ -1322,6 +1453,48 @@ export default function OrganizerCreateShiftScreen() {
               <Info size={16} color={colors.primary} style={{ marginTop: 2 }} />
               <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16, flex: 1 }}>
                 Publishing broadcasts this shift to verified Mumbai crew matching your skills criteria. Applications and confirmations appear immediately on your Roster desk.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Dynamic Budget & Headcount Summary Dock (Steps 1–3) */}
+        {step < 4 && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              padding: 12,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.06,
+              shadowRadius: 6,
+              elevation: 2,
+            }}
+          >
+            <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Live Budget Preview
+                </Text>
+              </View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }} numberOfLines={1}>
+                {parsedSlots > 0 ? `${parsedSlots} Crew` : 'No Headcount'} • {computedShiftPay > 0 ? `${formatINR(computedShiftPay)}/shift` : 'Rate TBD'}
+              </Text>
+            </View>
+
+            <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Est. Total Obligation
+              </Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary, marginTop: 1 }}>
+                {formatINR(totalEscrowRequired)}
               </Text>
             </View>
           </View>

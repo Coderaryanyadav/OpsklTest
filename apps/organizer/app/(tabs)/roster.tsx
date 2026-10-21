@@ -34,6 +34,8 @@ import {
   Plus,
   X,
   Users,
+  Radio,
+  UserPlus,
 } from 'lucide-react-native';
 
 const DRAFT_KEY = '@opskil_organizer_shift_draft';
@@ -133,6 +135,9 @@ export default function OrganizerShiftsRosterScreen() {
   const pendingApplicantsCount = applications.filter(
     (a) => a.status === 'applied' || a.status === 'shortlisted' || a.status === 'selected_awaiting_confirmation'
   ).length;
+  const totalSlotsCount = shifts.reduce((acc, s) => acc + (s.slotsTotal || 0), 0);
+  const openSlotsCount = Math.max(0, totalSlotsCount - confirmedCrewCount);
+  const confirmedPct = totalSlotsCount > 0 ? Math.round((confirmedCrewCount / totalSlotsCount) * 100) : 0;
 
   const filteredShifts = useMemo(() => {
     return shifts.filter((s) => {
@@ -205,7 +210,7 @@ export default function OrganizerShiftsRosterScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Operational Banner & Quick Stats */}
+        {/* Live Attendance & Roster Telemetry Radar */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -213,36 +218,104 @@ export default function OrganizerShiftsRosterScreen() {
             padding: spacing.md,
             borderWidth: 1,
             borderColor: colors.borderMuted,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: 12,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, paddingRight: 8 }}>
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surfaceMuted,
+                  borderWidth: 1,
+                  borderColor: colors.borderMuted,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Radio size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
+                    Live Attendance & Roster Radar
+                  </Text>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#16A34A', flexShrink: 0 }} />
+                </View>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }} numberOfLines={1}>
+                  Mumbai Hub • Real-time crew dispatch & attendance telemetry
+                </Text>
+              </View>
+            </View>
             <View
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: radii.md,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: radii.full,
                 backgroundColor: colors.surfaceMuted,
-                borderWidth: 1,
-                borderColor: colors.borderMuted,
-                alignItems: 'center',
-                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              <Calendar size={18} color={colors.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-                  Mumbai Roster Pulse
-                </Text>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-              </View>
-              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                {totalEventsCount} Active Events • {confirmedCrewCount} Confirmed Crew • {pendingApplicantsCount} Pending
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
+                LIVE SYNC
               </Text>
+            </View>
+          </View>
+
+          {/* 3-Way Roster Fill Progress Bar */}
+          <View style={{ gap: 6 }}>
+            <View
+              style={{
+                height: 7,
+                width: '100%',
+                borderRadius: radii.full,
+                backgroundColor: colors.surfaceMuted,
+                overflow: 'hidden',
+                flexDirection: 'row',
+              }}
+            >
+              {confirmedPct > 0 && (
+                <View
+                  style={{
+                    height: '100%',
+                    backgroundColor: '#16A34A',
+                    width: `${Math.min(100, confirmedPct)}%`,
+                  }}
+                />
+              )}
+              {pendingApplicantsCount > 0 && totalSlotsCount > 0 && (
+                <View
+                  style={{
+                    height: '100%',
+                    backgroundColor: colors.warning,
+                    width: `${Math.min(100 - confirmedPct, Math.round((pendingApplicantsCount / totalSlotsCount) * 100))}%`,
+                  }}
+                />
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#16A34A' }} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                  {confirmedCrewCount} Confirmed
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.warning }} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                  {pendingApplicantsCount} In Review
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textMuted }} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                  {openSlotsCount} Open Slots
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -533,7 +606,28 @@ export default function OrganizerShiftsRosterScreen() {
                       {appliedCount} Total Applicant{appliedCount === 1 ? '' : 's'}
                     </Text>
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {!isFull && appliedCount > 0 && (
+                      <TouchableOpacity
+                        onPress={() => router.push(`/shift/${shift.id}` as any)}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 4,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: radii.md,
+                          backgroundColor: colors.surfaceMuted,
+                          borderWidth: 1,
+                          borderColor: colors.borderMuted,
+                        }}
+                      >
+                        <UserPlus size={13} color={colors.primary} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                          Fill Slot ({appliedCount})
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                     {isToday && (
                       <TouchableOpacity
                         onPress={() => router.push(`/shift/${shift.id}` as any)}
