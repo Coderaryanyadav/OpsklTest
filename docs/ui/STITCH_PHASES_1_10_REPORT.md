@@ -49,6 +49,8 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Incident demo Unsplash photo + voice memo | `incident/report.tsx` | Fake evidence | **Fixed** (follow-up 5) |
 | WhatsApp offer / nudge / preference claims | screening, roster, notifications | Fake messaging | **Fixed** (follow-up 5) |
 | Fake ₹15k escrow pool on attendance | `attendance.tsx` | Fake bank hold | **Fixed** (follow-up 5) |
+| Fabricated Audit Governance bot feed | `AdminOverviewDesk.tsx` | Fake Kavita/Vibez/batch rows | **Fixed** (follow-up 5b) — live KYC/dispute snippets |
+| Incident “Attach Photos” added Unsplash demo | `incident/report.tsx` | Fake evidence | **Fixed** (follow-up 5b) — camera not wired |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

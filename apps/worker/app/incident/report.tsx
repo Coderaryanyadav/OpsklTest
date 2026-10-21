@@ -9,6 +9,7 @@ import {
   Linking,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -526,10 +527,10 @@ export default function IncidentReportScreen() {
             {/* Photo Trigger */}
             <TouchableOpacity
               onPress={() => {
-                setPhotos((prev) => [
-                  ...prev,
-                  'https://images.unsplash.com/photo-1584467735871-8e85353a8413?w=500&q=80',
-                ]);
+                Alert.alert(
+                  'Camera not wired',
+                  'Photo capture / upload is not integrated in this build. You can still submit the written incident report without attachments.'
+                );
               }}
               style={{
                 flex: 1,
@@ -548,7 +549,9 @@ export default function IncidentReportScreen() {
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                 Attach Photos
               </Text>
-              <Text style={{ fontSize: 10, color: colors.textSecondary }}>Up to 3 JPG/PNG</Text>
+              <Text style={{ fontSize: 10, color: colors.textSecondary }}>
+                {photos.length > 0 ? `${photos.length} attached` : 'Not available in this build'}
+              </Text>
             </TouchableOpacity>
 
             {/* Audio Memo Widget */}

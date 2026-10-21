@@ -621,15 +621,32 @@ export default function OrganizerApplicantScreeningScreen() {
                 {/* Header: Photo, Name, Rating, Verification Badge */}
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                   <View style={{ position: 'relative' }}>
-                    <Image
-                      source={{ uri: candidate.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150' }}
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: radii.full,
-                        backgroundColor: colors.surfaceMuted,
-                      }}
-                    />
+                    {candidate.avatarUrl ? (
+                      <Image
+                        source={{ uri: candidate.avatarUrl }}
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: radii.full,
+                          backgroundColor: colors.surfaceMuted,
+                        }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: radii.full,
+                          backgroundColor: colors.surfaceMuted,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}>
+                          {(candidate.name || 'W').slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
                     <View
                       style={{
                         position: 'absolute',

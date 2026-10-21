@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   AlertTriangle,
-  CheckCircle2,
   Clock,
   Shield,
   ShieldAlert,
@@ -1105,37 +1104,39 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 11 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <CheckCircle2 size={14} color="#059669" style={{ marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Aadhaar KYC Approved: #WK-7839</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>By Kavita S. • 15:24:12 IST</div>
+              {pendingKYC.slice(0, 2).map((k) => (
+                <div key={k.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <RefreshCw size={14} color="#1D4ED8" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                      Pending {(k.documentType || 'document').toUpperCase()}: ···{k.id.slice(-6)}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                      {k.applicantProfile?.fullName || `Profile ···${k.profileId.slice(-4)}`}
+                      {k.createdAt ? ` • ${new Date(k.createdAt).toLocaleString('en-IN')}` : ''}
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <RefreshCw size={14} color="#1D4ED8" style={{ marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>GSTIN Verification Passed: Vibez Ent</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>By Auto-GSTN Bot • 15:18:04 IST</div>
+              ))}
+              {activeDisputes.slice(0, 2).map((d) => (
+                <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <AlertTriangle size={14} color="#B91C1C" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                      Open dispute: ···{d.id.slice(-6)}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                      {(d.reason || 'Dispute').slice(0, 80)}
+                      {d.createdAt ? ` • ${new Date(d.createdAt).toLocaleString('en-IN')}` : ''}
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <AlertTriangle size={14} color="#B91C1C" style={{ marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Escrow Hold Imposed: #DIS-1108</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>By Kavita S. • 15:02:49 IST</div>
+              ))}
+              {pendingKYC.length === 0 && activeDisputes.length === 0 ? (
+                <div style={{ color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  No recent KYC or dispute activity on the live queues. Fabricated audit bot / escrow-hold / payout-batch rows are not shown.
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <Building2 size={14} color="#7C3AED" style={{ marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Payout Batch Triggered: #BCH-4401</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>By System Daemon • 14:30:00 IST</div>
-                </div>
-              </div>
+              ) : null}
             </div>
           </div>
         </div>
