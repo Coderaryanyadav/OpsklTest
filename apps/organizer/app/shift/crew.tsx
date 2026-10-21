@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Linking,
   Modal,
+  Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -19,9 +20,15 @@ import {
 } from '@opskil/design-system';
 import {
   Job,
+  Booking,
+  JobApplication,
   formatINR,
   fetchOrganizerJobs,
+  fetchJobBookings,
+  fetchApplicationsForJob,
   sendShiftMessage,
+  cancelBookingSafe,
+  confirmWorkerBookingSafe,
   subscribeToShiftRoster,
 } from '@opskil/shared';
 import {
@@ -42,22 +49,65 @@ import {
 
 interface DeployedCrewMember {
   id: string;
+  bookingId: string;
+  workerId: string;
   name: string;
   roleTag: string;
   isTeamLead?: boolean;
   phoneMasked: string;
   phoneRaw: string;
-  attireReady: boolean;
-  biometricKycReady: boolean;
-  geofencePassReady: boolean;
+  status: string;
+  checkInCode?: string;
+  kycReady: boolean;
+  checkedIn: boolean;
 }
 
 interface StandbyWorker {
   id: string;
+  applicationId: string;
+  workerId: string;
   name: string;
   location: string;
   distance: string;
   ready: boolean;
+}
+
+function maskPhone(phone?: string): string {
+  if (!phone) return 'No phone on file';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 6) return phone;
+  const local = digits.slice(-10);
+  return `+91 ${local.slice(0, 5)} •••••`;
+}
+
+function mapBookingToCrew(booking: Booking, index: number, jobTitle?: string): DeployedCrewMember {
+  const phone = booking.worker?.profile?.phone || '';
+  return {
+    id: booking.id,
+    bookingId: booking.id,
+    workerId: booking.workerId,
+    name: booking.worker?.profile?.fullName || `Worker ···${booking.workerId.slice(-4)}`,
+    roleTag: jobTitle || 'Confirmed crew',
+    isTeamLead: index === 0,
+    phoneMasked: maskPhone(phone),
+    phoneRaw: phone,
+    status: booking.status,
+    checkInCode: booking.checkInCode,
+    kycReady: booking.worker?.verificationStatus === 'verified',
+    checkedIn: booking.status === 'checked_in' || booking.status === 'checked_out' || booking.status === 'completed',
+  };
+}
+
+function mapAppToStandby(app: JobApplication): StandbyWorker {
+  return {
+    id: app.id,
+    applicationId: app.id,
+    workerId: app.workerId,
+    name: app.worker?.profile?.fullName || `Worker ···${app.workerId.slice(-4)}`,
+    location: app.worker?.preferredLocality || 'Mumbai',
+    distance: 'Reserve applicant',
+    ready: app.status === 'shortlisted' || app.status === 'applied',
+  };
 }
 
 export default function ConfirmedCrewRosterBriefingConsoleScreen() {
@@ -74,20 +124,15 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Briefing status
-  const [briefingDispatched, setBriefingDispatched] = useState(true);
+  const [briefingDispatched, setBriefingDispatched] = useState(false);
   const [dispatchingBriefing, setDispatchingBriefing] = useState(false);
 
-  // Replacement / Contingency Modal state
   const [selectedStandbyForReplacement, setSelectedStandbyForReplacement] = useState<StandbyWorker | null>(null);
   const [crewToReplace, setCrewToReplace] = useState<DeployedCrewMember | null>(null);
-  const replacementReason = 'Reported medical or travel delay';
+  const replacementReason = 'Organizer-initiated roster replacement';
   const [processingReplacement, setProcessingReplacement] = useState(false);
 
-  // Deployed crew — start empty; no fabricated Aarav/Priya demo roster
   const [crew, setCrew] = useState<DeployedCrewMember[]>([]);
-
-  // Standby feed not wired — keep empty (no fabricated nearby workers)
   const [standbyCrew, setStandbyCrew] = useState<StandbyWorker[]>([]);
 
   const loadData = useCallback(async () => {
@@ -101,9 +146,36 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
       setError(null);
       const jobs = await fetchOrganizerJobs(organizerId);
       const targetJob = jobId ? jobs.find((j) => j.id === jobId) : jobs[0];
-      if (targetJob) {
-        setShift(targetJob);
+      if (!targetJob) {
+        setShift(null);
+        setCrew([]);
+        setStandbyCrew([]);
+        return;
       }
+
+      setShift(targetJob);
+      const [bookings, applications] = await Promise.all([
+        fetchJobBookings(targetJob.id),
+        fetchApplicationsForJob(targetJob.id),
+      ]);
+
+      const activeBookings = bookings.filter(
+        (b) =>
+          b.status === 'confirmed' ||
+          b.status === 'checked_in' ||
+          b.status === 'checked_out' ||
+          b.status === 'completed_awaiting_review' ||
+          b.status === 'completed' ||
+          b.status === 'selected_awaiting_confirmation'
+      );
+      setCrew(activeBookings.map((b, i) => mapBookingToCrew(b, i, targetJob.title)));
+
+      const reserved = applications.filter(
+        (a) =>
+          (a.status === 'applied' || a.status === 'shortlisted') &&
+          !activeBookings.some((b) => b.workerId === a.workerId)
+      );
+      setStandbyCrew(reserved.map(mapAppToStandby));
     } catch (err: any) {
       setError(err?.message || 'Could not load confirmed crew roster.');
     } finally {
@@ -116,34 +188,43 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
     loadData();
 
     if (!organizerId) return;
-    const unsub = subscribeToShiftRoster(jobId || 'job-bkc-vip-01', () => {
+    const targetId = jobId || shift?.id;
+    if (!targetId) return;
+    const unsub = subscribeToShiftRoster(targetId, () => {
       loadData();
     });
     return () => unsub();
-  }, [loadData, organizerId, jobId]);
+  }, [loadData, organizerId, jobId, shift?.id]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
+  const filledSlots = crew.length;
+  const totalSlots = shift?.slotsTotal || 0;
+
   const handleBroadcast = async () => {
+    if (!shift?.id) {
+      OpsklAlert.alert('No shift', 'Open a shift from the roster before broadcasting.');
+      return;
+    }
+    if (crew.length === 0) {
+      OpsklAlert.alert('No crew yet', 'Confirm workers from Screening before sending a briefing.');
+      return;
+    }
     setDispatchingBriefing(true);
     try {
-      if (shift?.id) {
-        await sendShiftMessage(
-          shift.id,
-          'Briefing: Please review shift venue, dress code, and reporting time in the worker app.',
-          undefined,
-          true
-        );
-      }
+      await sendShiftMessage(
+        shift.id,
+        `Briefing for ${shift.title}: Report by ${shift.startTime || 'shift start'} at ${shift.venueName || 'venue'}. Dress code and pass code are in your worker app.`,
+        undefined,
+        true
+      );
       setBriefingDispatched(true);
       OpsklAlert.alert(
         'Briefing sent',
-        crew.length > 0
-          ? `Shift message queued for ${crew.length} rostered worker(s). WhatsApp broadcast and QR pass generation are not wired in this build.`
-          : 'No confirmed crew on this roster yet. Message was not delivered to a fabricated list.'
+        `In-app shift message queued for ${crew.length} confirmed worker(s).`
       );
     } catch {
       OpsklAlert.alert('Dispatch Error', 'Could not broadcast briefing to crew.');
@@ -153,65 +234,102 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
   };
 
   const handleCallWorker = (member: DeployedCrewMember) => {
+    if (!member.phoneRaw) {
+      OpsklAlert.alert('No phone', `${member.name} has no phone number on their profile.`);
+      return;
+    }
     Linking.openURL(`tel:${member.phoneRaw}`).catch(() => {
-      OpsklAlert.alert('Phone Dialler', `Calling ${member.name} (${member.phoneMasked}). Dialling requires physical device.`);
+      OpsklAlert.alert('Phone Dialler', `Could not open dialler for ${member.phoneMasked}.`);
     });
   };
 
-  /**
-   * NON-NEGOTIABLE:
-   * Never silently modify a confirmed roster!
-   * Require explicit impact explanation before replacing a confirmed worker.
-   */
   const handleInitiateReplacement = (standby: StandbyWorker) => {
+    if (crew.length === 0) {
+      OpsklAlert.alert('No confirmed crew', 'There is no confirmed worker to replace yet.');
+      return;
+    }
     setSelectedStandbyForReplacement(standby);
-    // Default to the last non-lead crew member for replacement preview
     setCrewToReplace(crew[crew.length - 1]);
   };
 
   const handleConfirmReplacement = async () => {
-    if (!selectedStandbyForReplacement || !crewToReplace) return;
+    if (!selectedStandbyForReplacement || !crewToReplace || !organizerId || !shift?.id) return;
 
     setProcessingReplacement(true);
     try {
-      // Simulate backend swap with audit trail
-      const newCrewMember: DeployedCrewMember = {
-        id: `crew-sub-${Date.now()}`,
-        name: selectedStandbyForReplacement.name,
-        roleTag: crewToReplace.roleTag,
-        phoneMasked: '+91 98201 •••••',
-        phoneRaw: '+919820144555',
-        attireReady: true,
-        biometricKycReady: true,
-        geofencePassReady: true,
-      };
+      const cancelRes = await cancelBookingSafe(
+        crewToReplace.bookingId,
+        replacementReason,
+        organizerId
+      );
+      if (!cancelRes.success) {
+        OpsklAlert.alert('Replacement failed', cancelRes.error || 'Could not cancel outgoing booking.');
+        return;
+      }
 
-      setCrew((prev) => prev.map((c) => (c.id === crewToReplace.id ? newCrewMember : c)));
-      setStandbyCrew((prev) => prev.filter((s) => s.id !== selectedStandbyForReplacement.id));
+      const confirmRes = await confirmWorkerBookingSafe(
+        shift.id,
+        selectedStandbyForReplacement.workerId,
+        organizerId,
+        `Standby replacement for ${crewToReplace.name}`
+      );
+      if (!confirmRes.success) {
+        OpsklAlert.alert(
+          'Partial failure',
+          confirmRes.error ||
+            'Outgoing booking was cancelled but standby confirmation failed. Refresh and select again from Screening.'
+        );
+        await loadData();
+        return;
+      }
 
       OpsklAlert.alert(
-        'Roster Contingency Executed',
-        `Confirmed worker ${crewToReplace.name} has been replaced by standby specialist ${selectedStandbyForReplacement.name}.\n\nReason: ${replacementReason}.\nRoster slot reassigned. Wage obligations follow the confirmed booking ledger (no live bank escrow rail).`
+        'Roster updated',
+        `${crewToReplace.name} was cancelled and ${selectedStandbyForReplacement.name} is now selected/confirmed on the ledger.`
       );
-
       setSelectedStandbyForReplacement(null);
       setCrewToReplace(null);
+      await loadData();
     } finally {
       setProcessingReplacement(false);
     }
   };
 
-  const handleExportGatePass = () => {
-    OpsklAlert.alert(
-      'Export Gate Pass PDF',
-      'Security muster PDF compiled for Jio World Convention Centre Gate 4 security concourse. Sent to organizer registered email & downloadable from portal.'
-    );
+  const handleExportGatePass = async () => {
+    if (crew.length === 0) {
+      OpsklAlert.alert('Empty roster', 'No confirmed crew to export yet.');
+      return;
+    }
+    const lines = [
+      `Opskl crew muster — ${shift?.title || 'Shift'}`,
+      `Venue: ${shift?.venueName || '—'}`,
+      `Date: ${shift?.date || '—'} ${shift?.startTime || ''}–${shift?.endTime || ''}`,
+      '',
+      ...crew.map(
+        (c, i) =>
+          `${i + 1}. ${c.name} | ${c.roleTag} | pass ${c.checkInCode || 'pending'} | ${c.phoneMasked} | ${c.status}`
+      ),
+    ];
+    try {
+      await Share.share({ message: lines.join('\n'), title: 'Crew muster list' });
+    } catch {
+      OpsklAlert.alert('Share failed', 'Could not open the system share sheet.');
+    }
   };
 
   const handleStaffCallBridge = () => {
+    const withPhone = crew.filter((c) => c.phoneRaw);
+    if (withPhone.length === 0) {
+      OpsklAlert.alert('No phones on file', 'Confirmed crew profiles do not include dialable numbers yet.');
+      return;
+    }
     OpsklAlert.alert(
-      'Staff Conference Bridge',
-      'Connecting all 6 confirmed crew members to instant teleconference audio bridge (Token: OPSKL-CONF-882).'
+      'Call crew',
+      `Conference bridging is not wired. Call the first worker with a number (${withPhone[0].name})?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Call', onPress: () => handleCallWorker(withPhone[0]) },
+      ]
     );
   };
 
@@ -267,7 +385,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
               CREW BRIEFING CONSOLE
             </Text>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
-              {shift?.title || 'Lead Guest Relations & VIP Concierge'}
+              {shift?.title || 'Confirmed crew'}
             </Text>
           </View>
         </View>
@@ -348,12 +466,12 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <MapPin size={13} color={colors.primary} />
             <Text style={{ fontSize: 12, color: colors.textSecondary }} numberOfLines={1}>
-              {shift?.venueName || 'Jio World Convention Centre, Gate 4 Staff Entry (BKC)'}
+              {shift?.venueName || 'Venue not set'}
             </Text>
           </View>
         </View>
 
-        {/* Primary Status Card: Roster 100% Locked */}
+        {/* Primary Status Card — live slot fill */}
         <View
           style={{
             backgroundColor: colors.surface,
@@ -368,7 +486,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary }}>
-                  Roster 100% Locked
+                  {totalSlots > 0 && filledSlots >= totalSlots ? 'Roster filled' : 'Roster in progress'}
                 </Text>
                 <View
                   style={{
@@ -383,16 +501,15 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                 >
                   <Lock size={11} color={colors.primary} />
                   <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
-                    6/6 SLOTS
+                    {filledSlots}/{totalSlots || '—'} SLOTS
                   </Text>
                 </View>
               </View>
               <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
                 Reporting:{' '}
                 <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
-                  Tomorrow, 09:30 AM IST
-                </Text>{' '}
-                • Sharp
+                  {shift?.date || '—'} · {shift?.startTime || '—'} IST
+                </Text>
               </Text>
             </View>
 
@@ -432,7 +549,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
           </TouchableOpacity>
 
           <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center' }}>
-            Dispatches real-time security gate QR passes & floor plan to 6 crew members
+            Sends an in-app shift message to confirmed bookings ({filledSlots} worker{filledSlots === 1 ? '' : 's'})
           </Text>
         </View>
 
@@ -473,16 +590,13 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                   backgroundColor: '#ECFDF5',
                 }}
               >
-                <Text style={{ fontSize: 10, fontWeight: '800', color: '#059669' }}>
-                  100% READ
+                <Text style={{ fontSize: 10, fontWeight: '800', color: briefingDispatched ? '#059669' : colors.textSecondary }}>
+                  {briefingDispatched ? 'SENT' : 'NOT SENT'}
                 </Text>
               </View>
             </View>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 }}>
-              Dispatched today at 04:15 PM IST •{' '}
-              <Text style={{ fontWeight: '600', color: colors.textPrimary }}>
-                6/6 Confirmed Acknowledged
-              </Text>
+              {filledSlots} confirmed on ledger · read receipts are not tracked in this build
             </Text>
           </View>
         </View>
@@ -635,31 +749,37 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <CheckCircle2 size={12} color={colors.primary} />
                   <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textPrimary }}>
-                    Black Formal Suit
+                    {member.status.replace(/_/g, ' ')}
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <CheckCircle2 size={12} color={colors.primary} />
+                  <CheckCircle2 size={12} color={member.kycReady ? colors.primary : colors.textMuted} />
                   <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textPrimary }}>
-                    KYC on file
+                    {member.kycReady ? 'KYC verified' : 'KYC pending'}
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <CheckCircle2 size={12} color={colors.primary} />
+                  <CheckCircle2 size={12} color={member.checkedIn ? colors.primary : colors.textMuted} />
                   <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textPrimary }}>
-                    Geofence Pass
+                    {member.checkedIn ? 'Checked in' : 'Awaiting check-in'}
                   </Text>
                 </View>
               </View>
             </View>
           ))}
+
+          {crew.length === 0 ? (
+            <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', paddingVertical: 12 }}>
+              No confirmed bookings yet. Select workers from Screening to fill this roster.
+            </Text>
+          ) : null}
         </View>
 
-        {/* Emergency Roster Contingency Section */}
+        {/* Reserve applicants (live applications not yet booked) */}
         <View style={{ gap: 10, marginTop: spacing.sm }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>
-              Emergency Roster Contingency
+              Reserve / standby applicants
             </Text>
             <View
               style={{
@@ -670,14 +790,20 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
               }}
             >
               <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>
-                2 Standby • &lt; 5 KM BKC
+                {standbyCrew.length} available
               </Text>
             </View>
           </View>
 
           <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-            Geo-standby pre-cleared for immediate replacement trigger in case of unexpected transit delays or medical call-offs.
+            Applied or shortlisted workers who are not on a confirmed booking. Summon replaces a confirmed booking via cancel + select.
           </Text>
+
+          {standbyCrew.length === 0 ? (
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+              No reserve applicants on this shift yet.
+            </Text>
+          ) : null}
 
           {standbyCrew.map((standby) => (
             <View
@@ -752,10 +878,10 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
         >
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-              Daily Wage Allocation: {formatINR(18000)} Total
+              Listed wage pool: {formatINR((shift?.totalPay || 0) * Math.max(filledSlots, 1))}
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-              Standby pool · wage terms follow confirmed booking ledger
+              {filledSlots} confirmed × {formatINR(shift?.totalPay || 0)} listed shift pay (ledger estimate)
             </Text>
           </View>
           <View
@@ -769,7 +895,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
             }}
           >
             <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
-              ESCROW SECURE
+              LEDGER
             </Text>
           </View>
         </View>

@@ -11,7 +11,8 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import {
   useOpsklTheme,
   Screen,
@@ -93,11 +94,14 @@ const SEVERITIES: {
 export default function IncidentReportScreen() {
   const { colors, spacing, radii } = useOpsklTheme();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { session } = useAuth();
+  const shiftIdParam = typeof params.shiftId === 'string' ? params.shiftId : typeof params.jobId === 'string' ? params.jobId : undefined;
+  const venueParam = typeof params.venueName === 'string' ? params.venueName : undefined;
 
   const [category, setCategory] = useState<IncidentCategory>('safety');
   const [severity, setSeverity] = useState<IncidentSeverity>('urgent');
-  const [locationText, setLocationText] = useState('Pavilion 2, Gate 4B Backstage Service Corridor');
+  const [locationText, setLocationText] = useState('');
   const [notes, setNotes] = useState('');
   const [witnessConsent, setWitnessConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -108,13 +112,12 @@ export default function IncidentReportScreen() {
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Audio recording simulation state
+  // Voice note flag (local only until audio upload is wired)
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [hasVoiceNote, setHasVoiceNote] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-  // Evidence attachments start empty (no demo Unsplash / voice memo)
   const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
@@ -159,13 +162,17 @@ export default function IncidentReportScreen() {
       return;
     }
 
+    if (!session?.user?.id) {
+      setErrorMessage('Sign in to submit an incident report.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const reporterId = session?.user?.id || 'wkr-current';
       const result = await submitSafetyIncidentSafe({
-        reporterId,
-        shiftId: 'SHF-BOM-7729',
-        venueName: 'Jio World Convention Centre',
+        reporterId: session.user.id,
+        shiftId: shiftIdParam,
+        venueName: venueParam,
         category,
         severity,
         locationDescription: locationText.trim(),
@@ -178,7 +185,7 @@ export default function IncidentReportScreen() {
       if (result.success && (result.status === 'server_accepted' || result.status === 'locally_queued')) {
         setSubmissionResult({
           status: result.status,
-          caseRef: result.caseRef || 'TK-BKC-8912',
+          caseRef: result.caseRef || result.reportId || `INC-${Date.now().toString(36).toUpperCase()}`,
           offlineNotice: result.offlineNotice,
         });
       } else {
@@ -188,6 +195,26 @@ export default function IncidentReportScreen() {
       setErrorMessage(err?.message || 'Unexpected network error.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAttachPhoto = async () => {
+    if (photos.length >= 3) {
+      Alert.alert('Limit reached', 'You can attach up to 3 photos.');
+      return;
+    }
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo library access to attach evidence.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsMultipleSelection: false,
+    });
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setPhotos((prev) => [...prev, result.assets[0].uri]);
     }
   };
 
@@ -526,12 +553,7 @@ export default function IncidentReportScreen() {
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             {/* Photo Trigger */}
             <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  'Camera not wired',
-                  'Photo capture / upload is not integrated in this build. You can still submit the written incident report without attachments.'
-                );
-              }}
+              onPress={handleAttachPhoto}
               style={{
                 flex: 1,
                 padding: spacing.md,
@@ -550,7 +572,7 @@ export default function IncidentReportScreen() {
                 Attach Photos
               </Text>
               <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                {photos.length > 0 ? `${photos.length} attached` : 'Not available in this build'}
+                {photos.length > 0 ? `${photos.length} of 3 attached` : 'From photo library'}
               </Text>
             </TouchableOpacity>
 

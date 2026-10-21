@@ -50,7 +50,11 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | WhatsApp offer / nudge / preference claims | screening, roster, notifications | Fake messaging | **Fixed** (follow-up 5) |
 | Fake ₹15k escrow pool on attendance | `attendance.tsx` | Fake bank hold | **Fixed** (follow-up 5) |
 | Fabricated Audit Governance bot feed | `AdminOverviewDesk.tsx` | Fake Kavita/Vibez/batch rows | **Fixed** (follow-up 5b) — live KYC/dispute snippets |
-| Incident “Attach Photos” added Unsplash demo | `incident/report.tsx` | Fake evidence | **Fixed** (follow-up 5b) — camera not wired |
+| Incident “Attach Photos” added Unsplash demo | `incident/report.tsx` | Fake evidence | **Fixed** (follow-up 5b) → later wired to ImagePicker |
+| Organizer crew / attendance / screening empty shells | shift consoles | Features looked dead after demo purge | **Wired** — `fetchJobBookings` / `fetchApplicationsForJob` + cancel/confirm/check-in/no-show/sign-off RPCs |
+| Crew muster / briefing / standby | `crew.tsx` | Simulated swap | **Wired** — Share muster, `sendShiftMessage`, cancel+confirm replacement from reserve applicants |
+| Incident evidence + submit IDs | `incident/report.tsx` | Dummy shift/venue/case refs | **Wired** — real session + ImagePicker URIs + optional route params |
+| Admin Audit Governance | `AdminOverviewDesk` | Fake bot rows | **Wired** — live `auditLogs` from admin page |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

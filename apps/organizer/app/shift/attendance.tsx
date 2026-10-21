@@ -21,9 +21,13 @@ import {
 } from '@opskil/design-system';
 import {
   Job,
+  Booking,
+  formatINR,
   fetchOrganizerJobs,
+  fetchJobBookings,
   completeShiftAndApproveAttendance,
   checkInWorkerSafe,
+  recordNoShowSafe,
   subscribeToShiftRoster,
 } from '@opskil/shared';
 import {
@@ -52,10 +56,68 @@ interface AttendanceWorker {
   phoneMasked: string;
   status: 'on_duty' | 'approaching' | 'checked_out' | 'no_show';
   checkInTime?: string;
+  checkInCode?: string;
   qrPrecision?: string;
   distanceMeters?: number;
   etaMinutes?: number;
   isManualOverride?: boolean;
+  agreedHours?: number;
+}
+
+function maskPhone(phone?: string): string {
+  if (!phone) return 'No phone on file';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 6) return phone;
+  const local = digits.slice(-10);
+  return `+91 ${local.slice(0, 5)} •••••`;
+}
+
+function mapBookingToAttendance(booking: Booking, job?: Job | null): AttendanceWorker | null {
+  if (booking.status === 'cancelled') return null;
+
+  let status: AttendanceWorker['status'] = 'approaching';
+  if (booking.status === 'checked_in') status = 'on_duty';
+  else if (
+    booking.status === 'checked_out' ||
+    booking.status === 'completed' ||
+    booking.status === 'completed_awaiting_review'
+  ) {
+    status = 'checked_out';
+  } else if (booking.status === 'no_show') {
+    status = 'no_show';
+  } else if (booking.status === 'confirmed' || booking.status === 'selected_awaiting_confirmation') {
+    status = 'approaching';
+  }
+
+  const phone = booking.worker?.profile?.phone || '';
+  const hours =
+    job?.durationHours ||
+    (booking.agreedHourlyRate > 0 && booking.agreedTotalPay > 0
+      ? booking.agreedTotalPay / booking.agreedHourlyRate
+      : 8);
+
+  return {
+    id: booking.id,
+    bookingId: booking.id,
+    name: booking.worker?.profile?.fullName || `Worker ···${booking.workerId.slice(-4)}`,
+    badgeId: booking.checkInCode ? `#${booking.checkInCode}` : `···${booking.id.slice(-4)}`,
+    roleTag: job?.title || 'Confirmed booking',
+    avatarUrl: booking.worker?.profile?.avatarUrl || '',
+    phoneRaw: phone,
+    phoneMasked: maskPhone(phone),
+    status,
+    checkInTime: booking.checkInTime
+      ? new Date(booking.checkInTime).toLocaleString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: 'short',
+        })
+      : undefined,
+    checkInCode: booking.checkInCode,
+    qrPrecision: booking.checkInTime ? 'Checked in via pass code / geofence' : undefined,
+    agreedHours: hours,
+  };
 }
 
 export default function LiveEventCheckInAttendanceConsoleScreen() {
@@ -89,7 +151,6 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
   const [signingOff, setSigningOff] = useState(false);
   const [isSignedOff, setIsSignedOff] = useState(false);
 
-  // Attendance roll — start empty; no fabricated Aarav/Priya demo workers
   const [workers, setWorkers] = useState<AttendanceWorker[]>([]);
 
   const loadData = useCallback(async () => {
@@ -103,9 +164,22 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
       setError(null);
       const jobs = await fetchOrganizerJobs(organizerId);
       const targetJob = jobId ? jobs.find((j) => j.id === jobId) : jobs[0];
-      if (targetJob) {
-        setShift(targetJob);
+      if (!targetJob) {
+        setShift(null);
+        setWorkers([]);
+        return;
       }
+      setShift(targetJob);
+      const bookings = await fetchJobBookings(targetJob.id);
+      setWorkers(
+        bookings
+          .map((b) => mapBookingToAttendance(b, targetJob))
+          .filter((w): w is AttendanceWorker => w != null)
+      );
+      const anyCompleted = bookings.some(
+        (b) => b.status === 'completed' || b.status === 'completed_awaiting_review'
+      );
+      setIsSignedOff(anyCompleted);
     } catch (err: any) {
       setError(err?.message || 'Could not load attendance console.');
     } finally {
@@ -118,23 +192,25 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
     loadData();
 
     if (!organizerId) return;
-    const unsub = subscribeToShiftRoster(jobId || 'job-bkc-vip-01', () => {
+    const targetId = jobId || shift?.id;
+    if (!targetId) return;
+    const unsub = subscribeToShiftRoster(targetId, () => {
       loadData();
     });
     return () => unsub();
-  }, [loadData, organizerId, jobId]);
+  }, [loadData, organizerId, jobId, shift?.id]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
-  // Metrics
   const totalExpected = workers.length;
   const presentCount = workers.filter((w) => w.status === 'on_duty' || w.status === 'checked_out').length;
   const inBoundsCount = workers.filter((w) => w.status === 'approaching').length;
   const noShowCount = workers.filter((w) => w.status === 'no_show').length;
-  const completionPct = Math.round((presentCount / totalExpected) * 100);
+  const completionPct = totalExpected > 0 ? Math.round((presentCount / totalExpected) * 100) : 0;
+  const wagePoolEstimate = (shift?.totalPay || 0) * workers.length;
 
   const filteredWorkers = useMemo(() => {
     if (activeFilter === 'pending') {
@@ -147,84 +223,105 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
   }, [workers, activeFilter]);
 
   const handleCallWorker = (w: AttendanceWorker) => {
+    if (!w.phoneRaw) {
+      OpsklAlert.alert('No phone', `${w.name} has no phone number on their profile.`);
+      return;
+    }
     Linking.openURL(`tel:${w.phoneRaw}`).catch(() => {
-      OpsklAlert.alert('Phone Call', `Dialling ${w.name} at ${w.phoneMasked}`);
+      OpsklAlert.alert('Phone Call', `Could not open dialler for ${w.phoneMasked}`);
     });
   };
 
-  // Manual Check-In (Supervisor Override)
   const handleManualCheckIn = (w: AttendanceWorker) => {
     setPinWorkerId(w.id);
+    setSupervisorPin(w.checkInCode || '');
     setPinModalVisible(true);
   };
 
   const handleConfirmPinOverride = async () => {
-    if (!supervisorPin || supervisorPin.length < 4) {
-      OpsklAlert.alert('PIN Required', 'Please enter supervisor 4-digit security PIN.');
+    const target = workers.find((w) => w.id === pinWorkerId);
+    if (!target) return;
+
+    const code = supervisorPin.trim() || target.checkInCode || '';
+    if (!code) {
+      OpsklAlert.alert('Pass code required', 'Enter the worker pass code from their booking to check them in.');
       return;
     }
 
     setSubmittingPin(true);
     try {
-      const target = workers.find((w) => w.id === pinWorkerId);
-      if (target) {
-        // Call checkInWorkerSafe if bookingId exists
-        if (target.bookingId) {
-          await checkInWorkerSafe(target.bookingId, 'MANUAL-PIN', 19.0645, 72.8679);
-        }
-
-        setWorkers((prev) =>
-          prev.map((w) =>
-            w.id === pinWorkerId
-              ? {
-                  ...w,
-                  status: 'on_duty',
-                  checkInTime: '09:46 AM IST',
-                  qrPrecision: 'Manual Override (Supervisor Auth)',
-                  isManualOverride: true,
-                }
-              : w
-          )
-        );
-
-        OpsklAlert.alert(
-          '✓ Manual Check-In Approved',
-          `Worker ${target.name} marked ON DUTY via Supervisor Token MUM-SUP-4109.`
-        );
+      const result = await checkInWorkerSafe(target.bookingId, code);
+      if (!result.success) {
+        OpsklAlert.alert('Check-in failed', result.error || 'Could not check in worker.');
+        return;
       }
+
+      OpsklAlert.alert('Checked in', `${target.name} is now on duty on the booking ledger.`);
       setPinModalVisible(false);
       setSupervisorPin('');
       setPinWorkerId('');
+      await loadData();
     } finally {
       setSubmittingPin(false);
     }
   };
 
+  const handleMarkNoShow = async (w: AttendanceWorker) => {
+    OpsklAlert.alert(
+      'Mark no-show?',
+      `Record ${w.name} as no-show on the booking ledger?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await recordNoShowSafe(w.bookingId, 'Organizer marked no-show from attendance console');
+            if (!res.success) {
+              OpsklAlert.alert('Failed', res.error || 'Could not record no-show.');
+              return;
+            }
+            await loadData();
+          },
+        },
+      ]
+    );
+  };
+
   /**
-   * NON-NEGOTIABLE LIFECYCLE:
-   * Attendance approval does NOT equal payment completion!
-   * Approving locks billable shift hours and schedules batch payout.
+   * Attendance approval ≠ paid. Completes checked-in bookings only.
    */
   const handleSignOffAttendance = async () => {
     if (isSignedOff) {
-      OpsklAlert.alert('Already Signed Off', 'This attendance timesheet has already been approved and queued for payout.');
+      OpsklAlert.alert('Already signed off', 'At least one booking on this shift is already completed.');
+      return;
+    }
+
+    const onDuty = workers.filter((w) => w.status === 'on_duty');
+    if (onDuty.length === 0) {
+      OpsklAlert.alert('Nothing to approve', 'Check workers in before approving attendance hours.');
       return;
     }
 
     setSigningOff(true);
     try {
-      // Loop bookings and complete shift attendance
-      for (const w of workers) {
-        if (w.status === 'on_duty') {
-          await completeShiftAndApproveAttendance(w.bookingId, 9.0);
+      const failures: string[] = [];
+      for (const w of onDuty) {
+        const res = await completeShiftAndApproveAttendance(w.bookingId, w.agreedHours);
+        if (!res.success) {
+          failures.push(`${w.name}: ${res.error || 'failed'}`);
         }
       }
 
-      setIsSignedOff(true);
-      OpsklAlert.alert(
-        '✓ Attendance Approved & Timesheets Queued',
-        'Timesheets validated.\n\nAttendance approval locks billable hours for payroll review. Payout remains a separate step — it is not completed by this approval alone.'
-      );
+      if (failures.length > 0) {
+        OpsklAlert.alert('Partial sign-off', failures.join('\n'));
+      } else {
+        OpsklAlert.alert(
+          'Attendance approved',
+          'Billable hours locked for payroll review. Payout remains a separate ledger step.'
+        );
+      }
+      await loadData();
     } catch (err: any) {
       OpsklAlert.alert('Sign-Off Error', err?.message || 'Could not validate timesheet.');
     } finally {
@@ -704,15 +801,14 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Radar size={13} color={colors.primary} />
                       <Text style={{ fontSize: 11, color: colors.textPrimary }}>
-                        Within Geofence ({w.distanceMeters}m away)
+                        Awaiting check-in · pass {w.checkInCode || 'pending'}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>
-                      ETA ~{w.etaMinutes} MIN
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>
+                      NOT CHECKED IN
                     </Text>
                   </View>
 
-                  {/* Actions for approaching worker */}
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity
                       onPress={() => handleCallWorker(w)}
@@ -729,14 +825,14 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                     >
                       <Phone size={14} color={colors.textPrimary} />
                       <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
-                        Call Worker
+                        Call
                       </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       onPress={() => handleManualCheckIn(w)}
                       style={{
-                        flex: 1.5,
+                        flex: 1.2,
                         paddingVertical: 8,
                         borderRadius: radii.md,
                         backgroundColor: colors.primary,
@@ -748,7 +844,23 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                     >
                       <KeyRound size={14} color="#FFFFFF" />
                       <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
-                        Manual Check-in
+                        Check-in
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleMarkNoShow(w)}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 8,
+                        borderRadius: radii.md,
+                        backgroundColor: '#FEF2F2',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#B91C1C' }}>
+                        No-show
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -780,10 +892,10 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
             <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
-              Workers on roll
+              Listed wage estimate
             </Text>
             <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
-              {workers.length} recorded
+              {formatINR(wagePoolEstimate)} · {workers.length} on roll
             </Text>
           </View>
         </View>
@@ -848,7 +960,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
         </TouchableOpacity>
 
         <Text style={{ fontSize: 10, color: colors.textMuted, textAlign: 'center' }}>
-          Audit trail logged under Supervisor Token: MUM-SUP-4109
+          Check-in uses the worker booking pass code on the ledger
         </Text>
       </View>
 

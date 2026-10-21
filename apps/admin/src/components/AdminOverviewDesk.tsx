@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  AlertTriangle,
   Clock,
   Shield,
   ShieldAlert,
@@ -21,6 +20,7 @@ import {
   VerificationCase,
   Dispute,
   Job,
+  AuditLog,
   SystemOperationalStatus,
   EmergencyBroadcastDetails,
   formatINR,
@@ -33,6 +33,7 @@ interface AdminOverviewDeskProps {
   verifications: VerificationCase[];
   disputes: Dispute[];
   jobs: Job[];
+  auditLogs?: AuditLog[];
   systemStatus: SystemOperationalStatus;
   onSelectModule: (module: AdminModule) => void;
   onToggleBookingPause: (reason?: string, broadcast?: EmergencyBroadcastDetails) => void | Promise<void>;
@@ -44,6 +45,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
   verifications,
   disputes,
   jobs,
+  auditLogs = [],
   systemStatus,
   onSelectModule,
   onToggleBookingPause,
@@ -1104,7 +1106,22 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 11 }}>
-              {pendingKYC.slice(0, 2).map((k) => (
+              {auditLogs.slice(0, 5).map((log) => (
+                <div key={log.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <FileText size={14} color="#1D4ED8" style={{ marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                      {log.action} · {log.entityType}
+                      {log.entityId ? ` ···${String(log.entityId).slice(-6)}` : ''}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
+                      {log.actorEmail || (log.actorId ? `Actor ···${log.actorId.slice(-6)}` : 'System')}
+                      {log.createdAt ? ` • ${new Date(log.createdAt).toLocaleString('en-IN')}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {auditLogs.length === 0 && pendingKYC.slice(0, 2).map((k) => (
                 <div key={k.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                   <RefreshCw size={14} color="#1D4ED8" style={{ marginTop: 2, flexShrink: 0 }} />
                   <div>
@@ -1118,23 +1135,9 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
                   </div>
                 </div>
               ))}
-              {activeDisputes.slice(0, 2).map((d) => (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <AlertTriangle size={14} color="#B91C1C" style={{ marginTop: 2, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                      Open dispute: ···{d.id.slice(-6)}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>
-                      {(d.reason || 'Dispute').slice(0, 80)}
-                      {d.createdAt ? ` • ${new Date(d.createdAt).toLocaleString('en-IN')}` : ''}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {pendingKYC.length === 0 && activeDisputes.length === 0 ? (
+              {auditLogs.length === 0 && pendingKYC.length === 0 && activeDisputes.length === 0 ? (
                 <div style={{ color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                  No recent KYC or dispute activity on the live queues. Fabricated audit bot / escrow-hold / payout-batch rows are not shown.
+                  No audit log rows yet. Live KYC and dispute queues are empty.
                 </div>
               ) : null}
             </div>

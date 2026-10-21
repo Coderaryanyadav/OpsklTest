@@ -19,9 +19,11 @@ import {
 } from '@opskil/design-system';
 import {
   Job,
+  JobApplication,
   formatINR,
   fetchOrganizerJobs,
   fetchOrganizerApplications,
+  fetchApplicationsForJob,
   updateApplicationStatusSafe,
   confirmWorkerBookingSafe,
   cancelBookingSafe,
@@ -66,6 +68,42 @@ interface CandidateProfile {
   timeLeftMinutes?: number;
 }
 
+function mapApplicationStatus(status: string): CandidateProfile['status'] {
+  if (status === 'selected_awaiting_confirmation') return 'selected';
+  if (status === 'confirmed') return 'confirmed';
+  if (status === 'shortlisted') return 'shortlisted';
+  if (status === 'rejected' || status === 'withdrawn') return 'rejected';
+  return 'applied';
+}
+
+function mapApplicationToCandidate(a: JobApplication, shiftPay: number): CandidateProfile {
+  return {
+    id: a.id,
+    applicationId: a.id,
+    workerId: a.workerId,
+    name: a.worker?.profile?.fullName || `Worker ···${a.workerId.slice(-4)}`,
+    avatarUrl: a.worker?.profile?.avatarUrl,
+    rating: a.worker?.rating ?? 0,
+    eventsCount: a.worker?.shiftsCompleted ?? 0,
+    verificationBadge:
+      a.worker?.verificationStatus === 'verified' ? 'KYC verified' : 'KYC pending',
+    languages: [],
+    distance: a.worker?.preferredLocality || 'Locality not set',
+    attire: 'See worker profile',
+    protocolBadge: 'Application on file',
+    dailyStipend: shiftPay,
+    appliedAtFormatted: a.appliedAt
+      ? `Applied ${new Date(a.appliedAt).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`
+      : 'Applied',
+    status: mapApplicationStatus(a.status),
+  };
+}
+
 export default function OrganizerApplicantScreeningScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -95,41 +133,19 @@ export default function OrganizerApplicantScreeningScreen() {
 
     try {
       setError(null);
-      const [jobsData, appsData] = await Promise.all([
-        fetchOrganizerJobs(organizerId),
-        fetchOrganizerApplications(organizerId),
-      ]);
-
+      const jobsData = await fetchOrganizerJobs(organizerId);
       const foundJob = jobId ? jobsData.find((j) => j.id === jobId) : jobsData[0];
       if (foundJob) {
         setShift(foundJob);
       }
 
-      if (appsData && appsData.length > 0) {
-        const liveApplications = appsData
-          .filter((a) => !jobId || a.jobId === jobId)
-          .map((a) => ({
-            id: a.id,
-            applicationId: a.id,
-            workerId: a.workerId,
-            name: (a as any).workerName || `Worker ···${a.workerId.slice(-4)}`,
-            rating: typeof (a as any).rating === 'number' ? (a as any).rating : 0,
-            eventsCount: typeof (a as any).eventsCount === 'number' ? (a as any).eventsCount : 0,
-            verificationBadge: 'KYC status on profile',
-            languages: Array.isArray((a as any).languages) ? (a as any).languages : [],
-            distance: (a as any).distance || 'Distance not available',
-            attire: (a as any).attire || 'Not specified',
-            protocolBadge: 'Application on file',
-            dailyStipend: foundJob?.totalPay || 0,
-            appliedAtFormatted: a.appliedAt
-              ? `Applied ${new Date(a.appliedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-              : 'Applied',
-            status: (a.status as any) || 'applied',
-          }));
-        setCandidates(liveApplications);
-      } else {
-        setCandidates([]);
-      }
+      const appsData: JobApplication[] = foundJob
+        ? await fetchApplicationsForJob(foundJob.id)
+        : await fetchOrganizerApplications(organizerId);
+
+      setCandidates(
+        (appsData || []).map((a) => mapApplicationToCandidate(a, foundJob?.totalPay || 0))
+      );
     } catch (err: any) {
       setError(err?.message || 'Could not load shift candidates.');
     } finally {

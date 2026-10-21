@@ -488,6 +488,7 @@ function AdminDashboardInner() {
                   verifications={verifications}
                   disputes={disputes}
                   jobs={jobs}
+                  auditLogs={auditLogs}
                   systemStatus={systemStatus}
                   onSelectModule={selectModule}
                   onToggleBookingPause={handleToggleBookingPause}
