@@ -414,7 +414,7 @@ export async function signUpWithEmailPassword({
   // Try universal registration endpoint if available to bypass SMTP confirmation email failure
   const apiBase =
     (typeof process !== 'undefined' && (process.env.EXPO_PUBLIC_ADMIN_URL || process.env.NEXT_PUBLIC_ADMIN_URL)) ||
-    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000');
+    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://192.168.1.193:3000');
 
   if (apiBase) {
     try {

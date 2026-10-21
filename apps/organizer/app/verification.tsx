@@ -235,7 +235,13 @@ export default function OrganizerBusinessVerificationScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/profile' as any);
+              }
+            }}
             style={{
               width: 36,
               height: 36,

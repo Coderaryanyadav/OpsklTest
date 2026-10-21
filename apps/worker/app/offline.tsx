@@ -155,7 +155,13 @@ export default function OfflineSyncHubScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)' as any);
+            }
+          }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}

@@ -69,14 +69,18 @@ export default function OrganizerWelcomeScreen() {
 
         {/* Active Venues Banner */}
         <View style={[styles.activeHubsCard, { backgroundColor: colors.primary, borderColor: colors.border }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
               <Building2 size={16} color={colors.accent} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textInverse, letterSpacing: -0.2 }}>
+              <Text
+                style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse, letterSpacing: -0.2, flex: 1 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 Supported Venues: BKC • NESCO • South Mumbai
               </Text>
             </View>
-            <View style={[styles.liveOpsBadge, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <View style={[styles.liveOpsBadge, { backgroundColor: 'rgba(255, 255, 255, 0.15)', flexShrink: 0 }]}>
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textInverse, letterSpacing: 0.5 }}>
                 ENTERPRISE
               </Text>
@@ -207,6 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingRight: 48,
   },
   statusPill: {
     flexDirection: 'row',

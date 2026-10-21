@@ -345,10 +345,14 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D4ED8' }} />
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>
-              Wage &lt; BKC Benchmark (#OPS-9041)
+              {flaggedJobs.length > 0
+                ? `${flaggedJobs.length} shift${flaggedJobs.length === 1 ? '' : 's'} flagged below standard`
+                : 'All posted shifts comply with wage standards'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Posted rate ₹850/shift vs mandated ₹1,200 floor
+              {flaggedJobs.length > 0
+                ? `Lowest: ₹${Math.min(...flaggedJobs.map((j) => j.hourlyRate))}/hr vs ₹200/hr floor`
+                : 'Wage floor verification active across all Mumbai zones'}
             </div>
           </div>
           <ChevronRight size={16} color="#1D4ED8" style={{ alignSelf: 'center' }} />
@@ -796,14 +800,14 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
                                 item.priority === 'CRITICAL'
                                   ? '#FEE2E2'
                                   : item.priority === 'HIGH'
-                                  ? '#FEF3C7'
-                                  : '#F1F5F9',
+                                    ? '#FEF3C7'
+                                    : '#F1F5F9',
                               color:
                                 item.priority === 'CRITICAL'
                                   ? '#B91C1C'
                                   : item.priority === 'HIGH'
-                                  ? '#92400E'
-                                  : '#475569',
+                                    ? '#92400E'
+                                    : '#475569',
                             }}
                           >
                             {item.priority}

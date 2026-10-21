@@ -49,21 +49,21 @@ import {
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { colors, spacing, radii, touchTarget } = useOpsklTheme();
+  const { colors, spacing, radii, touchTarget, isDark } = useOpsklTheme();
 
   const organizerId = session?.user?.id;
 
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [shifts, setShifts] = useState<Job[]>([]);
   const [metrics, setMetrics] = useState<OrganizerMetrics>({
-    activeJobs: 4,
-    openPositions: 8,
-    newApplications: 38,
-    shortlistedApplicants: 12,
-    confirmedWorkers: 18,
-    upcomingEvents: 5,
-    completedShifts: 140,
-    totalStaffingSpend: 184500,
+    activeJobs: 0,
+    openPositions: 0,
+    newApplications: 0,
+    shortlistedApplicants: 0,
+    confirmedWorkers: 0,
+    upcomingEvents: 0,
+    completedShifts: 0,
+    totalStaffingSpend: 0,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,9 +127,13 @@ export default function OrganizerDashboardScreen() {
 
   const activeShiftsCount = useMemo(() => {
     return shifts.length > 0
-      ? shifts.filter((s) => s.status !== 'paused').length
+      ? shifts.filter((s) => s.status !== 'paused' && s.status !== 'completed' && s.status !== 'cancelled').length
       : metrics.activeJobs || 0;
   }, [shifts, metrics.activeJobs]);
+
+  const liveTodayCount = useMemo(() => {
+    return shifts.filter((s) => s.date === todayStr && (s.status === 'in_progress' || s.status === 'open' || s.status === 'filling')).length;
+  }, [shifts, todayStr]);
 
   const isVerified = organizerProfile?.verificationStatus === 'verified';
 
@@ -148,7 +152,7 @@ export default function OrganizerDashboardScreen() {
         ]}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: spacing.sm }}>
             <View
               style={{
                 width: 34,
@@ -159,14 +163,18 @@ export default function OrganizerDashboardScreen() {
                 justifyContent: 'center',
               }}
             >
-              <Building2 size={18} color="#FFFFFF" />
+              <Building2 size={18} color={isDark ? '#000000' : '#FFFFFF'} />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 OPSKL MUMBAI
               </Text>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 }}>
-                Organizer Event Command & Dashboard
+              <Text
+                style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                Organizer Event Command
               </Text>
             </View>
           </View>
@@ -192,8 +200,8 @@ export default function OrganizerDashboardScreen() {
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/profile')}
               style={{
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 borderRadius: radii.full,
                 backgroundColor: colors.primary,
                 alignItems: 'center',
@@ -202,7 +210,7 @@ export default function OrganizerDashboardScreen() {
               accessibilityLabel="View profile"
               accessibilityRole="button"
             >
-              <User size={16} color="#FFFFFF" />
+              <User size={16} color={isDark ? '#000000' : '#FFFFFF'} />
             </TouchableOpacity>
           </View>
         </View>
@@ -273,8 +281,8 @@ export default function OrganizerDashboardScreen() {
                   {isVerified
                     ? `GST Verified Enterprise • ${organizerProfile?.gstin || 'Registered'}`
                     : organizerProfile?.verificationStatus === 'pending'
-                    ? 'Verification Under Review (4–6 hrs)'
-                    : 'Unverified Enterprise • Verification Required'}
+                      ? 'Verification Under Review (4–6 hrs)'
+                      : 'Unverified Enterprise • Verification Required'}
                 </Text>
               </View>
             </View>
@@ -333,60 +341,61 @@ export default function OrganizerDashboardScreen() {
 
         {/* Immediate Operational Alert Bar */}
         <View style={{ gap: 10 }}>
-          {/* Urgent Action Pill Card */}
-          <View
-            style={{
-              backgroundColor: '#FFF1F2',
-              borderRadius: radii.xl,
-              padding: 14,
-              borderWidth: 1,
-              borderColor: '#FFE4E6',
-              gap: 8,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Timer size={18} color="#E11D48" />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  3 Confirmations Expiring
-                </Text>
+          {metrics.newApplications > 0 ? (
+            <View
+              style={{
+                backgroundColor: isDark ? 'rgba(225, 29, 72, 0.15)' : '#FFF1F2',
+                borderRadius: radii.xl,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(225, 29, 72, 0.35)' : '#FFE4E6',
+                gap: 8,
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Timer size={18} color="#E11D48" />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#FFFFFF' : '#9F1239' }}>
+                    {metrics.newApplications} Candidate{metrics.newApplications === 1 ? '' : 's'} Pending Review
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: radii.full,
+                    backgroundColor: '#E11D48',
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF', textTransform: 'uppercase' }}>
+                    Action Required
+                  </Text>
+                </View>
               </View>
-              <View
-                style={{
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: radii.full,
-                  backgroundColor: '#E11D48',
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF', textTransform: 'uppercase' }}>
-                  45m Left
-                </Text>
+              <Text style={{ fontSize: 12, color: isDark ? '#F1F5F9' : '#475569', lineHeight: 17 }}>
+                Verified candidates have applied to your shifts. Review profiles and confirm crew to finalize rosters.
+              </Text>
+              <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
+                <TouchableOpacity
+                  onPress={() => router.push('/(tabs)/roster')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: radii.md,
+                    backgroundColor: '#E11D48',
+                  }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                    Review Candidates
+                  </Text>
+                  <ArrowRight size={13} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
             </View>
-            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
-              Lead VIP Concierge at JWCC BKC • Unaccepted slots will automatically roll back to next waitlisted crew.
-            </Text>
-            <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
-              <TouchableOpacity
-                onPress={() => router.push('/(tabs)/roster')}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: radii.md,
-                  backgroundColor: colors.primary,
-                }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
-                  Review Roster
-                </Text>
-                <ArrowRight size={13} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          ) : null}
 
           {/* Operational Briefing Note */}
           <View
@@ -405,16 +414,24 @@ export default function OrganizerDashboardScreen() {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  Tomorrow's Movement Protocol
+                  {todayShift
+                    ? "Today's Movement Protocol"
+                    : nextUpcomingShift
+                      ? 'Upcoming Movement Protocol'
+                      : 'Shift Movement Protocol'}
                 </Text>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-                  IST 09:30 AM
-                </Text>
+                {(todayShift || nextUpcomingShift)?.startTime && (
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                    IST {(todayShift || nextUpcomingShift)?.startTime}
+                  </Text>
+                )}
               </View>
               <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
-                {nextUpcomingShift
-                  ? `${nextUpcomingShift.slotsTotal} crew reporting to ${nextUpcomingShift.venueName || 'venue'} · briefing on schedule.`
-                  : 'No upcoming shift briefings queued. Create or open a shift to see reporting instructions here.'}
+                {todayShift
+                  ? `${todayShift.slotsTotal} crew reporting to ${todayShift.venueName || 'venue'} · shift live today.`
+                  : nextUpcomingShift
+                    ? `${nextUpcomingShift.slotsTotal} crew reporting to ${nextUpcomingShift.venueName || 'venue'} on ${nextUpcomingShift.date} · briefing on schedule.`
+                    : 'No upcoming shift briefings queued. Post or open a shift to see reporting instructions here.'}
               </Text>
             </View>
           </View>
@@ -445,7 +462,7 @@ export default function OrganizerDashboardScreen() {
                 {activeShiftsCount}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                1 live today
+                {liveTodayCount > 0 ? `${liveTodayCount} live today` : activeShiftsCount > 0 ? `${activeShiftsCount} scheduled` : 'None active'}
               </Text>
             </View>
           </View>
@@ -561,34 +578,34 @@ export default function OrganizerDashboardScreen() {
             </View>
 
             {(todayShift || nextUpcomingShift) ? (
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                backgroundColor: colors.surface,
-                borderRadius: radii.md,
-                padding: 10,
-                borderWidth: 1,
-                borderColor: colors.borderMuted,
-              }}
-            >
-              <View>
-                <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
-                  Shift Timeline
-                </Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 1 }}>
-                  {(todayShift || nextUpcomingShift)?.startTime || '—'} – {(todayShift || nextUpcomingShift)?.endTime || '—'} IST
-                </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  backgroundColor: colors.surface,
+                  borderRadius: radii.md,
+                  padding: 10,
+                  borderWidth: 1,
+                  borderColor: colors.borderMuted,
+                }}
+              >
+                <View>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
+                    Shift Timeline
+                  </Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 1 }}>
+                    {(todayShift || nextUpcomingShift)?.startTime || '—'} – {(todayShift || nextUpcomingShift)?.endTime || '—'} IST
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
+                    Slots
+                  </Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary, marginTop: 1 }}>
+                    {(todayShift || nextUpcomingShift)?.slotsFilled ?? 0} / {(todayShift || nextUpcomingShift)?.slotsTotal ?? 0} filled
+                  </Text>
+                </View>
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
-                  Slots
-                </Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary, marginTop: 1 }}>
-                  {(todayShift || nextUpcomingShift)?.slotsFilled ?? 0} / {(todayShift || nextUpcomingShift)?.slotsTotal ?? 0} filled
-                </Text>
-              </View>
-            </View>
             ) : null}
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -618,8 +635,8 @@ export default function OrganizerDashboardScreen() {
                 gap: 6,
               }}
             >
-              <Shield size={15} color="#FFFFFF" />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+              <Shield size={15} color={colors.textInverse} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                 Open Venue Live Check-in Console
               </Text>
             </TouchableOpacity>
@@ -650,18 +667,18 @@ export default function OrganizerDashboardScreen() {
                   width: 32,
                   height: 32,
                   borderRadius: radii.md,
-                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  backgroundColor: isDark ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <PlusCircle size={18} color="#FFFFFF" />
+                <PlusCircle size={18} color={colors.textInverse} />
               </View>
               <View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textInverse }}>
                   Post New Shift
                 </Text>
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                <Text style={{ fontSize: 11, color: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.8)', marginTop: 2 }}>
                   Funding estimate · ledger only
                 </Text>
               </View>
@@ -694,18 +711,20 @@ export default function OrganizerDashboardScreen() {
                 >
                   <Search size={18} color={colors.textPrimary} />
                 </View>
-                <View
-                  style={{
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    borderRadius: radii.full,
-                    backgroundColor: '#FFE4E6',
-                  }}
-                >
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
-                    12 New
-                  </Text>
-                </View>
+                {metrics.newApplications > 0 && (
+                  <View
+                    style={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: radii.full,
+                      backgroundColor: isDark ? 'rgba(225, 29, 72, 0.2)' : '#FFE4E6',
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
+                      {metrics.newApplications} New
+                    </Text>
+                  </View>
+                )}
               </View>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
@@ -755,7 +774,7 @@ export default function OrganizerDashboardScreen() {
                   Sign-off Sheets
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                  PDF audit logs ready
+                  Attendance ledger
                 </Text>
               </View>
             </TouchableOpacity>
@@ -791,7 +810,9 @@ export default function OrganizerDashboardScreen() {
                   Escrow Ledger
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-                  ₹1,84,500 active pool
+                  {metrics.totalStaffingSpend > 0
+                    ? `₹${metrics.totalStaffingSpend.toLocaleString('en-IN')} spend pool`
+                    : '₹0 active pool'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -804,276 +825,183 @@ export default function OrganizerDashboardScreen() {
             <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 }}>
               Active Shifts Overview
             </Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/roster')}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-                VIEW ALL (4)
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Shift Card 1: Tomorrow Sat 24 May */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: radii.xl,
-              padding: spacing.md,
-              borderWidth: 1,
-              borderColor: colors.borderMuted,
-              gap: 12,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, textTransform: 'uppercase' }}>
-                    Sat 24 May • Tomorrow
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-                  Lead Guest Relations & VIP Concierge
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                  Jio World Convention Centre, BKC
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: radii.sm,
-                  backgroundColor: colors.surfaceMuted,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>
-                  6/6 Full
-                </Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: colors.surfaceMuted,
-                borderRadius: radii.md,
-                padding: 10,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Clock size={14} color={colors.textPrimary} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  10:00 AM – 07:00 PM IST
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: radii.sm,
-                  backgroundColor: colors.surface,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>
-                  Briefing Dispatched
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Lock size={13} color={colors.textSecondary} />
-                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                  Roster Locked
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push('/(tabs)/roster')}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: radii.md,
-                  backgroundColor: colors.surfaceMuted,
-                }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
-                  View Confirmed Crew
+            {shifts.length > 0 && (
+              <TouchableOpacity onPress={() => router.push('/(tabs)/roster')}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                  VIEW ALL ({shifts.length})
                 </Text>
               </TouchableOpacity>
-            </View>
+            )}
           </View>
 
-          {/* Shift Card 2: Mon 26 May */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: radii.xl,
-              padding: spacing.md,
-              borderWidth: 1,
-              borderColor: colors.borderMuted,
-              gap: 12,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#E11D48' }} />
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48', textTransform: 'uppercase' }}>
-                    Mon 26 May
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-                  Production & Backstage Logistics
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                  Dome SVP Stadium, Worli
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: radii.sm,
-                  backgroundColor: '#FFE4E6',
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
-                  2/4 Confirmed
-                </Text>
-              </View>
-            </View>
+          {shifts.length > 0 ? (
+            shifts.slice(0, 5).map((shift) => {
+              const isToday = shift.date === todayStr;
+              const isFull = (shift.slotsFilled || 0) >= (shift.slotsTotal || 1);
+              const statusColor =
+                shift.status === 'in_progress'
+                  ? '#16A34A'
+                  : shift.status === 'cancelled'
+                    ? '#DC2626'
+                    : colors.primary;
 
+              return (
+                <View
+                  key={shift.id}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: radii.xl,
+                    padding: spacing.md,
+                    borderWidth: 1,
+                    borderColor: colors.borderMuted,
+                    gap: 12,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusColor }} />
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: statusColor, textTransform: 'uppercase' }}>
+                          {isToday ? `Today • ${shift.date}` : shift.date}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
+                        {shift.title}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                        {shift.venueName || 'Venue TBD'}{shift.city ? `, ${shift.city}` : ''}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: radii.sm,
+                        backgroundColor: isFull
+                          ? (isDark ? 'rgba(22, 163, 74, 0.2)' : '#DCFCE7')
+                          : colors.surfaceMuted,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '700',
+                          color: isFull
+                            ? (isDark ? '#4ADE80' : '#15803D')
+                            : colors.textPrimary,
+                        }}
+                      >
+                        {shift.slotsFilled || 0}/{shift.slotsTotal || 0} {isFull ? 'Full' : 'Confirmed'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      backgroundColor: colors.surfaceMuted,
+                      borderRadius: radii.md,
+                      padding: 10,
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Clock size={14} color={colors.textPrimary} />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                        {shift.startTime || 'TBD'} – {shift.endTime || 'TBD'} IST
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
+                      ₹{Number(shift.totalPay || 0).toLocaleString('en-IN')} / shift
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                      {isFull ? (
+                        <>
+                          <Lock size={13} color={colors.textSecondary} />
+                          <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                            Roster Locked
+                          </Text>
+                        </>
+                      ) : (
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                          {Math.max(0, (shift.slotsTotal || 0) - (shift.slotsFilled || 0))} open slots
+                        </Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => router.push(`/shift/${shift.id}` as any)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: radii.md,
+                        backgroundColor: colors.primary,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>
+                        {isToday ? 'Live Console' : 'Manage Shift'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
             <View
               style={{
-                backgroundColor: colors.surfaceMuted,
-                borderRadius: radii.md,
-                padding: 10,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                padding: spacing.xl,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
                 alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
               }}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Clock size={14} color={colors.textPrimary} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  02:00 PM – 11:00 PM IST
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: colors.surfaceMuted,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Calendar size={24} color={colors.primary} />
+              </View>
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' }}>
+                  No Active Shifts
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', lineHeight: 18, maxWidth: 280 }}>
+                  Create single-day shifts to source, screen, and schedule verified event crew across Mumbai venues.
                 </Text>
               </View>
-              <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
-                02h 15m remaining
-              </Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                2 Selected workers pending confirmation
-              </Text>
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/roster')}
+                onPress={() => router.push('/(tabs)/create')}
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: radii.md,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: radii.lg,
                   backgroundColor: colors.primary,
+                  marginTop: 4,
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
-                  Nudge Workers
+                <PlusCircle size={16} color={colors.textInverse} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textInverse }}>
+                  Post Your First Shift
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
-
-          {/* Shift Card 3: Sun 25 May */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: radii.xl,
-              padding: spacing.md,
-              borderWidth: 1,
-              borderColor: colors.borderMuted,
-              gap: 12,
-            }}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary }} />
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                    Sun 25 May
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-                  Delegate Registration & Badge Desk
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                  NESCO Grand Hall, Goregaon East
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: radii.sm,
-                  backgroundColor: colors.surfaceMuted,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>
-                  24 Applied / 8
-                </Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: colors.surfaceMuted,
-                borderRadius: radii.md,
-                padding: 10,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Clock size={14} color={colors.textPrimary} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  08:30 AM – 05:30 PM IST
-                </Text>
-              </View>
-              <View
-                style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: radii.sm,
-                  backgroundColor: colors.surface,
-                }}
-              >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>
-                  16 New Profiles
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                Daily payout: ₹2,400 / shift
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.push('/(tabs)/roster')}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: radii.md,
-                  backgroundColor: colors.primary,
-                }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
-                  Screen Applicants (24)
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Institutional Escrow & Trust Assurance Note */}

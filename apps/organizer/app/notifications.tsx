@@ -132,7 +132,13 @@ export default function OrganizerNotificationsScreen() {
       <ScreenHeader
         title="Crew Alerts"
         subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Live applications & venue check-ins'}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)' as any);
+          }
+        }}
         rightAction={
           activeTab === 'inbox' && unreadCount > 0 ? (
             <TouchableOpacity

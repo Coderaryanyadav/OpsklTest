@@ -55,7 +55,16 @@ export default function ShiftCheckInScreen() {
   if (!booking) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: spacing.lg }}>
-        <ScreenHeader title="Check-In" onBack={() => router.back()} />
+        <ScreenHeader
+          title="Check-In"
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/my-shifts' as any);
+            }
+          }}
+        />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' }}>
             No Active Booking Found
@@ -75,7 +84,13 @@ export default function ShiftCheckInScreen() {
     <GeofencedCheckInModal
       visible={true}
       booking={booking}
-      onClose={() => router.back()}
+      onClose={() => {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/my-shifts' as any);
+        }
+      }}
       onCheckInSuccess={(updated) => {
         setBooking(updated);
       }}

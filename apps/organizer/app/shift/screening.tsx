@@ -416,7 +416,13 @@ export default function OrganizerApplicantScreeningScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)' as any);
+              }
+            }}
             style={{
               width: touchTarget.min,
               height: touchTarget.min,
@@ -923,8 +929,8 @@ export default function OrganizerApplicantScreeningScreen() {
                         gap: 6,
                       }}
                     >
-                      <Send size={14} color="#FFFFFF" />
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                      <Send size={14} color={colors.textInverse} />
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                         {isProcessing ? 'Dispatching...' : 'Select & Send Offer'}
                       </Text>
                     </TouchableOpacity>
@@ -1096,7 +1102,7 @@ export default function OrganizerApplicantScreeningScreen() {
             backgroundColor: colors.primary,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
             View Roster ➔
           </Text>
         </TouchableOpacity>

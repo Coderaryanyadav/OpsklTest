@@ -365,7 +365,13 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)' as any);
+              }
+            }}
             style={{
               width: touchTarget.min,
               height: touchTarget.min,
@@ -648,16 +654,20 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                 gap: 6,
               }}
             >
-              <QrCode size={16} color="#FFFFFF" />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+              <QrCode size={16} color={colors.textInverse} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                 Launch QR Scanner
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
+                if (workers.length === 0) {
+                  OpsklAlert.alert('No Confirmed Crew', 'There are no confirmed workers for this shift to check in.');
+                  return;
+                }
                 const approaching = workers.find((w) => w.status === 'approaching');
-                setPinWorkerId(approaching?.id || workers[0].id);
+                setPinWorkerId(approaching?.id || workers[0]?.id || '');
                 setPinModalVisible(true);
               }}
               style={{
@@ -850,8 +860,8 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                         gap: 6,
                       }}
                     >
-                      <KeyRound size={14} color="#FFFFFF" />
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                      <KeyRound size={14} color={colors.textInverse} />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>
                         Check-in
                       </Text>
                     </TouchableOpacity>
@@ -957,8 +967,8 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
             gap: 8,
           }}
         >
-          <CheckCircle2 size={18} color="#FFFFFF" />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+          <CheckCircle2 size={18} color={isSignedOff ? '#FFFFFF' : colors.textInverse} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: isSignedOff ? '#FFFFFF' : colors.textInverse }}>
             {signingOff
               ? 'Signing Off Attendance...'
               : isSignedOff
@@ -1010,6 +1020,14 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               Use supervisor token authorization to manually check in worker who arrived through security turnstiles without QR pass.
             </Text>
+
+            {pinWorkerId && (
+              <View style={{ backgroundColor: colors.surfaceMuted, padding: 8, borderRadius: radii.md }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                  Target: {workers.find((w) => w.id === pinWorkerId)?.name || 'Selected Worker'}
+                </Text>
+              </View>
+            )}
 
             <TextInput
               style={{
@@ -1063,7 +1081,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                   backgroundColor: colors.primary,
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                   {submittingPin ? 'Validating...' : 'Authorize Check-In'}
                 </Text>
               </TouchableOpacity>
@@ -1149,7 +1167,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                 marginTop: 6,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                 Save Overtime Allowance
               </Text>
             </TouchableOpacity>

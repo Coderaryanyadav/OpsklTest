@@ -641,7 +641,7 @@ export default function OrganizerCreateShiftScreen() {
                     name: 'Taj Lands End, Bandra',
                     address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
                     landmark: 'Ballroom Foyer',
-                    zone: 'Bandra Kurla Complex (BKC)',
+                    zone: 'Andheri & Western Suburbs',
                     tag: 'Taj Bandra',
                   },
                 ].map((v) => (

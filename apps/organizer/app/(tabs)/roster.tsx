@@ -513,10 +513,10 @@ export default function OrganizerShiftsRosterScreen() {
                     gap: 6,
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                     Review 24 Applicants
                   </Text>
-                  <ArrowRight size={14} color="#FFFFFF" />
+                  <ArrowRight size={14} color={colors.textInverse} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -672,7 +672,7 @@ export default function OrganizerShiftsRosterScreen() {
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                     Track Confirmations
                   </Text>
                 </TouchableOpacity>
@@ -832,7 +832,7 @@ export default function OrganizerShiftsRosterScreen() {
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                     Broadcast Briefing
                   </Text>
                 </TouchableOpacity>
@@ -1057,8 +1057,8 @@ export default function OrganizerShiftsRosterScreen() {
           accessibilityLabel="Create new shift"
           accessibilityRole="button"
         >
-          <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+          <Plus size={20} color={colors.textInverse} strokeWidth={2.5} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textInverse }}>
             Create New Shift
           </Text>
         </TouchableOpacity>

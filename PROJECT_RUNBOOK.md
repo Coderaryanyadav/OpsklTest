@@ -114,9 +114,11 @@ npm run dev:admin               # Start Next.js App at http://localhost:3000
 npm run build:admin             # Production build validation
 
 # 4. Run Test Suites & Quality Checks
-npm test                        # Run all monorepo Jest test suites (165+ tests)
-npm run typecheck               # Validate TypeScript across all workspaces
-npm run lint                    # Check formatting & lint rules
+npm test                        # Run all monorepo Jest test suites (340 tests)
+npm run test:brutal             # Run high-concurrency race condition and boundary tests (17 tests)
+npm run test:sql                # Run live database RPC and migration invariant tests (26 checks)
+npm run typecheck               # Validate TypeScript across all 6 workspaces
+
 ```
 
 ---

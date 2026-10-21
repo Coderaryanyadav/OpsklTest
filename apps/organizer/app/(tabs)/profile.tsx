@@ -605,7 +605,9 @@ export default function OrganizerProfileScreen() {
                       </Text>
                       <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
                         <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
-                          <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>Zone: BKC / Mumbai Hub</Text>
+                          <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>
+                            Zone: {organizerData.billingAddress.includes('BKC') ? 'BKC Hub' : organizerData.billingAddress.includes('Worli') ? 'Worli Hub' : organizerData.billingAddress.includes('Goregaon') ? 'NESCO Hub' : 'Mumbai Region'}
+                          </Text>
                         </View>
                       </View>
                     </View>

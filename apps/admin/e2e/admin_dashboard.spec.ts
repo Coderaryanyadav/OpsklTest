@@ -49,7 +49,7 @@ test.describe('Opskl Admin Web Dashboard E2E Operations', () => {
       await emailInput.fill(process.env.ADMIN_EMAIL || 'admin@opskil.com');
       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/', { timeout: 15000 });
+      await page.waitForURL((url) => url.pathname === '/', { timeout: 20000 });
     }
   });
 

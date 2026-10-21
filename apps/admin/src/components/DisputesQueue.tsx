@@ -240,9 +240,11 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
               {disputes.filter((d) => d.status !== 'resolved' && d.status !== 'dismissed').length} OPEN DISPUTES
             </span>
             <span style={{ color: 'var(--text-secondary)' }}>•</span>
-            <span style={{ fontWeight: 700, color: '#D97706' }}>1 HIGH SEVERITY</span>
+            <span style={{ fontWeight: 700, color: '#D97706' }}>
+              {disputes.filter((d) => d.status === 'under_review').length} UNDER ARBITRATION
+            </span>
             <span style={{ color: 'var(--text-secondary)' }}>•</span>
-            <span style={{ color: 'var(--text-secondary)' }}>28m AVG MTTR (IST)</span>
+            <span style={{ color: 'var(--text-secondary)' }}>ACTIVE ESCROW FREEZE (IST)</span>
           </div>
         </div>
       </div>

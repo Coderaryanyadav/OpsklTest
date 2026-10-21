@@ -15,6 +15,7 @@ import {
   SegmentedControl,
   Divider,
   FormField,
+  InlineBanner,
   OpsklAlert,
 } from '@opskil/design-system';
 import { fetchUserProfile, supabase, classifyAuthError } from '@opskil/shared';
@@ -47,10 +48,22 @@ export default function OrganizerLoginScreen() {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [timerSeconds, setTimerSeconds] = useState(0);
 
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (timerSeconds > 0) {
+      interval = setInterval(() => {
+        setTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerSeconds]);
 
   useEffect(() => {
     const handleUrl = async (url: string) => {
@@ -83,6 +96,12 @@ export default function OrganizerLoginScreen() {
   const handlePostAuthRoute = async (userId: string) => {
     let profile = await fetchUserProfile(userId);
 
+    // If profile was just created by trigger, retry once after 400ms
+    if (!profile) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      profile = await fetchUserProfile(userId);
+    }
+
     if (profile && profile.role === 'worker') {
       try {
         const { data: switchRes } = await supabase.rpc('switch_user_role_safe', {
@@ -99,11 +118,11 @@ export default function OrganizerLoginScreen() {
     }
 
     if (!profile || profile.isActive === false || (profile.role !== 'organizer' && profile.role !== 'admin')) {
-      await supabase.auth.signOut().catch(() => {});
-      OpsklAlert.alert(
-        'Account Setup Required',
+      await supabase.auth.signOut().catch(() => { });
+      setErrorMessage(
         'Unable to verify an active Organizer account for this identity. Please register your organization below.'
       );
+      setMode('signup');
       return;
     }
 
@@ -111,18 +130,19 @@ export default function OrganizerLoginScreen() {
   };
 
   const handleSendOtp = async () => {
+    setErrorMessage(null);
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
-      OpsklAlert.alert('Invalid Email', 'Please enter a valid business email address.');
+      setErrorMessage('Please enter a valid business email address.');
       return;
     }
     setLoading(true);
     try {
       await sendEmailOtp(trimmed, 'organizer');
       setOtpSent(true);
-      OpsklAlert.alert('OTP Sent', `A 6-digit verification code has been dispatched to ${trimmed}. Check your inbox.`);
+      setTimerSeconds(60);
     } catch (err: any) {
-      OpsklAlert.alert('Authentication Status', classifyAuthError(err).message);
+      setErrorMessage(classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
@@ -130,9 +150,10 @@ export default function OrganizerLoginScreen() {
 
   const handleVerifyOtp = async () => {
     if (loading) return;
+    setErrorMessage(null);
     const cleanOtp = otp.replace(/\D/g, '').trim();
     if (cleanOtp.length !== 6) {
-      OpsklAlert.alert('Invalid Code', 'Please enter the complete 6-digit code.');
+      setErrorMessage('Please enter the complete 6-digit verification code.');
       return;
     }
     setLoading(true);
@@ -141,19 +162,24 @@ export default function OrganizerLoginScreen() {
       if (res?.session) {
         await handlePostAuthRoute(res.session.user.id);
       } else {
-        OpsklAlert.alert('Verification Pending', 'No session was returned by the auth service.');
+        setErrorMessage('No session was returned by the auth service. Please try again.');
       }
     } catch (err: any) {
-      OpsklAlert.alert('Verification Failed', classifyAuthError(err).message);
+      setErrorMessage(classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePasswordSignIn = async () => {
+    setErrorMessage(null);
     const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !password) {
-      OpsklAlert.alert('Missing Fields', 'Please enter both your business email and password.');
+    if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
+      setErrorMessage('Please enter a valid business email address.');
+      return;
+    }
+    if (!password) {
+      setErrorMessage('Please enter your password.');
       return;
     }
     setLoading(true);
@@ -163,31 +189,35 @@ export default function OrganizerLoginScreen() {
         await handlePostAuthRoute(res.session.user.id);
       }
     } catch (err: any) {
-      OpsklAlert.alert('Sign-In Failed', classifyAuthError(err).message);
+      setErrorMessage(classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignUp = async () => {
+    setErrorMessage(null);
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedOrg = businessName.trim();
-    const cleanPhone = phone.replace(/\D/g, '');
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) {
+      cleanPhone = cleanPhone.slice(2);
+    }
 
     if (!trimmedOrg || trimmedOrg.length < 2) {
-      OpsklAlert.alert('Organization Name Required', 'Please enter your organization or agency name.');
+      setErrorMessage('Please enter your organization or agency name.');
       return;
     }
-    if (cleanPhone.length < 10) {
-      OpsklAlert.alert('Valid Phone Required', 'Please enter a 10-digit business contact number.');
+    if (cleanPhone.length !== 10 || !/^[6-9]/.test(cleanPhone)) {
+      setErrorMessage('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
       return;
     }
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      OpsklAlert.alert('Valid Email Required', 'Please enter a valid business email address.');
+    if (!trimmedEmail || !trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+      setErrorMessage('Please enter a valid business email address.');
       return;
     }
     if (password.length < 6) {
-      OpsklAlert.alert('Weak Password', 'Password must be at least 6 characters.');
+      setErrorMessage('Password must be at least 6 characters.');
       return;
     }
 
@@ -221,7 +251,7 @@ export default function OrganizerLoginScreen() {
         );
       }
     } catch (err: any) {
-      OpsklAlert.alert('Registration Failed', err?.message || 'Unable to register organizer account.');
+      setErrorMessage(err?.message || 'Unable to register organizer account.');
     } finally {
       setLoading(false);
     }
@@ -287,7 +317,16 @@ export default function OrganizerLoginScreen() {
     <Screen edges={['top', 'bottom']}>
       <ScreenHeader
         title={mode === 'signin' ? 'Organizer Sign In' : 'Register Organization'}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (otpSent) {
+            setOtpSent(false);
+            setOtp('');
+          } else if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/welcome' as any);
+          }
+        }}
       />
 
       <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, paddingBottom: 60 }}>
@@ -300,9 +339,20 @@ export default function OrganizerLoginScreen() {
           onChange={(v) => {
             setMode(v);
             setOtpSent(false);
+            setOtp('');
+            setErrorMessage(null);
           }}
           style={{ marginBottom: spacing.lg }}
         />
+
+        {errorMessage && (
+          <InlineBanner
+            variant="error"
+            title="Authentication Error"
+            message={errorMessage}
+            style={{ marginBottom: spacing.md }}
+          />
+        )}
 
         <TouchableOpacity
           onPress={handleGoogleSignIn}
@@ -325,15 +375,15 @@ export default function OrganizerLoginScreen() {
         >
           <View
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: 11,
-              backgroundColor: colors.primary,
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              backgroundColor: '#4285F4',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: colors.textInverse, fontWeight: '900', fontSize: 13 }}>G</Text>
+            <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 13 }}>G</Text>
           </View>
           <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
             Continue with Google
@@ -350,14 +400,20 @@ export default function OrganizerLoginScreen() {
                 { value: 'password', label: 'Password' },
               ]}
               value={signInMethod}
-              onChange={setSignInMethod}
+              onChange={(m) => {
+                setSignInMethod(m);
+                setErrorMessage(null);
+              }}
               style={{ marginBottom: spacing.md }}
             />
 
             <Input
               label="Business Email Address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errorMessage) setErrorMessage(null);
+              }}
               placeholder="organizer@agency.com"
               keyboardType="email-address"
               autoComplete="email"
@@ -379,7 +435,14 @@ export default function OrganizerLoginScreen() {
               ) : (
                 <>
                   <FormField label="Enter 6-Digit OTP" helperText={`Code sent to ${email.trim().toLowerCase()}`}>
-                    <OtpInput value={otp} onChange={setOtp} autoFocus />
+                    <OtpInput
+                      value={otp}
+                      onChange={(code) => {
+                        setOtp(code);
+                        if (errorMessage) setErrorMessage(null);
+                      }}
+                      autoFocus
+                    />
                   </FormField>
                   <Button
                     title="Verify OTP & Open Workspace"
@@ -391,10 +454,10 @@ export default function OrganizerLoginScreen() {
                   />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button
-                      title="Resend Code"
+                      title={timerSeconds > 0 ? `Resend in ${timerSeconds}s` : 'Resend Code'}
                       variant="ghost"
                       size="sm"
-                      disabled={loading}
+                      disabled={loading || timerSeconds > 0}
                       onPress={handleSendOtp}
                     />
                     <Button
@@ -405,6 +468,7 @@ export default function OrganizerLoginScreen() {
                       onPress={() => {
                         setOtpSent(false);
                         setOtp('');
+                        setErrorMessage(null);
                       }}
                     />
                   </View>
@@ -415,7 +479,10 @@ export default function OrganizerLoginScreen() {
                 <PasswordInput
                   label="Password"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errorMessage) setErrorMessage(null);
+                  }}
                   placeholder="Enter secure password"
                   autoComplete="password"
                   textContentType="password"
@@ -440,6 +507,7 @@ export default function OrganizerLoginScreen() {
                   <TouchableOpacity
                     onPress={() => {
                       setResetEmail(email);
+                      setErrorMessage(null);
                       setShowForgotModal(true);
                     }}
                     accessibilityRole="button"
@@ -471,14 +539,20 @@ export default function OrganizerLoginScreen() {
             <Input
               label="Organization / Agency Name"
               value={businessName}
-              onChangeText={setBusinessName}
+              onChangeText={(text) => {
+                setBusinessName(text);
+                if (errorMessage) setErrorMessage(null);
+              }}
               placeholder="e.g. Apex Events & Media"
             />
 
             <Input
               label="Business Contact Number"
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(text) => {
+                setPhone(text);
+                if (errorMessage) setErrorMessage(null);
+              }}
               placeholder="9820098200"
               keyboardType="phone-pad"
               autoComplete="tel"
@@ -488,7 +562,10 @@ export default function OrganizerLoginScreen() {
             <Input
               label="Business Email Address"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errorMessage) setErrorMessage(null);
+              }}
               placeholder="contact@apexevents.in"
               keyboardType="email-address"
               autoComplete="email"
@@ -499,7 +576,10 @@ export default function OrganizerLoginScreen() {
             <PasswordInput
               label="Create Master Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errorMessage) setErrorMessage(null);
+              }}
               placeholder="Min. 6 characters"
               autoComplete="new-password"
               textContentType="newPassword"

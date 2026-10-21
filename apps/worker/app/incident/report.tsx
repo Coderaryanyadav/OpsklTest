@@ -252,7 +252,13 @@ export default function IncidentReportScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)' as any);
+            }
+          }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={{

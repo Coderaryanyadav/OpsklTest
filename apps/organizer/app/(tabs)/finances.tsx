@@ -592,8 +592,8 @@ export default function OrganizerFinancesScreen() {
                   gap: 6,
                 }}
               >
-                <FileCheck size={14} color="#FFFFFF" />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                <FileCheck size={14} color={colors.textInverse} />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textInverse }}>
                   Sign-Off & Release
                 </Text>
               </TouchableOpacity>

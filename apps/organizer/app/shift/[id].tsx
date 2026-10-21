@@ -225,7 +225,16 @@ export default function OrganizerShiftDetailScreen() {
   if (error || !job) {
     return (
       <Screen edges={['top', 'bottom']}>
-        <ScreenHeader title="Shift Console" onBack={() => router.back()} />
+        <ScreenHeader
+          title="Shift Console"
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)' as any);
+            }
+          }}
+        />
         <View style={{ flex: 1, padding: spacing.xl }}>
           <ErrorRetry
             variant="block"
@@ -238,7 +247,13 @@ export default function OrganizerShiftDetailScreen() {
             title="Return to Dashboard"
             variant="outline"
             size="md"
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)' as any);
+              }
+            }}
             style={{ marginTop: spacing.md }}
           />
         </View>
@@ -450,7 +465,13 @@ export default function OrganizerShiftDetailScreen() {
         title="Live Shift Console"
         subtitle={activeJob.title}
         largeTitle
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)' as any);
+          }
+        }}
         rightAction={
           <StatusIndicator label={`${activeJob.durationHours}h shift`} tone="neutral" size="sm" />
         }

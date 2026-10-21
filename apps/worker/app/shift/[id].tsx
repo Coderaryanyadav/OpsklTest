@@ -226,7 +226,16 @@ export default function WorkerShiftDetailScreen() {
   if (error || !shift) {
     return (
       <Screen edges={['top', 'bottom']}>
-        <ScreenHeader title="Shift Details" onBack={() => router.back()} />
+        <ScreenHeader
+          title="Shift Details"
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)' as any);
+            }
+          }}
+        />
         <View style={{ flex: 1, justifyContent: 'center', padding: spacing.xl }}>
           {error && error !== 'Shift not found or has been concluded.' ? (
             <ErrorRetry
@@ -240,7 +249,13 @@ export default function WorkerShiftDetailScreen() {
               title="Shift Unavailable"
               description={error || 'This shift is no longer open for new applications or does not exist.'}
               actionLabel="Return to Discovery"
-              onAction={() => router.back()}
+              onAction={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)' as any);
+                }
+              }}
             />
           )}
         </View>
@@ -282,7 +297,13 @@ export default function WorkerShiftDetailScreen() {
       <Screen edges={['top', 'bottom']}>
         <ScreenHeader
           title="Confirmed Shift Detail & Day Of Briefing"
-          onBack={() => router.back()}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/my-shifts' as any);
+            }
+          }}
           rightAction={
             <StatusIndicator label="Confirmed on Roster" tone="success" />
           }
@@ -928,7 +949,13 @@ export default function WorkerShiftDetailScreen() {
       <ScreenHeader
         title={shift.title}
         subtitle={`${shift.category.toUpperCase()} • ${shift.zone}`}
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)' as any);
+          }
+        }}
         rightAction={
           applied ? (
             <StatusIndicator label="Application submitted" tone="warning" />

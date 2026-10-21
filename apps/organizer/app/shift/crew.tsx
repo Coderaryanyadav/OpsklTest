@@ -366,7 +366,13 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)' as any);
+              }
+            }}
             style={{
               width: touchTarget.min,
               height: touchTarget.min,
@@ -542,8 +548,8 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
               gap: 8,
             }}
           >
-            <Radio size={16} color="#FFFFFF" />
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+            <Radio size={16} color={colors.textInverse} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textInverse }}>
               {dispatchingBriefing ? 'Broadcasting...' : briefingDispatched ? 'Re-broadcast Digital Briefing' : 'Broadcast Digital Briefing'}
             </Text>
           </TouchableOpacity>
@@ -684,7 +690,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textInverse }}>
                       {member.name.split(' ').map((n) => n[0]).join('')}
                     </Text>
                   </View>
@@ -949,8 +955,8 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
             gap: 6,
           }}
         >
-          <PhoneCall size={16} color="#FFFFFF" />
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+          <PhoneCall size={16} color={colors.textInverse} />
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
             Staff Call Bridge
           </Text>
         </TouchableOpacity>
@@ -1065,7 +1071,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                   backgroundColor: colors.primary,
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textInverse }}>
                   {processingReplacement ? 'Replacing...' : 'Confirm Replacement'}
                 </Text>
               </TouchableOpacity>
