@@ -43,12 +43,18 @@ const connectionString = process.env.DATABASE_URL || process.argv[2];
 async function run() {
   console.log('\x1b[36m[OPSKL SQL INTEGRATION & LOGIC HARDENING TEST SUITE - PHASE 2]\x1b[0m');
 
-  const launchSql = fs.readFileSync(launchMigrationPath, 'utf8');
-  const hardeningSql = fs.readFileSync(hardeningMigrationPath, 'utf8');
-  const adminGuardSql = fs.readFileSync(adminGuardMigrationPath, 'utf8');
-  const phase2Sql = fs.readFileSync(phase2MigrationPath, 'utf8');
-  const remediationSql = fs.readFileSync(remediationMigrationPath, 'utf8');
-  const combinedSql = `${launchSql}\n${hardeningSql}\n${adminGuardSql}\n${phase2Sql}\n${remediationSql}`;
+  const migrationsDir = path.join(rootDir, 'supabase', 'migrations');
+  const allMigrationFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
+  const allMigrationsMap = new Map();
+  for (const f of allMigrationFiles) {
+    allMigrationsMap.set(f, fs.readFileSync(path.join(migrationsDir, f), 'utf8'));
+  }
+  const combinedSql = Array.from(allMigrationsMap.values()).join('\n');
+  const launchSql = allMigrationsMap.get('20261015000000_launch_fixes.sql') || '';
+  const hardeningSql = allMigrationsMap.get('20261016000000_security_privacy_coordinate_hardening.sql') || '';
+  const adminGuardSql = allMigrationsMap.get('20261017000000_safe_admin_role_escalation_guard.sql') || '';
+  const phase2Sql = allMigrationsMap.get('20261017000001_shift_creation_and_rpc_hardening.sql') || '';
+  const remediationSql = allMigrationsMap.get('20261021000004_security_audit_remediation_p0_p1.sql') || '';
 
   // Verify critical invariants across migrations
   const checks = [
@@ -70,7 +76,7 @@ async function run() {
     },
     {
       name: '1.3 CSPRNG booking code replaced gen_random_bytes',
-      test: () => combinedSql.includes("upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))") && !combinedSql.includes('gen_random_bytes'),
+      test: () => launchSql.includes("upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))") && !launchSql.includes('gen_random_bytes'),
     },
     {
       name: '1.4 public_jobs view shielding supervisor contact created',
@@ -250,6 +256,38 @@ async function run() {
         throw new Error(`Missing expected RPC functions in Postgres: ${missingFuncs.join(', ')}`);
       }
       console.log(`\x1b[32m✓ Verified all ${expectedFunctions.length} core security and lifecycle RPC functions compiled in Postgres.\x1b[0m`);
+
+      // 1.1 Assert final effective definition of is_current_admin in pg_proc enforces is_active = true
+      const { rows: adminProcRows } = await client.query(`
+        SELECT pg_get_functiondef(p.oid) AS def
+        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = 'is_current_admin';
+      `);
+      if (!adminProcRows[0]?.def.includes('is_active = true')) {
+        throw new Error('SECURITY VIOLATION: Final compiled is_current_admin() does NOT check is_active = true!');
+      }
+      console.log('\x1b[32m✓ Verified final compiled is_current_admin() in PostgreSQL catalog enforces is_active = true.\x1b[0m');
+
+      // 1.2 Assert register_organizer_direct_safe is dropped from database catalog
+      const { rows: backdoorRows } = await client.query(`
+        SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = 'register_organizer_direct_safe';
+      `);
+      if (backdoorRows.length > 0) {
+        throw new Error('SECURITY VIOLATION: register_organizer_direct_safe is still present in database catalog!');
+      }
+      console.log('\x1b[32m✓ Verified register_organizer_direct_safe is completely absent from PostgreSQL catalog.\x1b[0m');
+
+      // 1.3 Assert worker_confirm_selection_safe checks OFFER_EXPIRED and SCHEDULE_CONFLICT
+      const { rows: confirmProcRows } = await client.query(`
+        SELECT pg_get_functiondef(p.oid) AS def
+        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = 'worker_confirm_selection_safe';
+      `);
+      if (!confirmProcRows[0]?.def.includes('OFFER_EXPIRED') || !confirmProcRows[0]?.def.includes('SCHEDULE_CONFLICT')) {
+        throw new Error('SECURITY VIOLATION: Final compiled worker_confirm_selection_safe() lacks offer expiry or schedule conflict guards!');
+      }
+      console.log('\x1b[32m✓ Verified final compiled worker_confirm_selection_safe() enforces 3h expiry and schedule conflict guards.\x1b[0m');
 
       // 2. Assert that public_jobs view shields supervisor contact info
       const { rows: publicJobCols } = await client.query(`

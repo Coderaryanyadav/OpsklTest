@@ -94,11 +94,36 @@ async function run() {
     let { rows: appliedRows } = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
 
     // If _opskil_migrations is newly created on an existing initialized database,
-    // backfill baseline migration history for migrations that were already applied.
+    // backfill baseline migration history ONLY when explicitly authorized and verified against schema fingerprint.
     if (appliedRows.length === 0) {
       const { rows: tableCheck } = await client.query("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles';");
       if (tableCheck.length > 0) {
-        console.log('Detected existing initialized database schema. Reconciling baseline migration history...');
+        if (process.env.ALLOW_BASELINE_RECONCILIATION !== 'true') {
+          console.error('\x1b[31m[ERROR] Detected pre-existing tables without migration ledger.\x1b[0m');
+          console.error('To reconcile historical migrations against an existing initialized database, you must:');
+          console.error('1. Independently prove the schema matches baseline release specifications.');
+          console.error('2. Explicitly provide: ALLOW_BASELINE_RECONCILIATION=true');
+          console.error('Failing closed to prevent unverified migration history insertion.\n');
+          process.exit(1);
+        }
+
+        // Schema Fingerprint Verification: Verify all core entities exist
+        const requiredEntities = [
+          'profiles', 'worker_profiles', 'organizer_profiles', 'jobs', 
+          'bookings', 'attendance_records', 'payment_records', 'organizer_invoices', 'disputes'
+        ];
+        const { rows: foundTables } = await client.query(
+          "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = ANY($1);",
+          [requiredEntities]
+        );
+        const foundSet = new Set(foundTables.map((r) => r.table_name));
+        const missing = requiredEntities.filter((t) => !foundSet.has(t));
+        if (missing.length > 0) {
+          console.error(`\x1b[31m[FINGERPRINT MISMATCH] Schema equivalence check failed. Missing baseline tables: ${missing.join(', ')}\x1b[0m`);
+          process.exit(1);
+        }
+
+        console.log('Schema fingerprint verified. Authorized baseline reconciliation in progress...');
         const migrationFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
         for (const f of migrationFiles) {
           if (f < '20261017000000') {
@@ -109,7 +134,7 @@ async function run() {
         }
         const refreshed = await client.query('SELECT filename, checksum FROM _opskil_migrations;');
         appliedRows = refreshed.rows;
-        console.log(`\x1b[32m✓ Reconciled ${appliedRows.length} baseline migration records in _opskil_migrations.\x1b[0m\n`);
+        console.log(`\x1b[32m✓ Reconciled ${appliedRows.length} verified baseline migration records in _opskil_migrations.\x1b[0m\n`);
       }
     }
 

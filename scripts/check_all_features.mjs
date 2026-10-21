@@ -183,12 +183,19 @@ async function main() {
     }
   });
 
-  // STEP 10: Email OTP Diagnostic Check
+  // STEP 10: Email OTP Diagnostic Check (Opt-In to avoid consuming external rate limits)
   await runAsyncStep('Email OTP Dispatch & Rate-Limit Diagnostics', async () => {
+    const isOptedIn = process.env.TEST_LIVE_OTP === 'true' || process.argv.includes('--live-otp');
+    if (!isOptedIn) {
+      logPass('Live external email OTP dispatch skipped by default (pure read-only safety mode). Pass --live-otp or TEST_LIVE_OTP=true to probe external SMTP.');
+      return;
+    }
+
     const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
     const supabase = createClient(url, anonKey);
     
+    console.log('\n  [EXTERNAL PROBE] Contacting Supabase GoTrue Auth service for OTP endpoint validation...');
     // We attempt a simulated OTP send to inspect GoTrue response
     const res = await supabase.auth.signInWithOtp({
       email: 'opskil_health_audit_test@opskil.com',

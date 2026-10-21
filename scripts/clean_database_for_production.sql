@@ -1,24 +1,39 @@
 -- ======================================================================
--- OPSKL DATABASE CLEANUP SCRIPT (HARDENED)
--- Cleans all demo / test data and preserves only the Administrator
+-- OPSKL DATABASE CLEANUP SCRIPT (DISPOSABLE TESTING SANDBOX ONLY)
 --
--- SAFETY INVARIANT:
--- To execute this destructive script, you MUST explicitly execute:
+-- CRITICAL WARNING:
+-- This script permanently deletes marketplace operational data and test accounts.
+-- It is designed EXCLUSIVELY for disposable ephemeral testing sandboxes.
+-- It MUST NEVER be executed against production or shared staging databases.
+--
+-- STRICT SAFETY INVARIANTS:
+-- To execute this script on a disposable test database, you must explicitly set:
+--   SET opskil.target_env = 'disposable_local_sandbox';
 --   SET opskil.confirm_destructive_clean = 'I_UNDERSTAND_THIS_DELETES_ALL_DATA';
--- Otherwise the script will abort immediately without modifying any tables.
+-- Without BOTH settings, the script aborts immediately without touching any table.
 -- ======================================================================
 
 BEGIN;
 
--- 1. Explicit destructive action confirmation guard
+-- 1. Explicit destructive action confirmation & disposable target allowlist guard
 DO $$
+DECLARE
+  v_db TEXT := current_database();
+  v_env TEXT := current_setting('opskil.target_env', true);
+  v_confirm TEXT := current_setting('opskil.confirm_destructive_clean', true);
 BEGIN
-  IF current_setting('opskil.confirm_destructive_clean', true) IS DISTINCT FROM 'I_UNDERSTAND_THIS_DELETES_ALL_DATA' THEN
-    RAISE EXCEPTION 'DESTRUCTIVE CLEAN BLOCKED: scripts/clean_database_for_production.sql drops all operational data. To run this script, you must first execute: SET opskil.confirm_destructive_clean = ''I_UNDERSTAND_THIS_DELETES_ALL_DATA'';';
+  -- Multi-step explicit environment declaration
+  IF v_env IS DISTINCT FROM 'disposable_local_sandbox' THEN
+    RAISE EXCEPTION 'FATAL: scripts/clean_database_for_production.sql is prohibited on non-disposable environments. opskil.target_env must be set to ''disposable_local_sandbox''. (Current target DB: %)', v_db;
   END IF;
 
-  IF current_database() IN ('production', 'opskil_production') AND current_setting('opskil.allow_production_clean', true) IS DISTINCT FROM 'true' THEN
-    RAISE EXCEPTION 'DESTRUCTIVE ACTION BLOCKED: Target database "%" is marked as production. Explicit override is required: SET opskil.allow_production_clean = ''true'';', current_database();
+  IF v_confirm IS DISTINCT FROM 'I_UNDERSTAND_THIS_DELETES_ALL_DATA' THEN
+    RAISE EXCEPTION 'DESTRUCTIVE CLEAN BLOCKED: Explicit confirmation required: SET opskil.confirm_destructive_clean = ''I_UNDERSTAND_THIS_DELETES_ALL_DATA'';';
+  END IF;
+
+  -- Block any database name indicating live, production, or client deployment
+  IF v_db ~* 'prod|production|live|opskil_main|client' THEN
+    RAISE EXCEPTION 'CRITICAL ACTION BLOCKED: Database name "%" indicates a production/live deployment. Automated cleanup is permanently forbidden on production.', v_db;
   END IF;
 END $$;
 
