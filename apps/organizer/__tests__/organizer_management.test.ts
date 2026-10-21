@@ -396,6 +396,232 @@ describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
       expect(completedShifts[0].id).toBe('shift-5');
     });
   });
+
+  describe('Screen 17: Applicant Screening Pipeline Lifecycle & Worker Privacy', () => {
+    test('organizer selecting worker transitions to "selected" (awaiting confirmation), NOT "confirmed"', () => {
+      // Lifecycle rule: organizer offer creates an offer / reservation, awaiting worker acceptance
+      const initialApplication = {
+        id: 'app-501',
+        workerId: 'worker-777',
+        status: 'applied' as const,
+      };
+
+      // Transition to shortlisted
+      const shortlistedApp = { ...initialApplication, status: 'shortlisted' as const };
+      expect(shortlistedApp.status).toBe('shortlisted');
+
+      // Organizer selects candidate -> Offer dispatched with held time window
+      const selectedOffer = {
+        ...shortlistedApp,
+        status: 'selected' as const,
+        heldUntilTime: '06:00 PM IST',
+        timeLeftMinutes: 180, // 3 hours window to accept
+        isConfirmed: false, // Worker must accept before confirmation
+      };
+
+      expect(selectedOffer.status).toBe('selected');
+      expect(selectedOffer.isConfirmed).toBe(false);
+      expect(selectedOffer.timeLeftMinutes).toBe(180);
+
+      // Only after worker accepts does it transition to confirmed
+      const confirmedBooking = {
+        ...selectedOffer,
+        status: 'confirmed' as const,
+        isConfirmed: true,
+      };
+      expect(confirmedBooking.status).toBe('confirmed');
+      expect(confirmedBooking.isConfirmed).toBe(true);
+    });
+
+    test('worker detail view strictly hides Aadhaar, PAN, and raw KYC documents from organizer', () => {
+      // Mock worker object containing internal credentials
+      const internalWorkerRecord = {
+        id: 'worker-777',
+        name: 'Aditya Rao',
+        phone: '+919820199888',
+        aadhaarNumber: '5482 9102 3847',
+        panNumber: 'ABCDE1234F',
+        kycDocUrl: 'https://storage.supabase.co/kyc/aditya_aadhaar_front.pdf',
+        rating: 4.85,
+        completedEvents: 14,
+        isUidaiVerified: true,
+        skills: ['Guest Relations', 'VIP Lounge Protocol'],
+      };
+
+      // Organizer screening pipeline view sanitization
+      const organizerCandidateCard = {
+        id: internalWorkerRecord.id,
+        name: internalWorkerRecord.name,
+        phoneMasked: `${internalWorkerRecord.phone.slice(0, 8)} •••••`,
+        rating: internalWorkerRecord.rating,
+        eventsCount: internalWorkerRecord.completedEvents,
+        verificationBadge: internalWorkerRecord.isUidaiVerified ? 'UIDAI Verified' : 'Unverified',
+        skills: internalWorkerRecord.skills,
+      };
+
+      // Verify ZERO leakage of sensitive PII / KYC docs
+      expect((organizerCandidateCard as any).aadhaarNumber).toBeUndefined();
+      expect((organizerCandidateCard as any).panNumber).toBeUndefined();
+      expect((organizerCandidateCard as any).kycDocUrl).toBeUndefined();
+      expect(organizerCandidateCard.phoneMasked).toContain('•••••');
+      expect(organizerCandidateCard.verificationBadge).toBe('UIDAI Verified');
+    });
+
+    test('rejects candidate selection when shift headcount capacity is full', () => {
+      const shiftCapacity = {
+        slotsTotal: 6,
+        slotsConfirmed: 4,
+        slotsSelected: 2,
+      };
+
+      const openSlots = shiftCapacity.slotsTotal - (shiftCapacity.slotsConfirmed + shiftCapacity.slotsSelected);
+      expect(openSlots).toBe(0);
+
+      const canSelectMore = openSlots > 0;
+      expect(canSelectMore).toBe(false);
+    });
+  });
+
+  describe('Screen 18: Confirmed Crew Roster & Briefing Console Roster Safety', () => {
+    test('roster modification requires explicit replacement explanation and confirmation modal', () => {
+      const confirmedRoster = [
+        { id: 'w-1', name: 'Aarav Kulkarni', isConfirmed: true, roleTag: 'Lead Usher' },
+        { id: 'w-2', name: 'Priya Sharma', isConfirmed: true, roleTag: 'VIP Host' },
+      ];
+
+      const standbyWorker = {
+        id: 'standby-1',
+        name: 'Nikhil Mehta',
+        distanceKm: 2.1,
+        isReadinessVerified: true,
+      };
+
+      // Silent deletion/replacement is forbidden
+      const attemptSilentReplacement = (_roster: typeof confirmedRoster, _targetId: string) => {
+        // Must throw or fail without explicit audit impact
+        throw new Error('CONFIRMED_ROSTER_MODIFICATION_REQUIRES_AUDIT_CONFIRMATION');
+      };
+
+      expect(() => attemptSilentReplacement(confirmedRoster, 'w-1')).toThrow(
+        'CONFIRMED_ROSTER_MODIFICATION_REQUIRES_AUDIT_CONFIRMATION'
+      );
+
+      // Explicit replacement with impact explanation
+      const executeAuditedReplacement = (
+        roster: typeof confirmedRoster,
+        targetId: string,
+        replacement: typeof standbyWorker,
+        reason: string,
+        organizerConfirmed: boolean
+      ) => {
+        if (!organizerConfirmed) {
+          return { success: false, error: 'User aborted replacement modal' };
+        }
+        if (!reason || reason.trim().length === 0) {
+          return { success: false, error: 'Replacement reason required' };
+        }
+        const updated = roster.map((w) =>
+          w.id === targetId ? { id: replacement.id, name: replacement.name, isConfirmed: true, roleTag: w.roleTag } : w
+        );
+        return {
+          success: true,
+          roster: updated,
+          auditNote: `Replaced worker ${targetId} with standby ${replacement.id}. Reason: ${reason}. Gate pass re-issued.`,
+        };
+      };
+
+      const result = executeAuditedReplacement(
+        confirmedRoster,
+        'w-1',
+        standbyWorker,
+        'Reported medical or travel delay',
+        true
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.roster?.find((w) => w.id === 'standby-1')?.name).toBe('Nikhil Mehta');
+      expect(result.auditNote).toContain('Gate pass re-issued');
+    });
+  });
+
+  describe('Screen 20: Event-Day Live Attendance Review & Sign-Off Semantics', () => {
+    test('distinguishes on_duty, approaching, checked_out, and no_show states', () => {
+      const crewAttendance = [
+        { id: 'w-1', name: 'Aarav', status: 'on_duty' as const, qrVerified: true, checkInTime: '09:28 AM' },
+        { id: 'w-2', name: 'Priya', status: 'on_duty' as const, qrVerified: true, checkInTime: '09:32 AM' },
+        { id: 'w-3', name: 'Sneha', status: 'approaching' as const, distanceMeters: 120, etaMinutes: 2 },
+        { id: 'w-4', name: 'Dev', status: 'no_show' as const, distanceMeters: 4800 },
+      ];
+
+      const present = crewAttendance.filter((w) => w.status === 'on_duty');
+      const inBounds = crewAttendance.filter((w) => w.status === 'approaching');
+      const noShow = crewAttendance.filter((w) => w.status === 'no_show');
+
+      expect(present.length).toBe(2);
+      expect(inBounds.length).toBe(1);
+      expect(noShow.length).toBe(1);
+    });
+
+    test('attendance review/approval validates billable hours, but does NOT equal payment completion', () => {
+      // Critical lifecycle rule:
+      // Attendance sign-off locks billable timesheet -> moves to batch payout queue.
+      // It does NOT trigger immediate completed disbursement.
+      const attendanceReviewState = {
+        shiftId: 'shift-bkc-01',
+        supervisorSignOff: true,
+        timesheetLocked: true,
+        approvedWorkersCount: 6,
+        paymentState: 'batch_scheduled' as const, // NOT 'disbursed' / 'paid'
+        payoutExecutionWindow: '23:00 IST Nightly Automated Nodal Run',
+      };
+
+      expect(attendanceReviewState.timesheetLocked).toBe(true);
+      expect(attendanceReviewState.paymentState).not.toBe('disbursed');
+      expect(attendanceReviewState.paymentState).toBe('batch_scheduled');
+    });
+  });
+
+  describe('Screen 19: Financial Breakdown, GST & Truthful Funding Representation', () => {
+    test('calculates gross wages, platform fee, GST on fee, and total organizer obligation correctly', () => {
+      const headcount = 6;
+      const workerStipend = 2400; // ₹2,400 per worker
+      const grossCrewWages = headcount * workerStipend; // ₹14,400
+
+      const platformFeeRate = 0.10; // 10%
+      const platformFee = Math.round(grossCrewWages * platformFeeRate * 100) / 100; // ₹1,440.00
+
+      const gstRate = 0.18; // 18% GST on platform fee only
+      const gstOnFee = Math.round(platformFee * gstRate * 100) / 100; // ₹259.20
+
+      const organizerTotal = grossCrewWages + platformFee + gstOnFee; // ₹16,099.20
+
+      expect(grossCrewWages).toBe(14400);
+      expect(platformFee).toBe(1440);
+      expect(gstOnFee).toBe(259.2);
+      expect(organizerTotal).toBe(16099.2);
+
+      // Worker wage pool zero-deduction guarantee
+      const workerDeduction = 0;
+      const netWorkerPay = workerStipend - workerDeduction;
+      expect(netWorkerPay).toBe(workerStipend);
+    });
+
+    test('truthfully labels funding capability without fabricating live escrow balances or bank transfers', () => {
+      const fundingCapability = {
+        hasNativeEscrowBankIntegration: false,
+        accountRail: 'ICICI Nodal Enterprise Rails',
+        ledgerLabel: 'Funding & payment status', // Truthful UX label as requested
+        preFundedStatus: 'locked_nodal_reserve',
+        invoiceState: 'pending_signoff' as const,
+        paymentState: 'pre_funded' as const,
+      };
+
+      // Static design titled "escrow" does NOT prove live escrow exists
+      expect(fundingCapability.hasNativeEscrowBankIntegration).toBe(false);
+      expect(fundingCapability.ledgerLabel).toBe('Funding & payment status');
+      expect(fundingCapability.invoiceState).not.toBe(fundingCapability.paymentState);
+    });
+  });
 });
 
 

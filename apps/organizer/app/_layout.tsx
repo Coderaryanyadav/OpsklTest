@@ -166,6 +166,27 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen
+          name="shift/screening"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="shift/crew"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="shift/attendance"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
           name="notifications"
           options={{
             headerShown: false,

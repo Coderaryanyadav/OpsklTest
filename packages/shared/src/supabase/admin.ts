@@ -144,6 +144,10 @@ export async function resolveVerificationCaseSafe(
 ): Promise<{ success: boolean; error?: string }> {
   logger.info('Resolving verification case', { caseId, status });
 
+  if (status === 'rejected' && (!rejectionReason || rejectionReason.trim().length < 5)) {
+    return { success: false, error: 'Rejection reason must be at least 5 characters' };
+  }
+
   try {
     const { data, error } = await getClient().rpc('admin_verify_case_safe', {
       p_case_id: caseId,
@@ -264,6 +268,10 @@ export async function resolveDisputeSafe(
   adminId?: string
 ): Promise<{ success: boolean; error?: string }> {
   logger.info('Resolving dispute', { disputeId, status, adjustedPayout });
+
+  if (!resolutionNotes || resolutionNotes.trim().length === 0) {
+    return { success: false, error: 'Documented case notes and investigation rationale are required' };
+  }
 
   try {
     const { data, error } = await getClient().rpc('admin_resolve_dispute_safe', {

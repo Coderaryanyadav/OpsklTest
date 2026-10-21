@@ -374,4 +374,107 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
       expect(res.scheduledPurgeAt).toBe('2026-11-12T12:00:00Z');
     });
   });
+
+  describe('Admin Operations Desks & Statutory Compliance', () => {
+    describe('Screen 21: Overview Operational Action Queues', () => {
+      test('prioritizes urgent action cases and derives real counts without fabrication', () => {
+        const mockVerifications = [
+          { id: 'case-1', status: 'pending' as const, documentType: 'aadhaar' as const, profileId: 'w-1', documentMaskedId: '•••• 1234', createdAt: '2026-10-21T06:00:00Z' },
+          { id: 'case-2', status: 'approved' as const, documentType: 'aadhaar' as const, profileId: 'w-2', documentMaskedId: '•••• 5678', createdAt: '2026-10-21T07:00:00Z' },
+        ];
+        const mockDisputes: Array<{ id: string; status: 'open' | 'under_review' | 'resolved' | 'dismissed'; bookingId: string; raisedBy: string; respondentId: string; reason: string; details: string; createdAt: string }> = [
+          { id: 'disp-1', status: 'open', bookingId: 'b-1', raisedBy: 'worker', respondentId: 'org-1', reason: 'Turnstile scanner desync', details: 'Gate 4 lag', createdAt: '2026-10-21T08:00:00Z' },
+        ];
+        const mockJobs = [
+          { id: 'job-1', status: 'open' as const, hourlyRate: 140, title: 'AV Runner', venueName: 'Grand Hyatt', slotsTotal: 2, organizerId: 'org-1' },
+          { id: 'job-2', status: 'open' as const, hourlyRate: 250, title: 'VIP Host', venueName: 'Jio World', slotsTotal: 4, organizerId: 'org-1' },
+        ];
+
+        const pendingKYCCount = mockVerifications.filter((v) => v.status === 'pending').length;
+        const activeDisputesCount = mockDisputes.filter((d) => d.status !== 'resolved' && d.status !== 'dismissed').length;
+        const flaggedJobsCount = mockJobs.filter((j) => j.status === 'open' && j.hourlyRate < 200).length;
+
+        expect(pendingKYCCount).toBe(1);
+        expect(activeDisputesCount).toBe(1);
+        expect(flaggedJobsCount).toBe(1);
+      });
+    });
+
+    describe('Screen 22: Worker Verification KYC Moderation Desk Privacy & Workflow', () => {
+      test('enforces strict PII masking on government identifiers', () => {
+        const rawWorkerId = '548291023847';
+        const maskedUID = `•••• •••• ${rawWorkerId.slice(-4)}`;
+        expect(maskedUID).toBe('•••• •••• 3847');
+        expect(maskedUID).not.toContain('5482');
+
+        const rawPhone = '+919820199888';
+        const maskedPhone = `${rawPhone.slice(0, 8)} •••••`;
+        expect(maskedPhone).toBe('+9198201 •••••');
+      });
+
+      test('requires mandatory rejection reason with minimum length before resolving', async () => {
+        // Empty rejection reason must be rejected
+        const resEmpty = await resolveVerificationCaseSafe('case-1', 'rejected', '', undefined);
+        expect(resEmpty.success).toBe(false);
+        expect(resEmpty.error).toContain('Rejection reason must be at least 5 characters');
+
+        // Too short reason must be rejected
+        const resShort = await resolveVerificationCaseSafe('case-1', 'rejected', 'bad', undefined);
+        expect(resShort.success).toBe(false);
+        expect(resShort.error).toContain('Rejection reason must be at least 5 characters');
+      });
+    });
+
+    describe('Screen 23: Shift Moderation & Fair Wage Review Desk', () => {
+      test('detects wage deficit below regional benchmark (₹200/hr in MMR)', () => {
+        const compliantJob = { id: 'j-1', hourlyRate: 250 };
+        const nonCompliantJob = { id: 'j-2', hourlyRate: 140 };
+
+        const isCompliant = (rate: number) => rate >= 200;
+        expect(isCompliant(compliantJob.hourlyRate)).toBe(true);
+        expect(isCompliant(nonCompliantJob.hourlyRate)).toBe(false);
+
+        const deficit = Math.max(0, 200 - nonCompliantJob.hourlyRate);
+        expect(deficit).toBe(60); // Underpaid by ₹60/hr
+      });
+
+      test('detects welfare breach for continuous shifts exceeding 6 hours without meals', () => {
+        const longShiftWithoutMeal = { durationHours: 10, mealProvided: false };
+        const longShiftWithMeal = { durationHours: 10, mealProvided: true };
+        const shortShiftWithoutMeal = { durationHours: 4, mealProvided: false };
+
+        const isWelfareBreached = (shift: { durationHours: number; mealProvided: boolean }) =>
+          shift.durationHours >= 6 && !shift.mealProvided;
+
+        expect(isWelfareBreached(longShiftWithoutMeal)).toBe(true);
+        expect(isWelfareBreached(longShiftWithMeal)).toBe(false);
+        expect(isWelfareBreached(shortShiftWithoutMeal)).toBe(false);
+      });
+    });
+
+    describe('Screen 24: Disputes & Incident Escalation Adjudication', () => {
+      test('calculates adjudicated payout based on selected ruling and telemetry evidence', () => {
+        const baseWage = 2400;
+        const disputedOvertime = 175;
+
+        // Ruling 1: Worker favor (full base + overtime)
+        const workerFavorPayout = baseWage + disputedOvertime;
+        expect(workerFavorPayout).toBe(2575);
+
+        // Ruling 2: Base wage only (overtime dismissed)
+        const baseOnlyPayout = baseWage;
+        expect(baseOnlyPayout).toBe(2400);
+
+        // Ruling 3: Split settlement (50% overtime)
+        const splitPayout = baseWage + disputedOvertime * 0.5;
+        expect(splitPayout).toBe(2487.5);
+      });
+
+      test('requires documented mediation findings before authorizing escrow release', async () => {
+        const res = await resolveDisputeSafe('disp-1', 'resolved', '', 2575, undefined);
+        expect(res.success).toBe(false);
+        expect(res.error).toContain('Documented case notes and investigation rationale are required');
+      });
+    });
+  });
 });

@@ -32,7 +32,7 @@ import { adminSupabase } from '../lib/supabase';
 import { AdminSidebar, AdminModule } from '../components/AdminSidebar';
 import { AdminHeader } from '../components/AdminHeader';
 import { AdminBreadcrumbs } from '../components/AdminBreadcrumbs';
-import { MetricCards } from '../components/MetricCards';
+import { AdminOverviewDesk } from '../components/AdminOverviewDesk';
 import { VerificationQueue } from '../components/VerificationQueue';
 import { DisputesQueue } from '../components/DisputesQueue';
 import { SafetyQueue } from '../components/SafetyQueue';
@@ -478,19 +478,19 @@ function AdminDashboardInner() {
           ) : (
             <>
               {activeModule === 'overview' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-                  <MetricCards metrics={metrics} />
-                  <VerificationQueue
-                    verifications={verifications}
-                    onResolveCase={handleResolveCase}
-                    compact
-                  />
-                  <DisputesQueue
-                    disputes={disputes}
-                    onResolveDispute={handleResolveDispute}
-                    compact
-                  />
-                </div>
+                <AdminOverviewDesk
+                  metrics={metrics}
+                  verifications={verifications}
+                  disputes={disputes}
+                  jobs={jobs}
+                  systemStatus={systemStatus}
+                  onSelectModule={selectModule}
+                  onToggleBookingPause={handleToggleBookingPause}
+                  onRefreshData={() => {
+                    setLoading(true);
+                    loadAdminData();
+                  }}
+                />
               )}
 
               {activeModule === 'verifications' && (
