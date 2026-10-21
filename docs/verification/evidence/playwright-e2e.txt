@@ -1,0 +1,135 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:e2e:admin
+> npm --workspace=@opskil/admin run test:e2e
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 test:e2e
+> playwright test
+
+[WebServer] npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 5 tests using 1 worker
+
+(node:89796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics (10.5s)
+(node:90017) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view (10.4s)
+(node:90171) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls (10.4s)
+(node:90327) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table (10.4s)
+(node:90564) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  5 [chromium] › e2e/admin_dashboard.spec.ts:80:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail (10.4s)
+
+
+  1) [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics 
+
+    TimeoutError: page.waitForURL: Timeout 10000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      12 |       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
+      13 |       await page.click('button[type="submit"]');
+    > 14 |       await page.waitForURL('/', { timeout: 10000 });
+         |                  ^
+      15 |     }
+      16 |   });
+      17 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:14:18
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-07002-and-key-operational-metrics-chromium/error-context.md
+
+  2) [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view 
+
+    TimeoutError: page.waitForURL: Timeout 10000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      12 |       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
+      13 |       await page.click('button[type="submit"]');
+    > 14 |       await page.waitForURL('/', { timeout: 10000 });
+         |                  ^
+      15 |     }
+      16 |   });
+      17 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:14:18
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-303bf-nd-verifies-compliance-view-chromium/error-context.md
+
+  3) [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+
+    TimeoutError: page.waitForURL: Timeout 10000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      12 |       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
+      13 |       await page.click('button[type="submit"]');
+    > 14 |       await page.waitForURL('/', { timeout: 10000 });
+         |                  ^
+      15 |     }
+      16 |   });
+      17 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:14:18
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-42bbf-ifies-adjudication-controls-chromium/error-context.md
+
+  4) [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+
+    TimeoutError: page.waitForURL: Timeout 10000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      12 |       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
+      13 |       await page.click('button[type="submit"]');
+    > 14 |       await page.waitForURL('/', { timeout: 10000 });
+         |                  ^
+      15 |     }
+      16 |   });
+      17 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:14:18
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-b0d10-iving-wage-compliance-table-chromium/error-context.md
+
+  5) [chromium] › e2e/admin_dashboard.spec.ts:80:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail 
+
+    TimeoutError: page.waitForURL: Timeout 10000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation to "/" until "load"
+    ============================================================
+
+      12 |       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
+      13 |       await page.click('button[type="submit"]');
+    > 14 |       await page.waitForURL('/', { timeout: 10000 });
+         |                  ^
+      15 |     }
+      16 |   });
+      17 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:14:18
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-c1e4c--administrative-audit-trail-chromium/error-context.md
+
+  5 failed
+    [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics 
+    [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view 
+    [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+    [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+    [chromium] › e2e/admin_dashboard.spec.ts:80:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail 
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error workspace @opskil/admin@1.0.0
+npm error location /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error command failed
+npm error command sh -c playwright test
+EXIT:1

@@ -1,0 +1,12 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/shared@0.1.0 typecheck
+> tsc --noEmit
+
+SHARED_TC:0
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/worker@1.0.0 typecheck
+> tsc --noEmit
+
+WORKER_TC:0

@@ -1,0 +1,147 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:e2e:admin
+> npm --workspace=@opskil/admin run test:e2e
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 test:e2e
+> playwright test
+
+[WebServer] npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[WebServer] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (113kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+[WebServer] <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (268kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+
+Running 5 tests using 1 worker
+
+(node:91444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics (8.2s)
+(node:91582) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view (7.1s)
+(node:91694) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls (6.6s)
+(node:91815) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table (6.7s)
+(node:91945) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  5 [chromium] › e2e/admin_dashboard.spec.ts:80:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail (2.4s)
+
+
+  1) [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('text=Marketplace volume')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('text=Marketplace volume') with timeout 5000ms
+      - waiting for locator('text=Marketplace volume')
+
+
+      20 |     await expect(page.getByRole('status').filter({ hasText: /LIVE|PAUSED/ })).toBeVisible();
+      21 |
+    > 22 |     await expect(page.locator('text=Marketplace volume')).toBeVisible();
+         |                                                           ^
+      23 |     await expect(page.locator('text=Active shifts')).toBeVisible();
+      24 |     await expect(page.locator('text=Verified workers')).toBeVisible();
+      25 |     await expect(page.locator('text=Active organizers')).toBeVisible();
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:22:59
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-07002-and-key-operational-metrics-chromium/error-context.md
+
+  2) [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('th:has-text("Applicant")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('th:has-text("Applicant")') with timeout 5000ms
+      - waiting for locator('th:has-text("Applicant")')
+
+
+      30 |     await expect(page.locator('h1:has-text("Verifications")')).toBeVisible();
+      31 |
+    > 32 |     await expect(page.locator('th:has-text("Applicant")')).toBeVisible();
+         |                                                            ^
+      33 |     await expect(page.locator('th:has-text("Document")')).toBeVisible();
+      34 |     await expect(page.locator('th:has-text("Masked ID")')).toBeVisible();
+      35 |
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:32:60
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-303bf-nd-verifies-compliance-view-chromium/error-context.md
+
+  3) [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('th:has-text("Shift & booking")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('th:has-text("Shift & booking")') with timeout 5000ms
+      - waiting for locator('th:has-text("Shift & booking")')
+
+
+      51 |     await expect(page.locator('h1:has-text("Disputes")')).toBeVisible();
+      52 |
+    > 53 |     await expect(page.locator('th:has-text("Shift & booking")')).toBeVisible();
+         |                                                                  ^
+      54 |     await expect(page.locator('th:has-text("Raised by")')).toBeVisible();
+      55 |
+      56 |     const investigateBtn = page.locator('button:has-text("Investigate")').first();
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:53:66
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-42bbf-ifies-adjudication-controls-chromium/error-context.md
+
+  4) [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('th:has-text("Shift & host")')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('th:has-text("Shift & host")') with timeout 5000ms
+      - waiting for locator('th:has-text("Shift & host")')
+
+
+      70 |     await expect(page.locator('h1:has-text("Shift moderation")')).toBeVisible();
+      71 |
+    > 72 |     await expect(page.locator('th:has-text("Shift & host")')).toBeVisible();
+         |                                                               ^
+      73 |     await expect(page.locator('th:has-text("Wage")')).toBeVisible();
+      74 |
+      75 |     const approveBtn = page.locator('button:has-text("Approve")').first();
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:72:63
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-b0d10-iving-wage-compliance-table-chromium/error-context.md
+
+  4 failed
+    [chromium] › e2e/admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics 
+    [chromium] › e2e/admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view 
+    [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+    [chromium] › e2e/admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+  1 passed (36.3s)
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error workspace @opskil/admin@1.0.0
+npm error location /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error command failed
+npm error command sh -c playwright test
+EXIT:1

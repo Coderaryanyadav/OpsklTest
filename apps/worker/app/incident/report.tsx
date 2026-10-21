@@ -23,6 +23,7 @@ import {
   IncidentCategory,
   IncidentSeverity,
   submitSafetyIncidentSafe,
+  uploadIncidentEvidenceBatch,
 } from '@opskil/shared';
 import {
   ChevronLeft,
@@ -169,6 +170,17 @@ export default function IncidentReportScreen() {
 
     setSubmitting(true);
     try {
+      let evidencePaths: string[] = [];
+      if (photos.length > 0) {
+        const uploaded = await uploadIncidentEvidenceBatch(session.user.id, photos);
+        if (!uploaded.success || !uploaded.storagePaths) {
+          setErrorMessage(uploaded.error || 'Could not upload photo evidence. Try again.');
+          setSubmitting(false);
+          return;
+        }
+        evidencePaths = uploaded.storagePaths;
+      }
+
       const result = await submitSafetyIncidentSafe({
         reporterId: session.user.id,
         shiftId: shiftIdParam,
@@ -177,7 +189,7 @@ export default function IncidentReportScreen() {
         severity,
         locationDescription: locationText.trim(),
         notes: notes.trim(),
-        evidenceUrls: photos,
+        evidenceUrls: evidencePaths,
         hasAudioMemo: hasVoiceNote,
         witnessDeclared: witnessConsent,
       });

@@ -1,0 +1,24 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:e2e:admin
+> npm --workspace=@opskil/admin run test:e2e
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 test:e2e
+> playwright test
+
+[WebServer] npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 5 tests using 1 worker
+
+(node:93978) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/admin_dashboard.spec.ts:19:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics (2.6s)
+  ✓  2 [chromium] › e2e/admin_dashboard.spec.ts:27:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view (2.5s)
+  ✓  3 [chromium] › e2e/admin_dashboard.spec.ts:39:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls (2.3s)
+  ✓  4 [chromium] › e2e/admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table (2.2s)
+  ✓  5 [chromium] › e2e/admin_dashboard.spec.ts:59:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail (2.4s)
+
+  5 passed (15.0s)
+EXIT:0

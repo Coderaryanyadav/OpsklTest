@@ -1,0 +1,92 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:e2e:admin
+> npm --workspace=@opskil/admin run test:e2e
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 test:e2e
+> playwright test
+
+[WebServer] npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+Running 5 tests using 1 worker
+
+(node:92639) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/admin_dashboard.spec.ts:19:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics (3.4s)
+  ✓  2 [chromium] › e2e/admin_dashboard.spec.ts:27:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view (2.9s)
+  ✘  3 [chromium] › e2e/admin_dashboard.spec.ts:39:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls (2.2s)
+(node:92808) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 [chromium] › e2e/admin_dashboard.spec.ts:51:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table (2.2s)
+(node:92857) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  5 [chromium] › e2e/admin_dashboard.spec.ts:63:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail (2.6s)
+
+
+  1) [chromium] › e2e/admin_dashboard.spec.ts:39:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: /Investigate|Adjudicate|Resolve/i }).first().or(getByText(/OPEN DISPUTES|No disputes|Active Investigation/i).first())
+    Expected: visible
+    Error: strict mode violation: getByRole('button', { name: /Investigate|Adjudicate|Resolve/i }).first().or(getByText(/OPEN DISPUTES|No disputes|Active Investigation/i).first()) resolved to 2 elements:
+        1) <span>0 OPEN DISPUTES</span> aka getByText('OPEN DISPUTES')
+        2) <button type="button">Resolved (0)</button> aka getByRole('button', { name: 'Resolved (0)' })
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: /Investigate|Adjudicate|Resolve/i }).first().or(getByText(/OPEN DISPUTES|No disputes|Active Investigation/i).first()) with timeout 10000ms
+      - waiting for getByRole('button', { name: /Investigate|Adjudicate|Resolve/i }).first().or(getByText(/OPEN DISPUTES|No disputes|Active Investigation/i).first())
+
+
+      46 |     const investigateBtn = page.getByRole('button', { name: /Investigate|Adjudicate|Resolve/i }).first();
+      47 |     const emptyOrList = page.getByText(/OPEN DISPUTES|No disputes|Active Investigation/i).first();
+    > 48 |     await expect(investigateBtn.or(emptyOrList)).toBeVisible({ timeout: 10000 });
+         |                                                  ^
+      49 |   });
+      50 |
+      51 |   test('navigates to shift moderation and checks living wage compliance table', async ({ page }) => {
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:48:50
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-42bbf-ifies-adjudication-controls-chromium/error-context.md
+
+  2) [chromium] › e2e/admin_dashboard.spec.ts:51:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('button', { name: /Approve/i }).first().or(getByText(/No shifts/i))
+    Expected: visible
+    Error: strict mode violation: getByRole('button', { name: /Approve/i }).first().or(getByText(/No shifts/i)) resolved to 3 elements:
+        1) <button type="button">Approved Shifts (0)</button> aka getByRole('button', { name: 'Approved Shifts (0)' })
+        2) <div class="admin-empty-title">No shifts</div> aka getByText('No shifts', { exact: true })
+        3) <div>No shifts in this moderation queue.</div> aka getByText('No shifts in this moderation')
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: /Approve/i }).first().or(getByText(/No shifts/i)) with timeout 10000ms
+      - waiting for getByRole('button', { name: /Approve/i }).first().or(getByText(/No shifts/i))
+
+
+      58 |     const approveBtn = page.getByRole('button', { name: /Approve/i }).first();
+      59 |     const emptyState = page.getByText(/No shifts/i);
+    > 60 |     await expect(approveBtn.or(emptyState)).toBeVisible({ timeout: 10000 });
+         |                                             ^
+      61 |   });
+      62 |
+      63 |   test('inspects administrative audit trail', async ({ page }) => {
+        at /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin/e2e/admin_dashboard.spec.ts:60:45
+
+    Error Context: test-results/admin_dashboard-Opskl-Admi-b0d10-iving-wage-compliance-table-chromium/error-context.md
+
+  2 failed
+    [chromium] › e2e/admin_dashboard.spec.ts:39:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls 
+    [chromium] › e2e/admin_dashboard.spec.ts:51:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table 
+  3 passed (16.9s)
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error workspace @opskil/admin@1.0.0
+npm error location /Users/aryan/Desktop/PROJECTS/OPSKIL/apps/admin
+npm error command failed
+npm error command sh -c playwright test
+EXIT:1

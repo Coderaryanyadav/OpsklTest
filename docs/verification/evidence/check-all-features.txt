@@ -1,0 +1,29 @@
+
+[36m[1m======================================================================[0m
+[36m[1m  OPSKIL FULL PLATFORM COMPREHENSIVE VERIFICATION AUDIT[0m
+[36m[1m======================================================================[0m
+
+• Checking Monorepo TypeScript across all 6 packages (@opskil/*)... [32mSUCCESS[0m
+• Checking Shared package domain & service unit tests... [32mSUCCESS[0m
+• Checking Validation rules, living wage floor, and Zod schemas... [32mSUCCESS[0m
+• Checking Worker mobile app component & navigation tests... [32mSUCCESS[0m
+• Checking Organizer mobile app component & navigation tests... [32mSUCCESS[0m
+• Checking Brutal Platform Launch-Readiness verification suite (17/17 tests)... [32mSUCCESS[0m
+• Checking Database SQL schema, RLS, and RPC security invariants... [32mSUCCESS[0m
+• Checking PostgreSQL Direct Database Connectivity & Table Audits... [32mSUCCESS[0m
+• Checking Supabase Live GoTrue Auth Client & API endpoint reachability... [32mSUCCESS[0m
+• Checking Email OTP Dispatch & Rate-Limit Diagnostics...   [32m✓ PASS:[0m GoTrue responded and correctly enforced shouldCreateUser=false security policy.
+[32mSUCCESS[0m
+• Checking Next.js Admin Dashboard production build compilation... [32mSUCCESS[0m
+
+[36m[1m======================================================================[0m
+[36m[1m  FINAL VERIFICATION SUMMARY[0m
+[36m[1m======================================================================[0m
+
+  Total Checks: 11
+  [32mPassed:       11[0m
+  [31mFailed:       0[0m
+
+[32m[1mAll platform systems, apps, and services are 100% HEALTHY & VERIFIED.[0m
+
+EXIT:0

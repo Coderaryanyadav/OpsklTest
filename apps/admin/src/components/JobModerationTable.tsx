@@ -393,7 +393,7 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
                   <th>ROLE & VENUE</th>
                   <th>SHIFT TIMING (IST)</th>
                   <th>WAGE RATE</th>
-                  <th>ESCROW</th>
+                  <th>LEDGER</th>
                   <th>STATUS</th>
                 </tr>
               </thead>
@@ -466,11 +466,12 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
                               borderRadius: 4,
                               fontSize: 10,
                               fontWeight: 700,
-                              background: '#ECFDF5',
-                              color: '#065F46',
+                              background: '#F1F5F9',
+                              color: '#475569',
                             }}
+                            title="Internal wage obligation estimate — live bank escrow is not integrated"
                           >
-                            Fully Funded
+                            Estimate
                           </span>
                         </td>
 

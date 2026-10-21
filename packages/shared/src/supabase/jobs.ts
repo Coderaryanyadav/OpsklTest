@@ -849,8 +849,63 @@ export async function fetchOrganizerApplications(
 }
 
 /**
+ * Organizer sends a shift offer (selected_awaiting_confirmation).
+ * Does NOT confirm the worker — worker must accept via workerConfirmSelectionSafe.
+ */
+export async function selectWorkerOfferSafe(
+  jobId: string,
+  workerId: string,
+  organizerId: string,
+  notes?: string
+): Promise<{
+  success: boolean;
+  bookingId?: string;
+  status?: string;
+  heldUntil?: string;
+  alreadyOffered?: boolean;
+  error?: string;
+}> {
+  logger.info('Executing safe worker offer selection', { jobId, workerId, organizerId });
+
+  try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('select_worker_offer_safe', {
+      p_job_id: jobId,
+      p_worker_id: workerId,
+      p_notes: notes ?? null,
+    });
+
+    if (rpcError) {
+      logger.error('RPC error in select_worker_offer_safe', rpcError);
+      return {
+        success: false,
+        error: rpcError.message || 'Server-side offer selection failed.',
+      };
+    }
+
+    if (rpcData?.success) {
+      return {
+        success: true,
+        bookingId: rpcData.booking_id,
+        status: rpcData.status,
+        heldUntil: rpcData.held_until,
+        alreadyOffered: !!rpcData.already_offered,
+      };
+    }
+
+    return {
+      success: false,
+      error: rpcData?.message || rpcData?.error_code || 'Worker offer could not be recorded.',
+    };
+  } catch (err: any) {
+    logger.error('Unexpected error selecting worker offer', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Concurrency-safe Worker Confirmation (Hiring Engine)
  * Enforces headcount capacity, prevents duplicate bookings, creates notifications, and logs audit trail.
+ * Use only when product intends immediate confirmation (not the screening "Send Offer" path).
  */
 export async function confirmWorkerBookingSafe(
   jobId: string,

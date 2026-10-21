@@ -25,7 +25,7 @@ import {
   fetchOrganizerApplications,
   fetchApplicationsForJob,
   updateApplicationStatusSafe,
-  confirmWorkerBookingSafe,
+  selectWorkerOfferSafe,
   cancelBookingSafe,
   subscribeToOrganizerRoster,
 } from '@opskil/shared';
@@ -247,6 +247,11 @@ export default function OrganizerApplicantScreeningScreen() {
       return;
     }
 
+    if (!shift?.id) {
+      OpsklAlert.alert('Shift Required', 'Open screening from a published shift before sending offers.');
+      return;
+    }
+
     if (openCount <= 0) {
       OpsklAlert.alert(
         'Headcount Full',
@@ -257,26 +262,40 @@ export default function OrganizerApplicantScreeningScreen() {
 
     setActionInProgress(candidate.id);
     try {
-      const effectiveJobId = shift?.id || 'job-bkc-vip-01';
-      await confirmWorkerBookingSafe(effectiveJobId, candidate.workerId, organizerId);
+      const res = await selectWorkerOfferSafe(shift.id, candidate.workerId, organizerId);
+      if (!res.success) {
+        OpsklAlert.alert('Offer Failed', res.error || 'Could not record shift offer.');
+        return;
+      }
 
-      // In real backend or mock, transition candidate to SELECTED / AWAITING CONFIRMATION
+      const heldUntil = res.heldUntil ? new Date(res.heldUntil) : new Date(Date.now() + 3 * 60 * 60 * 1000);
+      const heldLabel = heldUntil.toLocaleString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: 'short',
+        timeZone: 'Asia/Kolkata',
+      });
+
       setCandidates((prev) =>
         prev.map((c) =>
           c.id === candidate.id
             ? {
                 ...c,
                 status: 'selected',
-                heldUntilTime: '06:00 PM IST',
-                timeLeftMinutes: 180,
+                heldUntilTime: `${heldLabel} IST`,
+                timeLeftMinutes: Math.max(
+                  0,
+                  Math.round((heldUntil.getTime() - Date.now()) / 60000)
+                ),
               }
             : c
         )
       );
 
       OpsklAlert.alert(
-        'Shift Offer Recorded',
-        `Offer recorded for ${candidate.name} on the booking ledger. WhatsApp / push broadcast is not wired. Selected ≠ confirmed until the worker accepts.`
+        res.alreadyOffered ? 'Offer Already Pending' : 'Shift Offer Recorded',
+        `Offer held for ${candidate.name} until ${heldLabel} IST. Status is selected_awaiting_confirmation — not confirmed until the worker accepts. WhatsApp / push broadcast is not wired.`
       );
     } catch (err: any) {
       OpsklAlert.alert('Dispatch Error', err?.message || 'Could not dispatch shift offer.');
@@ -297,8 +316,12 @@ export default function OrganizerApplicantScreeningScreen() {
           onPress: async () => {
             setActionInProgress(candidate.id);
             try {
+              if (!organizerId) {
+                OpsklAlert.alert('Authentication Required', 'Sign in to revoke offers.');
+                return;
+              }
               if (candidate.applicationId) {
-                await cancelBookingSafe(candidate.applicationId, 'organizer_revoked', organizerId || 'org-1');
+                await cancelBookingSafe(candidate.applicationId, 'organizer_revoked', organizerId);
               }
               setCandidates((prev) =>
                 prev.map((c) => (c.id === candidate.id ? { ...c, status: 'shortlisted' } : c))

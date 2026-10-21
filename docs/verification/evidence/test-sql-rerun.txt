@@ -1,0 +1,57 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:sql
+> node scripts/test_sql_integration.mjs
+
+[36m[OPSKL SQL INTEGRATION & LOGIC HARDENING TEST SUITE - PHASE 2][0m
+[32m  ✓ Passed: 1.1 Trusted bypass mechanism configured in check_worker_profile_update[0m
+[32m  ✓ Passed: 1.2 Dispute reason minimum length validation (>= 10)[0m
+[32m  ✓ Passed: 1.2 Direct INSERT policy on disputes dropped[0m
+[32m  ✓ Passed: 1.3 Organizer business_contact_phone relaxed from NOT NULL[0m
+[32m  ✓ Passed: 1.3 CSPRNG booking code replaced gen_random_bytes[0m
+[32m  ✓ Passed: 1.4 public_jobs view shielding supervisor contact created[0m
+[32m  ✓ Passed: 1.5 Job lifecycle state machine validate_job_transition defined[0m
+[32m  ✓ Passed: 1.5 cancel_booking_safe slot reopen guarded against past/cancelled jobs[0m
+[32m  ✓ Passed: 1.6 Overlapping shift double-booking guard in confirm_worker_booking_safe[0m
+[32m  ✓ Passed: 1.7 Keyset paginated get_discovery_feed defined[0m
+[32m  ✓ Passed: 1.8 Attendance distance column widened to NUMERIC(8,2)[0m
+[32m  ✓ Passed: 1.9 Admin dispute resolution restores pre-dispute booking status on dismissal[0m
+[32m  ✓ Passed: 1.10 FY sequential invoice generator OPS/YY-YY/00001 defined[0m
+[32m  ✓ Passed: 1.10 Paid invoice immutability guard in generate_job_invoice_safe[0m
+[32m  ✓ Passed: 1.11 Overnight shifts crosses_midnight and end_date columns[0m
+[32m  ✓ Passed: 1.11 Sovereign India coordinate bounds validation (6-38 N, 68-98 E)[0m
+[32m  ✓ Passed: 2.1 Hardening migration: Partial coordinate pair rejection (INCOMPLETE_COORDINATES)[0m
+[32m  ✓ Passed: 2.2 Hardening migration: Public organizer card shields GSTIN & billing address[0m
+[32m  ✓ Passed: 2.3 Hardening migration: Initial shift lifecycle status restricted to draft/open[0m
+[32m  ✓ Passed: 2.4 Hardening migration: Application & payment deadlines persisted in INSERT[0m
+[32m  ✓ Passed: 2.5 Hardening migration: Min wage fallback protects against missing settings row[0m
+[32m  ✓ Passed: 2.6 Hardening migration: Same-day start time in the past rejected in IST[0m
+[32m  ✓ Passed: 2.7 Hardening migration: Break duration bounds (0-120 mins and < shift duration)[0m
+[32m  ✓ Passed: 2.8 Phase 2: Duplicate publication throttle guard (DUPLICATE_PUBLICATION)[0m
+[32m  ✓ Passed: 2.9 Phase 2: Organizer team memberships authorization check[0m
+[32m  ✓ Passed: 2.10 Phase 2: Admin role escalation safe guard prevents trigger-disable hacks[0m
+
+Invariant Checks Passed: 26/26
+
+Connecting to test database at aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres...
+[32m✓ Connected to PostgreSQL.[0m
+[32m✓ Verified all 12 core security and lifecycle RPC functions compiled in Postgres.[0m
+[32m✓ Verified public_jobs view strictly shields supervisor contact details.[0m
+[32m✓ Verified public_organizer_cards view strictly shields organizer GSTIN & billing address.[0m
+[32m✓ Verified create_job_safe strictly rejects partial coordinate pairs.[0m
+[32m✓ Verified create_job_safe strictly rejects non-India geographic coordinates.[0m
+[32m✓ Verified unverified organizer live shift creation is rejected by backend RPC (ORGANIZER_NOT_FOUND).[0m
+[32m✓ Verified create_job_safe rejects direct creation in non-initial lifecycle statuses.[0m
+[32m✓ Verified create_job_safe rejects same-day shifts scheduled after start time.[0m
+[32m✓ Verified create_job_safe validates break duration bounds (0-120 mins).[0m
+[32m✓ Verified create_job_safe validates venue name and address minimum length.[0m
+[32m✓ Verified create_job_safe enforces ₹100 floor when platform_settings min_wage row is missing.[0m
+[32m✓ Verified application_deadline and payment_deadline are authoritatively persisted and readable in jobs table.[0m
+[32m✓ Verified authoritative payable-hours rule: 8h @ ₹300/hr = ₹2,400 with 45min scheduled break included.[0m
+[32m✓ Verified duplicate publication guard blocks identical reposts within throttle window.[0m
+[32m✓ Verified prevent_role_escalation strictly blocks unprivileged role tampering.[0m
+[32m✓ Transaction rolled back cleanly without permanent mutations.[0m
+
+[32m✓ Full Opskl SQL integration & logic hardening test suite passed with 100% success.[0m
+
+EXIT:0

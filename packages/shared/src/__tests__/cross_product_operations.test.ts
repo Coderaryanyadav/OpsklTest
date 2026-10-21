@@ -115,6 +115,22 @@ describe('Cross-Product Operational Integrity: Phase 8 Requirements', () => {
       expect(res.caseRef).toMatch(/^TK-BKC-\d+$/);
       expect(res.offlineNotice).toBeDefined();
     });
+
+    test('rejects device file URIs as evidence_urls on online submit', async () => {
+      const res = await submitSafetyIncidentSafe({
+        reporterId: 'wkr-test-01',
+        category: 'safety',
+        severity: 'urgent',
+        locationDescription: 'Hall 4 Gate B',
+        notes: 'Blocked emergency fire exit with stacked flight cases.',
+        witnessDeclared: true,
+        evidenceUrls: ['file:///var/mobile/Containers/Data/evidence.jpg'],
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.status).toBe('validation_failed');
+      expect(res.error).toMatch(/secure storage/i);
+    });
   });
 
   describe('Screen 27: Emergency Marketplace Pause & Lockdown State', () => {

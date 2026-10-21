@@ -888,8 +888,10 @@ export default function WorkerOnboardingScreen() {
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
                   Shift Payout Settlement
                 </Text>
-                <View style={[styles.instantTag, { backgroundColor: colors.successLight }]}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.success }}>INSTANT UPI ENABLED</Text>
+                <View style={[styles.instantTag, { backgroundColor: colors.surfaceMuted }]}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary }}>
+                    UPI ON FILE
+                  </Text>
                 </View>
               </View>
 

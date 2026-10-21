@@ -1,0 +1,69 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/shared@0.1.0 test
+> jest packages/shared/src/__tests__/cross_product_operations.test.ts
+
+  console.log
+    [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792568364958-g76z","type":"check_in","idempotencyKey":"idemp-test-chk-1792568364958"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+  console.log
+    [OPSKL INFO] [OFFLINE QUEUE] Ignored duplicate mutation enqueue {"idempotencyKey":"idemp-test-chk-1792568364958"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+  console.log
+    [OPSKL INFO] [OFFLINE QUEUE] Cannot sync while network is disconnected
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+  console.log
+    [OPSKL INFO] [OFFLINE QUEUE] Sync complete {"synced":3,"failed":0,"remaining":0}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+  console.warn
+    [OPSKL WARN] [SAFETY ESCALATION] Device offline — queueing incident report locally {"caseRef":"TK-BKC-7676","category":"safety","severity":"immediate"}
+
+      93 |       }
+      94 |     }
+    > 95 |     console.warn(`[OPSKL WARN] ${message}${extra}`, sanitizedContext ? JSON.stringify(sanitizedContext) : '');
+         |             ^
+      96 |   },
+      97 |
+      98 |   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
+
+      at Object.warn (src/utils/logger.ts:95:13)
+      at submitSafetyIncidentSafe (src/services/safety_incident_service.ts:199:12)
+      at Object.<anonymous> (src/__tests__/cross_product_operations.test.ts:101:49)
+
+  console.log
+    [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792568364982-3tmq","type":"incident_report","idempotencyKey":"idemp-incident_report-1792568364982-wlvoe"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/cross_product_operations.test.ts
+  Cross-Product Operational Integrity: Phase 8 Requirements
+    Screen 26: Offline Mode & Local Idempotent Queue
+      ✓ enqueues a mutation and enforces idempotency against duplicates (14 ms)
+      ✓ retains queued status when sync is executed while offline
+      ✓ authoritatively acknowledges items when online sync succeeds
+      ✓ generates deterministic offline gate backup PIN and high integrity token
+    Screen 25: Incident Reporting Ground Safety Escalation
+      ✓ fails validation if witness declaration is not confirmed
+      ✓ fails validation if incident description is shorter than 10 characters
+      ✓ distinguishes locally queued incident report when submitted offline (11 ms)
+      ✓ rejects device file URIs as evidence_urls on online submit
+    Screen 27: Emergency Marketplace Pause & Lockdown State
+      ✓ enforces booking pause with emergency broadcast metadata and audit record (154 ms)
+      ✓ safely resumes marketplace operations when emergency condition clears (2 ms)
+    Screen 28: System Notifications Operational Event Stream
+      ✓ verifies notification categorization mappings
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        0.478 s, estimated 2 s
+Ran all test suites matching /packages\/shared\/src\/__tests__\/cross_product_operations.test.ts/i.
+EXIT:0

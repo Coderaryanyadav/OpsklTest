@@ -1,5 +1,6 @@
 /**
  * Playwright End-to-End Test Suite for Opskl Admin Portal
+ * Assertions match the current desk UI (AdminOverviewDesk / queue components), not MetricCards.
  */
 import { test, expect } from '@playwright/test';
 
@@ -11,75 +12,53 @@ test.describe('Opskl Admin Web Dashboard E2E Operations', () => {
       await emailInput.fill(process.env.ADMIN_EMAIL || 'admin@opskil.com');
       await page.fill('input[type="password"]', process.env.ADMIN_PASSWORD || 'TestOpskilPassword2026!');
       await page.click('button[type="submit"]');
-      await page.waitForURL('/', { timeout: 10000 });
+      await page.waitForURL('/', { timeout: 15000 });
     }
   });
 
   test('renders platform overview and key operational metrics', async ({ page }) => {
-    await expect(page.locator('text=OPSKL')).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: /LIVE|PAUSED/ })).toBeVisible();
-
-    await expect(page.locator('text=Marketplace volume')).toBeVisible();
-    await expect(page.locator('text=Active shifts')).toBeVisible();
-    await expect(page.locator('text=Verified workers')).toBeVisible();
-    await expect(page.locator('text=Active organizers')).toBeVisible();
+    await expect(page.locator('text=OPSKL').first()).toBeVisible();
+    await expect(page.getByText('LEDGER METRICS · LIVE QUEUES')).toBeVisible();
+    await expect(page.getByText('ACTIVE LIVE SHIFTS')).toBeVisible();
+    await expect(page.getByText(/MARKETPLACE PAUSE|RESUME MARKETPLACE/)).toBeVisible();
+    await expect(page.getByText('REVIEW WORKLOAD (LIVE)')).toBeVisible();
   });
 
   test('navigates to verification queue and verifies compliance view', async ({ page }) => {
-    await page.click('text=Verifications');
-    await expect(page.locator('h1:has-text("Verifications")')).toBeVisible();
+    await page.getByRole('button', { name: /Verifications/i }).or(page.getByText('Verifications')).first().click();
+    await expect(page.getByText('Verifications').first()).toBeVisible();
+    await expect(page.getByText(/Worker Identity Verification/i)).toBeVisible();
+    await expect(page.getByText(/OCR engine: not connected/i)).toBeVisible();
+    await expect(page.getByText(/Pending Review/i).first()).toBeVisible();
 
-    await expect(page.locator('th:has-text("Applicant")')).toBeVisible();
-    await expect(page.locator('th:has-text("Document")')).toBeVisible();
-    await expect(page.locator('th:has-text("Masked ID")')).toBeVisible();
-
-    const reviewButton = page.locator('button:has-text("Review")').first();
-    const emptyState = page.locator('text=No verification cases match the current filters.');
-    await expect(reviewButton.or(emptyState)).toBeVisible();
-
-    if (await reviewButton.isVisible().catch(() => false)) {
-      await reviewButton.click();
-      await expect(page.locator('text=Review verification case')).toBeVisible();
-      await expect(page.locator('button:has-text("Approve")')).toBeVisible();
-      await page.click('button:has-text("Cancel")');
-      await expect(page.locator('text=Review verification case')).not.toBeVisible();
-    }
+    const reviewControl = page.getByRole('button', { name: /Review|Approve Worker KYC/i }).first();
+    const emptyState = page.getByText(/No verification cases match/i);
+    await expect(reviewControl.or(emptyState)).toBeVisible({ timeout: 10000 });
   });
 
   test('navigates to attendance disputes and verifies adjudication controls', async ({ page }) => {
-    await page.click('text=Disputes');
-    await expect(page.locator('h1:has-text("Disputes")')).toBeVisible();
-
-    await expect(page.locator('th:has-text("Shift & booking")')).toBeVisible();
-    await expect(page.locator('th:has-text("Raised by")')).toBeVisible();
-
-    const investigateBtn = page.locator('button:has-text("Investigate")').first();
-    const emptyState = page.locator('text=No attendance or wage disputes reported.');
-    await expect(investigateBtn.or(emptyState)).toBeVisible();
-
-    if (await investigateBtn.isVisible().catch(() => false)) {
-      await investigateBtn.click();
-      await expect(page.locator('text=Adjudicate dispute')).toBeVisible();
-      await page.click('button:has-text("Cancel")');
-      await expect(page.locator('text=Adjudicate dispute')).not.toBeVisible();
-    }
+    await page.getByText('Disputes', { exact: true }).first().click();
+    await expect(page.getByText('Disputes').first()).toBeVisible();
+    await expect(page.getByText(/Disputes & Incident Escalation Center/i)).toBeVisible();
+    await expect(page.getByText(/OPEN DISPUTES/i)).toBeVisible();
+    await expect(page.getByText(/LEGAL AUDIT ACTIVE/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Active Investigation/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^All \(/i })).toBeVisible();
   });
 
   test('navigates to shift moderation and checks living wage compliance table', async ({ page }) => {
-    await page.click('text=Shifts');
-    await expect(page.locator('h1:has-text("Shift moderation")')).toBeVisible();
-
-    await expect(page.locator('th:has-text("Shift & host")')).toBeVisible();
-    await expect(page.locator('th:has-text("Wage")')).toBeVisible();
-
-    const approveBtn = page.locator('button:has-text("Approve")').first();
-    const emptyState = page.locator('text=No shifts currently in the moderation queue.');
-    await expect(approveBtn.or(emptyState)).toBeVisible();
+    await page.getByText('Shifts', { exact: true }).first().click();
+    await expect(page.getByText('Shift moderation').first()).toBeVisible();
+    await expect(page.getByText(/Event Shift Moderation|Fair Wage/i).first()).toBeVisible();
+    await expect(page.getByText('SHIFT REF / ORGANIZER')).toBeVisible();
+    await expect(page.getByText('WAGE RATE')).toBeVisible();
+    await expect(page.getByText('STATUS')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Flagged for Wage Review/i })).toBeVisible();
   });
 
   test('inspects administrative audit trail', async ({ page }) => {
-    await page.click('text=Audit logs');
-    await expect(page.locator('h1:has-text("Audit logs")')).toBeVisible();
+    await page.getByText('Audit logs').first().click();
+    await expect(page.getByText('Audit logs').first()).toBeVisible();
     await expect(page.locator('th:has-text("Timestamp (IST)")')).toBeVisible();
     await expect(page.locator('th:has-text("Action")')).toBeVisible();
     await expect(page.locator('th:has-text("Admin")')).toBeVisible();

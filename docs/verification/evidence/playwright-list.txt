@@ -1,0 +1,9 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Listing tests:
+  [chromium] › admin_dashboard.spec.ts:18:7 › Opskl Admin Web Dashboard E2E Operations › renders platform overview and key operational metrics
+  [chromium] › admin_dashboard.spec.ts:28:7 › Opskl Admin Web Dashboard E2E Operations › navigates to verification queue and verifies compliance view
+  [chromium] › admin_dashboard.spec.ts:49:7 › Opskl Admin Web Dashboard E2E Operations › navigates to attendance disputes and verifies adjudication controls
+  [chromium] › admin_dashboard.spec.ts:68:7 › Opskl Admin Web Dashboard E2E Operations › navigates to shift moderation and checks living wage compliance table
+  [chromium] › admin_dashboard.spec.ts:80:7 › Opskl Admin Web Dashboard E2E Operations › inspects administrative audit trail
+Total: 5 tests in 1 file
+EXIT:0

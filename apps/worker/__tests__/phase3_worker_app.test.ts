@@ -183,7 +183,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Re-Submission Required');
     expect(content).toContain('getDisplayMaskedDoc');
     expect(content).toContain('watermarkLock');
-    expect(content).toContain('INSTANT UPI ENABLED');
+    expect(content).toContain('UPI ON FILE');
     expect(content).toContain('Attach Document');
   });
 

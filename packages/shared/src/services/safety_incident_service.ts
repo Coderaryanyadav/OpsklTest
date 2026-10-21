@@ -22,10 +22,96 @@ export interface SafetyIncidentPayload {
   severity: IncidentSeverity;
   locationDescription: string;
   notes: string;
+  /** Storage object paths under private verification-documents (not device file:// URIs). */
   evidenceUrls?: string[];
   hasAudioMemo?: boolean;
   witnessDeclared: boolean;
   clientTimestamp?: string;
+}
+
+/**
+ * Uses the existing private `verification-documents` bucket (already provisioned + RLS'd)
+ * with user-scoped `incident_` object names so evidence works without a new live migration.
+ * Dedicated `incident-evidence` bucket migration remains in supabase/migrations for later apply.
+ */
+const INCIDENT_EVIDENCE_BUCKET = 'verification-documents';
+
+function resolveIncidentImageExtension(contentType: string, uri?: string): string {
+  const ct = (contentType || '').toLowerCase();
+  if (ct.includes('png') || uri?.toLowerCase().includes('.png')) return 'png';
+  if (ct.includes('webp') || uri?.toLowerCase().includes('.webp')) return 'webp';
+  return 'jpg';
+}
+
+/**
+ * Uploads a local incident photo into private storage.
+ * Returns a storage path scoped to `${userId}/incident_...` — never a device URI.
+ */
+export async function uploadIncidentEvidence(
+  userId: string,
+  localUri: string,
+  contentType: string = 'image/jpeg'
+): Promise<{ success: boolean; storagePath?: string; error?: string }> {
+  if (!userId) {
+    return { success: false, error: 'Authentication required to upload evidence.' };
+  }
+  if (localUri?.startsWith(`${userId}/`)) {
+    return { success: true, storagePath: localUri };
+  }
+  if (!localUri || localUri.startsWith('http://') || localUri.startsWith('https://')) {
+    return { success: false, error: 'Evidence must be a local photo URI or owned storage path.' };
+  }
+
+  try {
+    const client = getSharedSupabaseClient();
+    const extension = resolveIncidentImageExtension(contentType, localUri);
+    const storagePath = `${userId}/incident_${Date.now()}.${extension}`;
+
+    const res = await fetch(localUri);
+    if (!res.ok) {
+      return { success: false, error: `Could not read photo for upload (${res.status}).` };
+    }
+    const blob = await res.blob();
+
+    const { error } = await client.storage.from(INCIDENT_EVIDENCE_BUCKET).upload(storagePath, blob, {
+      contentType: contentType || blob.type || 'image/jpeg',
+      upsert: false,
+    });
+
+    if (error) {
+      logger.error('Failed to upload incident evidence', error);
+      return { success: false, error: `Evidence upload failed: ${error.message}` };
+    }
+
+    return { success: true, storagePath };
+  } catch (err: any) {
+    logger.error('Unexpected exception during incident evidence upload', err);
+    return { success: false, error: err?.message || 'Evidence storage upload error' };
+  }
+}
+
+/**
+ * Uploads each local photo URI and returns storage paths.
+ * Fails closed if any upload fails so device URIs are never persisted as evidence_urls.
+ */
+export async function uploadIncidentEvidenceBatch(
+  userId: string,
+  localUris: string[]
+): Promise<{ success: boolean; storagePaths?: string[]; error?: string }> {
+  const paths: string[] = [];
+  for (const uri of localUris) {
+    if (!uri) continue;
+    if (uri.startsWith(`${userId}/`)) {
+      paths.push(uri);
+      continue;
+    }
+    const uploaded = await uploadIncidentEvidence(userId, uri);
+    if (!uploaded.success || !uploaded.storagePath) {
+      return { success: false, error: uploaded.error || 'Evidence upload failed.' };
+    }
+    paths.push(uploaded.storagePath);
+  }
+  return { success: true, storagePaths: paths };
 }
 
 export interface SafetyIncidentResult {
@@ -133,7 +219,7 @@ export async function submitSafetyIncidentSafe(
       reportId: enqueued.item.id,
       caseRef,
       offlineNotice:
-        'Report encrypted and cached in local device storage. It will be authoritatively synchronized as soon as connectivity or BLE mesh link is established.',
+        'Report cached in local device storage. It will sync when network connectivity is restored. Bluetooth peer mesh is not available in this build.',
     };
   }
 
@@ -142,6 +228,18 @@ export async function submitSafetyIncidentSafe(
     const client = getSharedSupabaseClient();
     const dbCategory = mapCategoryToDbEnum(payload.category);
     const dbSeverity = mapSeverityToDbEnum(payload.severity);
+
+    // Reject device URIs and arbitrary URLs — only user-scoped storage paths may be persisted.
+    const evidenceUrls = payload.evidenceUrls || [];
+    const ownerPrefix = `${payload.reporterId}/`;
+    const unsafeEvidence = evidenceUrls.find((u) => !!u && !u.startsWith(ownerPrefix));
+    if (unsafeEvidence) {
+      return {
+        success: false,
+        status: 'validation_failed',
+        error: 'Photo evidence must be uploaded to secure storage before submission.',
+      };
+    }
 
     const fullDescription = `[LOCATION: ${payload.locationDescription}] [VENUE: ${payload.venueName || 'Unspecified'}] ${payload.notes}`;
 
@@ -152,7 +250,7 @@ export async function submitSafetyIncidentSafe(
         category: dbCategory,
         severity: dbSeverity,
         description: fullDescription,
-        evidence_urls: payload.evidenceUrls || [],
+        evidence_urls: evidenceUrls,
         status: 'open',
       })
       .select('id')
