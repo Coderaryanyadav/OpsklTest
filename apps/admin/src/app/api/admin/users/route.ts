@@ -296,6 +296,10 @@ export async function PUT(req: NextRequest) {
 
       if (workerErr) {
         console.error('[ADMIN WORKER UPDATE ERROR]', workerErr);
+        return NextResponse.json(
+          { success: false, error: `Failed to update worker profile: ${workerErr.message}` },
+          { status: 400 }
+        );
       }
     } else {
       const orgUpdates: Record<string, any> = {
@@ -316,6 +320,10 @@ export async function PUT(req: NextRequest) {
 
       if (orgErr) {
         console.error('[ADMIN ORG UPDATE ERROR]', orgErr);
+        return NextResponse.json(
+          { success: false, error: `Failed to update organizer profile: ${orgErr.message}` },
+          { status: 400 }
+        );
       }
     }
 
