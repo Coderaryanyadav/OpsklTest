@@ -20,6 +20,9 @@ import {
   syncOfflineQueueSafe,
   generateOfflineGateKey,
   OfflineMutationItem,
+  checkInWorkerSafe,
+  submitSafetyIncidentSafe,
+  getSharedSupabaseClient,
 } from '@opskil/shared';
 import {
   WifiOff,
@@ -75,20 +78,57 @@ export default function OfflineSyncHubScreen() {
     setRetryStatusMessage('Probing Cellular & Gate Wi-Fi Nodes…');
 
     try {
-      // Simulate connection probe and idempotent sync
-      const result = await syncOfflineQueueSafe(false); // In offline demo mode
-      setTimeout(() => {
+      const client = getSharedSupabaseClient();
+      // Fast probe to verify genuine connectivity
+      const probe = await Promise.race([
+        client.from('jobs').select('id').limit(1),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Probe timeout')), 3500)),
+      ]).catch(() => null);
+
+      const isConnected = !!probe && !(probe as any).error;
+
+      if (!isConnected) {
         setRetrying(false);
-        setRetryStatusMessage(
-          result.syncedCount > 0
-            ? `Successfully synchronized ${result.syncedCount} mutations.`
-            : 'Still Offline • Kept in Queue without Duplicate Replays'
-        );
+        setRetryStatusMessage('Network probe failed. Gate / Cellular offline.');
         setTimeout(() => setRetryStatusMessage(null), 3000);
-      }, 1200);
+        return;
+      }
+
+      // Execute queued mutations with authoritative functions
+      const result = await syncOfflineQueueSafe(true, async (item) => {
+        if (item.type === 'check_in') {
+          const payload = item.payload;
+          const res = await checkInWorkerSafe(
+            payload.bookingId,
+            payload.verificationCode,
+            payload.latitude,
+            payload.longitude
+          );
+          return { success: res.success, error: res.error };
+        } else if (item.type === 'incident_report') {
+          const res = await submitSafetyIncidentSafe(item.payload as any);
+          return { success: res.success, error: res.error };
+        } else if (item.type === 'acknowledgment') {
+          return { success: true };
+        }
+        return { success: false, error: `Unsupported mutation type: ${(item as any).type}` };
+      });
+
+      const updated = await getOfflineQueue();
+      setQueue(updated);
+      setRetrying(false);
+      setRetryStatusMessage(
+        result.syncedCount > 0
+          ? `Successfully synchronized ${result.syncedCount} mutation(s).`
+          : result.failedCount > 0
+          ? `Sync completed with ${result.failedCount} error(s).`
+          : 'Queue is clear.'
+      );
+      setTimeout(() => setRetryStatusMessage(null), 3000);
     } catch {
       setRetrying(false);
       setRetryStatusMessage('Network probe failed. Ledger intact.');
+      setTimeout(() => setRetryStatusMessage(null), 3000);
     }
   };
 

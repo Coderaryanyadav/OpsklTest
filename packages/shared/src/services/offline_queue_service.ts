@@ -158,10 +158,11 @@ export async function syncOfflineQueueSafe(
           nextQueue.push(item);
         }
       } else {
-        // Default simulated idempotent success if executor not passed
-        item.status = 'synced';
-        item.serverAcknowledgedAt = new Date().toISOString();
-        synced++;
+        item.status = 'failed';
+        item.retryCount += 1;
+        item.lastError = 'No execution handler provided for offline mutation sync';
+        failed++;
+        nextQueue.push(item);
       }
     } catch (err: any) {
       item.status = 'failed';

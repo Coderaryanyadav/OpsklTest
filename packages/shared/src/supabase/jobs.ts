@@ -456,6 +456,51 @@ export async function fetchWorkerApplications(workerId: string): Promise<JobAppl
 }
 
 export async function fetchApplicationsForJob(jobId: string): Promise<JobApplication[]> {
+  try {
+    const { data: rpcRows, error: rpcErr } = await supabase.rpc('get_organizer_applications_safe', {
+      p_organizer_id: null,
+      p_job_id: jobId,
+    });
+    if (!rpcErr && Array.isArray(rpcRows) && rpcRows.length > 0) {
+      return rpcRows.map((r: any) => ({
+        id: r.id,
+        jobId: r.job_id,
+        workerId: r.worker_id,
+        status: r.status,
+        appliedAt: r.applied_at,
+        notes: r.notes,
+        worker: {
+          id: r.worker_id,
+          preferredLocality: r.worker_preferred_locality || 'Mumbai MMR',
+          serviceAreas: [],
+          skills: r.worker_skills || [],
+          experienceYears: 1,
+          availabilityStatus: 'available',
+          profileCompletionStatus: 'completed',
+          verificationStatus: r.worker_verification_status || 'unverified',
+          rating: Number(r.worker_rating) || 5.0,
+          totalReviews: 0,
+          shiftsCompleted: r.worker_shifts_completed || 0,
+          createdAt: '',
+          updatedAt: '',
+          profile: {
+            id: r.worker_id,
+            role: 'worker',
+            phone: r.worker_phone || '',
+            fullName: r.worker_full_name || 'Verified Candidate',
+            avatarUrl: r.worker_avatar_url,
+            city: 'Mumbai',
+            isActive: true,
+            createdAt: '',
+            updatedAt: '',
+          },
+        },
+      }));
+    }
+  } catch (rpcErr) {
+    logger.debug('RPC get_organizer_applications_safe not available, using direct query', { rpcErr });
+  }
+
   const { data, error } = await supabase
     .from('job_applications')
     .select(`
@@ -1400,6 +1445,9 @@ export async function cancelBookingSafe(
   reason: string,
   userId?: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!bookingId) {
+    return { success: false, error: 'Booking ID is required to cancel' };
+  }
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('cancel_booking_safe', {
       p_booking_id: bookingId,
@@ -1636,3 +1684,27 @@ export async function getDiscoveryFeedRpc(
   }
 }
 
+/**
+ * Sweeps expired worker selection offers (held > 3h or shift start passed)
+ * Authoritatively decrements slots_filled and reopens capacity
+ */
+export async function sweepExpiredWorkerOffersSafe(
+  jobId?: string
+): Promise<{ success: boolean; sweptCount: number; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('sweep_expired_worker_offers_safe', {
+      p_job_id: jobId || null,
+    });
+    if (error) {
+      logger.error('RPC error in sweep_expired_worker_offers_safe', error);
+      return { success: false, sweptCount: 0, error: error.message };
+    }
+    return {
+      success: !!data?.success,
+      sweptCount: data?.swept_count || 0,
+    };
+  } catch (err: any) {
+    logger.error('Unexpected error in sweepExpiredWorkerOffersSafe', err);
+    return { success: false, sweptCount: 0, error: err?.message || 'Network error' };
+  }
+}

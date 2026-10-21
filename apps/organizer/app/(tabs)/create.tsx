@@ -610,6 +610,72 @@ export default function OrganizerCreateShiftScreen() {
               helperText="Computed hours used for wage and fee estimates"
             />
 
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                Popular Mumbai Event Venues (Quick Autofill)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {[
+                  {
+                    name: 'Jio World Convention Centre, Gate 4',
+                    address: 'G Block BKC, Bandra Kurla Complex, Mumbai 400098',
+                    landmark: 'Gate 4 Security Concourse',
+                    zone: 'Bandra Kurla Complex (BKC)',
+                    tag: 'JWC BKC',
+                  },
+                  {
+                    name: 'NESCO Exhibition Centre, Hall 1',
+                    address: 'Western Express Highway, Goregaon East, Mumbai 400063',
+                    landmark: 'Hall 1 VIP Concourse',
+                    zone: 'Goregaon & NESCO',
+                    tag: 'NESCO Goregaon',
+                  },
+                  {
+                    name: 'Dome SVP Stadium, Worli',
+                    address: 'Lala Lajpatrai Marg, Lotus Colony, Worli, Mumbai 400018',
+                    landmark: 'Main Gate Concourse',
+                    zone: 'Worli & South Mumbai',
+                    tag: 'Dome Worli',
+                  },
+                  {
+                    name: 'Taj Lands End, Bandra',
+                    address: 'BJ Road, Bandstand, Bandra West, Mumbai 400050',
+                    landmark: 'Ballroom Foyer',
+                    zone: 'Bandra Kurla Complex (BKC)',
+                    tag: 'Taj Bandra',
+                  },
+                ].map((v) => (
+                  <TouchableOpacity
+                    key={v.tag}
+                    onPress={() => {
+                      setVenueName(v.name);
+                      setVenueAddress(v.address);
+                      setLandmark(v.landmark);
+                      setZone(v.zone);
+                    }}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: radii.md,
+                      backgroundColor: venueName === v.name ? colors.primary : colors.surfaceMuted,
+                      borderWidth: 1,
+                      borderColor: venueName === v.name ? colors.primary : colors.borderMuted,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: venueName === v.name ? '#FFFFFF' : colors.textPrimary,
+                      }}
+                    >
+                      {v.tag}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             <Input
               label="Venue Name"
               value={venueName}

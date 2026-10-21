@@ -376,29 +376,43 @@ export function GeofencedCheckInModal({
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.lg,
-                  backgroundColor: colors.surfaceMuted,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 1,
-                  borderColor: colors.borderMuted,
-                }}
-              >
-                {geofenceState === 'checking' ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : geofenceState === 'verified' || isCheckedIn ? (
-                  <ShieldCheck size={24} color={colors.primary} strokeWidth={2.4} />
-                ) : geofenceState === 'out_of_range' ? (
-                  <Radio size={24} color={colors.warning} />
-                ) : geofenceState === 'permission_denied' ? (
-                  <AlertTriangle size={24} color={colors.danger} />
-                ) : (
-                  <HelpCircle size={24} color={colors.textSecondary} />
-                )}
+              <View style={{ position: 'relative', width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+                {/* Concentric radar ring aura */}
+                <View
+                  style={{
+                    position: 'absolute',
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    borderWidth: 1.5,
+                    borderColor: geofenceState === 'verified' || isCheckedIn ? colors.primary : colors.borderMuted,
+                    opacity: 0.35,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: radii.lg,
+                    backgroundColor: geofenceState === 'verified' || isCheckedIn ? colors.surfaceTertiary : colors.surfaceMuted,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: geofenceState === 'verified' || isCheckedIn ? colors.primary : colors.borderMuted,
+                  }}
+                >
+                  {geofenceState === 'checking' ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : geofenceState === 'verified' || isCheckedIn ? (
+                    <ShieldCheck size={22} color={colors.primary} strokeWidth={2.4} />
+                  ) : geofenceState === 'out_of_range' ? (
+                    <Radio size={22} color={colors.warning} />
+                  ) : geofenceState === 'permission_denied' ? (
+                    <AlertTriangle size={22} color={colors.danger} />
+                  ) : (
+                    <HelpCircle size={22} color={colors.textSecondary} />
+                  )}
+                </View>
               </View>
 
               <View style={{ flex: 1 }}>

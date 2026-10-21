@@ -800,24 +800,24 @@ export default function WorkerEarningsScreen() {
                 borderColor: colors.borderMuted,
               }}
               accessibilityRole="button"
-              accessibilityLabel="Settlement support guidance"
+              accessibilityLabel="Payment Dispute or Missing Settlement?"
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
                 <Headphones size={18} color={colors.danger} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.danger }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.danger, flexShrink: 1 }} numberOfLines={1}>
                   Payment Dispute or Missing Settlement?
                 </Text>
               </View>
               <View
                 style={{
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
                   borderRadius: radii.sm,
                   backgroundColor: `${colors.danger}15`,
                 }}
               >
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.danger }}>
-                  Email support
+                  Support
                 </Text>
               </View>
             </Pressable>

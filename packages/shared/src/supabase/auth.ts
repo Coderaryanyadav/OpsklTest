@@ -158,6 +158,15 @@ export function classifyAuthError(error: any): ClassifiedAuthError {
     };
   }
 
+  // 7. Unsupported phone provider (SMS gateway not configured in Supabase)
+  if (rawMsg.includes('unsupported phone provider') || rawMsg.includes('sms provider')) {
+    return {
+      kind: 'unknown',
+      message: 'SMS provider is not enabled in this Supabase project. Please use the "Email / Password" or "Email OTP" tab to sign in.',
+      originalError: error,
+    };
+  }
+
   return {
     kind: 'unknown',
     message: typeof error?.message === 'string' ? error.message : 'Authentication operation failed.',
@@ -402,21 +411,21 @@ export async function signUpWithEmailPassword({
   logger.info('Initiating Sign-up', { email, role });
   const normalizedEmail = email.trim().toLowerCase();
 
-  // For organizer role: use registration endpoint when available to guarantee instant activation
-  if (role === 'organizer') {
-    const apiBase =
-      (typeof process !== 'undefined' && (process.env.EXPO_PUBLIC_ADMIN_URL || process.env.NEXT_PUBLIC_ADMIN_URL)) ||
-      (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '');
+  // Try universal registration endpoint if available to bypass SMTP confirmation email failure
+  const apiBase =
+    (typeof process !== 'undefined' && (process.env.EXPO_PUBLIC_ADMIN_URL || process.env.NEXT_PUBLIC_ADMIN_URL)) ||
+    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:3000');
 
-    if (apiBase) {
-      try {
-        const resp = await fetch(`${apiBase}/api/auth/register-organizer`, {
+  if (apiBase) {
+    try {
+      const resp = await fetch(`${apiBase}/api/auth/register-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: normalizedEmail,
           password,
-          businessName: fullName,
+          role,
+          fullName,
           phone,
         }),
       });
@@ -432,13 +441,17 @@ export async function signUpWithEmailPassword({
           if (signInRes.data?.session) {
             return signInRes.data;
           }
+        } else if (body.error && body.error.includes('already exists')) {
+          throw new Error(body.error);
         }
       }
-    } catch (e) {
-      logger.warn('Direct organizer registration endpoint unavailable, falling back to standard auth', { error: String(e) });
+    } catch (e: any) {
+      if (e?.message && e.message.includes('already exists')) {
+        throw e;
+      }
+      logger.warn('Direct registration endpoint unavailable, falling back to standard auth', { error: String(e) });
     }
   }
-}
 
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
@@ -453,6 +466,11 @@ export async function signUpWithEmailPassword({
   });
 
   if (error) {
+    // If Supabase errors due to mail sending failure on unconfigured SMTP, clarify message
+    if (error.message?.toLowerCase().includes('sending confirmation email')) {
+      logger.warn('Supabase mail server unconfigured or rate limited', error);
+      throw new Error('Email server is temporarily unconfigured for confirmation emails. Please use Google Sign-In or Mobile OTP to enter.');
+    }
     logger.error('Sign-up failed', error, { email: normalizedEmail });
     throw error;
   }

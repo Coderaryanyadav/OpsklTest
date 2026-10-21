@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import {
@@ -233,7 +233,7 @@ export default function OrganizerLoginScreen() {
       const redirectUrl = Linking.createURL('/auth/login');
       const res = await signInWithGoogle('organizer', redirectUrl);
       if (res?.url) {
-        if (typeof window !== 'undefined' && window.location) {
+        if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
           window.location.href = res.url;
         } else {
           await Linking.openURL(res.url);

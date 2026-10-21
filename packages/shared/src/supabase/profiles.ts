@@ -155,10 +155,15 @@ export async function uploadVerificationDocument(
       }
     }
 
+    let normalizedContentType = (contentType || 'application/pdf').toLowerCase();
+    if (normalizedContentType === 'text/plain') {
+      normalizedContentType = 'application/pdf';
+    }
+
     const { error } = await supabase.storage
       .from('verification-documents')
       .upload(storagePath, uploadPayload, {
-        contentType,
+        contentType: normalizedContentType,
         upsert: true,
       });
 

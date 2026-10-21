@@ -477,6 +477,11 @@ export interface VerificationCase {
     email?: string;
     role?: string;
     phone?: string;
+    preferredLocality?: string;
+    serviceAreas?: string[];
+    skills?: string[];
+    upiId?: string;
+    businessName?: string;
   };
 }
 

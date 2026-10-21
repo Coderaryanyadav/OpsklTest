@@ -261,21 +261,21 @@ export function SwipeCard({
 
           {/* Hero Wage Section */}
           <View style={[styles.wageSection, { borderBottomColor: colors.border }]}>
-            <View>
-              <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase' }]}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={[typography.caption, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
                 Estimated Shift Earnings
               </Text>
               <View style={styles.wageRow}>
-                <WageText style={styles.wageAmount}>{formatINR(job.totalPay)}</WageText>
-                <Text style={[styles.hourlyBreakdown, { color: colors.textMuted }]}>
+                <WageText style={[styles.wageAmount, { color: colors.textPrimary }]}>{formatINR(job.totalPay)}</WageText>
+                <Text style={[styles.hourlyBreakdown, { color: colors.textSecondary }]}>
                   {formatINR(job.hourlyRate)}/hr • {job.durationHours}h
                 </Text>
               </View>
             </View>
             <View style={[styles.upiGuaranteePill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1 }]}>
-              <Zap size={12} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 4 }} />
+              <Zap size={12} color={colors.primary} strokeWidth={2.4} style={{ marginRight: 4 }} />
               <Text style={[styles.upiGuaranteeText, { color: colors.textSecondary }]}>
-                Pay after attendance approval
+                Pay after sign-off
               </Text>
             </View>
           </View>
@@ -512,13 +512,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   wageAmount: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
+    letterSpacing: -0.5,
   },
   hourlyBreakdown: {
     fontSize: 12,
     marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   upiGuaranteePill: {
     flexDirection: 'row',

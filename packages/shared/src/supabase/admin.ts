@@ -103,7 +103,7 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
 
   const { data, error } = await getClient()
     .from('verification_cases')
-    .select('*, profiles!verification_cases_profile_id_fkey(full_name, email, role, phone)')
+    .select('*, profiles!verification_cases_profile_id_fkey(full_name, email, role, phone, worker_profiles(*), organizer_profiles(*))')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -111,26 +111,37 @@ export async function fetchVerificationQueue(): Promise<VerificationCase[]> {
     throw new Error(`Failed to fetch verification queue: ${error.message}`);
   }
 
-  return (data || []).map((d: any) => ({
-    id: d.id,
-    profileId: d.profile_id,
-    documentType: d.document_type,
-    documentMaskedId: d.document_masked_id,
-    documentStoragePath: d.document_storage_path,
-    status: d.status,
-    rejectionReason: d.rejection_reason,
-    reviewedBy: d.reviewed_by,
-    reviewedAt: d.reviewed_at,
-    createdAt: d.created_at,
-    applicantProfile: d.profiles
-      ? {
-          fullName: d.profiles.full_name,
-          email: d.profiles.email,
-          role: d.profiles.role,
-          phone: d.profiles.phone,
-        }
-      : undefined,
-  }));
+  return (data || []).map((d: any) => {
+    const p = d.profiles;
+    const wp = p?.worker_profiles;
+    const op = p?.organizer_profiles;
+
+    return {
+      id: d.id,
+      profileId: d.profile_id,
+      documentType: d.document_type,
+      documentMaskedId: d.document_masked_id,
+      documentStoragePath: d.document_storage_path,
+      status: d.status,
+      rejectionReason: d.rejection_reason,
+      reviewedBy: d.reviewed_by,
+      reviewedAt: d.reviewed_at,
+      createdAt: d.created_at,
+      applicantProfile: p
+        ? {
+            fullName: p.full_name,
+            email: p.email,
+            role: p.role,
+            phone: p.phone,
+            preferredLocality: wp?.preferred_locality,
+            serviceAreas: wp?.service_areas,
+            skills: wp?.skills,
+            upiId: wp?.upi_id,
+            businessName: op?.business_name,
+          }
+        : undefined,
+    };
+  });
 }
 
 /**

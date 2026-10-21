@@ -543,29 +543,31 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
-              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                Roster Completion
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Roster Completion Status
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.textPrimary, marginTop: 2 }}>
-                {presentCount} of {totalExpected} On Deck
+              <Text style={{ fontSize: 18, fontWeight: '900', color: colors.textPrimary, marginTop: 2 }}>
+                {presentCount} / {totalExpected} Checked In
               </Text>
             </View>
 
-            {/* Completion Percentage Badge */}
+            {/* High-Visibility Completion Pill */}
             <View
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: colors.surfaceMuted,
-                borderWidth: 2,
-                borderColor: colors.primary,
+                flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 6,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: radii.full,
+                backgroundColor: presentCount > 0 ? colors.surfaceTertiary : colors.surfaceMuted,
+                borderWidth: 1.5,
+                borderColor: colors.primary,
               }}
             >
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
               <Text style={{ fontSize: 12, fontWeight: '800', color: colors.primary }}>
-                {completionPct}%
+                {completionPct}% Ready
               </Text>
             </View>
           </View>

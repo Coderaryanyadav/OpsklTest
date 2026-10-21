@@ -597,20 +597,20 @@ export function FilterSheet({
 
         {/* Fixed Bottom Action Bar */}
         <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.surface }]}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, marginRight: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                {availableShiftCount > 0 ? `${availableShiftCount} shifts ready` : '0 shifts found'}
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary }} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textPrimary }}>
+                {availableShiftCount > 0 ? `${availableShiftCount} Shifts Available` : 'No Shifts Match'}
               </Text>
             </View>
-            <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-              Mumbai • listed wages · payout after attendance
+            <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+              {selectedZone.id === 'all' ? 'All Mumbai Localities' : selectedZone.label}
             </Text>
           </View>
 
           <Button
-            title="Apply Filters"
+            title={availableShiftCount > 0 ? `Show ${availableShiftCount} Shifts` : 'Apply Filters'}
             variant="primary"
             size="md"
             onPress={handleApply}

@@ -27,6 +27,7 @@ import {
   uploadVerificationDocument,
   isValidIndianUpiId,
   VerificationCase,
+  logger,
 } from '@opskil/shared';
 import {
   Shield,
@@ -346,6 +347,16 @@ export default function WorkerOnboardingScreen() {
             throw new Error(uploadRes.error || 'Failed to securely store document image. Please retry.');
           }
           storagePath = uploadRes.storagePath;
+
+          // If back document was also captured, upload it to the secure bucket as well
+          if (backDoc) {
+            await uploadVerificationDocument(
+              userId,
+              docType,
+              { uri: backDoc.uri },
+              backDoc.mimeType
+            ).catch((err) => logger.warn('Back-side document upload non-blocking warning', { err }));
+          }
         }
 
         const verifyRes = await submitVerificationCaseSafe(docType, masked, storagePath);
@@ -841,7 +852,7 @@ export default function WorkerOnboardingScreen() {
               ) : null}
 
               {/* Document Preview Slots (Front & Back) */}
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 {/* Front Side */}
                 <Pressable
                   onPress={() => setPermissionTarget('front')}
@@ -849,15 +860,12 @@ export default function WorkerOnboardingScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Attach Front Side Document"
                 >
-                  <View style={styles.watermarkLock}>
-                    <Lock size={20} color="#FFFFFF" />
-                    <Text style={styles.watermarkText}>Encrypted</Text>
-                  </View>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
+                  <Lock size={16} color={colors.accent} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
                     Front Side
                   </Text>
-                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                    {frontDoc ? `${frontDoc.name.slice(0, 16)}...` : 'Attach PDF/Photo'}
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                    {frontDoc ? frontDoc.name : 'Attach Document'}
                   </Text>
                 </Pressable>
 
@@ -868,15 +876,12 @@ export default function WorkerOnboardingScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Attach Back Side Document"
                 >
-                  <View style={styles.watermarkLock}>
-                    <Lock size={20} color="#FFFFFF" />
-                    <Text style={styles.watermarkText}>Encrypted</Text>
-                  </View>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
+                  <Lock size={16} color={colors.accent} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
                     Back Side
                   </Text>
-                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                    {backDoc ? `${backDoc.name.slice(0, 16)}...` : 'Attach PDF/Photo'}
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                    {backDoc ? backDoc.name : 'Attach Document'}
                   </Text>
                 </Pressable>
               </View>
