@@ -1,0 +1,42 @@
+# Opskl CI Workflow Template
+# NOTE: If you wish to enable GitHub Actions automatically on push/PR, copy this file
+# to `.github/workflows/ci.yml`. Note that pushing to `.github/workflows/` requires a GitHub
+# Personal Access Token or OAuth grant with the 'workflow' scope.
+
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Admin production build
+        run: npm run build:admin
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder
+          NEXT_PUBLIC_APP_ENV: ci
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+      - name: SQL static invariants
+        # Without DATABASE_URL (and without a CI .env), live DB phase is skipped;
+        # migration text invariants still run and must pass.
+        run: npm run test:sql
