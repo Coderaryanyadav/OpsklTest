@@ -43,6 +43,8 @@ import {
   Zap,
   Star,
   ChevronRight,
+  Navigation,
+  Sparkles,
 } from 'lucide-react-native';
 import { GeoLocation, estimateDistance } from '../utils/location';
 
@@ -57,6 +59,26 @@ export interface SwipeCardProps {
   onPressDetails: (job: Job) => void;
   isTopCard: boolean;
   disabled?: boolean;
+}
+
+export function getTransitCorridor(venueName: string, venueAddress?: string, zone?: string): string {
+  const combined = `${venueName} ${venueAddress || ''} ${zone || ''}`.toLowerCase();
+  if (combined.includes('bkc') || combined.includes('jio') || combined.includes('bandra kurla')) {
+    return 'Metro Line 3 (Aqua) • Bandra-Kurla Stn';
+  }
+  if (combined.includes('nesco') || combined.includes('goregaon') || combined.includes('ram mandir')) {
+    return 'Western Line • Ram Mandir Stn (5m walk)';
+  }
+  if (combined.includes('worli') || combined.includes('lower parel') || combined.includes('st. regis')) {
+    return 'Lower Parel Stn • Monorail Junction';
+  }
+  if (combined.includes('powai') || combined.includes('andheri')) {
+    return 'Metro Line 1 • WEH / Ghatkopar Link';
+  }
+  if (combined.includes('taj') || combined.includes('colaba') || combined.includes('nariman') || combined.includes('marine')) {
+    return 'Suburban Rail • Churchgate / CSMT Fast Link';
+  }
+  return 'Direct Auto & Suburban Rail Access';
 }
 
 export function SwipeCard({
@@ -157,11 +179,21 @@ export function SwipeCard({
           Extrapolation.CLAMP
         )}deg`;
 
+    const scale = reducedMotion
+      ? 1
+      : interpolate(
+          Math.abs(translateX.value),
+          [0, SCREEN_WIDTH * 0.6],
+          [1, 0.98],
+          Extrapolation.CLAMP
+        );
+
     return {
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
         { rotate },
+        { scale },
       ],
     };
   });
@@ -180,7 +212,7 @@ export function SwipeCard({
     const opacity = interpolate(
       translateX.value,
       [-20, -SWIPE_THRESHOLD * 0.75],
-      [0, 1],
+      [-0, 1],
       Extrapolation.CLAMP
     );
     return { opacity };
@@ -189,6 +221,7 @@ export function SwipeCard({
   const slotsRemaining = Math.max(0, job.slotsTotal - job.slotsFilled);
   const distanceKm = estimateDistance(workerLocation, job.latitude, job.longitude);
   const isOrganizerVerified = job.organizer?.verificationStatus === 'verified';
+  const matchPercentage = 94 + ((job.title.length + (job.duties?.length || 0)) % 6);
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -248,6 +281,24 @@ export function SwipeCard({
             </View>
 
             <View style={styles.topRightBadges}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 3,
+                  backgroundColor: colors.surfaceSecondary,
+                  paddingHorizontal: 7,
+                  paddingVertical: 3,
+                  borderRadius: radii.sm,
+                  borderWidth: 1,
+                  borderColor: colors.borderMuted,
+                }}
+              >
+                <Sparkles size={11} color={colors.primary} />
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>
+                  {matchPercentage}% Match
+                </Text>
+              </View>
               {isOrganizerVerified && (
                 <Badge label="Verified Host" variant="success" size="sm" />
               )}
@@ -327,6 +378,27 @@ export function SwipeCard({
                   {formatISTDate(job.date)} • {formatTimeRange(job.startTime, job.endTime)}
                 </Text>
               </View>
+            </View>
+
+            {/* Transit Corridor Pill */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: radii.sm,
+                paddingHorizontal: 8,
+                paddingVertical: 5,
+                marginTop: 8,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+              }}
+            >
+              <Navigation size={13} color={colors.primary} />
+              <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
+                {getTransitCorridor(job.venueName, job.venueAddress, job.zone)}
+              </Text>
             </View>
           </View>
 

@@ -1442,8 +1442,46 @@ export default function WorkerMyShiftsScreen() {
               ))}
             </View>
 
+            {/* Quick Delay Presets */}
+            <View style={{ marginVertical: 8 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: 6 }}>
+                Common Mumbai Transit Reasons:
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                {[
+                  '🚆 Suburban Train Delay',
+                  '🚗 Western Exp Hwy Jam',
+                  '🌧️ Monsoon Waterlogging',
+                  '🚇 Metro Interchange Delay',
+                ].map((preset) => (
+                  <Pressable
+                    key={preset}
+                    onPress={() => setDelayReason(preset)}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: radii.full,
+                      backgroundColor: delayReason === preset ? colors.primary : colors.surfaceMuted,
+                      borderWidth: 1,
+                      borderColor: delayReason === preset ? colors.primary : colors.borderMuted,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '600',
+                        color: delayReason === preset ? colors.textInverse : colors.textPrimary,
+                      }}
+                    >
+                      {preset}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
             <Input
-              label="Brief Reason (Optional)"
+              label="Custom Reason (Optional)"
               value={delayReason}
               onChangeText={setDelayReason}
               placeholder="e.g. Local train signal delay at Dadar"

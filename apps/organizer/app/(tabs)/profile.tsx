@@ -30,6 +30,7 @@ import {
   requestAccountDeletionSafe,
   submitVerificationCaseSafe,
   uploadVerificationDocument,
+  supabase,
 } from '@opskil/shared';
 import { GstinSchema } from '@opskil/validation';
 import { Building2 } from 'lucide-react-native';
@@ -169,6 +170,30 @@ export default function OrganizerProfileScreen() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  // Realtime subscription to live GSTIN / KYC / organizer profile verification updates
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`organizer_profile_rt_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'organizer_profiles',
+          filter: `id=eq.${userId}`,
+        },
+        () => {
+          loadProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, loadProfile]);
 
   const handleOpenEdit = () => {
     setFormBusinessName(organizerData?.businessName || userProfile?.fullName || '');

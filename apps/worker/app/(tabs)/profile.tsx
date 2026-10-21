@@ -18,6 +18,7 @@ import {
   VerificationCase,
   calculateWorkerTrustScore,
   WorkerTrustScore,
+  supabase,
 } from '@opskil/shared';
 import { ShieldCheck, Info } from 'lucide-react-native';
 
@@ -57,6 +58,30 @@ export default function WorkerProfileScreen() {
 
   useEffect(() => {
     loadProfile();
+  }, [userId]);
+
+  // Realtime subscription to live KYC / profile updates from Admin dashboard
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`worker_profile_rt_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'worker_profiles',
+          filter: `id=eq.${userId}`,
+        },
+        () => {
+          loadProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const handleOpenUrl = async (url: string) => {
