@@ -697,8 +697,10 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700 }}>Turnstile Hardware Drift:</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: '#059669' }}>98.4% Match (Corroborated)</span>
+                      <span style={{ fontSize: 10, fontWeight: 700 }}>Sensor telemetry:</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-secondary)' }}>
+                        Not wired in this build
+                      </span>
                     </div>
                   </div>
                 </div>

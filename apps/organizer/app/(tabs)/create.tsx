@@ -607,7 +607,7 @@ export default function OrganizerCreateShiftScreen() {
               value={durationHours}
               onChangeText={setDurationHours}
               placeholder="9"
-              helperText="Computed hours used for statutory rate and escrow calculations"
+              helperText="Computed hours used for wage and fee estimates"
             />
 
             <Input

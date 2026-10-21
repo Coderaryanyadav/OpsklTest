@@ -7,6 +7,7 @@ import {
   Modal,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Rect } from 'react-native-svg';
@@ -45,8 +46,8 @@ export default function OfflineSyncHubScreen() {
   const [queue, setQueue] = useState<OfflineMutationItem[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [retryStatusMessage, setRetryStatusMessage] = useState<string | null>(null);
-  const [bleSyncing, setBleSyncing] = useState(false);
-  const [bleSuccess, setBleSuccess] = useState(false);
+  const bleSyncing = false;
+  const bleSuccess = false;
   const [showDutyModal, setShowDutyModal] = useState(false);
   const [showProofSlip, setShowProofSlip] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(42 * 60 - 12); // 41m 48s
@@ -92,18 +93,10 @@ export default function OfflineSyncHubScreen() {
   };
 
   const handleBleHandshake = () => {
-    setBleSyncing(true);
-    setTimeout(() => {
-      setBleSyncing(false);
-      setBleSuccess(true);
-      // Update queue item state to relayed
-      setQueue((prev) =>
-        prev.map((item) => ({
-          ...item,
-          summaryMeta: `${item.summaryMeta.split('•')[0]} • Relayed via BLE MUM-SUP-4109`,
-        }))
-      );
-    }, 1400);
+    Alert.alert(
+      'BLE mesh unavailable',
+      'Peer Bluetooth attendance relay is not implemented on this build. Keep queued mutations local and sync when cellular/Wi‑Fi returns.'
+    );
   };
 
   return (
@@ -175,7 +168,7 @@ export default function OfflineSyncHubScreen() {
                 HARDWARE LEDGER PROTECTED
               </Text>
             </View>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8' }}>AES-GCM-256</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#94a3b8' }}>LOCAL QUEUE</Text>
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 4 }}>
@@ -365,7 +358,7 @@ export default function OfflineSyncHubScreen() {
           </View>
 
           <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', marginTop: 4, lineHeight: 16 }}>
-            Present this token to the gate supervisor tablet for optical peer verification without cellular link.
+            Show this offline gate key or backup PIN to your supervisor if cellular sync is unavailable.
           </Text>
         </View>
 
@@ -394,10 +387,10 @@ export default function OfflineSyncHubScreen() {
               </View>
               <View>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#bfdbfe', letterSpacing: 0.5 }}>
-                  BLE MESH RELAY
+                  BLE MESH
                 </Text>
                 <Text style={{ fontSize: 14, fontWeight: '800', color: '#ffffff' }}>
-                  Supervisor Proximity Linked
+                  Peer sync not available
                 </Text>
               </View>
             </View>
@@ -410,13 +403,13 @@ export default function OfflineSyncHubScreen() {
               }}
             >
               <Text style={{ fontSize: 10, fontWeight: '700', color: '#ffffff' }}>
-                RSSI -64 dBm
+                UNAVAILABLE
               </Text>
             </View>
           </View>
 
           <Text style={{ fontSize: 12, color: '#e0e7ff', marginTop: 4, lineHeight: 18 }}>
-            Nearby Peer Supervisor Detected: <Text style={{ fontWeight: '800', color: '#ffffff' }}>MUM-SUP-4109</Text> via BLE. Tap to peer-sync attendance without cell coverage.
+            Bluetooth peer mesh for attendance is not implemented. Queued check-ins stay on-device until network sync succeeds.
           </Text>
 
           <TouchableOpacity
@@ -446,7 +439,7 @@ export default function OfflineSyncHubScreen() {
               <>
                 <Radio size={16} color={colors.primary} />
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
-                  Initiate Peer Handshake Sync
+                  BLE unavailable — tap for details
                 </Text>
               </>
             )}
@@ -715,10 +708,10 @@ export default function OfflineSyncHubScreen() {
               </TouchableOpacity>
             </View>
             <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, marginTop: 8 }}>
-              1. Assigned Station: Concourse Gate 4 Badge Check.{'\n'}
-              2. Zero Connectivity Policy: Scan worker offline QR key or record the 6-digit backup PIN in supervisor logbook.{'\n'}
-              3. Bluetooth Sync: Keep Bluetooth active so your device can participate in supervisor mesh packet exchange.{'\n'}
-              4. Wage Protection: Timestamps stamped locally are cryptographically verifiable for daily escrow disbursement.
+              1. Follow your confirmed shift reporting instructions when online.{'\n'}
+              2. Zero Connectivity Policy: Show your offline gate key or 6-digit backup PIN to the supervisor logbook.{'\n'}
+              3. Bluetooth peer mesh is not available in this build — do not rely on BLE for attendance.{'\n'}
+              4. Local queue timestamps sync when connectivity returns; payout remains a separate ledger step.
             </Text>
             <TouchableOpacity
               onPress={() => setShowDutyModal(false)}
@@ -763,17 +756,20 @@ export default function OfflineSyncHubScreen() {
                 gap: 4,
               }}
             >
-              <Text style={styles.voucherMono}>STAFF: Rajesh Sharma (ID: 9021)</Text>
-              <Text style={styles.voucherMono}>LOC: NESCO Hall 4, Mumbai</Text>
-              <Text style={styles.voucherMono}>TIMESTAMP: 09:28:14 IST</Text>
-              <Text style={styles.voucherMono}>HASH: 7f83b1657ff1fc53b92dc</Text>
+              <Text style={styles.voucherMono}>STATUS: LOCAL QUEUE SNAPSHOT</Text>
+              <Text style={styles.voucherMono}>
+                ITEMS: {queue.length} pending mutation{queue.length === 1 ? '' : 's'}
+              </Text>
+              <Text style={styles.voucherMono}>
+                CAPTURED: {new Date().toLocaleString('en-IN')}
+              </Text>
               <Text style={[styles.voucherMono, { color: colors.primary, fontWeight: '800' }]}>
-                STATUS: CRYPTO-STAMPED (OFFLINE)
+                NOT A BANK PAYOUT RECEIPT
               </Text>
             </View>
 
             <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-              This cryptographically signed voucher is saved to your device cache and exportable as proof for daily wage disbursement.
+              This is a local queue summary only. It is not a cryptographic bank voucher and does not prove payout.
             </Text>
 
             <TouchableOpacity

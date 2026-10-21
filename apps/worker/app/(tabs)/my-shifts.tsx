@@ -605,7 +605,7 @@ export default function WorkerMyShiftsScreen() {
               </Text>
             </View>
             <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 3, lineHeight: 17 }}>
-              Arrive precisely 30 mins prior for Gate 4 biometric accreditation & wristband handover. Late scans forfeit slot guarantee.
+              Arrive at least 30 minutes before call time and follow the venue reporting instructions on your confirmed shift briefing.
             </Text>
           </View>
         </View>

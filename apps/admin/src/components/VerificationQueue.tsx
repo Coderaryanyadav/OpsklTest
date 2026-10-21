@@ -250,19 +250,17 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               {filteredCases.filter((c) => c.status === 'pending').length} Pending Review
             </span>
             <span style={{ color: 'var(--text-secondary)' }}>•</span>
-            <span style={{ fontWeight: 700, color: '#B91C1C' }}>3 SLA WARNINGS (&gt;3H)</span>
-            <span style={{ color: 'var(--text-secondary)' }}>•</span>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              Mumbai Zone Grid: Phase 1 High-Density Event Deployments
+            <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>
+              Live pending queue only
             </span>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>OPERATOR ID</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>DESK</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-main)' }}>
-              OPR-MUM-892 (K. Sharma)
+              Masked KYC review
             </span>
           </div>
 
@@ -273,24 +271,12 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 fontWeight: 700,
                 padding: '4px 8px',
                 borderRadius: 4,
-                background: '#ECFDF5',
-                color: '#065F46',
-                border: '1px solid #A7F3D0',
-              }}
-            >
-              Auto-OCR Engine: Active (v4.1.2)
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 8px',
-                borderRadius: 4,
                 background: 'var(--surface-muted)',
                 color: 'var(--text-secondary)',
+                border: '1px solid var(--border-color)',
               }}
             >
-              Avg TTR: 14m 20s
+              OCR engine: not connected
             </span>
           </div>
         </div>
@@ -928,22 +914,22 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>PENNY-DROP LEDGER</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>BANK VERIFY</div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
-                    ₹1.00 Disbursed (UTR #414489201991)
+                    Penny-drop / IMPS not integrated
                   </div>
-                  <div style={{ fontSize: 10, color: '#059669', fontWeight: 700, marginTop: 2 }}>
-                    ✓ IMPS Credit Confirmed
+                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, marginTop: 2 }}>
+                    Review masked document evidence only
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>REGISTERED BENEFICIARY</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>APPLICANT</div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
-                    Aarav R Kulkarni
+                    {activeCase?.applicantProfile?.fullName || 'Name on case record'}
                   </div>
-                  <div style={{ fontSize: 10, color: '#059669', fontWeight: 700, marginTop: 2 }}>
-                    ✓ Fuzzy Match Score: 98.2%
+                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, marginTop: 2 }}>
+                    Masked ID: {activeCase?.documentMaskedId || '—'}
                   </div>
                 </div>
               </div>

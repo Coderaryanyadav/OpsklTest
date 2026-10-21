@@ -24,6 +24,11 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Admin queue rows invented SLA timers, assignees, hub locations | `AdminOverviewDesk.tsx` | Fake ops urgency | **Fixed** (follow-up) — real timestamps / QUEUE only |
 | Admin “98.4% SLA” horizon chart | `AdminOverviewDesk.tsx` | Fake telemetry | **Fixed** (follow-up) — live queue counts |
 | Organizer welcome optical QR / escrow settlement claims | `welcome.tsx` | Overclaim | **Fixed** (follow-up) |
+| Offline BLE mesh / AES / crypto voucher demo | `offline.tsx` | Fake hardware capability | **Fixed** (follow-up) — unavailable + local queue only |
+| Emergency pause “nodal escrow assured” | `emergency.tsx` | Fake bank guarantee | **Fixed** (follow-up) |
+| Organizer dashboard `98.4%` / `\|\| 38` metrics | `index.tsx` | Fake KPIs | **Fixed** (follow-up) — live metrics |
+| Verification desk OCR / penny-drop / K. Sharma | `VerificationQueue.tsx` | Fake ops tooling | **Fixed** (follow-up) |
+| Disputes turnstile 98.4% telemetry | `DisputesQueue.tsx` | Fake sensors | **Fixed** (follow-up) |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

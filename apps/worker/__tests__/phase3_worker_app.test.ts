@@ -175,7 +175,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     const onboardingPath = path.join(workerAppDir, 'app/onboarding.tsx');
     const content = fs.readFileSync(onboardingPath, 'utf8');
     expect(content).toContain('STEP 2 OF 2 • COMPLIANCE');
-    expect(content).toContain('BANK-GRADE 256-BIT');
+    expect(content).toContain('MASKED KYC');
     expect(content).toContain('Identity Verification (KYC)');
     expect(content).toContain('KYC Verification Pending Review');
     expect(content).toContain('KYC Verified & Active');
@@ -286,7 +286,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     // Mandatory IST Protocol
     expect(content).toContain('Mandatory IST Protocol');
     expect(content).toContain('Strict Access');
-    expect(content).toContain('Gate 4 biometric accreditation');
+    expect(content).toContain('Arrive at least 30 minutes before call time');
 
     // Tabs Rail
     expect(content).toContain("id: 'upcoming', label: 'Upcoming'");

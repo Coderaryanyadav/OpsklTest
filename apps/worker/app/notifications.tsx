@@ -386,7 +386,7 @@ export default function WorkerNotificationsScreen() {
         >
           {[
             { id: 'all', label: 'All', count: totalCount },
-            { id: 'escrow', label: 'Escrow & Payouts', count: escrowCount },
+            { id: 'escrow', label: 'Payouts', count: escrowCount },
             { id: 'lifecycle', label: 'Shift Lifecycle', count: lifecycleCount },
             { id: 'safety', label: 'Safety & System', count: safetyCount },
           ].map((chip) => {
@@ -551,7 +551,7 @@ export default function WorkerNotificationsScreen() {
           {filteredList.length === 0 ? (
             <EmptyState
               title={`No ${selectedCategory === 'all' ? '' : selectedCategory} alerts`}
-              description="New shift dispatches, escrow disbursements, and safety advisories will appear in this feed."
+              description="New shift dispatches, payout updates, and safety advisories will appear here when delivered from the server."
               actionTitle="View All Alerts"
               onAction={() => setSelectedCategory('all')}
             />

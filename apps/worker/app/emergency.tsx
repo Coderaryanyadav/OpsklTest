@@ -262,18 +262,18 @@ export default function EmergencyLockdownBroadcastScreen() {
               </View>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>
-                  100% Wage Protection Guarantee
+                  Wage ledger protection policy
                 </Text>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 }}>
-                  PRE-FUNDED NODAL ESCROW ASSURED
+                  NO PENALTY FOR OFFICIAL PAUSE
                 </Text>
               </View>
             </View>
 
             <Text style={{ fontSize: 12, color: colors.textPrimary, lineHeight: 18 }}>
-              All workers currently on duty at venues will receive{' '}
-              <Text style={{ fontWeight: '800' }}>100% of their contracted wage for today</Text>,
-              pre-funded from nodal escrow. No penalty strikes or reliability deductions will occur due to transit disruption.
+              Workers already checked in when an emergency marketplace pause is active keep their{' '}
+              <Text style={{ fontWeight: '800' }}>contracted wage obligation on the Opskl ledger</Text>.
+              No reliability penalties apply for transit disruption caused by the pause. Live bank escrow rails are not linked in this build.
             </Text>
 
             <View
@@ -289,11 +289,11 @@ export default function EmergencyLockdownBroadcastScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Wallet size={16} color={colors.primary} />
                 <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textPrimary }}>
-                  Instant Escrow Release
+                  Ledger status preserved
                 </Text>
               </View>
               <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary }}>
-                ₹ Fully Secured
+                No auto bank release
               </Text>
             </View>
           </View>

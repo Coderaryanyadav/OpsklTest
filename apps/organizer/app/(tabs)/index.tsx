@@ -411,8 +411,8 @@ export default function OrganizerDashboardScreen() {
               </View>
               <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
                 {nextUpcomingShift
-                  ? `${nextUpcomingShift.slotsTotal} Crew reporting to ${nextUpcomingShift.venueName || 'BKC Venue'} sharp. Uniform & shift briefing on schedule.`
-                  : '14 Crew reporting to Jio World Convention Centre (Gate 3 North) sharp. Uniform & radio distribution at 09:40 AM.'}
+                  ? `${nextUpcomingShift.slotsTotal} crew reporting to ${nextUpcomingShift.venueName || 'venue'} · briefing on schedule.`
+                  : 'No upcoming shift briefings queued. Create or open a shift to see reporting instructions here.'}
               </Text>
             </View>
           </View>
@@ -468,15 +468,15 @@ export default function OrganizerDashboardScreen() {
             </View>
             <View style={{ marginTop: 8 }}>
               <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>
-                {metrics.newApplications || 38}
+                {metrics.newApplications ?? 0}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                12 screening
+                {metrics.shortlistedApplicants ?? 0} shortlisted
               </Text>
             </View>
           </View>
 
-          {/* On-Time Rate */}
+          {/* Confirmed crew (real metric — no fabricated on-time %) */}
           <View
             style={{
               flex: 1,
@@ -490,16 +490,16 @@ export default function OrganizerDashboardScreen() {
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                On-Time Rate
+                Confirmed
               </Text>
               <Clock size={14} color={colors.primary} />
             </View>
             <View style={{ marginTop: 8 }}>
               <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>
-                98.4%
+                {metrics.confirmedWorkers ?? 0}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                Last 140 shifts
+                Booked crew
               </Text>
             </View>
           </View>

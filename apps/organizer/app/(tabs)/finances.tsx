@@ -1056,8 +1056,8 @@ export default function OrganizerFinancesScreen() {
                 {selectedInvoice.status === 'escrow_funded' ? (
                   <InlineBanner
                     variant="info"
-                    title="Escrow Verified & Funded"
-                    message="Funds for this shift are held in nodal escrow and will be disbursed automatically to confirmed crew members upon checkout."
+                    title="Marked funded on ledger"
+                    message="This invoice is marked funded in Opskl records. Automatic bank disbursement is not wired in this build — payout still requires separate settlement steps."
                   />
                 ) : (
                   <View

@@ -453,7 +453,7 @@ export default function WorkerOnboardingScreen() {
             <View style={[styles.securityBadge, { backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderWidth: borders.hairline }]}>
               <Lock size={12} color={colors.accent} />
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, letterSpacing: 0.5 }}>
-                {step === 1 ? '50% COMPLETE' : 'BANK-GRADE 256-BIT'}
+                {step === 1 ? '50% COMPLETE' : 'MASKED KYC'}
               </Text>
             </View>
           </View>
