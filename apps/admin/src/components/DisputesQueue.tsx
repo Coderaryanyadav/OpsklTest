@@ -629,34 +629,26 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
 
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 10,
+                  padding: 14,
+                  borderRadius: 6,
+                  background: 'var(--surface-muted)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5,
                 }}
               >
-                <div style={{ padding: 10, borderRadius: 6, background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8' }}>09:26 IST</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>Geofence Lock</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Crossed 50m perimeter</div>
-                </div>
-
-                <div style={{ padding: 10, borderRadius: 6, background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#B91C1C' }}>10:05 IST</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>Auto Absent Flag</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Missed muster tag</div>
-                </div>
-
-                <div style={{ padding: 10, borderRadius: 6, background: 'var(--surface-muted)', border: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-main)' }}>14:00 IST</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>Manual Override</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>Supervisor validates VIP duty</div>
-                </div>
-
-                <div style={{ padding: 10, borderRadius: 6, background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#059669' }}>19:34 IST</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>Exit Ping</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>BLE beacon logs 30m overtime</div>
-                </div>
+                No live geofence / BLE / turnstile telemetry is attached to this dispute in the current build.
+                Adjudicate using the dispute details, attendance records, and resolution notes only.
+                {activeDispute.createdAt ? (
+                  <div style={{ marginTop: 8, fontWeight: 700, color: 'var(--text-main)' }}>
+                    Case opened:{' '}
+                    {new Date(activeDispute.createdAt).toLocaleString('en-IN', {
+                      timeZone: 'Asia/Kolkata',
+                    })}{' '}
+                    IST
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

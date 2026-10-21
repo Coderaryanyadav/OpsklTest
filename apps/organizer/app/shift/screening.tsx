@@ -24,6 +24,7 @@ import {
   fetchOrganizerJobs,
   fetchOrganizerApplications,
   fetchApplicationsForJob,
+  fetchJobBookings,
   updateApplicationStatusSafe,
   selectWorkerOfferSafe,
   cancelBookingSafe,
@@ -51,6 +52,7 @@ type ScreeningTab = 'all' | 'applied' | 'shortlisted' | 'selected' | 'confirmed'
 interface CandidateProfile {
   id: string;
   applicationId: string;
+  bookingId?: string;
   workerId: string;
   name: string;
   avatarUrl?: string;
@@ -143,8 +145,28 @@ export default function OrganizerApplicantScreeningScreen() {
         ? await fetchApplicationsForJob(foundJob.id)
         : await fetchOrganizerApplications(organizerId);
 
+      const bookings = foundJob ? await fetchJobBookings(foundJob.id) : [];
+      const bookingByWorker = new Map(bookings.map((b) => [b.workerId, b]));
+
       setCandidates(
-        (appsData || []).map((a) => mapApplicationToCandidate(a, foundJob?.totalPay || 0))
+        (appsData || []).map((a) => {
+          const mapped = mapApplicationToCandidate(a, foundJob?.totalPay || 0);
+          const booking = bookingByWorker.get(a.workerId);
+          if (!booking) return mapped;
+          return {
+            ...mapped,
+            bookingId: booking.id,
+            status:
+              booking.status === 'selected_awaiting_confirmation'
+                ? 'selected'
+                : booking.status === 'confirmed' ||
+                    booking.status === 'checked_in' ||
+                    booking.status === 'checked_out' ||
+                    booking.status === 'completed'
+                  ? 'confirmed'
+                  : mapped.status,
+          };
+        })
       );
     } catch (err: any) {
       setError(err?.message || 'Could not load shift candidates.');
@@ -282,6 +304,7 @@ export default function OrganizerApplicantScreeningScreen() {
           c.id === candidate.id
             ? {
                 ...c,
+                bookingId: res.bookingId || c.bookingId,
                 status: 'selected',
                 heldUntilTime: `${heldLabel} IST`,
                 timeLeftMinutes: Math.max(
@@ -320,11 +343,28 @@ export default function OrganizerApplicantScreeningScreen() {
                 OpsklAlert.alert('Authentication Required', 'Sign in to revoke offers.');
                 return;
               }
-              if (candidate.applicationId) {
-                await cancelBookingSafe(candidate.applicationId, 'organizer_revoked', organizerId);
+              if (!candidate.bookingId) {
+                OpsklAlert.alert(
+                  'No Booking to Revoke',
+                  'This candidate has no held offer booking on the ledger yet.'
+                );
+                return;
+              }
+              const cancelRes = await cancelBookingSafe(
+                candidate.bookingId,
+                'organizer_revoked',
+                organizerId
+              );
+              if (!cancelRes.success) {
+                OpsklAlert.alert('Revoke Failed', cancelRes.error || 'Could not revoke offer.');
+                return;
               }
               setCandidates((prev) =>
-                prev.map((c) => (c.id === candidate.id ? { ...c, status: 'shortlisted' } : c))
+                prev.map((c) =>
+                  c.id === candidate.id
+                    ? { ...c, status: 'shortlisted', bookingId: undefined, heldUntilTime: undefined }
+                    : c
+                )
               );
               OpsklAlert.alert('Slot Revoked', `Spot released. ${candidate.name} returned to shortlisted pool.`);
             } finally {

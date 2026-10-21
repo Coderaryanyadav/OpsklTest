@@ -34,6 +34,7 @@ import {
 } from 'lucide-react-native';
 import {
   formatINR,
+  calculateJobFinancials,
   fetchOrganizerFinancesSummary,
   fetchOrganizerProfile,
   fetchOrganizerJobs,
@@ -135,6 +136,16 @@ export default function OrganizerFinancesScreen() {
   const totalEscrowPool = settledAmount + outstandingEscrow;
   const settledPct = totalEscrowPool > 0 ? Math.round((settledAmount / totalEscrowPool) * 100) : 0;
   const outstandingPct = totalEscrowPool > 0 ? Math.round((outstandingEscrow / totalEscrowPool) * 100) : 0;
+
+  const sampleJob = organizerJobs[0];
+  const sampleFinancials = sampleJob
+    ? calculateJobFinancials(
+        Math.max(1, sampleJob.slotsTotal || sampleJob.slotsFilled || 1),
+        sampleJob.totalPay ||
+          sampleJob.hourlyRate * (sampleJob.durationHours || 8) ||
+          0
+      )
+    : null;
 
   return (
     <Screen edges={['top']}>
@@ -437,21 +448,21 @@ export default function OrganizerFinancesScreen() {
                     paddingHorizontal: 8,
                     paddingVertical: 3,
                     borderRadius: radii.full,
-                    backgroundColor: '#DBEAFE',
+                    backgroundColor: colors.surfaceMuted,
                   }}
                 >
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2563EB' }} />
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#1E40AF', textTransform: 'uppercase' }}>
-                    PRE-FUNDED & LOCKED
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary }} />
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                    LEDGER ESTIMATE
                   </Text>
                 </View>
                 <Text style={{ fontSize: 10, fontFamily: 'monospace', color: colors.textMuted, marginTop: 3 }}>
-                  #ESC-BOM-88392
+                  {sampleJob ? `#${sampleJob.id.slice(-8).toUpperCase()}` : 'NO-SHIFT'}
                 </Text>
               </View>
             </View>
 
-            {/* Financial Breakdown Table */}
+            {/* Financial Breakdown Table — from authoritative calculator when a shift exists */}
             <View
               style={{
                 backgroundColor: colors.surfaceMuted,
@@ -460,56 +471,64 @@ export default function OrganizerFinancesScreen() {
                 gap: 8,
               }}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Base Crew Wage (6 Workers × ₹2,400)
-                </Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  ₹14,400.00
-                </Text>
-              </View>
+              {sampleFinancials ? (
+                <>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      Base Crew Wage ({sampleFinancials.headcount} × {formatINR(sampleFinancials.wagePerWorker)})
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                      {formatINR(sampleFinancials.totalWorkerWages)}
+                    </Text>
+                  </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  Opskl Enterprise Platform Fee (10%)
-                </Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  ₹1,440.00
-                </Text>
-              </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      Opskl Platform Fee ({sampleFinancials.platformFeePercent}%)
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                      {formatINR(sampleFinancials.platformFeeAmount)}
+                    </Text>
+                  </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  GST on Platform Fee (18% on ₹1,440)
-                </Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  ₹259.20
-                </Text>
-              </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      GST on Platform Fee ({sampleFinancials.gstRatePercent}% on {formatINR(sampleFinancials.platformFeeAmount)})
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                      {formatINR(sampleFinancials.gstAmount)}
+                    </Text>
+                  </View>
 
-              <View
-                style={{
-                  borderTopWidth: 1,
-                  borderTopColor: colors.borderMuted,
-                  paddingTop: 8,
-                  marginTop: 2,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <View>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                    Total Organizer Obligation
-                  </Text>
-                  <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                    100% Tax Compliant Settlement
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: colors.primary }}>
-                  ₹16,099.20
+                  <View
+                    style={{
+                      borderTopWidth: 1,
+                      borderTopColor: colors.borderMuted,
+                      paddingTop: 8,
+                      marginTop: 2,
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <View>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                        Total Organizer Obligation
+                      </Text>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary }}>
+                        Estimate from shift ledger — not a bank escrow hold
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: colors.primary }}>
+                      {formatINR(sampleFinancials.totalPayableByOrganizer)}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  Publish a shift to see wage + 10% fee + 18% GST estimates from the authoritative calculator.
                 </Text>
-              </View>
+              )}
             </View>
 
             {/* Zero Worker Deduction Guarantee */}

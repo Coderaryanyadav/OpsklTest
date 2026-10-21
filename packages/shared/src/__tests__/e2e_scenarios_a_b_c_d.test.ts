@@ -9,6 +9,7 @@ import {
   isValidIndianUpiId,
   applyForJobSafe,
   confirmWorkerBookingSafe,
+  selectWorkerOfferSafe,
   updateApplicationStatusSafe,
   updateJobStatus,
   createJobSafe,
@@ -307,6 +308,29 @@ describe("E2E Lifecycle: Scenarios A, B, C, & D", () => {
         organizerId,
       );
       expect(res.success).toBe(true);
+    });
+
+    test("1b. Organizer send-offer creates selected_awaiting_confirmation (not confirmed)", async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: true,
+          booking_id: "booking-offer-001",
+          status: "selected_awaiting_confirmation",
+          held_until: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+          already_offered: false,
+        },
+        error: null,
+      });
+
+      const res = await selectWorkerOfferSafe(jobId, workerId, organizerId);
+      expect(res.success).toBe(true);
+      expect(res.status).toBe("selected_awaiting_confirmation");
+      expect(res.bookingId).toBe("booking-offer-001");
+      expect(__mockRpc).toHaveBeenCalledWith("select_worker_offer_safe", {
+        p_job_id: jobId,
+        p_worker_id: workerId,
+        p_notes: null,
+      });
     });
 
     test("2. Organizer confirms candidate into booking with capacity decrement and secure check-in code", async () => {

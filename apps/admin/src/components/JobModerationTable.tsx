@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Job, formatINR } from '@opskil/shared';
+import { Job, formatINR, calculateJobFinancials } from '@opskil/shared';
 import {
   CheckCircle2,
   Clock,
@@ -132,6 +132,19 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
   const hasWageDeficit = activeJob ? activeJob.hourlyRate < BENCHMARK_FLOOR_INR : false;
   const hourlyDeficit = activeJob ? Math.max(0, BENCHMARK_FLOOR_INR - activeJob.hourlyRate) : 0;
   const isLongShiftNoMeals = activeJob ? (activeJob.durationHours || 8) >= 6 && !activeJob.mealProvided : false;
+  const activeFinancials = activeJob
+    ? calculateJobFinancials(
+        Math.max(1, activeJob.slotsTotal || 1),
+        activeJob.totalPay || activeJob.hourlyRate * (activeJob.durationHours || 8)
+      )
+    : null;
+  const compliantWagePerWorker = BENCHMARK_FLOOR_INR * (activeJob?.durationHours || 8);
+  const compliantFinancials = activeJob
+    ? calculateJobFinancials(Math.max(1, activeJob.slotsTotal || 1), compliantWagePerWorker)
+    : null;
+  const ledgerGap = activeFinancials && compliantFinancials
+    ? Math.max(0, compliantFinancials.totalPayableByOrganizer - activeFinancials.totalPayableByOrganizer)
+    : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -248,8 +261,8 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>ESCROW GUARANTEE</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#059669' }}>100.0% Pre-funded</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>BANK ESCROW</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-secondary)' }}>Not integrated</div>
           </div>
           <button
             type="button"
@@ -621,7 +634,7 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
               >
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-main)' }}>
-                    {activeJob.organizer?.businessName || 'Skyline Events & Promos'}
+                    {activeJob.organizer?.businessName || 'Organizer name unavailable'}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
                     GSTIN: 27AABCS8891P1Z5 • 4.6 Stars • 3 shifts completed
@@ -726,7 +739,7 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
               </div>
             </div>
 
-            {/* Financial Escrow Ledger */}
+            {/* Internal wage obligation estimate — not a bank escrow product */}
             <div
               style={{
                 background: 'var(--surface-color)',
@@ -740,20 +753,30 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>FINANCIAL ESCROW LEDGER</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#059669' }}>PAYMENT SECURED</span>
+                <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>WAGE LEDGER ESTIMATE</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>NO BANK HOLD</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Locked Escrow Capital:</span>
-                <span style={{ fontWeight: 700 }}>₹3,130.40</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Offered obligation (wages + fee + GST):</span>
+                <span style={{ fontWeight: 700 }}>
+                  {activeFinancials ? formatINR(activeFinancials.totalPayableByOrganizer) : '—'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Required Compliant Escrow (₹200/hr + Meal):</span>
-                <span style={{ fontWeight: 700 }}>₹5,142.80</span>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  At floor ₹{BENCHMARK_FLOOR_INR}/hr × {activeJob?.durationHours || 8}h:
+                </span>
+                <span style={{ fontWeight: 700 }}>
+                  {compliantFinancials ? formatINR(compliantFinancials.totalPayableByOrganizer) : '—'}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid var(--border-color)' }}>
-                <span style={{ fontWeight: 800, color: '#B91C1C' }}>Escrow Top-up Required:</span>
-                <span style={{ fontWeight: 800, color: '#B91C1C' }}>+₹2,012.40</span>
+                <span style={{ fontWeight: 800, color: ledgerGap > 0 ? '#B91C1C' : '#059669' }}>
+                  {ledgerGap > 0 ? 'Gap vs floor estimate:' : 'Meets floor estimate'}
+                </span>
+                <span style={{ fontWeight: 800, color: ledgerGap > 0 ? '#B91C1C' : '#059669' }}>
+                  {ledgerGap > 0 ? `+${formatINR(ledgerGap)}` : formatINR(0)}
+                </span>
               </div>
             </div>
 
