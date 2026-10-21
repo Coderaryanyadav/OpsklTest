@@ -12,8 +12,17 @@
 -- ------------------------------------------------------------------------------
 -- 1. P1-01: REVOKE & DROP register_organizer_direct_safe (Prevents Account Takeover)
 -- ------------------------------------------------------------------------------
-REVOKE ALL ON FUNCTION public.register_organizer_direct_safe(TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
-DROP FUNCTION IF EXISTS public.register_organizer_direct_safe(TEXT, TEXT, TEXT, TEXT);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'register_organizer_direct_safe'
+  ) THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.register_organizer_direct_safe(TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;';
+    EXECUTE 'DROP FUNCTION public.register_organizer_direct_safe(TEXT, TEXT, TEXT, TEXT);';
+  END IF;
+END $$;
+
 
 -- ------------------------------------------------------------------------------
 -- 2. P1-02: HARDEN is_current_admin() TO REQUIRE ACTIVE PROFILE STATUS

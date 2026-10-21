@@ -107,7 +107,7 @@ async function run() {
           process.exit(1);
         }
 
-        // Schema Fingerprint Verification: Verify all core entities exist
+        // Schema Fingerprint Verification: Comprehensive validation of tables, columns, RLS and compiled functions
         const requiredEntities = [
           'profiles', 'worker_profiles', 'organizer_profiles', 'jobs', 
           'bookings', 'attendance_records', 'payment_records', 'organizer_invoices', 'disputes'
@@ -119,11 +119,58 @@ async function run() {
         const foundSet = new Set(foundTables.map((r) => r.table_name));
         const missing = requiredEntities.filter((t) => !foundSet.has(t));
         if (missing.length > 0) {
-          console.error(`\x1b[31m[FINGERPRINT MISMATCH] Schema equivalence check failed. Missing baseline tables: ${missing.join(', ')}\x1b[0m`);
+          console.error(`\x1b[31m[FINGERPRINT MISMATCH] Missing baseline tables: ${missing.join(', ')}\x1b[0m`);
           process.exit(1);
         }
 
-        console.log('Schema fingerprint verified. Authorized baseline reconciliation in progress...');
+        // 1. Column-level schema fingerprint
+        const requiredColumns = [
+          { table: 'jobs', col: 'slots_filled' },
+          { table: 'jobs', col: 'slots_total' },
+          { table: 'jobs', col: 'latitude' },
+          { table: 'jobs', col: 'longitude' },
+          { table: 'bookings', col: 'check_in_code' },
+          { table: 'bookings', col: 'status' },
+          { table: 'profiles', col: 'is_active' },
+        ];
+        for (const item of requiredColumns) {
+          const { rows: colCheck } = await client.query(
+            "SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2;",
+            [item.table, item.col]
+          );
+          if (colCheck.length === 0) {
+            console.error(`\x1b[31m[FINGERPRINT MISMATCH] Missing required baseline column: ${item.table}.${item.col}\x1b[0m`);
+            process.exit(1);
+          }
+        }
+
+        // 2. RLS security fingerprint
+        const { rows: rlsCheck } = await client.query(
+          "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = ANY($1) AND rowsecurity = true;",
+          [requiredEntities]
+        );
+        if (rlsCheck.length < requiredEntities.length) {
+          const rlsSet = new Set(rlsCheck.map((r) => r.tablename));
+          const unshielded = requiredEntities.filter((t) => !rlsSet.has(t));
+          console.error(`\x1b[31m[FINGERPRINT MISMATCH] RLS disabled on required baseline tables: ${unshielded.join(', ')}\x1b[0m`);
+          process.exit(1);
+        }
+
+        // 3. Functions fingerprint
+        const requiredFunctions = ['is_current_admin', 'worker_confirm_selection_safe', 'check_in_with_pin_safe'];
+        const { rows: procCheck } = await client.query(
+          "SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND proname = ANY($1);",
+          [requiredFunctions]
+        );
+        const procSet = new Set(procCheck.map((r) => r.proname));
+        const missingProcs = requiredFunctions.filter((f) => !procSet.has(f));
+        if (missingProcs.length > 0) {
+          console.error(`\x1b[31m[FINGERPRINT MISMATCH] Missing required baseline functions in pg_proc: ${missingProcs.join(', ')}\x1b[0m`);
+          process.exit(1);
+        }
+
+        console.log('Comprehensive schema fingerprint (tables, columns, RLS, functions) verified. Authorized baseline reconciliation in progress...');
+
         const migrationFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
         for (const f of migrationFiles) {
           if (f < '20261017000000') {

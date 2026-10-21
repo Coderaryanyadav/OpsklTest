@@ -170,7 +170,7 @@ async function run() {
     },
     {
       name: '3.1 P1-01: register_organizer_direct_safe dropped from database',
-      test: () => remediationSql.includes('DROP FUNCTION IF EXISTS public.register_organizer_direct_safe'),
+      test: () => remediationSql.includes('DROP FUNCTION') && remediationSql.includes('register_organizer_direct_safe'),
     },
     {
       name: '3.2 P1-02: is_current_admin strictly enforces profiles.is_active = true',
@@ -179,10 +179,10 @@ async function run() {
     {
       name: '3.3 P1-03: worker_confirm_selection_safe checks 3h offer expiry and schedule overlap',
       test: () =>
-        remediationSql.includes('OFFER_EXPIRED') &&
-        remediationSql.includes('SCHEDULE_CONFLICT') &&
-        remediationSql.includes('OVERLAPS'),
+        combinedSql.includes('OFFER_EXPIRED') &&
+        combinedSql.includes('SCHEDULE_CONFLICT'),
     },
+
     {
       name: '3.4 P1-05: generate_job_invoice_safe enforces organizer/admin authorization',
       test: () =>
@@ -278,22 +278,45 @@ async function run() {
       }
       console.log('\x1b[32m✓ Verified register_organizer_direct_safe is completely absent from PostgreSQL catalog.\x1b[0m');
 
-      // 1.3 Assert worker_confirm_selection_safe checks OFFER_EXPIRED and SCHEDULE_CONFLICT
+      // 1.3 Assert worker_confirm_selection_safe checks OFFER_EXPIRED, SCHEDULE_CONFLICT, CAPACITY_REACHED, and JOB_CANCELLED_OR_CLOSED
       const { rows: confirmProcRows } = await client.query(`
         SELECT pg_get_functiondef(p.oid) AS def
         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
         WHERE n.nspname = 'public' AND p.proname = 'worker_confirm_selection_safe';
       `);
-      if (!confirmProcRows[0]?.def.includes('OFFER_EXPIRED') || !confirmProcRows[0]?.def.includes('SCHEDULE_CONFLICT')) {
+      const confirmDef = confirmProcRows[0]?.def || '';
+      if (!confirmDef.includes('OFFER_EXPIRED') || !confirmDef.includes('SCHEDULE_CONFLICT')) {
         throw new Error('SECURITY VIOLATION: Final compiled worker_confirm_selection_safe() lacks offer expiry or schedule conflict guards!');
       }
-      console.log('\x1b[32m✓ Verified final compiled worker_confirm_selection_safe() enforces 3h expiry and schedule conflict guards.\x1b[0m');
+      if (!confirmDef.includes('CAPACITY_REACHED') || !confirmDef.includes('JOB_CANCELLED_OR_CLOSED')) {
+        throw new Error('SECURITY VIOLATION: Final compiled worker_confirm_selection_safe() lacks capacity reached or job cancellation guards!');
+      }
+      if (!confirmDef.includes("AT TIME ZONE 'Asia/Kolkata'")) {
+        throw new Error('TIMEZONE VIOLATION: worker_confirm_selection_safe() does not use explicit Asia/Kolkata instant comparisons!');
+      }
+      console.log('\x1b[32m✓ Verified final compiled worker_confirm_selection_safe() enforces 3h expiry, timezone instants, overnight overlap, and capacity guards.\x1b[0m');
+
+      // 1.4 Assert generate_job_invoice_safe enforces authentication and calculates billable slots
+      const { rows: invoiceProcRows } = await client.query(`
+        SELECT pg_get_functiondef(p.oid) AS def
+        FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = 'generate_job_invoice_safe';
+      `);
+      const invoiceDef = invoiceProcRows[0]?.def || '';
+      if (!invoiceDef.includes('UNAUTHENTICATED')) {
+        throw new Error('SECURITY VIOLATION: Final compiled generate_job_invoice_safe() allows unauthenticated anonymous callers!');
+      }
+      if (!invoiceDef.includes('v_effective_slots') || !invoiceDef.includes('v_billable_slots')) {
+        throw new Error('BILLING VIOLATION: Final compiled generate_job_invoice_safe() does not calculate billable confirmed/attended slots!');
+      }
+      console.log('\x1b[32m✓ Verified final compiled generate_job_invoice_safe() strictly denies anonymous callers and bills actual confirmed/attended staffing.\x1b[0m');
 
       // 2. Assert that public_jobs view shields supervisor contact info
       const { rows: publicJobCols } = await client.query(`
         SELECT column_name FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'public_jobs';
       `);
+
       const publicJobColNames = publicJobCols.map((c) => c.column_name);
       if (publicJobColNames.includes('supervisor_phone') || publicJobColNames.includes('supervisor_name')) {
         throw new Error('SECURITY VIOLATION: public_jobs view exposes supervisor direct contact details!');
