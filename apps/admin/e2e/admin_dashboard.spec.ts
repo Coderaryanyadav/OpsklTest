@@ -4,6 +4,17 @@
  */
 import { test, expect } from '@playwright/test';
 
+test.describe('Opskl Admin readiness probes', () => {
+  test('GET /api/health reports configuration readiness', async ({ request }) => {
+    const res = await request.get('/api/health');
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(body.service).toBe('opskil-admin');
+    expect(body.status).toMatch(/ok|degraded/);
+    expect(body.checks).toBeDefined();
+  });
+});
+
 test.describe('Opskl Admin Web Dashboard E2E Operations', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');

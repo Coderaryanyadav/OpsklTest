@@ -26,6 +26,7 @@ try {
         if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
           val = val.slice(1, -1);
         }
+        // Treat empty string as unset so CI can force-skip live DB without a .env
         if (!process.env[key]) {
           process.env[key] = val;
         }

@@ -1,0 +1,849 @@
+=== typecheck ===
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 typecheck
+> npm run typecheck --workspaces --if-present
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 typecheck
+> tsc --noEmit
+
+
+> @opskil/organizer@1.0.0 typecheck
+> tsc --noEmit
+
+
+> @opskil/worker@1.0.0 typecheck
+> tsc --noEmit
+
+
+> @opskil/design-system@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @opskil/shared@0.1.0 typecheck
+> tsc --noEmit
+
+
+> @opskil/validation@0.1.0 typecheck
+> tsc --noEmit
+
+EXIT_TC:0
+=== lint ===
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 lint
+> npm run lint --workspaces --if-present
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+EXIT_LINT:0
+=== test ===
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test
+> npm --workspace=@opskil/shared test && npm --workspace=@opskil/validation test && npm --workspace=@opskil/worker test && npm --workspace=@opskil/organizer test
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/shared@0.1.0 test
+> jest
+
+PASS src/__tests__/phase1_launch_fixes.test.ts
+PASS src/__tests__/phase2_shared_ui.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Fetching user notifications {"userId":"user-1","limit":30}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] Failed to fetch user notifications — Database connection failed {"userId":"user-1"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at fetchUserNotifications (src/supabase/notifications.ts:28:12)
+      at Object.<anonymous> (src/__tests__/phase2_shared_ui.test.ts:88:7)
+
+    console.error
+      [OPSKL ERROR] send_notification_safe RPC failed — RPC execution failed {"userId":"user-1","idempotencyKey":"notif_test_1"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at sendNotificationSafe (src/supabase/notifications.ts:225:14)
+      at Object.<anonymous> (src/__tests__/phase2_shared_ui.test.ts:97:19)
+
+    console.error
+      [OPSKL ERROR] Failed to fetch user profile due to network/database error — Connection refused {"userId":"user-existing-500"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at fetchUserProfile (src/supabase/profiles.ts:48:12)
+      at Object.<anonymous> (src/__tests__/phase2_shared_ui.test.ts:140:7)
+
+PASS src/__tests__/admin_and_trust.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Fetching admin overview metrics
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching verification queue
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving verification case {"caseId":"case-1","status":"approved"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving verification case {"caseId":"case-1","status":"rejected"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching disputes queue
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving dispute {"disputeId":"disp-1","status":"resolved","adjustedPayout":1850}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching safety reports queue
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Submitting account deletion request {"userId":"worker-101","reason":"Worker requested deletion"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.warn
+      [OPSKL WARN] Account deletion request rejected by policy {"userId":"worker-101","data":{"success":false,"error_code":"ACTIVE_BOOKINGS_PENDING","message":"Cannot request deletion with active or pending shifts."}}
+
+      93 |       }
+      94 |     }
+    > 95 |     console.warn(`[OPSKL WARN] ${message}${extra}`, sanitizedContext ? JSON.stringify(sanitizedContext) : '');
+         |             ^
+      96 |   },
+      97 |
+      98 |   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
+
+      at Object.warn (src/utils/logger.ts:95:13)
+      at requestAccountDeletionSafe (src/supabase/profiles.ts:366:14)
+      at Object.<anonymous> (src/__tests__/admin_and_trust.test.ts:355:19)
+
+    console.log
+      [OPSKL INFO] Submitting account deletion request {"userId":"worker-101","reason":"Worker requested deletion"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving verification case {"caseId":"case-1","status":"rejected"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving verification case {"caseId":"case-1","status":"rejected"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Resolving dispute {"disputeId":"disp-1","status":"resolved","adjustedPayout":2575}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/notifications_and_realtime.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Subscribing to Realtime notifications channel {"channelName":"user-notifs-worker-101"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Unsubscribing from Realtime notifications channel {"channelName":"user-notifs-worker-101"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Subscribing to Realtime shift roster channel {"channelName":"roster-job-apex-01"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Unsubscribing from Realtime shift roster channel {"channelName":"roster-job-apex-01"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/payments_and_earnings.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Fetching earnings summary for worker {"workerId":"worker-101"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching earnings summary for worker {"workerId":"new-worker-0"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching finances summary for organizer {"organizerId":"org-101"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Fetching finances summary for organizer {"organizerId":"new-org-0"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] RPC generate_job_invoice_safe failed — Database constraint violation or unauthorized caller {"jobId":"job-1","organizerId":"org-1"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at generateJobInvoiceSafe (src/supabase/payments.ts:302:14)
+      at Object.<anonymous> (src/__tests__/payments_and_earnings.test.ts:491:19)
+
+PASS src/__tests__/e2e_marketplace_lifecycle.test.ts
+PASS src/__tests__/shift_messaging_and_conflict.test.ts
+PASS src/__tests__/brutal_platform_verification.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Verifying Email/Gmail OTP token {"email":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] Email OTP verification failed — Token has expired or is invalid {"email":"[REDACTED]"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at verifyEmailOtp (src/supabase/auth.ts:307:12)
+      at Object.<anonymous> (src/__tests__/brutal_platform_verification.test.ts:53:7)
+
+    console.log
+      [OPSKL INFO] Verifying Email/Gmail OTP token {"email":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Organizer creating new shift listing {"organizerId":"org-test-uuid","title":"VIP Usher - Tech Summit"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"shift-1001","workerId":"worker-dup-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"shift-capacity-1","workerId":"worker-1","organizerId":"org-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"shift-capacity-1","workerId":"worker-2","organizerId":"org-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/reliability_concurrency_resilience.test.ts
+PASS src/__tests__/e2e_scenarios_a_b_c_d.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Updating organizer profile {"userId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Organizer creating new shift listing {"organizerId":"org-fresh-uuid-001","title":"VIP Delegate Registration Host"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating job status {"jobId":"job-real-001","organizerId":"org-intruder-uuid-999","newStatus":"paused"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating user base profile {"userId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating worker profile {"userId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating application status safe {"applicationId":"app-priya-001","newStatus":"shortlisted","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker offer selection {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Worker confirming selection safe {"idOrJobId":"booking-offer-001","workerId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Worker declining selection safe {"idOrJobId":"booking-missing","workerId":"worker-fresh-uuid-002"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002","organizerId":"unauth-user-999"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-real-001","workerId":"worker-another-999","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-real-001","workerId":"suspended-worker-000"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-real-001","workerId":"worker-fresh-uuid-002","organizerId":"org-fresh-uuid-001"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/verification_document_extension.test.ts
+PASS src/__tests__/marketplace.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-1","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-1","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-closed","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-expired","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-full","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-1","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] RPC error in apply_for_job_safe — failing closed — Transaction rolled back
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at applyForJobSafe (src/supabase/jobs.ts:315:14)
+      at Object.<anonymous> (src/__tests__/marketplace.test.ts:159:19)
+
+    console.log
+      [OPSKL INFO] Executing safe job application submission {"jobId":"job-1","workerId":"worker-1"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] RPC error in apply_for_job_safe — failing closed — Database connection failed
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (src/utils/logger.ts:112:13)
+      at applyForJobSafe (src/supabase/jobs.ts:315:14)
+      at Object.<anonymous> (src/__tests__/marketplace.test.ts:171:19)
+
+PASS src/__tests__/premium_experience.test.ts
+PASS src/__tests__/security_audit_and_compliance.test.ts
+PASS src/__tests__/pilot_operations_and_metrics.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings RESUMED {"paused":false,"pausedBy":"Ops Admin"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings RESUMED {"paused":false,"pausedBy":"Ops Admin"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings PAUSED {"paused":true,"reason":"Severe monsoon weather warning issued for Goregaon / Western Express Highway","pausedBy":"Ops Director","timestamp":"2026-10-21T07:56:05.128Z"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings RESUMED {"paused":false,"pausedBy":"Ops Admin"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings PAUSED {"paused":true,"reason":"Test pause","pausedBy":"Ops Admin","timestamp":"2026-10-21T07:56:05.129Z"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings RESUMED {"paused":false,"pausedBy":"Ops Admin"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OPSKL SAFETY] Bookings RESUMED {"paused":false,"pausedBy":"Ops Admin"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/booking_attendance.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing check-in for booking {"bookingId":"booking-101","code":"[REDACTED]","lat":"[REDACTED]","lng":"[REDACTED]"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/cross_product_operations.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792569365061-2oc3","type":"check_in","idempotencyKey":"idemp-test-chk-1792569365061"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Ignored duplicate mutation enqueue {"idempotencyKey":"idemp-test-chk-1792569365061"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792569365071-yep5","type":"check_in","idempotencyKey":"idemp-offline-retain-1792569365071"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Cannot sync while network is disconnected
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792569365073-j3rl","type":"acknowledgment","idempotencyKey":"idemp-offline-sync-1792569365073"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Sync complete {"synced":3,"failed":0,"remaining":0}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+    console.warn
+      [OPSKL WARN] [SAFETY ESCALATION] Device offline — queueing incident report locally {"caseRef":"TK-BKC-9690","category":"safety","severity":"immediate"}
+
+      93 |       }
+      94 |     }
+    > 95 |     console.warn(`[OPSKL WARN] ${message}${extra}`, sanitizedContext ? JSON.stringify(sanitizedContext) : '');
+         |             ^
+      96 |   },
+      97 |
+      98 |   error(message: string, error?: Error | unknown, context?: Record<string, any>): void {
+
+      at Object.warn (src/utils/logger.ts:95:13)
+      at submitSafetyIncidentSafe (src/services/safety_incident_service.ts:199:12)
+      at Object.<anonymous> (src/__tests__/cross_product_operations.test.ts:125:49)
+
+    console.log
+      [OPSKL INFO] [OFFLINE QUEUE] Enqueued local mutation {"id":"off-mut-1792569365089-t46p","type":"incident_report","idempotencyKey":"idemp-incident_report-1792569365089-gtzv6"}
+
+      at Object.info (src/utils/logger.ts:77:13)
+
+PASS src/__tests__/security_and_auth.test.ts
+PASS src/__tests__/formatters.test.ts
+PASS src/__tests__/store_release_compliance.test.ts
+PASS src/__tests__/geocoding.test.ts
+
+Test Suites: 21 passed, 21 total
+Tests:       257 passed, 257 total
+Snapshots:   0 total
+Time:        1.009 s
+Ran all test suites.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/validation@0.1.0 test
+> jest --passWithNoTests
+
+PASS src/__tests__/validation.test.ts
+  Opskl Validation Schemas
+    ✓ validates email login input (1 ms)
+    ✓ validates 6-digit email OTP verification (1 ms)
+    ✓ validates phone login input
+    ✓ validates 6-digit OTP verification
+    ✓ validates admin email and password
+    ✓ validates Indian GSTIN format (1 ms)
+    ✓ validates complete shift payload (8 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        0.236 s, estimated 1 s
+Ran all test suites.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/worker@1.0.0 test
+> jest
+
+PASS __tests__/phase3_worker_app.test.ts
+PASS __tests__/swipe_marketplace.test.ts
+PASS __tests__/app.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       38 passed, 38 total
+Snapshots:   0 total
+Time:        0.282 s, estimated 1 s
+Ran all test suites.
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/organizer@1.0.0 test
+> jest
+
+PASS __tests__/organizer_management.test.ts
+  ● Console
+
+    console.log
+      [OPSKL INFO] Organizer creating new shift listing {"organizerId":"org-apex-01","title":"Registration Desk & VIP Usher"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-1","workerId":"worker-101","organizerId":"org-apex-01"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-1","workerId":"worker-102","organizerId":"org-apex-01"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Executing safe worker booking confirmation {"jobId":"job-1","workerId":"worker-101","organizerId":"org-apex-01"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating application status safe {"applicationId":"app-1","newStatus":"shortlisted","organizerId":"org-apex-01"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating application status safe {"applicationId":"app-1","newStatus":"rejected","organizerId":"org-apex-01"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating job status {"jobId":"job-1","organizerId":"org-apex-01","newStatus":"paused"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.log
+      [OPSKL INFO] Updating job status {"jobId":"job-1","organizerId":"unauth-org","newStatus":"paused"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] RPC error in update_job_status_safe — Unauthorized organizer account {"jobId":"job-1","organizerId":"unauth-org"}
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (../../packages/shared/src/utils/logger.ts:112:13)
+      at updateJobStatus (../../packages/shared/src/supabase/jobs.ts:668:14)
+      at Object.<anonymous> (__tests__/organizer_management.test.ts:241:19)
+
+    console.log
+      [OPSKL INFO] Organizer creating new shift listing {"organizerId":"org-1","title":"Test"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+    console.error
+      [OPSKL ERROR] RPC error in create_job_safe — Database constraint violation
+
+      110 |     }
+      111 |     const safeErrMessage = sanitizeErrorMessage(errMessage);
+    > 112 |     console.error(`[OPSKL ERROR] ${message} — ${safeErrMessage}`, sanitized ? JSON.stringify(sanitized) : '');
+          |             ^
+      113 |   },
+      114 |
+      115 |   debug(message: string, context?: Record<string, any>): void {
+
+      at Object.error (../../packages/shared/src/utils/logger.ts:112:13)
+      at createJobSafe (../../packages/shared/src/supabase/jobs.ts:630:14)
+      at Object.<anonymous> (__tests__/organizer_management.test.ts:252:19)
+
+    console.log
+      [OPSKL INFO] Organizer creating new shift listing {"organizerId":"unverified-org-123","title":"Guest Relations"}
+
+      at Object.info (../../packages/shared/src/utils/logger.ts:77:13)
+
+PASS __tests__/app.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        0.289 s, estimated 1 s
+Ran all test suites.
+EXIT_TEST:0
+=== build:admin ===
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 build:admin
+> npm --workspace=@opskil/admin run build
+
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @opskil/admin@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1180ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    35.8 kB         352 kB
+├ ○ /_not-found                            992 B         104 kB
+├ ƒ /api/auth/register-organizer           119 B         103 kB
+└ ○ /login                               1.44 kB         317 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/18-25b11e3a132b87ef.js        46.5 kB
+  ├ chunks/87c73c54-24122e7b92478d00.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+ƒ Middleware                             94.8 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+EXIT_BUILD:0
+=== test:sql ===
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> opskil-monorepo@0.1.0 test:sql
+> node scripts/test_sql_integration.mjs
+
+[36m[OPSKL SQL INTEGRATION & LOGIC HARDENING TEST SUITE - PHASE 2][0m
+[32m  ✓ Passed: 1.1 Trusted bypass mechanism configured in check_worker_profile_update[0m
+[32m  ✓ Passed: 1.2 Dispute reason minimum length validation (>= 10)[0m
+[32m  ✓ Passed: 1.2 Direct INSERT policy on disputes dropped[0m
+[32m  ✓ Passed: 1.3 Organizer business_contact_phone relaxed from NOT NULL[0m
+[32m  ✓ Passed: 1.3 CSPRNG booking code replaced gen_random_bytes[0m
+[32m  ✓ Passed: 1.4 public_jobs view shielding supervisor contact created[0m
+[32m  ✓ Passed: 1.5 Job lifecycle state machine validate_job_transition defined[0m
+[32m  ✓ Passed: 1.5 cancel_booking_safe slot reopen guarded against past/cancelled jobs[0m
+[32m  ✓ Passed: 1.6 Overlapping shift double-booking guard in confirm_worker_booking_safe[0m
+[32m  ✓ Passed: 1.7 Keyset paginated get_discovery_feed defined[0m
+[32m  ✓ Passed: 1.8 Attendance distance column widened to NUMERIC(8,2)[0m
+[32m  ✓ Passed: 1.9 Admin dispute resolution restores pre-dispute booking status on dismissal[0m
+[32m  ✓ Passed: 1.10 FY sequential invoice generator OPS/YY-YY/00001 defined[0m
+[32m  ✓ Passed: 1.10 Paid invoice immutability guard in generate_job_invoice_safe[0m
+[32m  ✓ Passed: 1.11 Overnight shifts crosses_midnight and end_date columns[0m
+[32m  ✓ Passed: 1.11 Sovereign India coordinate bounds validation (6-38 N, 68-98 E)[0m
+[32m  ✓ Passed: 2.1 Hardening migration: Partial coordinate pair rejection (INCOMPLETE_COORDINATES)[0m
+[32m  ✓ Passed: 2.2 Hardening migration: Public organizer card shields GSTIN & billing address[0m
+[32m  ✓ Passed: 2.3 Hardening migration: Initial shift lifecycle status restricted to draft/open[0m
+[32m  ✓ Passed: 2.4 Hardening migration: Application & payment deadlines persisted in INSERT[0m
+[32m  ✓ Passed: 2.5 Hardening migration: Min wage fallback protects against missing settings row[0m
+[32m  ✓ Passed: 2.6 Hardening migration: Same-day start time in the past rejected in IST[0m
+[32m  ✓ Passed: 2.7 Hardening migration: Break duration bounds (0-120 mins and < shift duration)[0m
+[32m  ✓ Passed: 2.8 Phase 2: Duplicate publication throttle guard (DUPLICATE_PUBLICATION)[0m
+[32m  ✓ Passed: 2.9 Phase 2: Organizer team memberships authorization check[0m
+[32m  ✓ Passed: 2.10 Phase 2: Admin role escalation safe guard prevents trigger-disable hacks[0m
+
+Invariant Checks Passed: 26/26
+
+Connecting to test database at aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres...
+[32m✓ Connected to PostgreSQL.[0m
+[32m✓ Verified all 12 core security and lifecycle RPC functions compiled in Postgres.[0m
+[32m✓ Verified public_jobs view strictly shields supervisor contact details.[0m
+[32m✓ Verified public_organizer_cards view strictly shields organizer GSTIN & billing address.[0m
+[32m✓ Verified create_job_safe strictly rejects partial coordinate pairs.[0m
+[32m✓ Verified create_job_safe strictly rejects non-India geographic coordinates.[0m
+[32m✓ Verified unverified organizer live shift creation is rejected by backend RPC (ORGANIZER_NOT_FOUND).[0m
+[32m✓ Verified create_job_safe rejects direct creation in non-initial lifecycle statuses.[0m
+[32m✓ Verified create_job_safe rejects same-day shifts scheduled after start time.[0m
+[32m✓ Verified create_job_safe validates break duration bounds (0-120 mins).[0m
+[32m✓ Verified create_job_safe validates venue name and address minimum length.[0m
+[32m✓ Verified create_job_safe enforces ₹100 floor when platform_settings min_wage row is missing.[0m
+[32m✓ Verified application_deadline and payment_deadline are authoritatively persisted and readable in jobs table.[0m
+[32m✓ Verified authoritative payable-hours rule: 8h @ ₹300/hr = ₹2,400 with 45min scheduled break included.[0m
+[32m✓ Verified duplicate publication guard blocks identical reposts within throttle window.[0m
+[32m✓ Verified prevent_role_escalation strictly blocks unprivileged role tampering.[0m
+[32m✓ Transaction rolled back cleanly without permanent mutations.[0m
+
+[32m✓ Full Opskl SQL integration & logic hardening test suite passed with 100% success.[0m
+
+EXIT_SQL:0
+=== check:all ===
+
+[36m[1m======================================================================[0m
+[36m[1m  OPSKIL FULL PLATFORM COMPREHENSIVE VERIFICATION AUDIT[0m
+[36m[1m======================================================================[0m
+
+• Checking Monorepo TypeScript across all 6 packages (@opskil/*)... [32mSUCCESS[0m
+• Checking Shared package domain & service unit tests... [32mSUCCESS[0m
+• Checking Validation rules, living wage floor, and Zod schemas... [32mSUCCESS[0m
+• Checking Worker mobile app component & navigation tests... [32mSUCCESS[0m
+• Checking Organizer mobile app component & navigation tests... [32mSUCCESS[0m
+• Checking Brutal Platform Launch-Readiness verification suite (17/17 tests)... [32mSUCCESS[0m
+• Checking Database SQL schema, RLS, and RPC security invariants... [32mSUCCESS[0m
+• Checking PostgreSQL Direct Database Connectivity & Table Audits... [32mSUCCESS[0m
+• Checking Supabase Live GoTrue Auth Client & API endpoint reachability... [32mSUCCESS[0m
+• Checking Email OTP Dispatch & Rate-Limit Diagnostics...   [32m✓ PASS:[0m GoTrue responded and correctly enforced shouldCreateUser=false security policy.
+[32mSUCCESS[0m
+• Checking Next.js Admin Dashboard production build compilation... [32mSUCCESS[0m
+
+[36m[1m======================================================================[0m
+[36m[1m  FINAL VERIFICATION SUMMARY[0m
+[36m[1m======================================================================[0m
+
+  Total Checks: 11
+  [32mPassed:       11[0m
+  [31mFailed:       0[0m
+
+[32m[1mAll platform systems, apps, and services are 100% HEALTHY & VERIFIED.[0m
+
+EXIT_CHECK:0
