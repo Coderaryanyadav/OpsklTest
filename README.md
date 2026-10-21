@@ -205,7 +205,7 @@ eas build --platform ios --profile preview
 eas build --platform android --profile preview
 ```
 
-### 3. Build Organizer App
+### 3. Build Organizer Appx
 ```bash
 cd apps/organizer
 eas build --platform ios --profile preview

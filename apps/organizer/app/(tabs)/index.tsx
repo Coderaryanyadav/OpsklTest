@@ -6,6 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -48,8 +49,23 @@ import {
 
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const { colors, spacing, radii, touchTarget, isDark } = useOpsklTheme();
+
+  // Redirect unauthenticated users immediately away from main dashboard to welcome screen
+  useEffect(() => {
+    if (!authLoading && !session) {
+      router.replace('/welcome');
+    }
+  }, [authLoading, session, router]);
+
+  if (!session) {
+    return (
+      <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </Screen>
+    );
+  }
 
   const organizerId = session?.user?.id;
 

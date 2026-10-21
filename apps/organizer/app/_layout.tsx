@@ -30,6 +30,8 @@ export function isGuestBrowsingActive(): boolean {
   return guestBrowsingActive;
 }
 
+import { ActivityIndicator } from 'react-native';
+
 function RootNavigator() {
   const router = useRouter();
   const segments = useSegments();
@@ -54,18 +56,14 @@ function RootNavigator() {
     async function evaluateRouting() {
       try {
         const topSegment = (segments as any)[0] || '';
-        const subSegment = (segments as any)[1] || '';
 
+        // If not authenticated, NEVER show (tabs) main dashboard screen
         if (!session) {
-          const protectedTabs = ['create', 'roster', 'finances', 'profile'];
-          if (topSegment === '(tabs)' && protectedTabs.includes(subSegment)) {
-            router.replace(`/auth/login?redirect=${encodeURIComponent(`/(tabs)/${subSegment}`)}` as any);
+          if (topSegment === '(tabs)' || !topSegment) {
+            router.replace('/welcome' as any);
             return;
           }
-
-          // Unauthenticated visitors must see Welcome screen (Image 1) first.
-          // Only if they explicitly chose "Explore as guest" does the Dashboard (Image 2) appear.
-          if (!guestBrowsingActive && topSegment !== 'welcome' && topSegment !== 'auth') {
+          if (topSegment !== 'welcome' && topSegment !== 'auth') {
             router.replace('/welcome' as any);
             return;
           }
@@ -75,7 +73,7 @@ function RootNavigator() {
           authState === 'READY' ||
           authState === 'VERIFICATION_PENDING' ||
           authState === 'VERIFICATION_ACTION_REQUIRED';
-        if (session && isAccessReady && (topSegment === 'welcome' || topSegment === 'auth')) {
+        if (session && isAccessReady && (topSegment === 'welcome' || topSegment === 'auth' || !topSegment)) {
           router.replace('/(tabs)' as any);
           return;
         }
@@ -86,6 +84,18 @@ function RootNavigator() {
 
     evaluateRouting();
   }, [loading, session, authState, segments]);
+
+  // Prevent flashing or mounting the main dashboard while auth session is loading
+  if (loading) {
+    return (
+      <Screen
+        edges={['top', 'bottom', 'left', 'right']}
+        contentStyle={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </Screen>
+    );
+  }
 
   if (!loading && roleMismatch) {
     return (

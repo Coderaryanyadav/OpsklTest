@@ -42,6 +42,7 @@ export default function OrganizerTabsLayout() {
     >
       <Tabs.Screen
         name="index"
+        listeners={createAuthTabListener('/(tabs)')}
         options={{
           title: 'Shifts',
           tabBarLabel: 'Shifts',

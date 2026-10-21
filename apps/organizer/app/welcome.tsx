@@ -15,7 +15,6 @@ import {
   FileText,
 } from 'lucide-react-native';
 import { universalStorage } from '@opskil/shared';
-import { setGuestBrowsingActive } from './_layout';
 
 export default function OrganizerWelcomeScreen() {
   const router = useRouter();
@@ -26,9 +25,6 @@ export default function OrganizerWelcomeScreen() {
       await universalStorage.setItem('@opskil_organizer_welcome_seen', 'true');
     } catch {
       // Non-critical
-    }
-    if (target.includes('(tabs)')) {
-      setGuestBrowsingActive(true);
     }
     if (replace) {
       router.replace(target as any);
@@ -171,16 +167,16 @@ export default function OrganizerWelcomeScreen() {
           />
 
           <Pressable
-            onPress={() => handleNavigate('/(tabs)', true)}
+            onPress={() => handleNavigate('/auth/login')}
             style={({ pressed }) => [
               styles.onboardingLink,
               { minHeight: touchTarget.min, opacity: pressed ? 0.7 : 1 },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Explore organizer dashboard as guest"
+            accessibilityLabel="Proceed to sign in"
           >
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
-              Explore management console as guest
+              Sign in to access management console
             </Text>
             <ArrowRight size={14} color={colors.textSecondary} strokeWidth={2} style={{ marginLeft: 4 }} />
           </Pressable>
