@@ -31,14 +31,25 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const expoAccessToken = Deno.env.get('EXPO_ACCESS_TOKEN') || '';
+    const authHeader = req.headers.get('Authorization') || '';
+    const incomingToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const webhookSecret = (Deno.env.get('WEBHOOK_SECRET') || '').trim();
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(JSON.stringify({ error: 'Missing Supabase service environment variables' }), {
         status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // P1-09: Require verified service_role or webhook secret credentials
+    const isAuthorized =
+      incomingToken === supabaseServiceKey ||
+      (webhookSecret !== '' && incomingToken === webhookSecret);
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Service-role authorization required' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

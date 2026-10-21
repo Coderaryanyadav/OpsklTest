@@ -10,6 +10,7 @@ const launchMigrationPath = path.join(rootDir, 'supabase', 'migrations', '202610
 const hardeningMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261016000000_security_privacy_coordinate_hardening.sql');
 const adminGuardMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261017000000_safe_admin_role_escalation_guard.sql');
 const phase2MigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261017000001_shift_creation_and_rpc_hardening.sql');
+const remediationMigrationPath = path.join(rootDir, 'supabase', 'migrations', '20261021000004_security_audit_remediation_p0_p1.sql');
 
 // Parse .env if present
 try {
@@ -46,7 +47,8 @@ async function run() {
   const hardeningSql = fs.readFileSync(hardeningMigrationPath, 'utf8');
   const adminGuardSql = fs.readFileSync(adminGuardMigrationPath, 'utf8');
   const phase2Sql = fs.readFileSync(phase2MigrationPath, 'utf8');
-  const combinedSql = `${launchSql}\n${hardeningSql}\n${adminGuardSql}\n${phase2Sql}`;
+  const remediationSql = fs.readFileSync(remediationMigrationPath, 'utf8');
+  const combinedSql = `${launchSql}\n${hardeningSql}\n${adminGuardSql}\n${phase2Sql}\n${remediationSql}`;
 
   // Verify critical invariants across migrations
   const checks = [
@@ -159,6 +161,34 @@ async function run() {
     {
       name: '2.10 Phase 2: Admin role escalation safe guard prevents trigger-disable hacks',
       test: () => adminGuardSql.includes('prevent_role_escalation') && adminGuardSql.includes('is_current_admin()'),
+    },
+    {
+      name: '3.1 P1-01: register_organizer_direct_safe dropped from database',
+      test: () => remediationSql.includes('DROP FUNCTION IF EXISTS public.register_organizer_direct_safe'),
+    },
+    {
+      name: '3.2 P1-02: is_current_admin strictly enforces profiles.is_active = true',
+      test: () => remediationSql.includes("role = 'admin'") && remediationSql.includes('is_active = true'),
+    },
+    {
+      name: '3.3 P1-03: worker_confirm_selection_safe checks 3h offer expiry and schedule overlap',
+      test: () =>
+        remediationSql.includes('OFFER_EXPIRED') &&
+        remediationSql.includes('SCHEDULE_CONFLICT') &&
+        remediationSql.includes('OVERLAPS'),
+    },
+    {
+      name: '3.4 P1-05: generate_job_invoice_safe enforces organizer/admin authorization',
+      test: () =>
+        remediationSql.includes('UNAUTHORIZED') &&
+        remediationSql.includes('auth.uid() <> v_job.organizer_id'),
+    },
+    {
+      name: '3.5 P1-06: initiate_worker_payout_safe blocks unapproved pay and active disputes',
+      test: () =>
+        remediationSql.includes('approved_total_pay') &&
+        remediationSql.includes('disputes') &&
+        remediationSql.includes('auth.uid() <> v_booking.organizer_id'),
     },
   ];
 
