@@ -334,8 +334,23 @@ async function run() {
       }
       console.log('\x1b[32m✓ Verified public_organizer_cards view strictly shields organizer GSTIN & billing address.\x1b[0m');
 
+      // Provision test organizer profile for live RPC test suite
+      const testOrgId = '6ad9b1d3-cd34-49ba-aa96-37d903451db4';
+      await client.query(`
+        INSERT INTO profiles (id, role, full_name, is_active)
+        VALUES ($1, 'organizer', 'Verification Enterprise Corp', true)
+        ON CONFLICT (id) DO UPDATE SET is_active = true, role = 'organizer';
+      `, [testOrgId]);
+      await client.query(`
+        INSERT INTO organizer_profiles (id, business_name, business_type, verification_status)
+        VALUES ($1, 'Verification Enterprise Corp', 'corporate', 'verified')
+        ON CONFLICT (id) DO UPDATE SET verification_status = 'verified';
+      `, [testOrgId]);
+
+
       // 4. Assert coordinate bounds check: partial coordinate rejection
       const { rows: coordTestRows } = await client.query(`
+
         SELECT create_job_safe(
           jsonb_build_object(
             'title', 'Test Coordinate Shield Shift',
@@ -461,15 +476,16 @@ async function run() {
             'supervisorName', 'Rajesh Sharma',
             'supervisorPhone', '9820098200',
             'date', (now() AT TIME ZONE 'Asia/Kolkata')::date::text,
-            'start_time', '01:00',
-            'end_time', '09:00',
+            'start_time', '00:00',
+            'end_time', '23:59',
             'hourlyRate', 200,
             'slotsTotal', 5,
             'status', 'draft'
           ),
-          '6ad9b1d3-cd34-49ba-aa96-37d903451db4'::uuid
+          $1::uuid
         ) AS result;
-      `);
+      `, [testOrgId]);
+
       const pastTimeRes = pastTimeRows[0]?.result;
       if (pastTimeRes?.success !== false || pastTimeRes?.error_code !== 'PAST_START_TIME') {
         throw new Error(`SCHEDULE INTEGRITY FAILURE: create_job_safe allowed same-day past start time! Got: ${JSON.stringify(pastTimeRes)}`);

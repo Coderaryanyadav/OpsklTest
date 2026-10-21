@@ -1,0 +1,38 @@
+# Feature & Route Verification Matrix (28 Stitch Design Screens)
+
+**Audit Date:** October 22, 2026  
+**Reference Folder:** `Design/` (28 screen folders)  
+**Standard:** UI Screen → Client Service → Database RPC / Schema → Status Provenance
+
+---
+
+| # | Design Screen Folder | App Target | Implementation Route / Component | Backend RPC / Ledger | Status | Evidence & Truthfulness Notes |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- |
+| **1** | `worker_welcome_value_prop` | Worker Mobile | `apps/worker/app/welcome.tsx` | N/A (Client presentation) | **Verified** | Honest value proposition; no unverified claims of guaranteed wages or automatic insurance. |
+| **2** | `worker_phone_otp_verification` | Worker Mobile | `apps/worker/app/auth/login.tsx` | `supabase.auth.signInWithOtp` | **Verified** | Clean 6-digit OTP input with resend countdown timer. |
+| **3** | `worker_profile_skills_setup` | Worker Mobile | `apps/worker/app/onboarding.tsx` & `(tabs)/profile.tsx` | `profiles`, `worker_profiles` | **Verified** | Real user-selected skills and localities; no fake Mumbai/BKC defaults. |
+| **4** | `worker_masked_kyc_verification_status` | Worker Mobile | `apps/worker/app/(tabs)/profile.tsx` | `verification_documents`, `worker_profiles` | **Verified** | Real document picker integration (Expo DocumentPicker); displays truthful pending/verified status; full numbers masked. |
+| **5** | `worker_discover_feed_shift_marketplace` | Worker Mobile | `apps/worker/app/(tabs)/index.tsx`, `SwipeCard.tsx` | `get_discovery_feed` | **Verified** | Server-side keyset pagination; living wage floor (₹100/hr); venue address shielded until booking. |
+| **6** | `discover_search_multi_filters` | Worker Mobile | `apps/worker/src/components/FilterSheet.tsx` | `get_discovery_feed` | **Verified** | Dynamic filtering by date, pay rate, distance, and shift timing. |
+| **7** | `comprehensive_shift_details_briefing` | Worker Mobile | `apps/worker/app/shift/[id].tsx` | `jobs`, `public_jobs` view | **Verified** | Shift requirements, dress code, and supervisor contact (shielded for unbooked workers). |
+| **8** | `shift_application_review_truthful_status` | Worker Mobile | `apps/worker/src/components/ApplicationReviewModal.tsx` | `job_applications`, `apply_for_job_safe` | **Verified** | Truthful status progression: Applied → Shortlisted → Selected → Confirmed. Duplicate check enforced. |
+| **9** | `my_shifts_event_roster` | Worker Mobile | `apps/worker/app/(tabs)/my-shifts.tsx` | `bookings`, `worker_confirm_selection_safe` | **Verified** | Clearly distinguishes confirmed bookings from pending offers. Shows 3-hour expiry countdown. |
+| **10**| `confirmed_shift_detail_day_of_briefing` | Worker Mobile | `apps/worker/app/shift/[id].tsx` | `bookings`, `public_jobs` | **Verified** | Displays single-use CSPRNG check-in code (`OP-XXXXXXXXXX`) and on-site supervisor coordinator phone. |
+| **11**| `geofenced_check_in_attendance_qr_token` | Worker Mobile | `apps/worker/app/shift/checkin.tsx` | `check_in_with_pin_safe` | **Verified** | Enforces 300m Haversine distance from venue coordinates; requires matching worker PIN. |
+| **12**| `incident_report_ground_safety_escalation` | Worker Mobile | `apps/worker/app/incident/report.tsx` | `disputes`, `submit_safety_incident_safe` | **Verified** | Form for ground safety incidents; minimum 10-char reason required; photo evidence upload. |
+| **13**| `worker_earnings_settlement_ledger` | Worker Mobile | `apps/worker/app/(tabs)/earnings.tsx` | `payment_records`, `worker_profiles` | **Verified** | UPI ID registration with checksum validation; truthful settlement states (`processing`, `completed`, `failed`). |
+| **14**| `offline_mode_local_queue_sync_hub` | Worker Mobile | `apps/worker/app/offline.tsx` | `packages/shared/src/services/offline_queue.ts` | **Verified** | Offline local queue holds pending mutations with idempotency keys; automatically syncs when connectivity restores. |
+| **15**| `system_notifications_operational_event_stream` | Worker/Org | `apps/worker/app/notifications.tsx`, `apps/organizer/app/notifications.tsx` | `notifications`, `dispatch-push-notifications` | **Verified** | Operational push stream; unread badge counter; preference opt-out support. |
+| **16**| `organizer_business_verification_kyc` | Organizer Mobile | `apps/organizer/app/verification.tsx` | `organizer_profiles`, `verification_documents` | **Verified** | GSTIN validation schema; business registration document capture; gating prevents shift publishing until verified. |
+| **17**| `organizer_event_command_dashboard` | Organizer Mobile | `apps/organizer/app/(tabs)/index.tsx` | `jobs`, `bookings`, `attendance_records` | **Verified** | Real-time shift status counters (Draft, Open, Filling, Filled, In Progress, Completed). |
+| **18**| `multi_step_shift_creator_wage_spec` | Organizer Mobile | `apps/organizer/app/(tabs)/create.tsx` | `create_job_safe` | **Verified** | Multi-step shift builder: Title, Category, India coordinates, Date/Time, Break bounds (0-120m), Wage floor, Capacity. |
+| **19**| `organizer_applicant_screening_pipeline` | Organizer Mobile | `apps/organizer/app/shift/screening.tsx` | `job_applications`, `update_application_status_safe` | **Verified** | Applicant screening cards; allows Shortlist, Select/Offer, and Reject actions. |
+| **20**| `organizer_shifts_management_roster` | Organizer Mobile | `apps/organizer/app/(tabs)/roster.tsx` | `bookings`, `select_worker_for_shift_safe` | **Verified** | Roster management console; atomic capacity limit enforced; manages standby and cancellations. |
+| **21**| `confirmed_crew_roster_briefing_console` | Organizer Mobile | `apps/organizer/app/shift/crew.tsx` | `bookings`, `profiles` | **Verified** | Crew roster; tap-to-call coordinator contact; emergency team alert broadcast. |
+| **22**| `live_event_check_in_attendance_console` | Organizer Mobile | `apps/organizer/app/shift/attendance.tsx` | `attendance_records`, `verify_worker_pin_safe` | **Verified** | Live supervisor attendance console; dual-PIN verification; manual override with mandatory reason. |
+| **23**| `escrow_finance_invoices_settlement_ledger` | Organizer Mobile | `apps/organizer/app/(tabs)/finances.tsx` | `organizer_invoices`, `generate_job_invoice_safe` | **Verified** | Invoice breakdown: Wage Total (billable confirmed staff only), Platform Fee (10%), GST (18%), Manual Escrow SOP payment submission. |
+| **24**| `admin_overview_operational_action_queues` | Admin Dashboard | `apps/admin/src/app/(dashboard)/page.tsx` | Platform metrics & stats | **Verified** | Overview KPI cards (Active Workers, Live Shifts, Unsettled Escrow, Open Disputes). |
+| **25**| `worker_verification_kyc_moderation_desk` | Admin Dashboard | `apps/admin/src/app/(dashboard)/users/page.tsx` | `review_kyc_document_safe` | **Verified** | Admin KYC desk; preview signed document URLs; approve or reject with audit trail. |
+| **26**| `shift_moderation_fair_wage_review_desk` | Admin Dashboard | `apps/admin/src/app/(dashboard)/shifts/page.tsx` | `jobs`, `update_job_status_safe` | **Verified** | Shift audit panel; flags sub-minimum wage or invalid locations; allows administrative suspension. |
+| **27**| `disputes_incident_escalation_panel` | Admin Dashboard | `apps/admin/src/app/(dashboard)/disputes/page.tsx` | `resolve_dispute_safe` | **Verified** | Formal dispute resolution console; requires reasoned notes; restores pre-dispute booking state on dismissal. |
+| **28**| `emergency_marketplace_pause_safety_lockdown_state` | Admin / Mobile | `apps/worker/app/emergency.tsx`, `toggle_marketplace_pause_safe` | `platform_settings`, `audit_logs` | **Verified** | Emergency pause trigger; reason, timestamp, and actor audit logged; safe resume mechanism. |
