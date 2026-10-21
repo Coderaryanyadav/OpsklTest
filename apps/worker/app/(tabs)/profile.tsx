@@ -319,11 +319,11 @@ export default function WorkerProfileScreen() {
                 <Badge
                   label={
                     workerData?.verificationStatus === 'verified'
-                      ? 'BANK-GRADE VERIFIED'
+                      ? 'VERIFIED'
                       : workerData?.verificationStatus === 'pending'
-                      ? 'UNDER 2-4H REVIEW'
+                      ? 'PENDING REVIEW'
                       : workerData?.verificationStatus === 'rejected'
-                      ? 'REVISION REQUIRED'
+                      ? 'REJECTED — RESUBMIT'
                       : 'KYC REQUIRED'
                   }
                   variant={

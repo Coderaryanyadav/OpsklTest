@@ -63,7 +63,7 @@ export default function OrganizerWelcomeScreen() {
             Command your event crew across premier Mumbai venues.
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>
-            Real-time candidate screening, attendance verification, and transparent nodal escrow settlement.
+            Real-time candidate screening, attendance verification, and transparent wage + fee ledgers.
           </Text>
         </View>
 
@@ -117,11 +117,11 @@ export default function OrganizerWelcomeScreen() {
                   Live Attendance Console
                 </Text>
                 <View style={[styles.tagPill, { backgroundColor: colors.surfaceMuted }]}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>300m GPS</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>GPS + PIN</Text>
                 </View>
               </View>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, lineHeight: 18 }]}>
-                Optical QR scanner and 6-digit backup PIN verification for accurate on-site call time timestamps.
+                Geofenced worker check-in with venue pass codes and manual PIN fallback for on-site call-time timestamps.
               </Text>
             </View>
           </View>
@@ -134,14 +134,14 @@ export default function OrganizerWelcomeScreen() {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                  Audited Escrow Settlement
+                  Funding &amp; Invoice Ledger
                 </Text>
                 <View style={[styles.tagPill, { backgroundColor: colors.surfaceMuted }]}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>Itemized GST</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>Fee estimate</Text>
                 </View>
               </View>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, lineHeight: 18 }]}>
-                Itemized tax invoices with SAC codes, UTR tracking, and transparent escrow disbursements.
+                Itemized wage + platform fee + GST estimates with invoice status tracking. Live bank escrow rails are not linked in this build.
               </Text>
             </View>
           </View>

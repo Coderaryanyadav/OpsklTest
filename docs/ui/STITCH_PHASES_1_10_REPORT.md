@@ -21,6 +21,9 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Check-in UI presented decorative SVG as dynamic QR protocol | `GeofencedCheckInModal.tsx` | Fake scanner protocol | **Fixed** — labeled pass code / illustrative badge |
 | Attendance approval copy implied auto escrow batch payout tonight | `attendance.tsx` | Attendance ≠ paid violated | **Fixed** |
 | Escrow guarantee banners on organizer home / crew / disputes / lockdown | multiple | Overclaim | **Fixed** |
+| Admin queue rows invented SLA timers, assignees, hub locations | `AdminOverviewDesk.tsx` | Fake ops urgency | **Fixed** (follow-up) — real timestamps / QUEUE only |
+| Admin “98.4% SLA” horizon chart | `AdminOverviewDesk.tsx` | Fake telemetry | **Fixed** (follow-up) — live queue counts |
+| Organizer welcome optical QR / escrow settlement claims | `welcome.tsx` | Overclaim | **Fixed** (follow-up) |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

@@ -85,56 +85,54 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
       category: 'kyc' | 'moderation' | 'disputes';
     }> = [];
 
-    // Map KYC verifications
-    pendingKYC.forEach((k, idx) => {
-      const waitHours = 3 + (idx % 3);
-      const waitMins = 12 + ((idx * 17) % 45);
-      const isCritical = waitHours >= 4 || idx === 0;
+    // Map KYC verifications — only fields we actually have (no invented SLA/assignees/hubs)
+    pendingKYC.forEach((k) => {
+      const docLabel = (k.documentType || 'document').toUpperCase();
       list.push({
         id: k.id,
         module: 'verifications',
-        priority: isCritical ? 'CRITICAL' : 'MEDIUM',
-        slaText: isCritical ? `${35 + idx * 13}m left` : 'Name Match Variance',
+        priority: 'MEDIUM',
+        slaText: 'Pending review',
         title: k.applicantProfile?.fullName || `Applicant #${k.profileId.slice(-4)}`,
-        subtitle: `WORKER AADHAAR VERIFICATION (ID: #${k.id.slice(-6).toUpperCase()})`,
-        location: idx % 2 === 0 ? 'Kurla West Hub' : 'Andheri East Hub',
-        waitTime: `${waitHours}h ${waitMins}m`,
-        assigned: idx % 3 === 0 ? 'K. Sharma' : idx % 3 === 1 ? 'UNASSIGNED' : 'A. Verma',
-        assignedInitial: idx % 3 === 0 ? 'K' : idx % 3 === 1 ? '?' : 'A',
+        subtitle: `${docLabel} VERIFICATION (ID: #${k.id.slice(-6).toUpperCase()})`,
+        location: k.applicantProfile?.role ? `Role: ${k.applicantProfile.role}` : 'Queued for admin review',
+        waitTime: k.createdAt ? new Date(k.createdAt).toLocaleString('en-IN') : '—',
+        assigned: 'QUEUE',
+        assignedInitial: 'Q',
         category: 'kyc',
       });
     });
 
     // Map Flagged / Moderation Jobs
-    flaggedJobs.forEach((j, idx) => {
+    flaggedJobs.forEach((j) => {
       list.push({
         id: j.id,
         module: 'jobs',
         priority: 'HIGH',
-        slaText: 'Wage Floor Flag',
+        slaText: 'Wage floor flag',
         title: `Shift #${j.id.slice(-6).toUpperCase()} (${j.title})`,
         subtitle: `ORGANIZER: ${(j.organizer?.businessName || 'EVENT HOST').toUpperCase()}`,
-        location: `${j.venueName || 'JWCC Pavilion'} (${formatINR(j.hourlyRate)}/hr vs ₹200/hr Floor)`,
-        waitTime: `${1 + idx}h 14m`,
-        assigned: 'A. Verma',
-        assignedInitial: 'A',
+        location: `${j.venueName || 'Venue TBD'} (${formatINR(j.hourlyRate)}/hr vs ₹200/hr floor heuristic)`,
+        waitTime: j.createdAt ? new Date(j.createdAt).toLocaleString('en-IN') : '—',
+        assigned: 'QUEUE',
+        assignedInitial: 'Q',
         category: 'moderation',
       });
     });
 
     // Map Disputes
-    activeDisputes.forEach((d, idx) => {
+    activeDisputes.forEach((d) => {
       list.push({
         id: d.id,
         module: 'disputes',
-        priority: idx === 0 ? 'HIGH' : 'MEDIUM',
-        slaText: idx === 0 ? 'Turnstile Jam' : '+2.5h Unscheduled',
+        priority: 'HIGH',
+        slaText: d.status || 'Open',
         title: `Dispute #${d.id.slice(-6).toUpperCase()}`,
-        subtitle: (d.reason || 'Turnstile QR scan desync & overtime claim').toUpperCase(),
-        location: idx === 0 ? 'BKC Complex (GPS Valid, Scan Failed)' : 'Worli Waterfront (Escrow Dispute)',
-        waitTime: `${28 + idx * 35}m`,
-        assigned: idx === 0 ? 'K. Sharma' : 'UNASSIGNED',
-        assignedInitial: idx === 0 ? 'K' : '?',
+        subtitle: (d.reason || 'Attendance / payout dispute').toUpperCase(),
+        location: 'Open case',
+        waitTime: d.createdAt ? new Date(d.createdAt).toLocaleString('en-IN') : '—',
+        assigned: 'QUEUE',
+        assignedInitial: 'Q',
         category: 'disputes',
       });
     });
@@ -297,15 +295,15 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#B91C1C', letterSpacing: '0.04em' }}>
-                SLA BREACH RISK (35M)
+                VERIFICATION QUEUE
               </span>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#B91C1C' }} />
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>
-              {pendingKYC.length > 0 ? `${pendingKYC.length} Worker KYC Aadhaar reviews > 4h` : '3 Worker KYC Aadhaar reviews > 4h'}
+              {pendingKYC.length} pending verification case{pendingKYC.length === 1 ? '' : 's'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Andheri & Kurla Hub applicants in pipeline awaiting unlock
+              Live count from verification_cases · no invented SLA timers
             </div>
           </div>
           <ChevronRight size={16} color="#B91C1C" style={{ alignSelf: 'center' }} />
@@ -901,7 +899,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             </div>
           </div>
 
-          {/* Today's SLA Compliance Horizon Banner */}
+          {/* Queue honesty banner — no fabricated SLA % charts */}
           <div
             style={{
               background: 'var(--surface-color)',
@@ -916,10 +914,10 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>
-                  TODAY&apos;S SLA COMPLIANCE HORIZON
+                  REVIEW WORKLOAD (LIVE)
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
-                  98.4% of Verifications Processed &lt; 2h
+                  {pendingKYC.length} KYC · {flaggedJobs.length} wage flags · {activeDisputes.length} disputes
                 </div>
               </div>
               <span
@@ -936,27 +934,8 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
                 MASKED KYC REVIEW ONLY
               </span>
             </div>
-
-            {/* Stylized Horizon Curve */}
-            <div style={{ position: 'relative', height: 48, background: '#F8FAFC', borderRadius: 6, overflow: 'hidden' }}>
-              <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 400 48">
-                <path
-                  d="M0,38 Q50,34 100,32 T200,24 T300,16 T400,10 L400,48 L0,48 Z"
-                  fill="rgba(29, 78, 216, 0.12)"
-                />
-                <path
-                  d="M0,38 Q50,34 100,32 T200,24 T300,16 T400,10"
-                  fill="none"
-                  stroke="#1D4ED8"
-                  strokeWidth="2.5"
-                />
-              </svg>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>
-              <span>06:00 IST MORNING RUSH</span>
-              <span>12:00 MIDDAY CHECK-INS</span>
-              <span>15:30 CURRENT (PEAK CAPACITY)</span>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              SLA percentage charts and peak-capacity timelines are not computed from production telemetry in this build.
             </div>
           </div>
         </div>
