@@ -276,6 +276,27 @@ function AdminDashboardInner() {
     await loadAdminData();
   };
 
+  const handleVerifyUser = async (userId: string, targetStatus: 'verified' | 'unverified') => {
+    setDirectoryError(null);
+    const res = await fetch('/api/admin/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: userId, verificationStatus: targetStatus }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      const err = result.error || 'Failed to update verification status';
+      setDirectoryError(err);
+      throw new Error(err);
+    }
+    setActionSuccessMessage(
+      targetStatus === 'verified'
+        ? 'Account KYC verified and approved.'
+        : 'Account KYC status updated to unverified.'
+    );
+    await loadAdminData();
+  };
+
   const handleDeleteUser = async (userId: string) => {
     setDirectoryError(null);
     const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
@@ -574,6 +595,7 @@ function AdminDashboardInner() {
                   type="worker"
                   users={directoryWorkers}
                   onToggleActiveStatus={handleToggleActiveStatus}
+                  onVerifyUser={handleVerifyUser}
                   onCreateUser={handleCreateUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -590,6 +612,7 @@ function AdminDashboardInner() {
                   type="organizer"
                   users={directoryOrganizers}
                   onToggleActiveStatus={handleToggleActiveStatus}
+                  onVerifyUser={handleVerifyUser}
                   onCreateUser={handleCreateUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}

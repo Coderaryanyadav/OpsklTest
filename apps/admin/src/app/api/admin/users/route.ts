@@ -241,7 +241,12 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'User ID is required.' }, { status: 400 });
     }
 
-    const cleanRole = role === 'organizer' ? 'organizer' : 'worker';
+    let userRole = role;
+    if (!userRole) {
+      const { data: pData } = await adminClient.from('profiles').select('role').eq('id', id).maybeSingle();
+      userRole = pData?.role;
+    }
+    const cleanRole = userRole === 'organizer' ? 'organizer' : 'worker';
     const isVerified = verificationStatus === 'verified';
 
     // 1. Update profiles table

@@ -409,9 +409,9 @@ export default function OrganizerCreateShiftScreen() {
           >
             <ArrowLeft size={18} color={colors.textPrimary} />
           </TouchableOpacity>
-          <View>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
-              Multi Step Shift Creator & Wage Spec
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
+              Create Shift Listing
             </Text>
             <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Step {step} of 4 • {WIZARD_STEPS[step - 1].label}
@@ -535,7 +535,7 @@ export default function OrganizerCreateShiftScreen() {
                       style={{
                         fontSize: 11,
                         fontWeight: '700',
-                        color: category === c.value ? '#FFFFFF' : colors.textSecondary,
+                        color: category === c.value ? colors.textInverse : colors.textSecondary,
                       }}
                     >
                       {c.label}

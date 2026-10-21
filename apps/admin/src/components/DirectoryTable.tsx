@@ -39,6 +39,7 @@ interface DirectoryTableProps {
   type: 'worker' | 'organizer';
   users: DirectoryUser[];
   onToggleActiveStatus: (userId: string, currentActive: boolean) => Promise<void>;
+  onVerifyUser?: (userId: string, targetStatus: 'verified' | 'unverified') => Promise<void>;
   onCreateUser?: (userData: any) => Promise<void>;
   onUpdateUser?: (userId: string, updates: any) => Promise<void>;
   onDeleteUser?: (userId: string) => Promise<void>;
@@ -79,6 +80,7 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
   type,
   users,
   onToggleActiveStatus,
+  onVerifyUser,
   onCreateUser,
   onUpdateUser,
   onDeleteUser,
@@ -512,6 +514,25 @@ export const DirectoryTable: React.FC<DirectoryTableProps> = ({
                         >
                           View
                         </button>
+
+                        {/* 1-Click KYC Verification */}
+                        {onVerifyUser && (
+                          <button
+                            type="button"
+                            className={`admin-btn admin-btn-sm ${isVerified ? 'admin-btn-secondary' : 'admin-btn-success'}`}
+                            onClick={async () => {
+                              try {
+                                setLocalError(null);
+                                await onVerifyUser(u.id, isVerified ? 'unverified' : 'verified');
+                              } catch (err: any) {
+                                setLocalError(err?.message || 'Failed to update verification status');
+                              }
+                            }}
+                            title={isVerified ? 'Click to revoke verification' : '1-click approve KYC verification'}
+                          >
+                            {isVerified ? 'Approved ✓' : 'Approve KYC'}
+                          </button>
+                        )}
 
                         {/* UPDATE / Edit */}
                         <button

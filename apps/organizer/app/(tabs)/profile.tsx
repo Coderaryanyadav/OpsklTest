@@ -447,21 +447,21 @@ export default function OrganizerProfileScreen() {
                 </View>
               </View>
 
-              {/* Stitch Operational Notice: Publishing Lockout Status */}
+              {/* Publishing Verification Status Card */}
               <View
                 style={{
-                  backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surface : colors.primary,
+                  backgroundColor: colors.surface,
                   borderRadius: radii.lg,
                   padding: spacing.md,
                   gap: spacing.xs,
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: organizerData?.verificationStatus === 'verified' ? colors.border : '#F59E0B',
                 }}
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View
                     style={{
-                      backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surfaceMuted : 'rgba(255,255,255,0.15)',
+                      backgroundColor: organizerData?.verificationStatus === 'verified' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.12)',
                       paddingHorizontal: 8,
                       paddingVertical: 3,
                       borderRadius: radii.full,
@@ -475,28 +475,28 @@ export default function OrganizerProfileScreen() {
                         width: 6,
                         height: 6,
                         borderRadius: radii.full,
-                        backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.success : '#FFDAD6',
+                        backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.success : '#F59E0B',
                       }}
                     />
                     <Text
                       style={{
                         fontSize: 10,
                         fontWeight: '700',
-                        color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF',
+                        color: organizerData?.verificationStatus === 'verified' ? colors.success : '#F59E0B',
                         textTransform: 'uppercase',
                         letterSpacing: 0.5,
                       }}
                     >
                       {organizerData?.verificationStatus === 'verified'
-                        ? 'Publishing Unlocked • Tier-1 Verified'
-                        : 'Step 1 of 2 • Publishing Locked'}
+                        ? 'Publishing Unlocked • Verified Host'
+                        : 'Action Required • Publishing Locked'}
                     </Text>
                   </View>
                   <Text
                     style={{
                       fontSize: 11,
                       fontWeight: '600',
-                      color: organizerData?.verificationStatus === 'verified' ? colors.textSecondary : 'rgba(255,255,255,0.8)',
+                      color: colors.textSecondary,
                     }}
                   >
                     IST (UTC +5:30)
@@ -507,7 +507,7 @@ export default function OrganizerProfileScreen() {
                   style={[
                     typography.h3,
                     {
-                      color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF',
+                      color: colors.textPrimary,
                       marginTop: 2,
                     },
                   ]}
@@ -519,13 +519,13 @@ export default function OrganizerProfileScreen() {
                 <Text
                   style={{
                     fontSize: 12,
-                    color: organizerData?.verificationStatus === 'verified' ? colors.textSecondary : 'rgba(255,255,255,0.85)',
-                    lineHeight: 17,
+                    color: colors.textSecondary,
+                    lineHeight: 18,
                   }}
                 >
                   {organizerData?.verificationStatus === 'verified'
                     ? 'Your organization is authorized to publish event shifts and recruit verified crew across BKC, NESCO, and South Mumbai venues.'
-                    : 'To post event shifts across Mumbai venues (BKC, NESCO), Indian legal entity verification is required. Shifts cannot be published until GSTIN & business credentials are validated.'}
+                    : 'To post event shifts across premier Mumbai venues (BKC, NESCO), Indian business verification is required. Shifts cannot be published until GSTIN & business credentials are validated.'}
                 </Text>
 
                 <TouchableOpacity
@@ -534,14 +534,18 @@ export default function OrganizerProfileScreen() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: 10,
+                    padding: 12,
                     borderRadius: radii.md,
-                    backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surfaceMuted : 'rgba(255,255,255,0.15)',
-                    marginTop: 4,
+                    backgroundColor: colors.surfaceMuted,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    marginTop: 6,
                   }}
                 >
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF' }}>
-                    {organizerData?.verificationStatus === 'verified' ? 'View Corporate Verification Credentials' : 'Open Verification & KYC Console'} ➔
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    {organizerData?.verificationStatus === 'verified'
+                      ? 'View Corporate Verification Credentials'
+                      : 'Open Verification & KYC Console'} ➔
                   </Text>
                 </TouchableOpacity>
               </View>

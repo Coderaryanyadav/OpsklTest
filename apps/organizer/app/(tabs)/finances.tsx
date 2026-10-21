@@ -182,7 +182,7 @@ export default function OrganizerFinancesScreen() {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 60 }}
+          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 120 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Enterprise Identity Header Strip (Stitch Contemporary Institutional Modernism) */}

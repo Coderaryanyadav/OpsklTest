@@ -223,12 +223,14 @@ export default function OrganizerShiftsRosterScreen() {
                 width: 38,
                 height: 38,
                 borderRadius: radii.md,
-                backgroundColor: colors.primary,
+                backgroundColor: colors.surfaceMuted,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Calendar size={20} color="#FFFFFF" />
+              <Calendar size={18} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -287,7 +289,7 @@ export default function OrganizerShiftsRosterScreen() {
                   style={{
                     fontSize: 12,
                     fontWeight: isSelected ? '700' : '500',
-                    color: isSelected ? '#FFFFFF' : colors.textSecondary,
+                    color: isSelected ? colors.textInverse : colors.textSecondary,
                   }}
                 >
                   {tab.label}
