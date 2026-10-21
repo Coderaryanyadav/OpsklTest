@@ -240,6 +240,57 @@ function AdminDashboardInner() {
     );
   };
 
+  const handleCreateUser = async (userData: any) => {
+    setDirectoryError(null);
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      const err = result.error || 'Failed to create user account';
+      setDirectoryError(err);
+      throw new Error(err);
+    }
+    setActionSuccessMessage(
+      `New ${userData.role === 'worker' ? 'worker' : 'organizer'} account created successfully.`
+    );
+    await loadAdminData();
+  };
+
+  const handleUpdateUser = async (userId: string, updates: any) => {
+    setDirectoryError(null);
+    const res = await fetch('/api/admin/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: userId, ...updates }),
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      const err = result.error || 'Failed to update user account';
+      setDirectoryError(err);
+      throw new Error(err);
+    }
+    setActionSuccessMessage('Account details updated successfully.');
+    await loadAdminData();
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDirectoryError(null);
+    const res = await fetch(`/api/admin/users?userId=${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      const err = result.error || 'Failed to delete user account';
+      setDirectoryError(err);
+      throw new Error(err);
+    }
+    setActionSuccessMessage(result.message || 'Account successfully removed.');
+    await loadAdminData();
+  };
+
   useEffect(() => {
     const checkAuthAndLoad = async () => {
       try {
@@ -523,6 +574,9 @@ function AdminDashboardInner() {
                   type="worker"
                   users={directoryWorkers}
                   onToggleActiveStatus={handleToggleActiveStatus}
+                  onCreateUser={handleCreateUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
                   onRefresh={() => {
                     setLoading(true);
                     loadAdminData();
@@ -536,6 +590,9 @@ function AdminDashboardInner() {
                   type="organizer"
                   users={directoryOrganizers}
                   onToggleActiveStatus={handleToggleActiveStatus}
+                  onCreateUser={handleCreateUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
                   onRefresh={() => {
                     setLoading(true);
                     loadAdminData();
