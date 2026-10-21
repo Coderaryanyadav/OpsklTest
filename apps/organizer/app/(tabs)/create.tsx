@@ -111,8 +111,8 @@ export default function OrganizerCreateShiftScreen() {
   const [venueAddress, setVenueAddress] = useState('G Block BKC, Bandra East, Mumbai 400098');
   const [landmark, setLandmark] = useState('Gate 4 Security Concourse');
   const [zone, setZone] = useState('Bandra Kurla Complex (BKC)');
-  const [supervisorName, setSupervisorName] = useState('Rohit Verma');
-  const [supervisorPhone, setSupervisorPhone] = useState('9820198201');
+  const [supervisorName, setSupervisorName] = useState('');
+  const [supervisorPhone, setSupervisorPhone] = useState('');
 
   // Step 3: Wages & Escrow (Stitch Screen 16 Focal)
   const [payBasis, setPayBasis] = useState<'shift' | 'hourly'>('shift');
@@ -333,8 +333,8 @@ export default function OrganizerCreateShiftScreen() {
         reportingInstructions: reportingInstructions.trim() || 'Report 30 minutes prior at Gate 4.',
         cancellationPolicy: cancellationPolicy.trim() || 'Free cancellation up to 18 hours prior.',
         dressCode: dressCode.trim() || 'Formal Western Black Suit or Plain Black Sari.',
-        supervisorName: supervisorName.trim() || 'Operations Lead',
-        supervisorPhone: supervisorPhone.trim() || '9820198201',
+        supervisorName: supervisorName.trim(),
+        supervisorPhone: supervisorPhone.trim(),
         status: 'open' as const,
       };
 
@@ -662,7 +662,7 @@ export default function OrganizerCreateShiftScreen() {
                   label="On-Site Lead Name"
                   value={supervisorName}
                   onChangeText={setSupervisorName}
-                  placeholder="Rohit Verma"
+                  placeholder="On-site supervisor name"
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -670,7 +670,7 @@ export default function OrganizerCreateShiftScreen() {
                   label="Lead Phone"
                   value={supervisorPhone}
                   onChangeText={setSupervisorPhone}
-                  placeholder="9820198201"
+                  placeholder="10-digit mobile"
                   keyboardType="phone-pad"
                 />
               </View>

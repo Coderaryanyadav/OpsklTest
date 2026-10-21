@@ -218,7 +218,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
   if (loading && !refreshing) {
     return (
       <Screen edges={['top']}>
-        <LoadingView message="Loading confirmed crew telemetry..." />
+        <LoadingView message="Loading confirmed crew..." />
       </Screen>
     );
   }

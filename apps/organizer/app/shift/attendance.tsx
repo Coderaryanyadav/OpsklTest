@@ -21,7 +21,6 @@ import {
 } from '@opskil/design-system';
 import {
   Job,
-  formatINR,
   fetchOrganizerJobs,
   completeShiftAndApproveAttendance,
   checkInWorkerSafe,
@@ -236,7 +235,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
   if (loading && !refreshing) {
     return (
       <Screen edges={['top']}>
-        <LoadingView message="Connecting to turnstile telemetry..." />
+        <LoadingView message="Loading attendance roster..." />
       </Screen>
     );
   }
@@ -759,7 +758,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
           ))}
         </View>
 
-        {/* Escrow Settlement Safeguard Banner */}
+        {/* Attendance ≠ paid reminder */}
         <View
           style={{
             backgroundColor: colors.surfaceMuted,
@@ -773,18 +772,18 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Shield size={16} color={colors.primary} />
             <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-              Escrow Settlement Safeguard
+              Attendance approval ≠ payout
             </Text>
           </View>
           <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-            Approving attendance locks billable shift hours for payroll review. Payout initiation and settlement are separate steps and are not completed by this approval alone.
+            Approving attendance locks billable hours for payroll review. Live bank escrow pools are not integrated — wage totals come from confirmed bookings only.
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
             <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
-              Locked Escrow Pool
+              Workers on roll
             </Text>
             <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary }}>
-              {formatINR(15000)} (6 Crew × ₹2,500)
+              {workers.length} recorded
             </Text>
           </View>
         </View>

@@ -883,7 +883,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   checked={notifyParties}
                   onChange={(e) => setNotifyParties(e.target.checked)}
                 />
-                <span>Publish this resolution to the immutable state ledger and notify both parties via WhatsApp & SMS.</span>
+                <span>Save resolution notes on the dispute ledger. WhatsApp / SMS party notify is not wired in this build.</span>
               </label>
 
               {actionError && (

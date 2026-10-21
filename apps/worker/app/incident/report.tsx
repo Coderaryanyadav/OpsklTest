@@ -110,13 +110,11 @@ export default function IncidentReportScreen() {
   // Audio recording simulation state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [hasVoiceNote, setHasVoiceNote] = useState(true); // Pre-attached demo memo
+  const [hasVoiceNote, setHasVoiceNote] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-  // Demo photos
-  const [photos, setPhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1584467735871-8e85353a8413?w=500&q=80',
-  ]);
+  // Evidence attachments start empty (no demo Unsplash / voice memo)
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     let interval: any = null;

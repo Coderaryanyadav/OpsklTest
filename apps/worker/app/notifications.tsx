@@ -484,7 +484,7 @@ export default function WorkerNotificationsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.prefTitle}>WhatsApp Shift Updates</Text>
                 <Text style={styles.prefSubtitle}>
-                  Booking confirmations and venue passes sent to your WhatsApp
+                  Preference only — WhatsApp delivery is not wired in this build
                 </Text>
               </View>
               <Switch
@@ -498,9 +498,9 @@ export default function WorkerNotificationsScreen() {
 
             <View style={styles.prefRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.prefTitle}>SMS Alerts (TRAI DLT Verified)</Text>
+                <Text style={styles.prefTitle}>SMS Alerts</Text>
                 <Text style={styles.prefSubtitle}>
-                  Critical bank UTR credits and shift reporting reminders
+                  Preference only — TRAI DLT / UTR SMS rails are not wired in this build
                 </Text>
               </View>
               <Switch

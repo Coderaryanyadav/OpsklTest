@@ -457,21 +457,12 @@ export default function WorkerLoginScreen() {
               </Pressable>
             </View>
 
-            {/* Alternative Delivery Channel */}
+            {/* Alternative channel — WhatsApp OTP is not wired */}
             <Pressable
               onPress={() => {
                 OpsklAlert.alert(
-                  'WhatsApp Delivery',
-                  'If SMS is delayed by your telecom carrier, Opskl can deliver verification codes directly via verified WhatsApp Business API.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Send via WhatsApp',
-                      onPress: () => {
-                        OpsklAlert.alert('Dispatched', 'Verification dispatch triggered via WhatsApp service.');
-                      },
-                    },
-                  ]
+                  'WhatsApp OTP unavailable',
+                  'WhatsApp Business OTP delivery is not integrated in this build. Use Resend SMS when the timer reaches zero, or retry after a short wait.'
                 );
               }}
               style={({ pressed }) => [
@@ -484,7 +475,7 @@ export default function WorkerLoginScreen() {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Get OTP via WhatsApp"
+              accessibilityLabel="WhatsApp OTP not available"
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                 <View style={[styles.channelIconWrap, { backgroundColor: colors.surfaceMuted }]}>
@@ -492,10 +483,10 @@ export default function WorkerLoginScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                    Get OTP via WhatsApp
+                    WhatsApp OTP (not available)
                   </Text>
                   <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                    Instant delivery to registered Indian mobile number
+                    Business API delivery is not wired — use SMS resend
                   </Text>
                 </View>
               </View>

@@ -153,7 +153,8 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Edit number');
     expect(content).toContain('Resend code in');
     expect(content).toContain('Resend SMS');
-    expect(content).toContain('Get OTP via WhatsApp');
+    expect(content).toContain('WhatsApp OTP (not available)');
+    expect(content).not.toContain('Verification dispatch triggered via WhatsApp');
     expect(content).toContain('Never share your OTP with event organizers');
     expect(content).toContain('sendPhoneOtp');
   });

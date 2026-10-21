@@ -259,8 +259,8 @@ export default function OrganizerApplicantScreeningScreen() {
       );
 
       OpsklAlert.alert(
-        'Shift Offer Dispatched',
-        `Offer sent to ${candidate.name} via WhatsApp & In-App push.\n\nFair Dispatch Governance: Worker has 3 hours to verify attendance. Roster spot is locked only upon worker confirmation.`
+        'Shift Offer Recorded',
+        `Offer recorded for ${candidate.name} on the booking ledger. WhatsApp / push broadcast is not wired. Selected ≠ confirmed until the worker accepts.`
       );
     } catch (err: any) {
       OpsklAlert.alert('Dispatch Error', err?.message || 'Could not dispatch shift offer.');
@@ -299,8 +299,8 @@ export default function OrganizerApplicantScreeningScreen() {
 
   const handleNudgeWorker = (candidate: CandidateProfile) => {
     OpsklAlert.alert(
-      'Worker Nudged',
-      `Urgent SMS and WhatsApp ping sent to ${candidate.name}. Held spot expires in ${candidate.timeLeftMinutes || 105} minutes.`
+      'Nudge unavailable',
+      `SMS / WhatsApp nudge is not wired in this build. Ask ${candidate.name} to check the worker app for the pending offer.`
     );
   };
 
@@ -734,7 +734,7 @@ export default function OrganizerApplicantScreeningScreen() {
                       <View style={{ width: '60%', height: '100%', backgroundColor: colors.primary }} />
                     </View>
                     <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                      Offer dispatched via WhatsApp & In-App push. Candidate has acknowledged review notification.
+                      Offer recorded on ledger. WhatsApp / push delivery and candidate acknowledgement are not wired.
                     </Text>
                   </View>
                 )}

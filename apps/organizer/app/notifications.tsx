@@ -287,13 +287,13 @@ export default function OrganizerNotificationsScreen() {
           />
           <Toggle
             label="WhatsApp Roster Summaries"
-            description="Daily crew reporting headcount and check-in summary"
+            description="Preference only — WhatsApp delivery is not wired in this build"
             value={!!preferences?.whatsappEnabled}
             onValueChange={(val) => handleTogglePreference('whatsappEnabled', val)}
           />
           <Toggle
             label="SMS Critical Alerts"
-            description="Crew cancellations and immediate replacement alerts"
+            description="Preference only — SMS alert rails are not wired in this build"
             value={!!preferences?.smsEnabled}
             onValueChange={(val) => handleTogglePreference('smsEnabled', val)}
           />

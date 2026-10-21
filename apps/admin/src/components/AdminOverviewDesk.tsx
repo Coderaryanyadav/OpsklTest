@@ -383,15 +383,17 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>
-                TURNSTILE SCAN ESCALATION
+                OPEN DISPUTES
               </span>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D97706' }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: activeDisputes.length > 0 ? '#D97706' : '#94A3B8' }} />
             </div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)', marginTop: 2 }}>
-              {activeDisputes.length > 0 ? `${activeDisputes.length} Disputes: JWCC Gate 4 Scanner` : '2 Disputes: JWCC Gate 4 Scanner'}
+              {activeDisputes.length > 0
+                ? `${activeDisputes.length} open dispute${activeDisputes.length === 1 ? '' : 's'} on ledger`
+                : 'No open disputes'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Supervisor override requested by Vibez Ent
+              Queue count only · no turnstile / scanner telemetry
             </div>
           </div>
           <ChevronRight size={16} color="var(--text-secondary)" style={{ alignSelf: 'center' }} />

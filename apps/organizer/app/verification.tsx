@@ -61,18 +61,18 @@ export default function OrganizerBusinessVerificationScreen() {
   const [organizerData, setOrganizerData] = useState<OrganizerProfile | null>(null);
 
   // Form states
-  const [businessName, setBusinessName] = useState('Apex Live Experiences Pvt Ltd');
+  const [businessName, setBusinessName] = useState('');
   const [entityType, setEntityType] = useState('pvt_ltd');
   const [showEntityTypeMenu, setShowEntityTypeMenu] = useState(false);
-  const [address, setAddress] = useState('Unit 402, Naman Chambers, C-32 G Block, Bandra Kurla Complex, Mumbai 400051');
-  const [gstin, setGstin] = useState('27AABCA1234F1ZP');
-  const [signatoryName, setSignatoryName] = useState('Rohit Mehta (Director of Operations)');
-  const [contactPhone, setContactPhone] = useState('+91 98204 •••••');
-  const [contactEmail, setContactEmail] = useState('rohit.mehta@apexlive.in');
+  const [address, setAddress] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [signatoryName, setSignatoryName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
 
-  // Venue accreditations
-  const [jwccAccredited, setJwccAccredited] = useState(true);
-  const [nescoAccredited, setNescoAccredited] = useState(true);
+  // Venue accreditations — opt-in, not pre-checked as accredited
+  const [jwccAccredited, setJwccAccredited] = useState(false);
+  const [nescoAccredited, setNescoAccredited] = useState(false);
   const [nsciAccredited, setNsciAccredited] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);

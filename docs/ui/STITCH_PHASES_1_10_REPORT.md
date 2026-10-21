@@ -43,6 +43,12 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Empty finances showing INV-2025 demo GST/UTR cards | `finances.tsx` | Fake invoices | **Fixed** (follow-up 4) — honest empty state |
 | Dashboard FinTech / 6·6 / Rohit phone / `\|\| 4` metrics | organizer `index.tsx` | Fake live venue | **Fixed** (follow-up 4) |
 | Masked “Opskl Bridge Call” / Rohit Mehta defaults | worker `shift/[id].tsx` | Fake telephony | **Fixed** (follow-up 4) |
+| Fake WhatsApp OTP / Business API dispatch | worker `auth/login.tsx` | Fake OTP channel | **Fixed** (follow-up 5) |
+| JWCC Gate 4 / Vibez Ent dispute chrome when empty | `AdminOverviewDesk.tsx` | Fake escalation | **Fixed** (follow-up 5) |
+| Apex/Rohit/GSTIN prefilled verification form | organizer `verification.tsx` | Demo identity | **Fixed** (follow-up 5) — empty until profile load |
+| Incident demo Unsplash photo + voice memo | `incident/report.tsx` | Fake evidence | **Fixed** (follow-up 5) |
+| WhatsApp offer / nudge / preference claims | screening, roster, notifications | Fake messaging | **Fixed** (follow-up 5) |
+| Fake ₹15k escrow pool on attendance | `attendance.tsx` | Fake bank hold | **Fixed** (follow-up 5) |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

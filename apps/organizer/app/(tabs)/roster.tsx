@@ -659,7 +659,7 @@ export default function OrganizerShiftsRosterScreen() {
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
                   onPress={() => {
-                    OpsklAlert.alert('Track Confirmations', 'Live tracking shows worker notifications delivered via Push and WhatsApp.');
+                    OpsklAlert.alert('Track Confirmations', 'Push / WhatsApp delivery tracking is not wired. Check application status on the roster for acceptances.');
                   }}
                   style={{
                     flex: 1,

@@ -265,7 +265,7 @@ export default function OrganizerDashboardScreen() {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
-                    {organizerProfile?.businessName || 'Apex Live Experiences'}
+                    {organizerProfile?.businessName || 'Organizer account'}
                   </Text>
                   {isVerified && <CheckCircle2 size={16} color={colors.primary} strokeWidth={2.4} />}
                 </View>
