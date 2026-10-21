@@ -913,7 +913,11 @@ export function GeofencedCheckInModal({
 
             {job?.supervisorPhone ? (
               <Pressable
-                onPress={() => Linking.openURL(`tel:${job.supervisorPhone}`)}
+                onPress={() => {
+                  Linking.openURL(`tel:${job.supervisorPhone}`).catch(() => {
+                    Alert.alert('Unable to Call', 'Could not open phone dialer on this device.');
+                  });
+                }}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',

@@ -196,6 +196,28 @@ async function run() {
         remediationSql.includes('disputes') &&
         remediationSql.includes('auth.uid() <> v_booking.organizer_id'),
     },
+    {
+      name: '3.6 BUG-002: cancel_booking_safe and worker_decline_selection_safe perform exact derived capacity recalculation',
+      test: () => {
+        const bugHuntSql = allMigrationsMap.get('20261022000000_bug_hunt_capacity_and_auth_hardening.sql') || '';
+        return (
+          bugHuntSql.includes('SELECT count(*) INTO v_active_slots') &&
+          bugHuntSql.includes('slots_filled = v_active_slots') &&
+          bugHuntSql.includes('selected_awaiting_confirmation')
+        );
+      },
+    },
+    {
+      name: '3.7 BUG-003: sweep_expired_worker_offers_safe compares canonical timestamptz instants and rebalances affected jobs',
+      test: () => {
+        const bugHuntSql = allMigrationsMap.get('20261022000000_bug_hunt_capacity_and_auth_hardening.sql') || '';
+        return (
+          bugHuntSql.includes('(((j.date + j.start_time) AT TIME ZONE \'Asia/Kolkata\') <= now())') &&
+          bugHuntSql.includes('FOREACH v_iter_job_id IN ARRAY v_job_ids_affected') &&
+          bugHuntSql.includes('slots_filled = v_active_slots')
+        );
+      },
+    },
   ];
 
   let passed = 0;

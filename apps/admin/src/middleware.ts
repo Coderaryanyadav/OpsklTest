@@ -9,11 +9,13 @@ export async function middleware(request: NextRequest) {
   });
 
   const { pathname } = request.nextUrl;
+  const isApiRoute = pathname.startsWith('/api');
 
-  // Exclude static assets, api, next internals, and login page
+  // Allow static assets, next internals, and public endpoints
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/health') ||
     pathname.startsWith('/static') ||
     pathname.includes('.') ||
     pathname === '/login'
@@ -30,9 +32,13 @@ export async function middleware(request: NextRequest) {
 
 
   // If live credentials are not configured:
-  // In production, block access safely with a config error rather than allowing unauthenticated access.
-  // In development/test build steps, allow passthrough so static bundling succeeds.
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
+    if (isApiRoute) {
+      return NextResponse.json(
+        { success: false, error: 'Supabase credentials are not configured.' },
+        { status: 500 }
+      );
+    }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('error', 'missing_configuration');
     return NextResponse.redirect(loginUrl);
@@ -62,6 +68,12 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (error || !user) {
+      if (isApiRoute) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized: Admin authentication required.' },
+          { status: 401 }
+        );
+      }
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       const redirectResponse = NextResponse.redirect(loginUrl);
@@ -88,6 +100,12 @@ export async function middleware(request: NextRequest) {
       .maybeSingle();
 
     if (!profile || profile.role !== 'admin' || !profile.is_active) {
+      if (isApiRoute) {
+        return NextResponse.json(
+          { success: false, error: 'Forbidden: Active admin privileges required.' },
+          { status: 403 }
+        );
+      }
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'unauthorized_role');
       const redirectResponse = NextResponse.redirect(loginUrl);
@@ -97,6 +115,12 @@ export async function middleware(request: NextRequest) {
       return redirectResponse;
     }
   } catch {
+    if (isApiRoute) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication verification error.' },
+        { status: 401 }
+      );
+    }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     const redirectResponse = NextResponse.redirect(loginUrl);

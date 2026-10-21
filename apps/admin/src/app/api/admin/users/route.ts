@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,10 +15,57 @@ function getAdminClient() {
 }
 
 /**
- * Log administrative operations to audit_logs
+ * Server-side verification that caller has an active admin session
+ */
+async function verifyAdminAuth(req: NextRequest) {
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    return { ok: false as const, status: 500, error: 'Supabase credentials are not configured.' };
+  }
+
+  const authHeader = req.headers.get('authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+  const supabase = createServerClient(supabaseUrl, anonKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll() {},
+    },
+  });
+
+  const {
+    data: { user },
+    error: authError,
+  } = bearerToken
+    ? await supabase.auth.getUser(bearerToken)
+    : await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { ok: false as const, status: 401, error: 'Unauthorized: Valid admin authentication required.' };
+  }
+
+  const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role, is_active')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'admin' || !profile.is_active) {
+    return { ok: false as const, status: 403, error: 'Forbidden: Caller is not an active platform administrator.' };
+  }
+
+  return { ok: true as const, user, profile, adminClient };
+}
+
+/**
+ * Log administrative operations to audit_logs with actor attribution
  */
 async function logAudit(
   adminClient: any,
+  actorId: string,
   action: string,
   entityId: string,
   entityType: string,
@@ -25,6 +73,7 @@ async function logAudit(
 ) {
   try {
     await adminClient.from('audit_logs').insert({
+      actor_id: actorId,
       action,
       entity_type: entityType,
       entity_id: entityId,
@@ -39,10 +88,15 @@ async function logAudit(
 /**
  * POST /api/admin/users
  * Create a new Worker or Organizer account with pre-verified email and initialized profile.
+ * Requires active platform admin authorization.
  */
 export async function POST(req: NextRequest) {
   try {
-    const adminClient = getAdminClient();
+    const auth = await verifyAdminAuth(req);
+    if (!auth.ok) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
+    const adminClient = auth.adminClient;
     const body = await req.json();
 
     const {
@@ -80,10 +134,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Business name is required for organizers.' }, { status: 400 });
     }
 
-    // 1. Check existing users
-    const { data: userList } = await adminClient.auth.admin.listUsers();
-    const existing = userList?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
-    if (existing) {
+    // 1. Direct profile lookup to prevent duplicate email accounts without relying on pagination
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id, email')
+      .ilike('email', cleanEmail)
+      .maybeSingle();
+
+    if (existingProfile) {
       return NextResponse.json(
         { success: false, error: `An account with email ${cleanEmail} already exists.` },
         { status: 409 }
@@ -110,6 +168,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = authData.user.id;
+    const resolvedCity = (preferredLocality || body?.city || 'Mumbai').trim();
 
     // 3. Upsert profiles
     const { error: profileErr } = await adminClient.from('profiles').upsert({
@@ -118,7 +177,7 @@ export async function POST(req: NextRequest) {
       full_name: cleanName,
       phone: cleanPhone || null,
       email: cleanEmail,
-      city: 'Mumbai',
+      city: resolvedCity,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -132,7 +191,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Upsert Role Specific Profile
+    // 4. Upsert Role Specific Profile with rollback on failure
     if (cleanRole === 'worker') {
       const parsedSkills = Array.isArray(skills)
         ? skills
@@ -142,8 +201,8 @@ export async function POST(req: NextRequest) {
 
       const { error: workerErr } = await adminClient.from('worker_profiles').upsert({
         id: userId,
-        preferred_locality: preferredLocality || 'Mumbai',
-        service_areas: [preferredLocality || 'Mumbai'],
+        preferred_locality: resolvedCity,
+        service_areas: [resolvedCity],
         skills: parsedSkills,
         upi_id: upiId || null,
         profile_completion_status: isVerified ? 'completed' : 'incomplete',
@@ -155,6 +214,12 @@ export async function POST(req: NextRequest) {
 
       if (workerErr) {
         console.error('[ADMIN WORKER ERROR]', workerErr);
+        await adminClient.from('profiles').delete().eq('id', userId);
+        await adminClient.auth.admin.deleteUser(userId);
+        return NextResponse.json(
+          { success: false, error: `Failed to create worker profile: ${workerErr.message}` },
+          { status: 500 }
+        );
       }
     } else {
       const cleanBizName = (businessName || cleanName).trim();
@@ -176,11 +241,17 @@ export async function POST(req: NextRequest) {
 
       if (orgErr) {
         console.error('[ADMIN ORG ERROR]', orgErr);
+        await adminClient.from('profiles').delete().eq('id', userId);
+        await adminClient.auth.admin.deleteUser(userId);
+        return NextResponse.json(
+          { success: false, error: `Failed to create organizer profile: ${orgErr.message}` },
+          { status: 500 }
+        );
       }
     }
 
-    // 5. Audit Log
-    await logAudit(adminClient, 'admin_create_user', userId, cleanRole, {
+    // 5. Audit Log with Actor Attribution
+    await logAudit(adminClient, auth.user.id, 'admin_create_user', userId, cleanRole, {
       email: cleanEmail,
       fullName: cleanName,
       role: cleanRole,
@@ -213,10 +284,15 @@ export async function POST(req: NextRequest) {
 /**
  * PUT /api/admin/users
  * Update user profile details, skills/business attributes, verification, or active status.
+ * Requires active platform admin authorization.
  */
 export async function PUT(req: NextRequest) {
   try {
-    const adminClient = getAdminClient();
+    const auth = await verifyAdminAuth(req);
+    if (!auth.ok) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
+    const adminClient = auth.adminClient;
     const body = await req.json();
 
     const {
@@ -327,8 +403,8 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // 3. Audit Log
-    await logAudit(adminClient, 'admin_update_user', id, cleanRole, {
+    // 3. Audit Log with Actor Attribution
+    await logAudit(adminClient, auth.user.id, 'admin_update_user', id, cleanRole, {
       fullName,
       phone,
       isActive,
@@ -351,10 +427,15 @@ export async function PUT(req: NextRequest) {
 /**
  * DELETE /api/admin/users
  * Delete user from auth and profiles, or safely soft-deactivate if dependent jobs/bookings exist.
+ * Requires active platform admin authorization.
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const adminClient = getAdminClient();
+    const auth = await verifyAdminAuth(req);
+    if (!auth.ok) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+    }
+    const adminClient = auth.adminClient;
     const url = new URL(req.url);
     const userId = url.searchParams.get('userId');
 
@@ -374,7 +455,7 @@ export async function DELETE(req: NextRequest) {
     if (hasJobs || hasBookings) {
       // Due to relational integrity and payroll audit constraints, deactivate rather than hard-deleting
       await adminClient.from('profiles').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', userId);
-      await logAudit(adminClient, 'admin_archive_user_with_records', userId, 'user', {
+      await logAudit(adminClient, auth.user.id, 'admin_archive_user_with_records', userId, 'user', {
         reason: 'Archived due to existing jobs/bookings history',
         jobsCount: jobsCheck.count,
         bookingsCount: bookingsCheck.count,
@@ -399,7 +480,7 @@ export async function DELETE(req: NextRequest) {
       console.warn('[ADMIN AUTH DELETE WARNING]', authDeleteErr);
     }
 
-    await logAudit(adminClient, 'admin_delete_user', userId, 'user', {
+    await logAudit(adminClient, auth.user.id, 'admin_delete_user', userId, 'user', {
       deletedAt: new Date().toISOString(),
     });
 

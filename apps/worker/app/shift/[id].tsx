@@ -915,7 +915,11 @@ export default function WorkerShiftDetailScreen() {
                       [
                         {
                           text: 'Call Now',
-                          onPress: () => Linking.openURL(`tel:${shift.supervisorPhone}`),
+                          onPress: () => {
+                            Linking.openURL(`tel:${shift.supervisorPhone}`).catch(() => {
+                              Alert.alert('Unable to Call', 'Could not open phone dialer on this device.');
+                            });
+                          },
                         },
                         { text: 'Cancel', style: 'cancel' },
                       ]
@@ -992,7 +996,11 @@ export default function WorkerShiftDetailScreen() {
                   ? [
                       {
                         text: 'Call',
-                        onPress: () => Linking.openURL(`tel:${shift.supervisorPhone}`),
+                        onPress: () => {
+                          Linking.openURL(`tel:${shift.supervisorPhone}`).catch(() => {
+                            Alert.alert('Unable to Call', 'Could not open phone dialer on this device.');
+                          });
+                        },
                       },
                       { text: 'Close', style: 'cancel' },
                     ]

@@ -269,7 +269,9 @@ export default function WorkerMyShiftsScreen() {
               text: 'Call Supervisor',
               onPress: () => {
                 if (booking.job?.supervisorPhone) {
-                  Linking.openURL(`tel:${booking.job.supervisorPhone}`);
+                  Linking.openURL(`tel:${booking.job.supervisorPhone}`).catch(() => {
+                    Alert.alert('Unable to Call', 'Could not open phone dialer on this device.');
+                  });
                 }
               },
             },
