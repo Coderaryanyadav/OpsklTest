@@ -8,7 +8,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
 import {
   useOpsklTheme,
   Badge,
