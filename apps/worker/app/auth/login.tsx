@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Linking from 'expo-linking';
 import {
@@ -17,41 +17,85 @@ import {
   FormField,
   OpsklAlert,
 } from '@opskil/design-system';
-import { fetchUserProfile, fetchWorkerProfile, supabase, classifyAuthError } from '@opskil/shared';
+import {
+  fetchUserProfile,
+  fetchWorkerProfile,
+  supabase,
+  classifyAuthError,
+} from '@opskil/shared';
+import {
+  Shield,
+  Lock,
+  ArrowRight,
+  Clock,
+  MessageSquare,
+  AlertCircle,
+  ShieldCheck,
+  ChevronRight,
+} from 'lucide-react-native';
 
-type AuthMode = 'signin' | 'signup';
-type SignInMethod = 'otp' | 'password';
+type AuthMethod = 'phone' | 'email';
 
 export default function WorkerLoginScreen() {
   const router = useRouter();
-  const { redirect, mode: initialMode } = useLocalSearchParams<{ redirect?: string; mode?: AuthMode }>();
-  const { colors, spacing, radii, typography, touchTarget } = useOpsklTheme();
+  const { redirect, method: initialMethod, mode: initialMode } = useLocalSearchParams<{
+    redirect?: string;
+    method?: string;
+    mode?: string;
+  }>();
+  const { colors, spacing, typography, touchTarget, borders } = useOpsklTheme();
   const {
+    sendPhoneOtp,
+    verifyOtp,
     sendEmailOtp,
-    verifyEmailOtp,
     signInWithPassword,
     signUpWithPassword,
     signInWithGoogle,
-    sendPasswordReset,
-    resendVerification,
     handleAuthUrl,
   } = useAuth();
 
-  const [mode, setMode] = useState<AuthMode>(initialMode === 'signup' ? 'signup' : 'signin');
-  const [signInMethod, setSignInMethod] = useState<SignInMethod>('otp');
+  // Authentication mode & method
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(
+    initialMethod === 'email' ? 'email' : 'phone'
+  );
+  const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  // Phone OTP Flow State
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
 
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
+  // Resend Countdown Timer (60s)
+  const [timerSeconds, setTimerSeconds] = useState(60);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Email / Password Fallback State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+
+  // Handle countdown
+  useEffect(() => {
+    if (otpSent && timerSeconds > 0) {
+      timerRef.current = setInterval(() => {
+        setTimerSeconds((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [otpSent, timerSeconds]);
+
+  // Handle OAuth callbacks
   useEffect(() => {
     const handleUrl = async (url: string) => {
       if (url && (url.includes('code=') || url.includes('access_token='))) {
@@ -83,7 +127,7 @@ export default function WorkerLoginScreen() {
   const handlePostAuthRoute = async (userId: string) => {
     const profile = await fetchUserProfile(userId);
     if (!profile || profile.isActive === false || (profile.role !== 'worker' && profile.role !== 'admin')) {
-      await supabase.auth.signOut().catch(() => { });
+      await supabase.auth.signOut().catch(() => {});
       OpsklAlert.alert(
         'Unauthorized Account',
         profile && profile.role === 'organizer'
@@ -108,50 +152,112 @@ export default function WorkerLoginScreen() {
     }
   };
 
-  const handleSendOtp = async () => {
+  // 1. Send Phone OTP
+  const handleSendPhoneOtp = async () => {
+    setErrorMessage(null);
+    const cleanDigits = phone.replace(/\D/g, '');
+    if (cleanDigits.length !== 10 || !/^[6-9]/.test(cleanDigits)) {
+      setErrorMessage('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formatted = `+91${cleanDigits}`;
+      await sendPhoneOtp(formatted);
+      setOtpSent(true);
+      setTimerSeconds(60);
+      setAttemptsRemaining(3);
+    } catch (err: any) {
+      const classified = classifyAuthError(err);
+      setErrorMessage(classified.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Verify Phone OTP
+  const handleVerifyPhoneOtp = async () => {
+    if (loading) return;
+    setErrorMessage(null);
+    const cleanOtp = otp.replace(/\D/g, '').trim();
+    if (cleanOtp.length !== 6) {
+      setErrorMessage('Please enter the complete 6-digit OTP verification code.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formatted = `+91${phone.replace(/\D/g, '')}`;
+      const res = await verifyOtp(formatted, cleanOtp, 'worker');
+      if (res?.session) {
+        await handlePostAuthRoute(res.session.user.id);
+      } else {
+        setErrorMessage('Verification was received, but no active session was returned. Please retry.');
+      }
+    } catch (err: any) {
+      const classified = classifyAuthError(err);
+      if (attemptsRemaining !== null && attemptsRemaining > 1) {
+        setAttemptsRemaining((prev) => (prev ? prev - 1 : 1));
+        setErrorMessage(`Invalid OTP code. ${attemptsRemaining - 1} attempt(s) remaining before temporary lock.`);
+      } else {
+        setErrorMessage(classified.message || 'Invalid or expired OTP. Please check code or request a new one.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Email OTP Flow
+  const handleSendEmailOtp = async () => {
+    setErrorMessage(null);
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes('@') || !trimmed.includes('.')) {
-      OpsklAlert.alert('Invalid Email', 'Please enter a valid email address.');
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
     setLoading(true);
     try {
       await sendEmailOtp(trimmed, 'worker');
       setOtpSent(true);
-      OpsklAlert.alert('OTP Dispatched', `A 6-digit verification code has been sent to ${trimmed}. Check your inbox or spam.`);
+      setTimerSeconds(60);
     } catch (err: any) {
-      OpsklAlert.alert('Authentication Error', classifyAuthError(err).message);
+      const classified = classifyAuthError(err);
+      setErrorMessage(classified.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyEmailOtp = async () => {
     if (loading) return;
+    setErrorMessage(null);
     const cleanOtp = otp.replace(/\D/g, '').trim();
     if (cleanOtp.length !== 6) {
-      OpsklAlert.alert('Invalid Code', 'Please enter the complete 6-digit code.');
+      setErrorMessage('Please enter the complete 6-digit code.');
       return;
     }
     setLoading(true);
     try {
-      const res = await verifyEmailOtp(email.trim().toLowerCase(), cleanOtp, 'worker');
+      const res = await verifyOtp(email.trim().toLowerCase(), cleanOtp, 'worker');
       if (res?.session) {
         await handlePostAuthRoute(res.session.user.id);
       } else {
-        OpsklAlert.alert('Verification Pending', 'No session was returned by the auth service.');
+        setErrorMessage('No active session was returned by the auth service.');
       }
     } catch (err: any) {
-      OpsklAlert.alert('Verification Failed', classifyAuthError(err).message);
+      setErrorMessage(classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
   };
 
+  // 4. Password Sign In
   const handlePasswordSignIn = async () => {
+    setErrorMessage(null);
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !password) {
-      OpsklAlert.alert('Missing Fields', 'Please enter both your email and password.');
+      setErrorMessage('Please enter both your email and password.');
       return;
     }
     setLoading(true);
@@ -161,31 +267,33 @@ export default function WorkerLoginScreen() {
         await handlePostAuthRoute(res.session.user.id);
       }
     } catch (err: any) {
-      OpsklAlert.alert('Sign-In Failed', classifyAuthError(err).message);
+      setErrorMessage(classifyAuthError(err).message);
     } finally {
       setLoading(false);
     }
   };
 
+  // 5. Password Sign Up
   const handleSignUp = async () => {
+    setErrorMessage(null);
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedName = fullName.trim();
     const cleanPhone = phone.replace(/\D/g, '');
 
     if (!trimmedName || trimmedName.length < 2) {
-      OpsklAlert.alert('Full Name Required', 'Please enter your legal full name.');
+      setErrorMessage('Please enter your legal full name.');
       return;
     }
     if (cleanPhone.length < 10) {
-      OpsklAlert.alert('Valid Phone Required', 'Please enter a 10-digit Indian mobile number.');
+      setErrorMessage('Please enter a 10-digit Indian mobile number.');
       return;
     }
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      OpsklAlert.alert('Valid Email Required', 'Please enter a valid email address.');
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
     if (password.length < 6) {
-      OpsklAlert.alert('Weak Password', 'Password must be at least 6 characters.');
+      setErrorMessage('Password must be at least 6 characters.');
       return;
     }
 
@@ -204,372 +312,516 @@ export default function WorkerLoginScreen() {
       } else if (res?.user && !res.session) {
         OpsklAlert.alert(
           'Verification Email Sent',
-          `We have sent an activation link to ${trimmedEmail}. Please verify your email before logging in.`,
-          [{ text: 'OK', onPress: () => setMode('signin') }]
+          `An activation link has been sent to ${trimmedEmail}. Please verify your email before logging in.`,
+          [{ text: 'OK', onPress: () => setIsSignUp(false) }]
         );
       }
     } catch (err: any) {
-      OpsklAlert.alert('Registration Failed', err?.message || 'Unable to register account.');
+      setErrorMessage(err?.message || 'Unable to register account.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const redirectUrl = Linking.createURL('/auth/login');
-      const res = await signInWithGoogle('worker', redirectUrl);
-      if (res?.url) {
-        if (typeof window !== 'undefined' && window.location) {
-          window.location.href = res.url;
-        } else {
-          await Linking.openURL(res.url);
-        }
-      }
-    } catch (err: any) {
-      OpsklAlert.alert('Google Sign-In Error', err?.message || 'Could not initiate Google OAuth.');
-    } finally {
-      setLoading(false);
+  // Helper: Masked phone string
+  const getMaskedPhone = () => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      return `+91 ${digits.slice(0, 5)} •••••`;
     }
-  };
-
-  const handleSendResetEmail = async () => {
-    const trimmed = resetEmail.trim().toLowerCase();
-    if (!trimmed || !trimmed.includes('@')) {
-      OpsklAlert.alert('Invalid Email', 'Please provide a valid email address.');
-      return;
-    }
-    setResetLoading(true);
-    try {
-      const redirectUrl = Linking.createURL('/auth/login');
-      await sendPasswordReset(trimmed, redirectUrl);
-      OpsklAlert.alert('Password Reset Sent', `Password reset instructions have been dispatched to ${trimmed}.`);
-      setShowForgotModal(false);
-      setResetEmail('');
-    } catch (err: any) {
-      OpsklAlert.alert('Reset Failed', err?.message || 'Unable to send password reset email.');
-    } finally {
-      setResetLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !trimmed.includes('@')) {
-      OpsklAlert.alert('Email Required', 'Please enter your email above to resend verification.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await resendVerification(trimmed);
-      OpsklAlert.alert('Verification Sent', `A new verification email has been dispatched to ${trimmed}.`);
-    } catch (err: any) {
-      OpsklAlert.alert('Error', err?.message || 'Unable to resend verification email.');
-    } finally {
-      setLoading(false);
-    }
+    return `+91 ${phone}`;
   };
 
   return (
-    <Screen edges={['top', 'bottom']}>
+    <Screen edges={['top', 'bottom']} contentStyle={{ backgroundColor: colors.background }}>
       <ScreenHeader
-        title={mode === 'signin' ? 'Worker Sign In' : 'Create Worker Profile'}
-        onBack={() => router.back()}
+        title={otpSent ? 'Verification' : authMethod === 'phone' ? 'Worker Sign In' : 'Opskl Account'}
+        onBack={() => {
+          if (otpSent) {
+            setOtpSent(false);
+            setOtp('');
+            setErrorMessage(null);
+          } else if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/welcome' as any);
+          }
+        }}
       />
 
-      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.xl, paddingBottom: 60 }}>
-        <SegmentedControl
-          options={[
-            { value: 'signin', label: 'Sign In' },
-            { value: 'signup', label: 'Create Account' },
-          ]}
-          value={mode}
-          onChange={(v) => {
-            setMode(v);
-            setOtpSent(false);
-          }}
-          style={{ marginBottom: spacing.lg }}
-        />
-
-        <TouchableOpacity
-          onPress={handleGoogleSignIn}
-          disabled={loading}
-          activeOpacity={0.8}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: radii.md,
-            minHeight: touchTarget.comfortable,
-            marginBottom: spacing.md,
-            gap: 10,
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Continue with Google"
-        >
-          <View
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 11,
-              backgroundColor: colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: colors.textInverse, fontWeight: '900', fontSize: 13 }}>G</Text>
+      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, paddingBottom: 60 }}>
+        {/* Context Security Pill */}
+        <View style={styles.securityHeaderRow}>
+          <View style={[styles.securityPill, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: borders.hairline }]}>
+            <Lock size={12} color={colors.accent} />
+            <Text style={[styles.securityPillText, { color: colors.textSecondary }]}>
+              SECURE ACCESS • MUMBAI WORKFORCE
+            </Text>
           </View>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
-            Continue with Google
-          </Text>
-        </TouchableOpacity>
+          <Shield size={18} color={colors.textMuted} />
+        </View>
 
-        <Divider label="OR WITH EMAIL" />
+        {/* ========================================================================= */}
+        {/* SCENARIO A: OTP ENTRY SCREEN (Stitch worker_phone_otp_verification)     */}
+        {/* ========================================================================= */}
+        {otpSent ? (
+          <View style={{ marginTop: spacing.md, gap: spacing.md }}>
+            <View>
+              <Text style={[typography.h1, { color: colors.textPrimary, letterSpacing: -0.5 }]}>
+                Enter verification code
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                <Text style={[typography.body, { color: colors.textSecondary }]}>
+                  We sent a 6-digit OTP to{' '}
+                  <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                    {authMethod === 'phone' ? getMaskedPhone() : email}
+                  </Text>
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setOtpSent(false);
+                    setOtp('');
+                    setErrorMessage(null);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit phone number"
+                >
+                  <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 13, textDecorationLine: 'underline' }}>
+                    {authMethod === 'phone' ? 'Edit number' : 'Edit email'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
 
-        {mode === 'signin' ? (
-          <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+            {/* Error Banner State */}
+            {errorMessage ? (
+              <View style={[styles.errorBanner, { backgroundColor: colors.dangerLight, borderColor: colors.danger, borderWidth: borders.hairline }]}>
+                <AlertCircle size={18} color={colors.danger} style={{ flexShrink: 0, marginTop: 1 }} />
+                <Text style={{ color: colors.danger, fontSize: 13, fontWeight: '500', flex: 1, lineHeight: 18 }}>
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* 6-Digit OTP Input */}
+            <FormField label="One-Time Password (OTP)" helperText="Enter the 6-digit code received via SMS">
+              <OtpInput
+                value={otp}
+                onChange={(code) => {
+                  setOtp(code);
+                  if (errorMessage) setErrorMessage(null);
+                  if (code.length === 6) {
+                    // Auto-submit on 6 digits
+                    setTimeout(() => {
+                      if (authMethod === 'phone') handleVerifyPhoneOtp();
+                      else handleVerifyEmailOtp();
+                    }, 100);
+                  }
+                }}
+                autoFocus
+              />
+            </FormField>
+
+            {/* Resend & Timer Row */}
+            <View style={styles.resendTimerRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Clock size={15} color={colors.textSecondary} />
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  Resend code in{' '}
+                  <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
+                    {`00:${timerSeconds < 10 ? `0${timerSeconds}` : timerSeconds}`}
+                  </Text>
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => {
+                  if (timerSeconds === 0) {
+                    if (authMethod === 'phone') handleSendPhoneOtp();
+                    else handleSendEmailOtp();
+                  }
+                }}
+                disabled={timerSeconds > 0 || loading}
+                accessibilityRole="button"
+                accessibilityLabel="Resend SMS code"
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: timerSeconds === 0 ? colors.accent : colors.textMuted,
+                  }}
+                >
+                  Resend SMS
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Alternative Delivery Channel */}
+            <Pressable
+              onPress={() => {
+                OpsklAlert.alert(
+                  'WhatsApp Delivery',
+                  'If SMS is delayed by your telecom carrier, Opskl can deliver verification codes directly via verified WhatsApp Business API.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Send via WhatsApp',
+                      onPress: () => {
+                        OpsklAlert.alert('Dispatched', 'Verification dispatch triggered via WhatsApp service.');
+                      },
+                    },
+                  ]
+                );
+              }}
+              style={({ pressed }) => [
+                styles.channelCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: borders.hairline,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Get OTP via WhatsApp"
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <View style={[styles.channelIconWrap, { backgroundColor: colors.surfaceMuted }]}>
+                  <MessageSquare size={18} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    Get OTP via WhatsApp
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                    Instant delivery to registered Indian mobile number
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color={colors.textMuted} />
+            </Pressable>
+
+            {/* Primary Action Button */}
+            <Button
+              title="Verify & Continue"
+              variant="accent"
+              size="lg"
+              loading={loading}
+              disabled={loading || otp.replace(/\D/g, '').length < 6}
+              icon={<ArrowRight size={18} color={colors.textInverse} />}
+              iconPosition="right"
+              onPress={authMethod === 'phone' ? handleVerifyPhoneOtp : handleVerifyEmailOtp}
+            />
+
+            {/* Security Advisory Notice */}
+            <View style={styles.advisoryRow}>
+              <ShieldCheck size={16} color={colors.textMuted} style={{ marginTop: 2, flexShrink: 0 }} />
+              <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16, flex: 1 }}>
+                Never share your OTP with event organizers, coordinators, or third parties. Shifts and pay ledgers are strictly linked to your verified credentials.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          /* ========================================================================= */
+          /* SCENARIO B: PHONE / CREDENTIAL ENTRY SCREEN                              */
+          /* ========================================================================= */
+          <View style={{ marginTop: spacing.md, gap: spacing.md }}>
+            <View>
+              <Text style={[typography.h1, { color: colors.textPrimary, letterSpacing: -0.5 }]}>
+                {isSignUp ? 'Create your worker profile' : 'Sign in with phone number'}
+              </Text>
+              <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4 }]}>
+                {isSignUp
+                  ? 'Join Mumbai’s verified event hospitality network with instant shift allocations.'
+                  : 'Enter your 10-digit mobile number to receive a secure 6-digit login code.'}
+              </Text>
+            </View>
+
+            {/* Method Toggle: Phone vs Email */}
             <SegmentedControl
               options={[
-                { value: 'otp', label: 'Email OTP' },
-                { value: 'password', label: 'Password' },
+                { value: 'phone', label: 'Mobile Number' },
+                { value: 'email', label: 'Email / Password' },
               ]}
-              value={signInMethod}
-              onChange={setSignInMethod}
-              style={{ marginBottom: spacing.md }}
+              value={authMethod === 'phone' ? 'phone' : 'email'}
+              onChange={(val) => {
+                setAuthMethod(val as AuthMethod);
+                setErrorMessage(null);
+              }}
             />
 
-            <Input
-              label="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@gmail.com"
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
-              autoCapitalize="none"
-              editable={!otpSent}
-            />
+            {errorMessage ? (
+              <View style={[styles.errorBanner, { backgroundColor: colors.dangerLight, borderColor: colors.danger, borderWidth: borders.hairline }]}>
+                <AlertCircle size={18} color={colors.danger} style={{ flexShrink: 0, marginTop: 1 }} />
+                <Text style={{ color: colors.danger, fontSize: 13, fontWeight: '500', flex: 1, lineHeight: 18 }}>
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
 
-            {signInMethod === 'otp' ? (
-              !otpSent ? (
+            {authMethod === 'phone' ? (
+              /* Phone Entry Form */
+              <View style={{ gap: spacing.md }}>
+                {isSignUp ? (
+                  <Input
+                    label="Full Legal Name"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="As printed on government ID"
+                    helperText="Required for event venue accreditation"
+                  />
+                ) : null}
+
+                <FormField label="Mobile Number" helperText="10-digit Indian mobile (starts with 6, 7, 8, 9)">
+                  <View style={styles.phoneInputRow}>
+                    <View style={[styles.countryCodeBox, { backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderWidth: borders.hairline }]}>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>+91</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        value={phone}
+                        onChangeText={(t) => {
+                          setPhone(t);
+                          if (errorMessage) setErrorMessage(null);
+                        }}
+                        placeholder="98201 98201"
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                      />
+                    </View>
+                  </View>
+                </FormField>
+
                 <Button
-                  title="Send Verification OTP"
-                  variant="primary"
+                  title="Get Verification OTP"
+                  variant="accent"
                   size="lg"
                   loading={loading}
-                  disabled={loading}
-                  onPress={handleSendOtp}
+                  disabled={loading || phone.replace(/\D/g, '').length < 10}
+                  icon={<ArrowRight size={18} color={colors.textInverse} />}
+                  iconPosition="right"
+                  onPress={handleSendPhoneOtp}
                 />
-              ) : (
-                <>
-                  <FormField label="Enter 6-Digit OTP" helperText={`Code sent to ${email.trim().toLowerCase()}`}>
-                    <OtpInput value={otp} onChange={setOtp} autoFocus />
-                  </FormField>
-                  <Button
-                    title="Verify OTP & Sign In"
-                    variant="primary"
-                    size="lg"
-                    loading={loading}
-                    disabled={loading}
-                    onPress={handleVerifyOtp}
-                  />
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Button
-                      title="Resend Code"
-                      variant="ghost"
-                      size="sm"
-                      disabled={loading}
-                      onPress={handleSendOtp}
-                    />
-                    <Button
-                      title="Change Email"
-                      variant="ghost"
-                      size="sm"
-                      disabled={loading}
-                      onPress={() => {
-                        setOtpSent(false);
-                        setOtp('');
-                      }}
-                    />
-                  </View>
-                </>
-              )
+
+                <Pressable
+                  onPress={() => setIsSignUp(!isSignUp)}
+                  style={{ alignItems: 'center', paddingVertical: 6 }}
+                  accessibilityRole="button"
+                >
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                    {isSignUp ? 'Already registered? ' : 'New to Opskl? '}
+                    <Text style={{ color: colors.accent, fontWeight: '700' }}>
+                      {isSignUp ? 'Sign In' : 'Create Account'}
+                    </Text>
+                  </Text>
+                </Pressable>
+              </View>
             ) : (
-              <>
+              /* Email / Password Form (Fallback & Admin/Testing) */
+              <View style={{ gap: spacing.sm }}>
+                {isSignUp ? (
+                  <Input
+                    label="Full Legal Name"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="e.g. Aarav Ramesh Kulkarni"
+                  />
+                ) : null}
+
+                <Input
+                  label="Email Address"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="name@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+
                 <PasswordInput
                   label="Password"
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Enter your password"
-                  autoComplete="password"
-                  textContentType="password"
+                  placeholder="At least 6 characters"
                 />
+
                 <Button
-                  title="Sign In with Password"
+                  title={isSignUp ? 'Create Worker Account' : 'Sign In with Password'}
                   variant="primary"
                   size="lg"
                   loading={loading}
                   disabled={loading}
-                  onPress={handlePasswordSignIn}
+                  onPress={isSignUp ? handleSignUp : handlePasswordSignIn}
                 />
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginTop: spacing.sm,
-                    minHeight: touchTarget.min,
-                  }}
+
+                <Button
+                  title="Sign In with Email OTP"
+                  variant="ghost"
+                  size="sm"
+                  onPress={handleSendEmailOtp}
+                />
+
+                <Pressable
+                  onPress={() => setIsSignUp(!isSignUp)}
+                  style={{ alignItems: 'center', paddingVertical: 6 }}
+                  accessibilityRole="button"
                 >
-                  <TouchableOpacity
-                    onPress={() => {
-                      setResetEmail(email);
-                      setShowForgotModal(true);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Forgot password"
-                  >
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                      Forgot Password?
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                    {isSignUp ? 'Already have an account? ' : 'Need a new worker profile? '}
+                    <Text style={{ color: colors.accent, fontWeight: '700' }}>
+                      {isSignUp ? 'Sign In' : 'Sign Up'}
                     </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={handleResendVerification} accessibilityRole="button">
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textMuted }}>
-                      Resend Verification Email
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
+                  </Text>
+                </Pressable>
+              </View>
             )}
-          </View>
-        ) : (
-          <View style={{ gap: spacing.xs, marginTop: spacing.md }}>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: 2 }]}>
-              Register as Event Crew
-            </Text>
-            <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: spacing.md }}>
-              Create your worker profile to apply for single-day event shifts
-            </Text>
 
-            <Input
-              label="Legal Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="e.g. Rahul Sharma"
-              autoComplete="name"
-              textContentType="name"
-            />
+            <Divider label="OR" style={{ marginVertical: spacing.sm }} />
 
-            <Input
-              label="Indian Mobile Number"
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="9820098200"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              textContentType="telephoneNumber"
-            />
-
-            <Input
-              label="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@gmail.com"
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
-              autoCapitalize="none"
-            />
-
-            <PasswordInput
-              label="Create Password"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Min. 6 characters"
-              autoComplete="new-password"
-              textContentType="newPassword"
-            />
-
-            <Button
-              title="Create Account & Start Onboarding"
-              variant="primary"
-              size="lg"
-              loading={loading}
+            {/* Google OAuth Button */}
+            <TouchableOpacity
+              onPress={async () => {
+                setLoading(true);
+                try {
+                  const redirectUrl = Linking.createURL('/auth/login');
+                  const res = await signInWithGoogle('worker', redirectUrl);
+                  if (res?.url) {
+                    if (typeof window !== 'undefined' && window.location) {
+                      window.location.href = res.url;
+                    } else {
+                      await Linking.openURL(res.url);
+                    }
+                  }
+                } catch (err: any) {
+                  OpsklAlert.alert('Google Sign-In Error', err?.message || 'Could not initiate Google OAuth.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
               disabled={loading}
-              onPress={handleSignUp}
-              style={{ marginTop: spacing.sm }}
-            />
+              activeOpacity={0.8}
+              style={[
+                styles.googleButton,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: borders.hairline,
+                  minHeight: touchTarget.comfortable,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+            >
+              <View style={[styles.googleIconBadge, { backgroundColor: colors.primary }]}>
+                <Text style={{ color: colors.textInverse, fontWeight: '900', fontSize: 13 }}>G</Text>
+              </View>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                Continue with Google
+              </Text>
+            </TouchableOpacity>
+
+            {/* Guest Browsing */}
+            <Pressable
+              onPress={() => router.replace('/(tabs)' as any)}
+              style={styles.guestLink}
+              accessibilityRole="button"
+              accessibilityLabel="Explore shifts as guest"
+            >
+              <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '600' }}>
+                Explore shifts as guest
+              </Text>
+              <ArrowRight size={14} color={colors.textSecondary} style={{ marginLeft: 4 }} />
+            </Pressable>
           </View>
         )}
       </KeyboardAwareContainer>
-
-      <Modal
-        visible={showForgotModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowForgotModal(false)}
-        accessibilityViewIsModal
-      >
-        <KeyboardAwareContainer
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            padding: spacing.xl,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: radii.xl,
-              padding: spacing.xl,
-              gap: spacing.md,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text style={[typography.h3, { color: colors.textPrimary }]}>Reset Password</Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
-              Enter your registered email address to receive password reset instructions.
-            </Text>
-            <Input
-              label="Email Address"
-              value={resetEmail}
-              onChangeText={setResetEmail}
-              placeholder="you@gmail.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoFocus
-            />
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-              <Button
-                title="Cancel"
-                variant="outline"
-                size="md"
-                onPress={() => {
-                  setShowForgotModal(false);
-                  setResetEmail('');
-                }}
-                style={{ flex: 1 }}
-              />
-              <Button
-                title={resetLoading ? 'Sending…' : 'Send Reset Link'}
-                variant="primary"
-                size="md"
-                disabled={resetLoading}
-                loading={resetLoading}
-                onPress={handleSendResetEmail}
-                style={{ flex: 1 }}
-              />
-            </View>
-          </View>
-        </KeyboardAwareContainer>
-      </Modal>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  securityHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  securityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  securityPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+    borderRadius: 8,
+  },
+  resendTimerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+  },
+  channelCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 10,
+  },
+  channelIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  advisoryRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    paddingHorizontal: 4,
+    marginTop: 4,
+  },
+  phoneInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countryCodeBox: {
+    height: 48,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    gap: 10,
+  },
+  googleIconBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+});

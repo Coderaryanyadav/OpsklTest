@@ -2,12 +2,25 @@ import React from 'react';
 import { View, Text, ViewStyle, TextStyle, StyleProp } from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
-export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'neutral';
+export type BadgeVariant =
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'primary'
+  | 'neutral'
+  | 'draft'
+  | 'applied'
+  | 'selected'
+  | 'checked_in'
+  | 'disputed'
+  | 'paid';
 
 export interface BadgeProps {
   label: string;
   variant?: BadgeVariant;
   withDot?: boolean;
+  icon?: React.ReactNode;
   size?: 'sm' | 'md';
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
@@ -17,6 +30,7 @@ export const Badge: React.FC<BadgeProps> = ({
   label,
   variant = 'primary',
   withDot = true,
+  icon,
   size = 'md',
   style,
   textStyle,
@@ -25,6 +39,48 @@ export const Badge: React.FC<BadgeProps> = ({
 
   const getVariantStyles = (): { bg: string; text: string; dot: string; border: string } => {
     switch (variant) {
+      case 'draft':
+        return {
+          bg: colors.operationalDraft.bg,
+          text: colors.operationalDraft.text,
+          dot: colors.operationalDraft.text,
+          border: colors.operationalDraft.border,
+        };
+      case 'applied':
+        return {
+          bg: colors.operationalApplied.bg,
+          text: colors.operationalApplied.text,
+          dot: colors.operationalApplied.text,
+          border: colors.operationalApplied.border,
+        };
+      case 'selected':
+        return {
+          bg: colors.operationalSelected.bg,
+          text: colors.operationalSelected.text,
+          dot: colors.operationalSelected.text,
+          border: colors.operationalSelected.border,
+        };
+      case 'checked_in':
+        return {
+          bg: colors.operationalCheckedIn.bg,
+          text: colors.operationalCheckedIn.text,
+          dot: colors.operationalCheckedIn.text,
+          border: colors.operationalCheckedIn.border,
+        };
+      case 'disputed':
+        return {
+          bg: colors.operationalDisputed.bg,
+          text: colors.operationalDisputed.text,
+          dot: colors.operationalDisputed.text,
+          border: colors.operationalDisputed.border,
+        };
+      case 'paid':
+        return {
+          bg: colors.operationalPaid.bg,
+          text: colors.operationalPaid.text,
+          dot: colors.operationalPaid.text,
+          border: colors.operationalPaid.border,
+        };
       case 'success':
         return {
           bg: colors.successLight,
@@ -78,16 +134,19 @@ export const Badge: React.FC<BadgeProps> = ({
           alignItems: 'center',
           alignSelf: 'flex-start',
           backgroundColor: bg,
-          paddingVertical: isSm ? 2 : spacing.xxs + 1,
+          paddingVertical: isSm ? 2 : spacing.xxs + 2,
           paddingHorizontal: isSm ? spacing.xs + 4 : spacing.sm + 4,
           borderRadius: radii.full,
           borderWidth: 1,
           borderColor: border,
+          minHeight: isSm ? 20 : 24,
         },
         style,
       ]}
     >
-      {withDot ? (
+      {icon ? (
+        <View style={{ marginRight: spacing.xs }}>{icon}</View>
+      ) : withDot ? (
         <View
           style={{
             width: isSm ? 5 : 6,
@@ -102,9 +161,10 @@ export const Badge: React.FC<BadgeProps> = ({
         style={[
           {
             color: text,
-            fontSize: isSm ? 11 : 12,
-            fontWeight: '600',
-            letterSpacing: -0.1,
+            fontSize: isSm ? 10 : 11,
+            fontWeight: '700',
+            letterSpacing: 0.4,
+            textTransform: 'uppercase',
           },
           textStyle,
         ]}

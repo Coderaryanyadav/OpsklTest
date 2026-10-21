@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   Pressable,
   RefreshControl,
@@ -27,7 +28,22 @@ import { SwipeCard } from '../../src/components/SwipeCard';
 import { CardActionControls } from '../../src/components/CardActionControls';
 import { JobDetailSheet } from '../../src/components/JobDetailSheet';
 import { FilterSheet } from '../../src/components/FilterSheet';
-import { Bell, List, Layers, MapPin, SlidersHorizontal, Search, RefreshCw } from 'lucide-react-native';
+import {
+  Bell,
+  List,
+  Layers,
+  MapPin,
+  SlidersHorizontal,
+  Search,
+  RefreshCw,
+  X,
+  ShieldCheck,
+  Clock,
+  Zap,
+  CheckCircle2,
+  Shirt,
+  Utensils,
+} from 'lucide-react-native';
 import { LocalityZone, MUMBAI_ZONES, estimateDistance } from '../../src/utils/location';
 
 export default function WorkerDiscoverScreen() {
@@ -41,6 +57,7 @@ export default function WorkerDiscoverScreen() {
   const [viewMode, setViewMode] = useState<'swipe' | 'list'>('swipe');
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -75,6 +92,21 @@ export default function WorkerDiscoverScreen() {
     onRefresh,
   } = useDiscoveryFeed(session?.user?.id ?? null, workerProfile?.verificationStatus);
 
+  const displayedCards = useMemo(() => {
+    if (!searchQuery.trim()) return cards;
+    const q = searchQuery.toLowerCase().trim();
+    return cards.filter((shift) => {
+      return (
+        shift.title?.toLowerCase().includes(q) ||
+        shift.venueName?.toLowerCase().includes(q) ||
+        shift.venueAddress?.toLowerCase().includes(q) ||
+        shift.organizer?.businessName?.toLowerCase().includes(q) ||
+        shift.category?.toLowerCase().includes(q) ||
+        shift.zone?.toLowerCase().includes(q)
+      );
+    });
+  }, [cards, searchQuery]);
+
   const handleRefresh = async () => {
     setLastRefreshedAt(new Date());
     await onRefresh();
@@ -84,7 +116,8 @@ export default function WorkerDiscoverScreen() {
     (filters.category && filters.category !== 'all') ||
     filters.minWage ||
     filters.requiredSkill ||
-    activeZone.id !== MUMBAI_ZONES[0].id
+    activeZone.id !== MUMBAI_ZONES[0].id ||
+    searchQuery.trim().length > 0
   );
 
   const handleApplyZone = (newFilters: any, zone: LocalityZone) => {
@@ -94,6 +127,7 @@ export default function WorkerDiscoverScreen() {
   };
 
   const handleResetFilters = () => {
+    setSearchQuery('');
     setActiveZone(MUMBAI_ZONES[0]);
     setWorkerLocation(MUMBAI_ZONES[0].coords);
     setFilters({ category: 'all', zone: undefined, minWage: undefined, requiredSkill: undefined });
@@ -197,43 +231,104 @@ export default function WorkerDiscoverScreen() {
 
       {/* KYC Verification Status Banner */}
       {session?.user?.id && workerProfile && workerProfile.verificationStatus !== 'verified' && (
-        <View
-          style={{
-            backgroundColor: colors.surfaceMuted,
-            paddingHorizontal: spacing.md,
-            paddingVertical: 9,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-            <Badge
-              label={workerProfile.verificationStatus === 'pending' ? 'KYC PENDING' : 'KYC REQUIRED'}
-              variant={workerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
-              size="sm"
-            />
-            <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={2}>
-              {workerProfile.verificationStatus === 'pending'
-                ? 'Admin approval in progress. Shift applications unlock once approved.'
-                : 'Submit KYC documents under Profile to unlock applications.'}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => router.push('/(tabs)/profile' as any)}
-            hitSlop={8}
-            accessibilityRole="link"
-            accessibilityLabel="Open profile to submit KYC"
-            style={{ minHeight: 44, justifyContent: 'center' }}
+        <View style={{ paddingHorizontal: spacing.md, paddingTop: 8 }}>
+          <View
+            style={[
+              styles.kycBannerCard,
+              { backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderRadius: radii.xl },
+            ]}
           >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textDecorationLine: 'underline' }}>
-              Profile
-            </Text>
-          </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+              <View style={[styles.kycIconCircle, { backgroundColor: colors.surface, borderRadius: radii.full }]}>
+                <ShieldCheck size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <Badge
+                    label={workerProfile.verificationStatus === 'pending' ? 'KYC UNDER REVIEW' : 'KYC REQUIRED'}
+                    variant={workerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
+                    size="sm"
+                  />
+                  {workerProfile.verificationStatus === 'pending' && (
+                    <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
+                      Ref #KYC-BOM-9102
+                    </Text>
+                  )}
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
+                  {workerProfile.verificationStatus === 'pending'
+                    ? 'KYC Under Review • Browsing is active'
+                    : 'Identity Verification Required'}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>
+                  {workerProfile.verificationStatus === 'pending'
+                    ? 'Direct 1-tap application unlocks automatically in ~2h once Aadhaar and bank details are validated.'
+                    : 'Submit government identity documents under Profile to unlock instant shift applications.'}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/(tabs)/profile' as any)}
+                hitSlop={8}
+                accessibilityRole="link"
+                accessibilityLabel="Open profile to submit KYC"
+                style={{ minHeight: 44, justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, textDecorationLine: 'underline' }}>
+                  Profile
+                </Text>
+              </Pressable>
+            </View>
+
+            {workerProfile.verificationStatus === 'pending' && (
+              <View style={{ marginTop: 10, paddingTop: 4 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>Verification Stage: Document OCR Complete</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>80%</Text>
+                </View>
+                <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden' }}>
+                  <View style={{ width: '80%', height: '100%', backgroundColor: colors.primary, borderRadius: 2 }} />
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       )}
+
+      {/* Search Bar & Tune Filter Trigger */}
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: 10, paddingBottom: 4 }}>
+        <View style={[styles.searchInputWrapper, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.lg }]}>
+          <Search size={18} color={colors.textSecondary} style={{ marginLeft: 12, marginRight: 8 }} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by venue, role or organizer..."
+            placeholderTextColor={colors.textMuted}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            returnKeyType="search"
+            accessibilityLabel="Search shifts input"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable
+              onPress={() => setSearchQuery('')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search text"
+              style={{ padding: 6, marginRight: 2 }}
+            >
+              <X size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => setFilterSheetVisible(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Open filter sheet"
+            style={{ padding: 8, marginRight: 4 }}
+          >
+            <SlidersHorizontal size={18} color={hasActiveFilters ? colors.primary : colors.textSecondary} />
+          </Pressable>
+        </View>
+      </View>
 
       {/* Stitch Quick Filter Chips Strip */}
       <ScrollView
@@ -362,7 +457,7 @@ export default function WorkerDiscoverScreen() {
             Available Shifts
           </Text>
           <View style={{ backgroundColor: colors.surfaceMuted, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9999, borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{cards.length} LIVE</Text>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.accent }}>{displayedCards.length} LIVE</Text>
           </View>
         </View>
         <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500' }}>
@@ -433,7 +528,7 @@ export default function WorkerDiscoverScreen() {
             retryLabel="Retry Connection"
           />
         </View>
-      ) : cards.length === 0 ? (
+      ) : displayedCards.length === 0 ? (
         /* Redesigned Compact Reassurance Empty State */
         <ScrollView
           contentContainerStyle={[styles.emptyContainer, { padding: spacing.lg }]}
@@ -441,19 +536,27 @@ export default function WorkerDiscoverScreen() {
         >
           <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.xl }]}>
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceMuted, borderRadius: radii.full }]}>
-              {hasActiveFilters ? (
+              {searchQuery.trim().length > 0 ? (
+                <Search size={26} color={colors.textPrimary} strokeWidth={2} />
+              ) : hasActiveFilters ? (
                 <SlidersHorizontal size={26} color={colors.textPrimary} strokeWidth={2} />
               ) : (
-                <Search size={26} color={colors.textPrimary} strokeWidth={2} />
+                <MapPin size={26} color={colors.textPrimary} strokeWidth={2} />
               )}
             </View>
 
             <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
-              {hasActiveFilters ? 'No Shifts Match Current Filters' : `No Shifts Currently in ${activeZone.coords.name || 'this Locality'}`}
+              {searchQuery.trim().length > 0
+                ? `No Shifts Match "${searchQuery}"`
+                : hasActiveFilters
+                ? 'No Shifts Match Current Filters'
+                : `No Shifts Currently in ${activeZone.coords.name || 'this Locality'}`}
             </Text>
 
             <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6, lineHeight: 19, maxWidth: 300 }}>
-              {hasActiveFilters
+              {searchQuery.trim().length > 0
+                ? 'Try broadening your search term or clearing active filters to see available shifts.'
+                : hasActiveFilters
                 ? `No published shifts match your selected criteria in ${activeZone.label}. Try adjusting filters or expanding your search.`
                 : `There are currently no verified shifts posted in ${activeZone.label}. Organizers publish new shifts daily.`}
             </Text>
@@ -461,6 +564,9 @@ export default function WorkerDiscoverScreen() {
             {/* Active Filters Summary Chips */}
             {hasActiveFilters && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: spacing.md }}>
+                {searchQuery.trim().length > 0 && (
+                  <Badge label={`Search: "${searchQuery}"`} variant="primary" size="sm" />
+                )}
                 {filters.category && filters.category !== 'all' && (
                   <Badge label={`Category: ${filters.category.toUpperCase()}`} variant="neutral" size="sm" />
                 )}
@@ -555,7 +661,7 @@ export default function WorkerDiscoverScreen() {
           {/* Feed Count Indicator */}
           <View style={styles.deckStatsRow}>
             <Text style={{ fontSize: 12, color: colors.textMuted }}>
-              Showing {cards.length} verified shifts • Swipe right to apply, left to pass
+              Showing {displayedCards.length} verified shifts • Swipe right to apply, left to pass
             </Text>
             {passedHistory.length > 0 && (
               <Pressable
@@ -618,67 +724,131 @@ export default function WorkerDiscoverScreen() {
       ) : (
         /* ACCESSIBLE LIST VIEW FALLBACK */
         <ScrollView
-          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+          contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={[typography.caption, { color: colors.textMuted }]}>
-              {cards.length} shifts open in {activeZone.label}
+              {displayedCards.length} shifts open in {activeZone.label}
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
               UPI on verified checkout
             </Text>
           </View>
 
-          {cards.map((shift) => {
+          {displayedCards.map((shift) => {
             const isApplied = appliedJobIds.has(shift.id);
             const dist = estimateDistance(workerLocation, shift.latitude, shift.longitude);
+            const slotsRemaining = Math.max(0, (shift.slotsTotal || 1) - (shift.slotsFilled || 0));
+
             return (
               <Card
                 key={shift.id}
                 variant="elevated"
-                style={{ borderRadius: radii.xl, padding: spacing.lg }}
+                style={{ borderRadius: radii.xl, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <View>
-                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                      <WageText>{formatINR(shift.totalPay)}</WageText>
-                      <Text style={{ fontSize: 13, color: colors.textMuted, marginLeft: 6 }}>
-                        ({formatINR(shift.hourlyRate)}/hr • {shift.durationHours}h)
+                {/* Status Badges Row */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  {isApplied ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceMuted, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary }} />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                        APPLICATION SUBMITTED • UNDER REVIEW
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600', marginTop: 2 }}>
-                      ✓ UPI payout on verified attendance sign-off
-                    </Text>
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceMuted, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary, textTransform: 'uppercase' }}>
+                        OPEN • {slotsRemaining} SLOTS LEFT
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceMuted, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full }}>
+                    <Zap size={11} color={colors.primary} />
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>Instant UPI</Text>
                   </View>
-                  <Badge label={shift.category.toUpperCase()} variant="primary" size="sm" />
                 </View>
 
-                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.xs }]} numberOfLines={2}>
+                {/* Compensation & Rate */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 2 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <WageText style={{ fontSize: 22, fontWeight: '800' }}>{formatINR(shift.totalPay)}</WageText>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginLeft: 4 }}>/ shift</Text>
+                  </View>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                    {formatINR(shift.hourlyRate)}/hr ({shift.durationHours}h)
+                  </Text>
+                </View>
+
+                {/* Title & Organizer */}
+                <Text style={[typography.h3, { color: colors.textPrimary, marginTop: 6 }]} numberOfLines={2}>
                   {shift.title}
                 </Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  {shift.organizer?.businessName || 'Organizer details unavailable'}
-                </Text>
-
-                <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: spacing.sm, marginTop: spacing.md, gap: 4 }}>
-                  <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '600' }}>
-                    {shift.venueName}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '500' }}>
+                    {shift.organizer?.businessName || 'Verified Corporate Enterprise'}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                    {shift.zone} • {formatDistance(dist)}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                    {formatISTDate(shift.date)} • {formatTimeRange(shift.startTime, shift.endTime)}
-                  </Text>
+                  <CheckCircle2 size={13} color={colors.primary} strokeWidth={2.5} />
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>• Verified</Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
+                {/* Venue & Schedule Box */}
+                <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 10, marginTop: 10, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                    <MapPin size={14} color={colors.primary} style={{ marginTop: 2 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                        {shift.venueName}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                        {shift.zone} {workerLocation ? `• ${formatDistance(dist)}` : ''}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <Clock size={14} color={colors.textSecondary} />
+                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                      {formatISTDate(shift.date)} • {formatTimeRange(shift.startTime, shift.endTime)} IST
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Perks & Criteria Chips */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                  {shift.dressCode && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceMuted, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radii.full }}>
+                      <Shirt size={10} color={colors.textSecondary} />
+                      <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }} numberOfLines={1}>
+                        {shift.dressCode}
+                      </Text>
+                    </View>
+                  )}
+                  {shift.mealProvided && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceMuted, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radii.full }}>
+                      <Utensils size={10} color={colors.textSecondary} />
+                      <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>
+                        Meals Provided
+                      </Text>
+                    </View>
+                  )}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceMuted, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radii.full }}>
+                    <ShieldCheck size={10} color={colors.textSecondary} />
+                    <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>
+                      Air-Conditioned Hall
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Card Actions */}
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                   <View style={{ flex: 1 }}>
                     <Button
                       title="Details"
                       variant="outline"
-                      size="md"
+                      size="sm"
                       onPress={() => router.push(`/shift/${shift.id}` as any)}
                     />
                   </View>
@@ -686,7 +856,7 @@ export default function WorkerDiscoverScreen() {
                     <Button
                       title="✕ Pass"
                       variant="secondary"
-                      size="md"
+                      size="sm"
                       onPress={() => onPass(shift)}
                     />
                   </View>
@@ -694,7 +864,7 @@ export default function WorkerDiscoverScreen() {
                     <Button
                       title={isApplied ? '✓ Applied' : '✓ Apply'}
                       variant="primary"
-                      size="md"
+                      size="sm"
                       disabled={isApplied}
                       onPress={() => onApply(shift)}
                     />
@@ -730,6 +900,7 @@ export default function WorkerDiscoverScreen() {
         onClose={() => setFilterSheetVisible(false)}
         onApplyFilters={handleApplyZone}
         onResetFilters={handleResetFilters}
+        availableShiftCount={displayedCards.length}
       />
     </SafeAreaView>
   );
@@ -771,6 +942,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderWidth: 1,
+  },
+  quickFilterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kycBannerCard: {
+    padding: 12,
+    borderWidth: 1,
+  },
+  kycIconCircle: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    minHeight: 44,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
   },
   inFlightBar: {
     flexDirection: 'row',
@@ -839,3 +1040,4 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
 });
+

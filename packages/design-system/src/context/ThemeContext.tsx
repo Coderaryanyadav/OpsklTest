@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { lightColors, darkColors, OpsklThemeColors } from '../tokens/colors';
-import { spacing, radii, shadows } from '../tokens/spacing';
+import { spacing, radii, shadows, borders, elevationLayers } from '../tokens/spacing';
 import { typography } from '../tokens/typography';
 import { motion } from '../tokens/motion';
 import {
@@ -23,6 +23,8 @@ export interface ThemeContextValue {
   spacing: typeof spacing;
   radii: typeof radii;
   shadows: typeof shadows;
+  borders: typeof borders;
+  elevationLayers: typeof elevationLayers;
   typography: typeof typography;
   motion: typeof motion;
   fontWeights: typeof fontWeights;
@@ -71,6 +73,8 @@ export const OpsklThemeProvider: React.FC<ThemeProviderProps> = ({
       spacing,
       radii,
       shadows,
+      borders,
+      elevationLayers,
       typography,
       motion,
       fontWeights,
@@ -100,6 +104,8 @@ export function useOpsklTheme(): ThemeContextValue {
       spacing,
       radii,
       shadows,
+      borders,
+      elevationLayers,
       typography,
       motion,
       fontWeights,

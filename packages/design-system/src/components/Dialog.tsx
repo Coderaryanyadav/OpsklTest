@@ -14,11 +14,13 @@ export interface DialogProps {
   visible: boolean;
   title: string;
   message: string;
+  impactSummary?: string;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
   isDestructive?: boolean;
+  children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -26,11 +28,13 @@ export const Dialog: React.FC<DialogProps> = ({
   visible,
   title,
   message,
+  impactSummary,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   onConfirm,
   onCancel,
   isDestructive = false,
+  children,
   style,
 }) => {
   const { colors, radii, spacing, typography, isDark } = useOpsklTheme();
@@ -58,12 +62,12 @@ export const Dialog: React.FC<DialogProps> = ({
               style={[
                 {
                   width: '100%',
-                  maxWidth: 360,
+                  maxWidth: 380,
                   backgroundColor: colors.surface,
                   borderRadius: radii.xl,
                   padding: spacing.xl,
                   borderWidth: 1,
-                  borderColor: isDark ? colors.border : colors.border,
+                  borderColor: isDark ? colors.borderStrong : colors.border,
                 },
                 style,
               ]}
@@ -76,11 +80,52 @@ export const Dialog: React.FC<DialogProps> = ({
               <Text
                 style={[
                   typography.body,
-                  { color: colors.textSecondary, lineHeight: 22, marginBottom: spacing.xl },
+                  { color: colors.textSecondary, lineHeight: 22, marginBottom: impactSummary || children ? spacing.md : spacing.xl },
                 ]}
               >
                 {message}
               </Text>
+
+              {impactSummary ? (
+                <View
+                  style={{
+                    backgroundColor: isDestructive ? colors.dangerLight : colors.surfaceMuted,
+                    borderRadius: radii.sm,
+                    padding: spacing.md,
+                    borderWidth: 1,
+                    borderColor: isDestructive ? colors.danger : colors.border,
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '700',
+                      color: isDestructive ? colors.danger : colors.textPrimary,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.4,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Operational Impact
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 18,
+                      color: isDestructive ? colors.danger : colors.textSecondary,
+                    }}
+                  >
+                    {impactSummary}
+                  </Text>
+                </View>
+              ) : null}
+
+              {children ? (
+                <View style={{ marginBottom: spacing.lg }}>
+                  {children}
+                </View>
+              ) : null}
 
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                 <Button

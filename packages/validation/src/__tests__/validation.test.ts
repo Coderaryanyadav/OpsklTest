@@ -50,7 +50,7 @@ describe('Opskl Validation Schemas', () => {
       venueAddress: 'Western Express Highway, Goregaon East, Mumbai 400063',
       city: 'Mumbai',
       zone: 'Goregaon East',
-      date: '2026-10-20',
+      date: '2026-11-20',
       startTime: '09:00',
       endTime: '17:00',
       durationHours: 8,

@@ -31,6 +31,7 @@ import { adminSupabase } from '../lib/supabase';
 
 import { AdminSidebar, AdminModule } from '../components/AdminSidebar';
 import { AdminHeader } from '../components/AdminHeader';
+import { AdminBreadcrumbs } from '../components/AdminBreadcrumbs';
 import { MetricCards } from '../components/MetricCards';
 import { VerificationQueue } from '../components/VerificationQueue';
 import { DisputesQueue } from '../components/DisputesQueue';
@@ -427,6 +428,17 @@ function AdminDashboardInner() {
         />
 
         <main className="admin-content">
+          <AdminBreadcrumbs
+            items={
+              activeModule === 'overview'
+                ? [{ label: 'Console' }, { label: 'Operational Overview' }]
+                : [
+                    { label: 'Console', onClick: () => selectModule('overview') },
+                    { label: title },
+                  ]
+            }
+          />
+
           {dashboardError && !loadFailed && (
             <div className="admin-banner admin-banner--warning" role="status" style={{ marginBottom: 20 }}>
               <span>{dashboardError}</span>

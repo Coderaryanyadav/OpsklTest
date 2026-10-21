@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Linking, Modal, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Linking, Modal, RefreshControl, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import {
   useOpsklTheme,
   Button,
+  Badge,
   Input,
   useAuth,
   Screen,
@@ -446,6 +447,106 @@ export default function OrganizerProfileScreen() {
                 </View>
               </View>
 
+              {/* Stitch Operational Notice: Publishing Lockout Status */}
+              <View
+                style={{
+                  backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surface : colors.primary,
+                  borderRadius: radii.lg,
+                  padding: spacing.md,
+                  gap: spacing.xs,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View
+                    style={{
+                      backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surfaceMuted : 'rgba(255,255,255,0.15)',
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: radii.full,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: radii.full,
+                        backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.success : '#FFDAD6',
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: '700',
+                        color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {organizerData?.verificationStatus === 'verified'
+                        ? 'Publishing Unlocked • Tier-1 Verified'
+                        : 'Step 1 of 2 • Publishing Locked'}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '600',
+                      color: organizerData?.verificationStatus === 'verified' ? colors.textSecondary : 'rgba(255,255,255,0.8)',
+                    }}
+                  >
+                    IST (UTC +5:30)
+                  </Text>
+                </View>
+
+                <Text
+                  style={[
+                    typography.h3,
+                    {
+                      color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF',
+                      marginTop: 2,
+                    },
+                  ]}
+                >
+                  {organizerData?.verificationStatus === 'verified'
+                    ? 'Corporate Entity Clearance Active'
+                    : 'Business Verification Required'}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: organizerData?.verificationStatus === 'verified' ? colors.textSecondary : 'rgba(255,255,255,0.85)',
+                    lineHeight: 17,
+                  }}
+                >
+                  {organizerData?.verificationStatus === 'verified'
+                    ? 'Your organization is authorized to publish event shifts and recruit verified crew across BKC, NESCO, and South Mumbai venues.'
+                    : 'To post event shifts across Mumbai venues (BKC, NESCO), Indian legal entity verification is required. Shifts cannot be published until GSTIN & business credentials are validated.'}
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => router.push('/verification' as any)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 10,
+                    borderRadius: radii.md,
+                    backgroundColor: organizerData?.verificationStatus === 'verified' ? colors.surfaceMuted : 'rgba(255,255,255,0.15)',
+                    marginTop: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: organizerData?.verificationStatus === 'verified' ? colors.textPrimary : '#FFFFFF' }}>
+                    {organizerData?.verificationStatus === 'verified' ? 'View Corporate Verification Credentials' : 'Open Verification & KYC Console'} ➔
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Section: Legal Entity Details */}
               <View
                 style={{
                   borderWidth: 1,
@@ -453,59 +554,113 @@ export default function OrganizerProfileScreen() {
                   borderRadius: radii.lg,
                   padding: spacing.lg,
                   backgroundColor: colors.surface,
-                  gap: spacing.sm,
+                  gap: spacing.md,
                 }}
               >
-                <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
-                  Billing & Tax Compliance
-                </Text>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                  Tax invoices and input tax credits (ITC) are generated under this profile.
-                </Text>
-
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>GSTIN status</Text>
-                  <Text
+                  <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                    Legal Entity Details
+                  </Text>
+                  <Badge label="MCA COMPLIANT" variant="neutral" size="sm" />
+                </View>
+
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                    Registered Business Name
+                  </Text>
+                  <View
                     style={{
-                      fontSize: 13,
-                      fontWeight: '600',
-                      color:
-                        organizerData?.verificationStatus === 'verified' && organizerData?.gstin
-                          ? colors.success
-                          : organizerData?.gstin
-                            ? colors.warning
-                            : colors.textMuted,
+                      backgroundColor: colors.surfaceMuted,
+                      borderRadius: radii.md,
+                      padding: spacing.sm + 2,
+                      borderWidth: 1,
+                      borderColor: colors.border,
                     }}
                   >
-                    {organizerData?.verificationStatus === 'verified' && organizerData?.gstin
-                      ? 'Verified GST registered'
-                      : organizerData?.gstin
-                        ? 'Submitted (under review)'
-                        : 'Not provided'}
-                  </Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                      {businessName}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                      Matches Ministry of Corporate Affairs records
+                    </Text>
+                  </View>
                 </View>
 
                 {organizerData?.billingAddress ? (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>Billing address</Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: colors.textPrimary,
-                        flex: 1,
-                        textAlign: 'right',
-                        marginLeft: 16,
-                      }}
-                      numberOfLines={3}
-                    >
-                      {organizerData.billingAddress}
+                  <View style={{ gap: 4 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                      Registered Mumbai Address
                     </Text>
+                    <View
+                      style={{
+                        backgroundColor: colors.surfaceMuted,
+                        borderRadius: radii.md,
+                        padding: spacing.sm + 2,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 18 }}>
+                        {organizerData.billingAddress}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
+                        <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                          <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>Zone: BKC / Mumbai Hub</Text>
+                        </View>
+                      </View>
+                    </View>
                   </View>
                 ) : null}
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>Contact phone</Text>
-                  <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '500' }}>
+                {/* Section: Tax Credentials & GSTIN */}
+                <View style={{ gap: 4, marginTop: spacing.xs }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                      Goods & Services Tax PIN (GSTIN)
+                    </Text>
+                    <Badge label="State Code 27 (MH)" variant="neutral" size="sm" />
+                  </View>
+                  <View
+                    style={{
+                      backgroundColor: colors.surfaceMuted,
+                      borderRadius: radii.md,
+                      padding: spacing.sm + 2,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      gap: 6,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: 0.5 }}>
+                        {organizerData?.gstin || 'No GSTIN Registered'}
+                      </Text>
+                      <StatusIndicator
+                        label={
+                          organizerData?.verificationStatus === 'verified' && organizerData?.gstin
+                            ? 'Verified'
+                            : organizerData?.gstin
+                            ? 'Pending Admin Review'
+                            : 'Unregistered'
+                        }
+                        tone={
+                          organizerData?.verificationStatus === 'verified' && organizerData?.gstin
+                            ? 'success'
+                            : organizerData?.gstin
+                            ? 'warning'
+                            : 'neutral'
+                        }
+                        size="sm"
+                      />
+                    </View>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
+                      Entering a GSTIN does not automatically verify the entity. Legal registry check takes 4–6 business hours.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: spacing.xs }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Contact Phone</Text>
+                  <Text style={{ fontSize: 13, color: colors.textPrimary, fontWeight: '600' }}>
                     {organizerData?.businessContactPhone || userProfile?.phone || '—'}
                   </Text>
                 </View>
@@ -514,7 +669,7 @@ export default function OrganizerProfileScreen() {
 
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                   <View style={{ flex: 1 }}>
-                    <Button title="Edit Profile" variant="primary" size="sm" onPress={handleOpenEdit} />
+                    <Button title="Edit Profile & Documents" variant="primary" size="sm" onPress={handleOpenEdit} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Button

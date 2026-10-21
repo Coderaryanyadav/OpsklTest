@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useOpsklTheme } from '../context/ThemeContext';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'accent';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps {
@@ -52,6 +52,9 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'primary':
         bg = pressed ? colors.primaryHover : colors.primary;
+        break;
+      case 'accent':
+        bg = pressed ? colors.accentHover : colors.accent;
         break;
       case 'secondary':
         bg = pressed ? colors.surfaceTertiary : colors.surface;
@@ -100,6 +103,7 @@ export const Button: React.FC<ButtonProps> = ({
     if (disabled) return colors.textMuted;
     switch (variant) {
       case 'primary':
+      case 'accent':
       case 'danger':
         return colors.textInverse;
       case 'secondary':

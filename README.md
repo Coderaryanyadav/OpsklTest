@@ -188,7 +188,7 @@ npm run typecheck
 
 ---
 
-## 📦 Cloud Mobile Builds (Expo EAS Build)
+## 📦 Cloud Mobile Builds (Expo EAS Build)s
 
 Each app is equipped with `eas.json` containing `development`, `preview`, and `production` profiles.
 

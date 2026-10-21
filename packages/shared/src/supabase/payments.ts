@@ -47,7 +47,10 @@ export async function fetchWorkerEarningsSummary(
         title,
         date,
         start_time,
-        end_time
+        end_time,
+        venue_name,
+        venue_address,
+        duration_hours
       )
     `)
     .eq('worker_id', workerId);
@@ -75,11 +78,16 @@ export async function fetchWorkerEarningsSummary(
   let disputedAmounts = 0;
 
   const records: PaymentRecord[] = [];
+  const jobMap = new Map<string, any>();
 
   // Categorize bookings
   if (bookings && bookings.length > 0) {
     for (const b of bookings) {
       const pay = Number(b.agreed_total_pay) || 0;
+      if (b.jobs) {
+        jobMap.set(b.job_id, b.jobs);
+        jobMap.set(b.id, b.jobs);
+      }
 
       if (b.status === 'confirmed') {
         confirmedUpcomingWages += pay;
@@ -95,6 +103,7 @@ export async function fetchWorkerEarningsSummary(
   if (paymentRecords && paymentRecords.length > 0) {
     for (const p of paymentRecords) {
       const net = Number(p.net_payout) || 0;
+      const jobInfo = jobMap.get(p.job_id) || jobMap.get(p.booking_id);
 
       if (p.status === 'settled') {
         paidEarnings += net;
@@ -124,6 +133,10 @@ export async function fetchWorkerEarningsSummary(
         escrowLockedAt: p.escrow_locked_at || p.created_at,
         settledAt: p.settled_at || undefined,
         createdAt: p.created_at,
+        jobTitle: p.job_title || jobInfo?.title || 'Event Shift',
+        shiftHours: p.shift_hours || jobInfo?.duration_hours || undefined,
+        venueName: jobInfo?.venue_name || undefined,
+        shiftDate: jobInfo?.date || undefined,
       });
     }
   }

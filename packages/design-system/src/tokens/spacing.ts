@@ -56,3 +56,49 @@ export const shadows = {
     elevation: 4,
   },
 } as const;
+
+export const borders = {
+  none: 0,
+  hairline: 1,
+  medium: 1.5,
+  strong: 2,
+} as const;
+
+/**
+ * Stitch DESIGN.md Architectural Elevation Layers
+ * - Layer 0 (Canvas Base): Tinted neutral foundation (#F8F9FA)
+ * - Layer 1 (Card Default): Pure White with 1px solid hairline (#E2E4E8), no shadow
+ * - Layer 2 (Floating Modals & Rosters): 1px solid #CBD5E1 with subtle ambient depth
+ * - Layer 3 (Executive Alerts & Action Drawers): 1px solid #94A3B8 with prominent focus depth
+ */
+export const elevationLayers = {
+  layer0: {
+    borderWidth: 0,
+    borderColor: 'transparent',
+    ...shadows.none,
+  },
+  layer1: {
+    borderWidth: borders.hairline,
+    borderColor: '#E2E4E8',
+    ...shadows.none,
+  },
+  layer2: {
+    borderWidth: borders.hairline,
+    borderColor: '#CBD5E1',
+    shadowColor: '#0F1115',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  layer3: {
+    borderWidth: borders.hairline,
+    borderColor: '#94A3B8',
+    shadowColor: '#0F1115',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+} as const;
+

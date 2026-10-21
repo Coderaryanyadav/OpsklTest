@@ -4,17 +4,30 @@ import {
   confirmWorkerBookingSafe,
   updateApplicationStatusSafe,
   updateJobStatus,
+  calculateJobFinancials,
+  universalStorage,
+  Job,
 } from '@opskil/shared';
 
 // Mock Supabase client
 jest.mock('@opskil/shared/src/supabase/client', () => {
   const mockRpc = jest.fn();
   const mockFrom = jest.fn();
+  const storageMap = new Map<string, string>();
 
   return {
     supabase: {
       rpc: mockRpc,
       from: mockFrom,
+    },
+    universalStorage: {
+      getItem: jest.fn(async (key: string) => storageMap.get(key) ?? null),
+      setItem: jest.fn(async (key: string, value: string) => {
+        storageMap.set(key, value);
+      }),
+      removeItem: jest.fn(async (key: string) => {
+        storageMap.delete(key);
+      }),
     },
     __mockRpc: mockRpc,
     __mockFrom: mockFrom,
@@ -256,5 +269,133 @@ describe('Phase 4 — Organizer Job Management & Hiring Rules', () => {
       expect(res.error).toBeDefined();
     });
   });
+
+  describe('Multi-Step Shift Creator: Wage, Welfare & Institutional Escrow Formula', () => {
+    test('calculates transparent escrow with 10% fee and 18% GST without deducting worker wages', () => {
+      const headcount = 6;
+      const shiftPayPerWorker = 2400; // ₹2,400 per 9-hr shift (₹266.67/hr)
+
+      const breakdown = calculateJobFinancials(headcount, shiftPayPerWorker, 10, 18);
+
+      // Total worker wage: 6 * 2400 = 14400
+      expect(breakdown.totalWorkerWages).toBe(14400);
+
+      // Platform fee: 10% of worker wages = 1440
+      expect(breakdown.platformFeeAmount).toBe(1440);
+
+      // GST on platform fee: 18% of 1440 = 259.20
+      expect(breakdown.gstAmount).toBe(259.20);
+
+      // Total payable into RBI-regulated nodal escrow by organizer: 14400 + 1440 + 259.20 = 16099.20
+      expect(breakdown.totalPayableByOrganizer).toBe(16099.20);
+
+      // Worker receives 100% of their base rate: zero deductions
+      expect(breakdown.wagePerWorker).toBe(2400);
+    });
+
+    test('validates statutory fair wage benchmark (must exceed ₹100/hr)', () => {
+      const durationHours = 9;
+      const subCompliancePay = 800; // ₹88.89/hr
+      const effectiveRate = subCompliancePay / durationHours;
+
+      expect(effectiveRate).toBeLessThan(100);
+
+      const compliantPay = 2400; // ₹266.67/hr
+      const compliantEffectiveRate = compliantPay / durationHours;
+      expect(compliantEffectiveRate).toBeGreaterThanOrEqual(100);
+    });
+  });
+
+  describe('Local Draft Persistence & Resume Wizard', () => {
+    const DRAFT_KEY = '@opskil_organizer_shift_draft';
+
+    test('persists draft shift to universalStorage and retrieves it intact', async () => {
+      const draftPayload = {
+        title: 'Lead VIP Usher - Jio World Convention Centre',
+        category: 'conference',
+        slotsTotal: '8',
+        durationHours: '9',
+        venueName: 'Jio World Convention Centre, Gate 4',
+        payBasis: 'shift',
+        shiftRate: '2400',
+        savedAt: new Date().toISOString(),
+      };
+
+      await universalStorage.setItem(DRAFT_KEY, JSON.stringify(draftPayload));
+
+      const raw = await universalStorage.getItem(DRAFT_KEY);
+      expect(raw).toBeTruthy();
+      const parsed = JSON.parse(raw!);
+      expect(parsed.title).toBe('Lead VIP Usher - Jio World Convention Centre');
+      expect(parsed.slotsTotal).toBe('8');
+      expect(parsed.shiftRate).toBe('2400');
+
+      // Cleanup
+      await universalStorage.removeItem(DRAFT_KEY);
+      const afterClear = await universalStorage.getItem(DRAFT_KEY);
+      expect(afterClear).toBeNull();
+    });
+  });
+
+  describe('Business Verification Gating & Publishing State', () => {
+    test('createJobSafe surfaces ORGANIZER_NOT_VERIFIED when account lacks KYC approval', async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: false,
+          error_code: 'ORGANIZER_NOT_VERIFIED',
+          message: 'Legal entity verification required before publishing shifts.',
+        },
+        error: null,
+      });
+
+      const res = await createJobSafe(
+        {
+          title: 'Guest Relations',
+          category: 'conference',
+          venueName: 'NESCO Hall 4',
+          venueAddress: 'Western Express Hwy, Goregaon',
+          city: 'Mumbai',
+          date: '2026-10-25',
+          startTime: '09:00',
+          endTime: '18:00',
+          hourlyRate: 200,
+          totalPay: 1800,
+          slotsTotal: 10,
+        } as any,
+        'unverified-org-123'
+      );
+
+      expect(res.success).toBe(false);
+      expect(res.errorCode).toBe('ORGANIZER_NOT_VERIFIED');
+    });
+  });
+
+  describe('Organizer Shift Roster Lifecycle & State Separation', () => {
+    const mockShifts: Partial<Job>[] = [
+      { id: 'shift-1', title: 'Open Shift', status: 'open', slotsFilled: 4, slotsTotal: 10 },
+      { id: 'shift-2', title: 'Filling Shift', status: 'filling', slotsFilled: 8, slotsTotal: 10 },
+      { id: 'shift-3', title: 'Locked Roster Shift', status: 'open', slotsFilled: 10, slotsTotal: 10 },
+      { id: 'shift-4', title: 'Draft Shift', status: 'draft', slotsFilled: 0, slotsTotal: 5 },
+      { id: 'shift-5', title: 'Completed Shift', status: 'completed', slotsFilled: 6, slotsTotal: 6 },
+    ];
+
+    test('separates active shifts from locked, draft, and completed states', () => {
+      const activeShifts = mockShifts.filter((s) => s.status === 'open' || s.status === 'filling');
+      expect(activeShifts.length).toBe(3);
+
+      const lockedShifts = mockShifts.filter((s) => (s.slotsFilled ?? 0) >= (s.slotsTotal ?? 1));
+      expect(lockedShifts.length).toBe(2);
+      expect(lockedShifts.map((s) => s.id)).toEqual(['shift-3', 'shift-5']);
+
+      const draftShifts = mockShifts.filter((s) => s.status === 'draft');
+      expect(draftShifts.length).toBe(1);
+      expect(draftShifts[0].id).toBe('shift-4');
+
+      const completedShifts = mockShifts.filter((s) => s.status === 'completed');
+      expect(completedShifts.length).toBe(1);
+      expect(completedShifts[0].id).toBe('shift-5');
+    });
+  });
 });
+
 

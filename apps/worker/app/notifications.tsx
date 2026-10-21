@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
   Card,
-  Badge,
   EmptyState,
   useAuth,
   usePushNotifications,
@@ -21,6 +20,7 @@ import {
   SegmentedControl,
   InlineBanner,
   LoadingView,
+  FilterPills,
 } from '@opskil/design-system';
 import {
   Notification,
@@ -34,14 +34,39 @@ import {
 } from '@opskil/shared';
 
 type ActiveTab = 'inbox' | 'preferences';
+type NotificationCategory = 'all' | 'escrow' | 'lifecycle' | 'safety';
+
+function getNotificationCategory(item: Notification): 'escrow' | 'lifecycle' | 'safety' {
+  const text = `${item.type} ${item.title} ${item.body}`.toLowerCase();
+  if (text.includes('escrow') || text.includes('payout') || text.includes('wage') || text.includes('settle') || text.includes('upi')) {
+    return 'escrow';
+  }
+  if (text.includes('safety') || text.includes('emergency') || text.includes('geofence') || text.includes('weather') || text.includes('curfew') || text.includes('alert')) {
+    return 'safety';
+  }
+  return 'lifecycle';
+}
+
+function getCategoryBadgeLabel(cat: 'escrow' | 'lifecycle' | 'safety'): string {
+  switch (cat) {
+    case 'escrow':
+      return 'ESCROW LEDGER';
+    case 'safety':
+      return 'SAFETY ADVISORY';
+    case 'lifecycle':
+    default:
+      return 'ROSTER UPDATE';
+  }
+}
 
 export default function WorkerNotificationsScreen() {
-  const { colors, spacing, typography } = useOpsklTheme();
+  const { colors, spacing, radii, typography } = useOpsklTheme();
   const router = useRouter();
   const { session } = useAuth();
   const { permissionGranted, requestPermission } = usePushNotifications();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('inbox');
+  const [categoryFilter, setCategoryFilter] = useState<NotificationCategory>('all');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [preferences, setPreferences] = useState<UserNotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,12 +152,20 @@ export default function WorkerNotificationsScreen() {
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const escrowCount = notifications.filter((n) => getNotificationCategory(n) === 'escrow').length;
+  const lifecycleCount = notifications.filter((n) => getNotificationCategory(n) === 'lifecycle').length;
+  const safetyCount = notifications.filter((n) => getNotificationCategory(n) === 'safety').length;
+
+  const filteredNotifications = notifications.filter((n) => {
+    if (categoryFilter === 'all') return true;
+    return getNotificationCategory(n) === categoryFilter;
+  });
 
   return (
     <Screen edges={['top']}>
       <ScreenHeader
         title="Notifications"
-        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Live shift and payout alerts'}
+        subtitle={unreadCount > 0 ? `${unreadCount} unread • IST stream` : 'Live shift and payout alerts'}
         onBack={() => router.back()}
         rightAction={
           activeTab === 'inbox' && unreadCount > 0 ? (
@@ -150,7 +183,7 @@ export default function WorkerNotificationsScreen() {
         }
       />
 
-      <View style={{ marginHorizontal: spacing.lg, marginTop: spacing.md }}>
+      <View style={{ marginHorizontal: spacing.lg, marginTop: spacing.md, gap: spacing.sm }}>
         <SegmentedControl
           options={[
             { value: 'inbox', label: `Inbox (${notifications.length})` },
@@ -159,6 +192,20 @@ export default function WorkerNotificationsScreen() {
           value={activeTab}
           onChange={setActiveTab}
         />
+
+        {activeTab === 'inbox' && notifications.length > 0 && (
+          <FilterPills
+            items={[
+              { id: 'all', label: 'All', count: notifications.length },
+              { id: 'escrow', label: 'Escrow & Pay', count: escrowCount },
+              { id: 'lifecycle', label: 'Shift Roster', count: lifecycleCount },
+              { id: 'safety', label: 'Safety & System', count: safetyCount },
+            ]}
+            selectedId={categoryFilter}
+            onSelect={(id) => setCategoryFilter(id as NotificationCategory)}
+            style={{ marginHorizontal: -spacing.lg }}
+          />
+        )}
       </View>
 
       {!userId ? (
@@ -197,80 +244,108 @@ export default function WorkerNotificationsScreen() {
             />
           )}
 
-          {notifications.length === 0 ? (
+          {filteredNotifications.length === 0 ? (
             <EmptyState
-              title="No notifications yet"
-              description="You will receive updates when you apply or get selected for shifts."
+              title={categoryFilter === 'all' ? 'No notifications yet' : `No ${categoryFilter} alerts`}
+              description={
+                categoryFilter === 'all'
+                  ? 'You will receive updates when you apply or get selected for shifts.'
+                  : `There are currently no alerts in the "${categoryFilter}" category.`
+              }
+              actionLabel={categoryFilter !== 'all' ? 'View All Alerts' : undefined}
+              onAction={categoryFilter !== 'all' ? () => setCategoryFilter('all') : undefined}
             />
           ) : (
-            notifications.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.8}
-                onPress={() => handleNotificationPress(item)}
-              >
-                <Card
-                  variant={item.read ? 'outlined' : 'elevated'}
-                  style={{
-                    padding: spacing.md,
-                    backgroundColor: item.read ? colors.surface : colors.surfaceElevated,
-                    borderLeftWidth: item.read ? 1 : 4,
-                    borderLeftColor: item.read ? colors.border : colors.primary,
-                  }}
+            filteredNotifications.map((item) => {
+              const cat = getNotificationCategory(item);
+              const badgeLabel = getCategoryBadgeLabel(cat);
+              const istTime = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.8}
+                  onPress={() => handleNotificationPress(item)}
                 >
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1, marginRight: spacing.sm }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: item.read ? '600' : '800',
-                            color: colors.textPrimary,
-                          }}
-                        >
-                          {item.title}
+                  <View
+                    style={{
+                      padding: spacing.md,
+                      backgroundColor: item.read ? colors.surface : colors.surfaceMuted,
+                      borderRadius: radii.lg,
+                      borderWidth: 1,
+                      borderColor: item.read ? colors.border : colors.accent,
+                      gap: spacing.xs,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.04,
+                      shadowRadius: 3,
+                      elevation: 1,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, letterSpacing: 0.5 }}>
+                          {badgeLabel}
                         </Text>
                         {!item.read && (
                           <View
                             style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: colors.primary,
+                              width: 6,
+                              height: 6,
+                              borderRadius: radii.full,
+                              backgroundColor: colors.accent,
                             }}
                           />
                         )}
                       </View>
-
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          color: colors.textSecondary,
-                          marginTop: 4,
-                          lineHeight: 18,
-                        }}
-                      >
-                        {item.body}
-                      </Text>
-
-                      <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 6 }}>
-                        {new Date(item.createdAt).toLocaleTimeString('en-IN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })} • {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                        {istTime} IST
                       </Text>
                     </View>
 
-                    {item.priority === 'urgent' && (
-                      <Badge label="URGENT" variant="danger" size="sm" />
-                    )}
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: item.read ? '600' : '800',
+                        color: colors.textPrimary,
+                        lineHeight: 20,
+                      }}
+                    >
+                      {item.title}
+                    </Text>
+
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: colors.textSecondary,
+                        lineHeight: 18,
+                      }}
+                    >
+                      {item.body}
+                    </Text>
+
+                    {item.actionUrl ? (
+                      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 }}>
+                        <View
+                          style={{
+                            paddingHorizontal: spacing.sm + 2,
+                            paddingVertical: 4,
+                            borderRadius: radii.md,
+                            backgroundColor: colors.surface,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                          }}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>
+                            View Update ➔
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
                   </View>
-                </Card>
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       ) : (

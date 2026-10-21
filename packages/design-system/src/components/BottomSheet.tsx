@@ -8,6 +8,7 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOpsklTheme } from '../context/ThemeContext';
 import { X } from 'lucide-react-native';
 
@@ -27,6 +28,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   containerStyle,
 }) => {
   const { colors, radii, spacing, typography } = useOpsklTheme();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom + spacing.md, spacing.xxl + 8);
 
   return (
     <Modal
@@ -52,7 +55,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   borderTopLeftRadius: radii.xl,
                   borderTopRightRadius: radii.xl,
                   paddingHorizontal: spacing.lg,
-                  paddingBottom: spacing.xxl + 8,
+                  paddingBottom: bottomPadding,
                   paddingTop: spacing.md,
                   borderTopWidth: 1,
                   borderColor: colors.border,

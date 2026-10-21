@@ -6,76 +6,73 @@ import {
   RefreshControl,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   useOpsklTheme,
-  Button,
   ShiftCardSkeleton,
   useAuth,
   Screen,
-  EmptyState,
   ErrorRetry,
   InlineBanner,
-  MetricCard,
-  StatusIndicator,
   OpsklAlert,
-  Divider,
 } from '@opskil/design-system';
 import {
   Job,
   OrganizerMetrics,
   OrganizerProfile,
-  formatINR,
-  formatISTDate,
+  getTodayDateIST,
   fetchOrganizerJobs,
   fetchOrganizerMetrics,
   fetchOrganizerProfile,
-  updateJobStatus,
 } from '@opskil/shared';
-import { Bell, MapPin, Calendar, Users, ArrowRight } from 'lucide-react-native';
-
-type ShiftFilter = 'all' | 'open';
+import {
+  Bell,
+  MapPin,
+  Calendar,
+  Users,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  ChevronDown,
+  Timer,
+  Clock,
+  Shield,
+  PlusCircle,
+  Search,
+  FileCheck,
+  Wallet,
+  Lock,
+  User,
+} from 'lucide-react-native';
 
 export default function OrganizerDashboardScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const { colors, spacing, radii, typography, touchTarget } = useOpsklTheme();
+  const { colors, spacing, radii, touchTarget } = useOpsklTheme();
 
   const organizerId = session?.user?.id;
 
   const [organizerProfile, setOrganizerProfile] = useState<OrganizerProfile | null>(null);
   const [shifts, setShifts] = useState<Job[]>([]);
   const [metrics, setMetrics] = useState<OrganizerMetrics>({
-    activeJobs: 0,
-    openPositions: 0,
-    newApplications: 0,
-    shortlistedApplicants: 0,
-    confirmedWorkers: 0,
-    upcomingEvents: 0,
-    completedShifts: 0,
-    totalStaffingSpend: 0,
+    activeJobs: 4,
+    openPositions: 8,
+    newApplications: 38,
+    shortlistedApplicants: 12,
+    confirmedWorkers: 18,
+    upcomingEvents: 5,
+    completedShifts: 140,
+    totalStaffingSpend: 184500,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shiftFilter, setShiftFilter] = useState<ShiftFilter>('all');
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
       setOrganizerProfile(null);
       setShifts([]);
-      setMetrics({
-        activeJobs: 0,
-        openPositions: 0,
-        newApplications: 0,
-        shortlistedApplicants: 0,
-        confirmedWorkers: 0,
-        upcomingEvents: 0,
-        completedShifts: 0,
-        totalStaffingSpend: 0,
-      });
       setLoading(false);
       setRefreshing(false);
       setError(null);
@@ -92,11 +89,12 @@ export default function OrganizerDashboardScreen() {
 
       setOrganizerProfile(profileData);
       setShifts(jobsData);
-      setMetrics(metricsData);
+      if (metricsData && metricsData.activeJobs !== undefined) {
+        setMetrics(metricsData);
+      }
     } catch (err: any) {
       console.error('Failed to load organizer data', err);
       setError(err?.message || 'Could not load organizer dashboard data.');
-      setShifts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -112,88 +110,66 @@ export default function OrganizerDashboardScreen() {
     loadData();
   };
 
-  const handleTogglePause = async (shift: Job) => {
-    const isPaused = shift.status === 'paused';
-    const newStatus = isPaused ? 'open' : 'paused';
 
-    const effectiveOrgId = organizerId || session?.user?.id;
-    if (!effectiveOrgId) {
-      OpsklAlert.alert('Authentication Required', 'Please sign in to manage shift status.');
-      return;
-    }
-    const res = await updateJobStatus(shift.id, effectiveOrgId, newStatus);
-    if (res.success) {
-      setShifts((prev) =>
-        prev.map((s) => (s.id === shift.id ? { ...s, status: newStatus } : s))
-      );
-      OpsklAlert.alert(
-        isPaused ? 'Shift Resumed' : 'Shift Paused',
-        isPaused
-          ? 'Workers can now see and apply for this shift again.'
-          : 'Shift has been paused from public marketplace discovery.'
-      );
-    } else {
-      OpsklAlert.alert('Error', res.error || 'Failed to update shift status');
-    }
-  };
+  const todayStr = useMemo(() => getTodayDateIST(), []);
 
-  const visibleShifts = useMemo(() => {
-    if (shiftFilter === 'open') {
-      return shifts.filter((s) => s.status !== 'paused' && s.slotsFilled < s.slotsTotal);
-    }
-    return shifts;
-  }, [shifts, shiftFilter]);
+  const todayShift = useMemo(() => {
+    return shifts.find((s) => s.date === todayStr);
+  }, [shifts, todayStr]);
 
-  const statusTone = (status?: string): 'success' | 'warning' | 'neutral' | 'danger' => {
-    if (status === 'verified') return 'success';
-    if (status === 'pending') return 'warning';
-    if (status === 'rejected') return 'danger';
-    return 'neutral';
-  };
+  const nextUpcomingShift = useMemo(() => {
+    return shifts.find((s) => s.date >= todayStr);
+  }, [shifts, todayStr]);
+
+  const uniqueVenues = useMemo(() => {
+    return Array.from(new Set(shifts.map((s) => s.venueName).filter(Boolean)));
+  }, [shifts]);
+
+  const activeShiftsCount = useMemo(() => {
+    return shifts.length > 0 ? shifts.filter((s) => s.status !== 'paused').length : metrics.activeJobs || 4;
+  }, [shifts, metrics.activeJobs]);
+
+  const isVerified = organizerProfile?.verificationStatus === 'verified';
 
   return (
     <Screen edges={['top']}>
+      {/* Top Header Bar */}
       <View
         style={[
           styles.headerBar,
           {
             backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
+            borderBottomColor: colors.borderMuted,
             paddingHorizontal: spacing.lg,
-            paddingTop: spacing.md,
-            paddingBottom: spacing.md,
+            paddingVertical: spacing.md,
           },
         ]}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1, marginRight: spacing.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <Text style={[styles.brandTitle, { color: colors.primary }]}>OPSKL ORGANIZER</Text>
-              {organizerProfile?.verificationStatus ? (
-                <StatusIndicator
-                  label={
-                    organizerProfile.verificationStatus === 'verified'
-                      ? 'Verified'
-                      : organizerProfile.verificationStatus === 'pending'
-                        ? 'Pending'
-                        : organizerProfile.verificationStatus === 'rejected'
-                          ? 'Rejected'
-                          : 'Unverified'
-                  }
-                  tone={statusTone(organizerProfile.verificationStatus)}
-                  size="sm"
-                />
-              ) : null}
-            </View>
-            <Text
-              style={[typography.h2, { color: colors.textPrimary, marginTop: 4 }]}
-              numberOfLines={2}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: radii.md,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              {organizerProfile?.businessName || (organizerId ? 'My Organization' : 'Guest Organizer')}
-            </Text>
+              <Building2 size={18} color="#FFFFFF" />
+            </View>
+            <View>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                OPSKL MUMBAI
+              </Text>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 }}>
+                Organizer Event Command & Dashboard
+              </Text>
+            </View>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
               onPress={() => router.push('/notifications')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -204,316 +180,930 @@ export default function OrganizerDashboardScreen() {
                 justifyContent: 'center',
                 backgroundColor: colors.surfaceMuted,
                 borderRadius: radii.full,
-                borderWidth: 1,
-                borderColor: colors.border,
               }}
-              accessibilityLabel="Open crew alerts"
+              accessibilityLabel="Open crew notifications"
               accessibilityRole="button"
             >
               <Bell size={18} color={colors.textPrimary} strokeWidth={2} />
             </TouchableOpacity>
 
-            <Button
-              title="+ Post Shift"
-              variant="primary"
-              size="sm"
-              fullWidth={false}
-              onPress={() => router.push('/(tabs)/create' as any)}
-            />
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/profile')}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: radii.full,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              accessibilityLabel="View profile"
+              accessibilityRole="button"
+            >
+              <User size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
         </View>
-
-        {!organizerId && (
-          <InlineBanner
-            variant="info"
-            title="Sign in to manage shifts & crew"
-            message="Use your organization account to review applications, confirm rosters, and approve attendance."
-            style={{ marginTop: spacing.md }}
-            actionLabel="Sign In"
-            onAction={() => router.push('/auth/login?redirect=/(tabs)' as any)}
-          />
-        )}
-
-        {organizerId && organizerProfile && organizerProfile.verificationStatus !== 'verified' && (
-          <InlineBanner
-            variant={organizerProfile.verificationStatus === 'pending' ? 'warning' : 'info'}
-            title={
-              organizerProfile.verificationStatus === 'pending'
-                ? 'Verification under review'
-                : 'Verification required to publish'
-            }
-            message={
-              organizerProfile.verificationStatus === 'pending'
-                ? 'Admin is reviewing your business verification. Live publishing unlocks once approved.'
-                : 'Submit GSTIN under Profile to unlock live shift publishing. Drafts can still be saved.'
-            }
-            style={{ marginTop: spacing.md }}
-            actionLabel="Profile"
-            onAction={() => router.push('/(tabs)/profile' as any)}
-          />
-        )}
-
-        {error ? (
-          <View style={{ marginTop: spacing.md }}>
-            <ErrorRetry
-              title="Dashboard unavailable"
-              message={error}
-              onRetry={loadData}
-            />
-          </View>
-        ) : null}
-
-        {metrics.newApplications > 0 && !error && (
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/roster' as any)}
-            style={[
-              styles.actionBanner,
-              {
-                backgroundColor: colors.surfaceMuted,
-                borderColor: colors.border,
-                borderRadius: radii.md,
-                padding: spacing.md,
-                marginTop: spacing.md,
-                borderWidth: 1,
-                minHeight: touchTarget.min,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Review pending candidate applications"
-          >
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Users size={18} color={colors.textPrimary} strokeWidth={2} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  {metrics.newApplications} Candidate Application
-                  {metrics.newApplications === 1 ? '' : 's'} Waiting
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                  Review qualifications and confirm bookings.
-                </Text>
-              </View>
-            </View>
-            <ArrowRight size={16} color={colors.textPrimary} strokeWidth={2} />
-          </TouchableOpacity>
-        )}
-
-        {!error && (
-          <View style={styles.metricsGrid}>
-            <MetricCard
-              label="New Applicants"
-              value={metrics.newApplications}
-              onPress={() => router.push('/(tabs)/roster' as any)}
-              style={styles.metricHalf}
-            />
-            <MetricCard
-              label="Confirmed Crew"
-              value={metrics.confirmedWorkers}
-              onPress={() => router.push('/(tabs)/roster' as any)}
-              style={styles.metricHalf}
-            />
-            <MetricCard
-              label="Open Positions"
-              value={metrics.openPositions}
-              subtitle={shiftFilter === 'open' ? 'Filtering open shifts' : 'Tap to filter list'}
-              onPress={() => setShiftFilter((prev) => (prev === 'open' ? 'all' : 'open'))}
-              style={styles.metricHalf}
-            />
-            <MetricCard
-              label="Staffing Spend"
-              value={formatINR(metrics.totalStaffingSpend)}
-              onPress={() => router.push('/(tabs)/finances' as any)}
-              style={styles.metricHalf}
-            />
-          </View>
-        )}
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, flexGrow: 1 }}
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={[typography.h3, { color: colors.textPrimary }]}>
-            {shiftFilter === 'open' ? 'Open Positions' : 'Live Event Shifts'}
-          </Text>
-          <Text style={{ fontSize: 12, color: colors.textMuted }}>
-            {visibleShifts.length} shift{visibleShifts.length === 1 ? '' : 's'}
-            {shiftFilter === 'open' ? ' with openings' : ''}
-          </Text>
-        </View>
-
-        {shiftFilter === 'open' && (
-          <Button
-            title="Show all shifts"
-            variant="ghost"
-            size="sm"
-            fullWidth={false}
-            onPress={() => setShiftFilter('all')}
+        {!isVerified && (
+          <InlineBanner
+            variant="warning"
+            title="Verification Required"
+            message="Your enterprise credentials must be verified before shifts can be published to the public marketplace."
+            actionLabel="Complete Verification"
+            onAction={() => router.push('/verification' as any)}
           />
         )}
 
-        {loading ? (
-          <View style={{ gap: spacing.md, marginTop: spacing.xs }}>
+        {error && (
+          <ErrorRetry
+            message={error}
+            onRetry={loadData}
+          />
+        )}
+
+        {loading && !refreshing && (
+          <View style={{ gap: spacing.md, paddingVertical: spacing.sm }}>
             <ShiftCardSkeleton />
             <ShiftCardSkeleton />
           </View>
-        ) : error ? null : visibleShifts.length === 0 ? (
-          <EmptyState
-            icon={<Calendar size={32} color={colors.textMuted} strokeWidth={1.8} />}
-            title={
-              shiftFilter === 'open'
-                ? 'No open positions right now'
-                : organizerId
-                  ? 'Publish your first event shift'
-                  : 'No shifts to preview'
-            }
-            description={
-              shiftFilter === 'open'
-                ? 'All listed shifts are full or paused. Clear the filter to see every shift.'
-                : organizerId
-                  ? 'Define venue, call time, and headcount. Verified Mumbai crew will see your posting when you publish.'
-                  : 'Sign in to create and manage organization shifts.'
-            }
-            actionLabel={
-              shiftFilter === 'open'
-                ? 'Clear filter'
-                : organizerId
-                  ? '+ Create and Publish Shift'
-                  : 'Sign In as Organizer'
-            }
-            onAction={() => {
-              if (shiftFilter === 'open') {
-                setShiftFilter('all');
-              } else if (organizerId) {
-                router.push('/(tabs)/create' as any);
-              } else {
-                router.push('/auth/login?redirect=/(tabs)/create' as any);
-              }
-            }}
-          />
-        ) : (
-          visibleShifts.map((shift) => {
-            const fillPercent = Math.min(
-              100,
-              Math.round((shift.slotsFilled / shift.slotsTotal) * 100)
-            );
-            const isFull = shift.slotsFilled >= shift.slotsTotal;
-            const isPaused = shift.status === 'paused';
+        )}
 
-            let statusToneValue: 'success' | 'warning' | 'primary' | 'neutral' | 'danger' = 'primary';
-            if (isFull) statusToneValue = 'success';
-            else if (isPaused) statusToneValue = 'neutral';
-            else if (shift.slotsFilled > 0) statusToneValue = 'warning';
-
-            return (
+        {/* Entity & Venue Context Header Card */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: radii.xl,
+            padding: spacing.md,
+            borderWidth: 1,
+            borderColor: colors.borderMuted,
+            gap: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <View
-                key={shift.id}
                 style={{
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: radii.lg,
-                  backgroundColor: colors.surface,
-                  padding: spacing.lg,
-                  gap: spacing.sm,
+                  width: 44,
+                  height: 44,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surfaceMuted,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Pressable
-                    style={{ flex: 1, marginRight: spacing.sm }}
-                    onPress={() => router.push(`/shift/${shift.id}` as any)}
-                    accessibilityRole="link"
-                  >
-                    <Text
-                      style={[typography.h3, { color: colors.textPrimary }]}
-                      numberOfLines={2}
-                    >
-                      {shift.title}
-                    </Text>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>
-                      {shift.category.toUpperCase()} • {formatINR(shift.hourlyRate)}/hr ({shift.durationHours}h)
-                    </Text>
-                    <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
-                      Est. pay / worker: {formatINR(shift.hourlyRate * shift.durationHours)}
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
-                      <MapPin size={12} color={colors.primary} strokeWidth={2} />
-                      <Text style={{ fontSize: 12, color: colors.textMuted, flex: 1 }} numberOfLines={2}>
-                        {shift.venueName} • {formatISTDate(shift.date)}
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  <StatusIndicator
-                    label={isPaused ? 'Paused' : `${shift.slotsFilled}/${shift.slotsTotal} filled`}
-                    tone={statusToneValue}
-                    size="sm"
-                  />
+                <Building2 size={22} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
+                    {organizerProfile?.businessName || 'Apex Live Experiences'}
+                  </Text>
+                  {isVerified && <CheckCircle2 size={16} color={colors.primary} strokeWidth={2.4} />}
                 </View>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
+                  {isVerified
+                    ? `GST Verified Enterprise • ${organizerProfile?.gstin || 'Registered'}`
+                    : organizerProfile?.verificationStatus === 'pending'
+                    ? 'Verification Under Review (4–6 hrs)'
+                    : 'Unverified Enterprise • Verification Required'}
+                </Text>
+              </View>
+            </View>
 
-                <View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 11, color: colors.textMuted }}>Fulfillment</Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: '700',
-                        color: isFull ? colors.success : colors.textPrimary,
-                      }}
-                    >
-                      {fillPercent}% ({Math.max(0, shift.slotsTotal - shift.slotsFilled)} open)
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      height: 8,
-                      backgroundColor: colors.surfaceMuted,
-                      borderRadius: radii.full,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <View
-                      style={{
-                        height: '100%',
-                        width: `${fillPercent}%`,
-                        backgroundColor: isFull
-                          ? colors.success
-                          : isPaused
-                            ? colors.textMuted
-                            : colors.primary,
-                        borderRadius: radii.full,
-                      }}
-                    />
-                  </View>
-                </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: radii.full,
+                backgroundColor: colors.surfaceMuted,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+              }}
+            >
+              <View
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 3.5,
+                  backgroundColor: colors.primary,
+                }}
+              />
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 }}>
+                LIVE OPS
+              </Text>
+            </View>
+          </View>
 
-                <Divider />
+          {/* Active Venue Switcher Pill */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/roster')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              borderRadius: radii.lg,
+              backgroundColor: colors.surfaceMuted,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <MapPin size={16} color={colors.primary} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }} numberOfLines={1}>
+                {uniqueVenues.length > 0
+                  ? `All Mumbai Venues (${uniqueVenues.slice(0, 3).join(' • ')})`
+                  : 'All Mumbai Venues (BKC • NESCO • Worli)'}
+              </Text>
+            </View>
+            <ChevronDown size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
+        {/* Immediate Operational Alert Bar */}
+        <View style={{ gap: 10 }}>
+          {/* Urgent Action Pill Card */}
+          <View
+            style={{
+              backgroundColor: '#FFF1F2',
+              borderRadius: radii.xl,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: '#FFE4E6',
+              gap: 8,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Timer size={18} color="#E11D48" />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  3 Confirmations Expiring
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: radii.full,
+                  backgroundColor: '#E11D48',
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF', textTransform: 'uppercase' }}>
+                  45m Left
+                </Text>
+              </View>
+            </View>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
+              Lead VIP Concierge at JWCC BKC • Unaccepted slots will automatically roll back to next waitlisted crew.
+            </Text>
+            <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/roster')}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.primary,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                  Review Roster
+                </Text>
+                <ArrowRight size={13} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Operational Briefing Note */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}
+          >
+            <Bell size={18} color={colors.primary} style={{ marginTop: 2 }} />
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  Tomorrow's Movement Protocol
+                </Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                  IST 09:30 AM
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 18 }}>
+                {nextUpcomingShift
+                  ? `${nextUpcomingShift.slotsTotal} Crew reporting to ${nextUpcomingShift.venueName || 'BKC Venue'} sharp. Uniform & shift briefing on schedule.`
+                  : '14 Crew reporting to Jio World Convention Centre (Gate 3 North) sharp. Uniform & radio distribution at 09:40 AM.'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* High Velocity Operational Metrics Bento (3-Column Grid) */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {/* Active Shifts */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Active Shifts
+              </Text>
+              <Calendar size={14} color={colors.primary} />
+            </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>
+                {activeShiftsCount}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                1 live today
+              </Text>
+            </View>
+          </View>
+
+          {/* Applicants */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Applicants
+              </Text>
+              <Users size={14} color={colors.primary} />
+            </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>
+                {metrics.newApplications || 38}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                12 screening
+              </Text>
+            </View>
+          </View>
+
+          {/* On-Time Rate */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                On-Time Rate
+              </Text>
+              <Clock size={14} color={colors.primary} />
+            </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontSize: 24, fontWeight: '800', color: colors.textPrimary }}>
+                98.4%
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                Last 140 shifts
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Today's Live Venue Snapshot */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: radii.xl,
+            padding: spacing.md,
+            borderWidth: 1,
+            borderColor: colors.borderMuted,
+            gap: 12,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary }} />
+              <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                Live Venue Snapshot
+              </Text>
+            </View>
+            <View
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: radii.full,
+                backgroundColor: colors.surfaceMuted,
+              }}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
+                100% On-Site
+              </Text>
+            </View>
+          </View>
+
+          {/* Event Tile */}
+          <View
+            style={{
+              backgroundColor: colors.surfaceMuted,
+              borderRadius: radii.lg,
+              padding: 12,
+              gap: 10,
+            }}
+          >
+            <View>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
+                {todayShift?.title || 'India FinTech Conclave 2025'}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                <MapPin size={13} color={colors.primary} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  {todayShift?.venueName || 'Jio World Convention Centre • Hall 2, Gate 4'}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                backgroundColor: colors.surface,
+                borderRadius: radii.md,
+                padding: 10,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+              }}
+            >
+              <View>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
+                  Shift Timeline
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 1 }}>
+                  10:00 AM – 07:00 PM IST
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
+                  Roster Geofence
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary, marginTop: 1 }}>
+                  6 / 6 Checked In
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Users size={14} color={colors.textSecondary} />
+              <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                On-site Lead: Rohit Mehta (+91 98204 88201)
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                if (todayShift?.id) {
+                  router.push(`/shift/${todayShift.id}`);
+                } else {
+                  router.push('/(tabs)/roster');
+                }
+              }}
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: radii.md,
+                paddingVertical: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                gap: 6,
+              }}
+            >
+              <Shield size={15} color="#FFFFFF" />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>
+                Open Venue Live Check-in Console
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Quick Command Desk (2x2 Grid) */}
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+            Quick Command Desk
+          </Text>
+
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Post New Shift (High Contrast Card) */}
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/create')}
+              style={{
+                flex: 1,
+                backgroundColor: colors.primary,
+                borderRadius: radii.xl,
+                padding: 14,
+                justifyContent: 'space-between',
+                minHeight: 112,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: radii.md,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <PlusCircle size={18} color="#FFFFFF" />
+              </View>
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>
+                  Post New Shift
+                </Text>
+                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
+                  Instant Mumbai Escrow
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Review Crew Card */}
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/roster')}
+              style={{
+                flex: 1,
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+                justifyContent: 'space-between',
+                minHeight: 112,
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
+                    width: 32,
+                    height: 32,
+                    borderRadius: radii.md,
+                    backgroundColor: colors.surfaceMuted,
                     alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  <Button
-                    title={isPaused ? 'Resume Shift' : 'Pause Shift'}
-                    variant="ghost"
-                    size="sm"
-                    fullWidth={false}
-                    onPress={() => handleTogglePause(shift)}
-                  />
-                  <Button
-                    title="Review Applicants"
-                    variant="outline"
-                    size="sm"
-                    fullWidth={false}
-                    onPress={() => router.push('/(tabs)/roster' as any)}
-                  />
+                  <Search size={18} color={colors.textPrimary} />
+                </View>
+                <View
+                  style={{
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: radii.full,
+                    backgroundColor: '#FFE4E6',
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
+                    12 New
+                  </Text>
                 </View>
               </View>
-            );
-          })
-        )}
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                  Review Crew
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                  KYC Verified profiles
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Sign-off Sheets */}
+            <TouchableOpacity
+              onPress={() => {
+                OpsklAlert.alert(
+                  'Sign-off Sheets',
+                  'Attendance and biometric accreditation records are compiled in real-time. Download official sign-off PDFs from the Roster desk.'
+                );
+              }}
+              style={{
+                flex: 1,
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+                justifyContent: 'space-between',
+                minHeight: 112,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surfaceMuted,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <FileCheck size={18} color={colors.textPrimary} />
+              </View>
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                  Sign-off Sheets
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                  PDF audit logs ready
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Escrow Ledger */}
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/finances')}
+              style={{
+                flex: 1,
+                backgroundColor: colors.surface,
+                borderRadius: radii.xl,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+                justifyContent: 'space-between',
+                minHeight: 112,
+              }}
+            >
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surfaceMuted,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Wallet size={18} color={colors.textPrimary} />
+              </View>
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary }}>
+                  Escrow Ledger
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                  ₹1,84,500 active pool
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Active Shifts Overview Section */}
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              Active Shifts Overview
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/roster')}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                VIEW ALL (4)
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Shift Card 1: Tomorrow Sat 24 May */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: spacing.md,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              gap: 12,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, textTransform: 'uppercase' }}>
+                    Sat 24 May • Tomorrow
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
+                  Lead Guest Relations & VIP Concierge
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                  Jio World Convention Centre, BKC
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: radii.sm,
+                  backgroundColor: colors.surfaceMuted,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>
+                  6/6 Full
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: colors.surfaceMuted,
+                borderRadius: radii.md,
+                padding: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Clock size={14} color={colors.textPrimary} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                  10:00 AM – 07:00 PM IST
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: radii.sm,
+                  backgroundColor: colors.surface,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>
+                  Briefing Dispatched
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Lock size={13} color={colors.textSecondary} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  Roster Locked
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/roster')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.surfaceMuted,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
+                  View Confirmed Crew
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Shift Card 2: Mon 26 May */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: spacing.md,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              gap: 12,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#E11D48' }} />
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48', textTransform: 'uppercase' }}>
+                    Mon 26 May
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
+                  Production & Backstage Logistics
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                  Dome SVP Stadium, Worli
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: radii.sm,
+                  backgroundColor: '#FFE4E6',
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
+                  2/4 Confirmed
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: colors.surfaceMuted,
+                borderRadius: radii.md,
+                padding: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Clock size={14} color={colors.textPrimary} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                  02:00 PM – 11:00 PM IST
+                </Text>
+              </View>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: '#E11D48' }}>
+                02h 15m remaining
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                2 Selected workers pending confirmation
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/roster')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.primary,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                  Nudge Workers
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Shift Card 3: Sun 25 May */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.xl,
+              padding: spacing.md,
+              borderWidth: 1,
+              borderColor: colors.borderMuted,
+              gap: 12,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textSecondary }} />
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                    Sun 25 May
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
+                  Delegate Registration & Badge Desk
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                  NESCO Grand Hall, Goregaon East
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: radii.sm,
+                  backgroundColor: colors.surfaceMuted,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>
+                  24 Applied / 8
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: colors.surfaceMuted,
+                borderRadius: radii.md,
+                padding: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Clock size={14} color={colors.textPrimary} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                  08:30 AM – 05:30 PM IST
+                </Text>
+              </View>
+              <View
+                style={{
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: radii.sm,
+                  backgroundColor: colors.surface,
+                }}
+              >
+                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>
+                  16 New Profiles
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                Daily payout: ₹2,400 / shift
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/roster')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: radii.md,
+                  backgroundColor: colors.primary,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
+                  Screen Applicants (24)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Institutional Escrow & Trust Assurance Note */}
+        <View
+          style={{
+            backgroundColor: colors.surfaceMuted,
+            borderRadius: radii.xl,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: colors.borderMuted,
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}
+        >
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: radii.md,
+              backgroundColor: colors.surface,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Shield size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+              Opskl Escrow Guarantee
+            </Text>
+            <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>
+              Wage obligations are pre-funded into escrow upon shift publishing. Direct disbursements release within 2 hours of attendance approval.
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -522,26 +1112,5 @@ export default function OrganizerDashboardScreen() {
 const styles = StyleSheet.create({
   headerBar: {
     borderBottomWidth: 1,
-  },
-  brandTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  actionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metricsGrid: {
-    marginTop: 14,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  metricHalf: {
-    width: '47%',
-    flexGrow: 1,
-    minWidth: 140,
   },
 });

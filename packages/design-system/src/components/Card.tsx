@@ -12,6 +12,7 @@ export interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
   variant?: 'elevated' | 'outlined' | 'flat';
+  elevationLayer?: 0 | 1 | 2 | 3;
   style?: StyleProp<ViewStyle>;
   padding?: number;
   testID?: string;
@@ -21,13 +22,22 @@ export const Card: React.FC<CardProps> = ({
   children,
   onPress,
   variant = 'elevated',
+  elevationLayer,
   style,
   padding,
   testID,
 }) => {
-  const { colors, radii, spacing, shadows } = useOpsklTheme();
+  const { colors, radii, spacing, shadows, elevationLayers } = useOpsklTheme();
 
   const cardPadding = padding !== undefined ? padding : spacing.lg;
+
+  const layerStyle: ViewStyle = (() => {
+    if (elevationLayer === 0) return { ...elevationLayers.layer0, backgroundColor: colors.background };
+    if (elevationLayer === 1) return { ...elevationLayers.layer1, backgroundColor: colors.surface };
+    if (elevationLayer === 2) return { ...elevationLayers.layer2, backgroundColor: colors.surfaceElevated };
+    if (elevationLayer === 3) return { ...elevationLayers.layer3, backgroundColor: colors.surfaceElevated };
+    return {};
+  })();
 
   const baseStyle: ViewStyle = {
     backgroundColor: variant === 'flat' ? colors.surfaceMuted : colors.surface,
@@ -37,6 +47,7 @@ export const Card: React.FC<CardProps> = ({
     borderColor: colors.border,
     width: '100%',
     ...(variant === 'elevated' ? shadows.sm : {}),
+    ...layerStyle,
   };
 
   // On React Native Web, naked strings/whitespace outside of <Text> cause

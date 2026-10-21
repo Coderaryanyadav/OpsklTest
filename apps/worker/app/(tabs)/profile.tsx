@@ -298,6 +298,98 @@ export default function WorkerProfileScreen() {
               </View>
             </Card>
 
+            {/* Stitch Masked KYC & Government Compliance Card */}
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: radii.lg,
+                padding: spacing.md,
+                borderWidth: 1,
+                borderColor: colors.border,
+                gap: spacing.sm,
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <ShieldCheck size={16} color={colors.accent} strokeWidth={2.2} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    Government Identity (KYC)
+                  </Text>
+                </View>
+                <Badge
+                  label={
+                    workerData?.verificationStatus === 'verified'
+                      ? 'BANK-GRADE VERIFIED'
+                      : workerData?.verificationStatus === 'pending'
+                      ? 'UNDER 2-4H REVIEW'
+                      : workerData?.verificationStatus === 'rejected'
+                      ? 'REVISION REQUIRED'
+                      : 'KYC REQUIRED'
+                  }
+                  variant={
+                    workerData?.verificationStatus === 'verified'
+                      ? 'success'
+                      : workerData?.verificationStatus === 'rejected'
+                      ? 'danger'
+                      : workerData?.verificationStatus === 'pending'
+                      ? 'warning'
+                      : 'neutral'
+                  }
+                  size="sm"
+                />
+              </View>
+
+              {/* Masked UIDAI ID Box */}
+              <View
+                style={{
+                  backgroundColor: colors.surfaceMuted,
+                  borderRadius: radii.md,
+                  padding: spacing.sm + 2,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <View>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '600' }}>
+                    Masked Identity Record
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, letterSpacing: 1, marginTop: 2 }}>
+                    {verificationCase?.documentMaskedId || 'No Document On File'}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: radii.sm,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary }}>
+                    Auto-Masked
+                  </Text>
+                </View>
+              </View>
+
+              {/* Locality & Roles Strip */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 2 }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  Dispatch Base: <Text style={{ fontWeight: '600', color: colors.textPrimary }}>{workerData?.preferredLocality || 'BKC & MMR Hub'}</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/onboarding' as any)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accent }}>
+                    Edit Profile ➔
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Worker Trust and Reliability Score Card */}
             <Card variant="elevated">
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

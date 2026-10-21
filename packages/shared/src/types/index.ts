@@ -293,6 +293,8 @@ export interface PaymentRecord {
   createdAt: string;
   jobTitle?: string;
   shiftHours?: number;
+  venueName?: string;
+  shiftDate?: string;
 }
 
 export type InvoiceStatus = 'draft' | 'pending' | 'escrow_funded' | 'settled' | 'overdue' | 'cancelled';

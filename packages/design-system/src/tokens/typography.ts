@@ -173,4 +173,80 @@ export const typography: Record<string, TextStyle> = {
     lineHeight: lineHeights.sm,
     fontWeight: '400',
   },
+
+  // ── Stitch DESIGN.md Typographic Tokens ────────────────────────
+  displayLg: {
+    fontSize: 36,
+    lineHeight: 44,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  displayLgMobile: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+  },
+  headlineLg: {
+    fontSize: 24,
+    lineHeight: 32,
+    fontWeight: '600',
+    letterSpacing: -0.4,
+  },
+  headlineLgMobile: {
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '600',
+    letterSpacing: -0.3,
+  },
+  headlineSm: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  bodyLg: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400',
+    letterSpacing: -0.1,
+  },
+  bodyMd: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+    letterSpacing: 0,
+  },
+  bodySm: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  labelLg: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  labelMd: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  labelXs: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  numericData: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500',
+    letterSpacing: -0.2,
+    fontVariant: ['tabular-nums'],
+  },
 };
