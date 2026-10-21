@@ -26,42 +26,8 @@ export interface OfflineGateKey {
 
 const OFFLINE_QUEUE_STORAGE_KEY = 'opskil_offline_queue_v1';
 
-/**
- * Universal safe in-memory fallback for non-storage environments
- */
-let memoryQueueFallback: OfflineMutationItem[] = [
-  {
-    id: 'off-mut-4092',
-    idempotencyKey: 'idemp-chk-4092-1710408494',
-    type: 'check_in',
-    payload: {
-      bookingId: 'booking-4092',
-      gate: 'Gate 4 Concourse',
-      venue: 'NESCO Center',
-      timestamp: '2025-03-14T09:28:14.000Z',
-    },
-    createdAt: '2025-03-14T09:28:14.000Z',
-    status: 'queued',
-    retryCount: 0,
-    summaryTitle: 'Check-in Gate 4 Concourse',
-    summaryMeta: '09:28:14 IST • Cached locally (ID: #4092)',
-  },
-  {
-    id: 'off-mut-4093',
-    idempotencyKey: 'idemp-ack-4093-1710408602',
-    type: 'acknowledgment',
-    payload: {
-      section: 'Sec 3.B',
-      title: 'Briefing Acknowledged',
-      timestamp: '2025-03-14T09:30:02.000Z',
-    },
-    createdAt: '2025-03-14T09:30:02.000Z',
-    status: 'queued',
-    retryCount: 0,
-    summaryTitle: 'Briefing Acknowledged',
-    summaryMeta: '09:30:02 IST • Ready for sync (Sec 3.B)',
-  },
-];
+/** In-memory mirror of persisted queue — never seed demo mutations. */
+let memoryQueueFallback: OfflineMutationItem[] = [];
 
 /**
  * Fetch all locally queued mutations
@@ -74,6 +40,7 @@ export async function getOfflineQueue(): Promise<OfflineMutationItem[]> {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
+      memoryQueueFallback = parsed;
       return parsed;
     }
   } catch (err) {

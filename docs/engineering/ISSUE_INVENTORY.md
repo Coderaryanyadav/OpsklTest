@@ -18,12 +18,17 @@
 | ENG-009 | P3 | Onboarding badge “INSTANT UPI ENABLED” without payout rail | `onboarding.tsx` | **FIXED** — UPI ON FILE |
 | ENG-010 | P2 | Incident evidence device URIs persisted | Prior verification D-SEC-001 | **FIXED** earlier this branch |
 | ENG-011 | P2 | Admin moderation panel hardcoded escrow capital ₹3,130 / “PAYMENT SECURED” | `JobModerationTable.tsx` | **FIXED** — calculator-based wage ledger estimate |
+| ENG-012 | P1 | Worker accept/decline used client UPDATEs (RLS SELECT-only) + decline always success | `jobs.ts` workerConfirm/Decline | **FIXED** — `worker_*_selection_safe` RPCs |
+| ENG-013 | P2 | Offline queue seeded fake mutations when empty | `offline_queue_service.ts` | **FIXED** |
+| ENG-014 | P2 | Roster padded metrics with `\|\| 18` / `Math.max(5, …)` | `roster.tsx` | **FIXED** |
+| ENG-015 | P2 | Attendance treated `selected_awaiting_confirmation` as approaching crew | `attendance.tsx` | **FIXED** — excluded from gate list |
+| ENG-016 | P1 | `/api/auth/register-organizer` open outside production | `register-organizer/route.ts` | **FIXED** — require explicit allow flag always |
+| ENG-017 | P3 | QR scanner / overtime / regional floors were fake-success alerts | attendance + JobModerationTable | **FIXED** — honest not-wired copy |
 
 ## Potential risks (not fully proven this session)
 
 | ID | Risk | Notes |
 | --- | --- | --- |
-| RISK-001 | `workerConfirmSelectionSafe` updates bookings via client `.update` not SECURITY DEFINER RPC | Privilege depends on RLS; needs dedicated RPC hardening |
 | RISK-002 | Capacity held on offer (`slots_filled++`) may interact with `confirm_worker_booking_safe` if both used | Confirm expects no existing booking; offer creates one — confirm path must not double-count |
 | RISK-003 | Mobile Maestro/OTP still NOT RUN | Release blocker for full GO |
 | RISK-004 | Escrow wording may remain in older docs/notifications category labels | Worker notifications still has category id `escrow` mapped to “Payouts” |

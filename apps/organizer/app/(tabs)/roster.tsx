@@ -137,10 +137,12 @@ export default function OrganizerShiftsRosterScreen() {
     }
   };
 
-  // Filter counts
-  const totalEventsCount = Math.max(5, shifts.length);
-  const confirmedCrewCount = applications.filter((a) => a.status === 'confirmed').length || 18;
-  const pendingApplicantsCount = applications.filter((a) => a.status === 'applied' || a.status === 'shortlisted').length || 24;
+  // Filter counts — real ledger only (never pad with demo numbers)
+  const totalEventsCount = shifts.length;
+  const confirmedCrewCount = applications.filter((a) => a.status === 'confirmed').length;
+  const pendingApplicantsCount = applications.filter(
+    (a) => a.status === 'applied' || a.status === 'shortlisted' || a.status === 'selected_awaiting_confirmation'
+  ).length;
 
   const filteredShifts = useMemo(() => {
     return shifts.filter((s) => {

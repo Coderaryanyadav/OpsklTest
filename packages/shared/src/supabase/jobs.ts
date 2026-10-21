@@ -985,8 +985,8 @@ export async function updateApplicationStatusSafe(
 }
 
 /**
- * Worker confirms an offered spot (transitions selected_awaiting_confirmation -> confirmed).
- * Enforces non-negotiable: Never mark a shift confirmed before the required worker confirmation succeeds.
+ * Worker confirms an offered spot (selected_awaiting_confirmation -> confirmed)
+ * via SECURITY DEFINER RPC. Direct client updates are blocked by RLS.
  */
 export async function workerConfirmSelectionSafe(
   idOrJobId: string,
@@ -995,106 +995,34 @@ export async function workerConfirmSelectionSafe(
   try {
     logger.info('Worker confirming selection safe', { idOrJobId, workerId });
 
-    // 1. Try finding booking first
-    const { data: bookingData } = await supabase
-      .from('bookings')
-      .select('*, jobs(*)')
-      .or(`id.eq.${idOrJobId},job_id.eq.${idOrJobId}`)
-      .eq('worker_id', workerId)
-      .maybeSingle();
+    const { data: rpcData, error: rpcError } = await supabase.rpc('worker_confirm_selection_safe', {
+      p_booking_or_job_id: idOrJobId,
+    });
 
-    if (bookingData) {
-      if (bookingData.status === 'confirmed') {
-        return { success: true, booking: mapBookingRow(bookingData) };
-      }
-      if (bookingData.status !== 'selected_awaiting_confirmation') {
-        return {
-          success: false,
-          error: `Cannot confirm booking in '${bookingData.status}' status. Only offers awaiting confirmation can be confirmed.`,
-        };
-      }
-
-      const generatedCode = bookingData.check_in_code || `OP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-
-      const { data: updated, error: updateError } = await supabase
-        .from('bookings')
-        .update({
-          status: 'confirmed',
-          confirmed_at: new Date().toISOString(),
-          check_in_code: generatedCode,
-        })
-        .eq('id', bookingData.id)
-        .select('*, jobs(*)')
-        .single();
-
-      if (updateError) {
-        logger.error('Failed to update booking status to confirmed', updateError);
-        return { success: false, error: updateError.message };
-      }
-
-      // Also update job application if present
-      await supabase
-        .from('job_applications')
-        .update({ status: 'confirmed', updated_at: new Date().toISOString() })
-        .eq('job_id', bookingData.job_id)
-        .eq('worker_id', workerId);
-
-      return { success: true, booking: mapBookingRow(updated) };
+    if (rpcError) {
+      logger.error('RPC error in worker_confirm_selection_safe', rpcError);
+      return { success: false, error: rpcError.message || 'Server-side offer confirmation failed.' };
     }
 
-    // 2. If no booking row yet, check job_applications
-    const { data: appData, error: appError } = await supabase
-      .from('job_applications')
-      .select('*, jobs(*)')
-      .or(`id.eq.${idOrJobId},job_id.eq.${idOrJobId}`)
-      .eq('worker_id', workerId)
-      .maybeSingle();
-
-    if (appError || !appData) {
-      return { success: false, error: 'Shift selection offer not found or expired.' };
-    }
-
-    if (appData.status !== 'selected_awaiting_confirmation') {
+    if (!rpcData?.success) {
       return {
         success: false,
-        error: `Application is in '${appData.status}' state, not awaiting confirmation.`,
+        error: rpcData?.message || rpcData?.error_code || 'Could not confirm shift offer.',
       };
     }
 
-    // Update application to confirmed
-    const { error: appUpError } = await supabase
-      .from('job_applications')
-      .update({ status: 'confirmed', updated_at: new Date().toISOString() })
-      .eq('id', appData.id);
-
-    if (appUpError) {
-      return { success: false, error: appUpError.message };
-    }
-
-    const job = appData.jobs || (await fetchJobById(appData.job_id));
-    const generatedCode = `OP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-
-    // Create confirmed booking
-    const { data: newBooking, error: bookCreateError } = await supabase
+    // Re-fetch mapped booking for callers that need the full object
+    const { data: bookingData } = await supabase
       .from('bookings')
-      .insert({
-        job_id: appData.job_id,
-        worker_id: workerId,
-        organizer_id: job?.organizerId || job?.organizer_id,
-        status: 'confirmed',
-        agreed_hourly_rate: job?.hourlyRate || job?.hourly_rate || 0,
-        agreed_total_pay: job?.totalPay || job?.total_pay || 0,
-        check_in_code: generatedCode,
-        confirmed_at: new Date().toISOString(),
-      })
       .select('*, jobs(*)')
-      .single();
+      .eq('id', rpcData.booking_id)
+      .eq('worker_id', workerId)
+      .maybeSingle();
 
-    if (bookCreateError) {
-      return { success: false, error: bookCreateError.message };
-    }
-
-    return { success: true, booking: mapBookingRow(newBooking) };
+    return {
+      success: true,
+      booking: bookingData ? mapBookingRow(bookingData) : undefined,
+    };
   } catch (err: any) {
     logger.error('Unexpected exception in workerConfirmSelectionSafe', err);
     return { success: false, error: err.message };
@@ -1102,7 +1030,7 @@ export async function workerConfirmSelectionSafe(
 }
 
 /**
- * Worker declines an offered spot
+ * Worker declines an offered spot via SECURITY DEFINER RPC (fail-closed).
  */
 export async function workerDeclineSelectionSafe(
   idOrJobId: string,
@@ -1112,27 +1040,22 @@ export async function workerDeclineSelectionSafe(
   try {
     logger.info('Worker declining selection safe', { idOrJobId, workerId });
 
-    // Cancel booking if exists
-    await supabase
-      .from('bookings')
-      .update({
-        status: 'cancelled',
-        cancellation_reason: reason,
-        cancelled_by: workerId,
-      })
-      .or(`id.eq.${idOrJobId},job_id.eq.${idOrJobId}`)
-      .eq('worker_id', workerId);
+    const { data: rpcData, error: rpcError } = await supabase.rpc('worker_decline_selection_safe', {
+      p_booking_or_job_id: idOrJobId,
+      p_reason: reason,
+    });
 
-    // Update application to withdrawn
-    await supabase
-      .from('job_applications')
-      .update({
-        status: 'withdrawn',
-        notes: reason,
-        updated_at: new Date().toISOString(),
-      })
-      .or(`id.eq.${idOrJobId},job_id.eq.${idOrJobId}`)
-      .eq('worker_id', workerId);
+    if (rpcError) {
+      logger.error('RPC error in worker_decline_selection_safe', rpcError);
+      return { success: false, error: rpcError.message || 'Server-side offer decline failed.' };
+    }
+
+    if (!rpcData?.success) {
+      return {
+        success: false,
+        error: rpcData?.message || rpcData?.error_code || 'Could not decline shift offer.',
+      };
+    }
 
     return { success: true };
   } catch (err: any) {

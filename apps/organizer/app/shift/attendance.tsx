@@ -73,7 +73,10 @@ function maskPhone(phone?: string): string {
 }
 
 function mapBookingToAttendance(booking: Booking, job?: Job | null): AttendanceWorker | null {
-  if (booking.status === 'cancelled') return null;
+  // Offers awaiting worker acceptance are not confirmed crew — exclude from gate attendance.
+  if (booking.status === 'cancelled' || booking.status === 'selected_awaiting_confirmation') {
+    return null;
+  }
 
   let status: AttendanceWorker['status'] = 'approaching';
   if (booking.status === 'checked_in') status = 'on_duty';
@@ -85,7 +88,7 @@ function mapBookingToAttendance(booking: Booking, job?: Job | null): AttendanceW
     status = 'checked_out';
   } else if (booking.status === 'no_show') {
     status = 'no_show';
-  } else if (booking.status === 'confirmed' || booking.status === 'selected_awaiting_confirmation') {
+  } else if (booking.status === 'confirmed') {
     status = 'approaching';
   }
 
@@ -627,7 +630,10 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
               onPress={() => {
-                OpsklAlert.alert('Gate 4 Scanner Feed', 'Activating device optical sensor for gate turnstile badge QR verification.');
+                OpsklAlert.alert(
+                  'QR scanner not wired',
+                  'Camera QR / turnstile badge scanning is not integrated in this build. Use the manual PIN / check-in code flow for confirmed crew.'
+                );
               }}
               style={{
                 flex: 1,
@@ -1125,7 +1131,10 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
 
             <TouchableOpacity
               onPress={() => {
-                OpsklAlert.alert('Overtime Logged', `Recorded +${otMinutes} minutes overtime allowance for active crew. Added to post-shift ledger.`);
+                OpsklAlert.alert(
+                  'Overtime not persisted',
+                  `+${otMinutes} minutes was not written to the ledger. Overtime recording RPC is not wired in this build.`
+                );
                 setOtModalVisible(false);
               }}
               style={{

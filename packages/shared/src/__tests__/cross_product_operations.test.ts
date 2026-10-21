@@ -2,6 +2,7 @@ import {
   enqueueOfflineMutation,
   syncOfflineQueueSafe,
   generateOfflineGateKey,
+  getOfflineQueue,
 } from '../services/offline_queue_service';
 import {
   submitSafetyIncidentSafe,
@@ -44,6 +45,13 @@ describe('Cross-Product Operational Integrity: Phase 8 Requirements', () => {
     });
 
     test('retains queued status when sync is executed while offline', async () => {
+      await enqueueOfflineMutation({
+        type: 'check_in',
+        payload: { bookingId: 'booking-offline-1' },
+        summaryTitle: 'Offline check-in',
+        summaryMeta: 'queued for sync',
+        idempotencyKey: `idemp-offline-retain-${Date.now()}`,
+      });
       const res = await syncOfflineQueueSafe(false);
       expect(res.syncedCount).toBe(0);
       expect(res.remainingQueue.length).toBeGreaterThan(0);
@@ -51,11 +59,27 @@ describe('Cross-Product Operational Integrity: Phase 8 Requirements', () => {
     });
 
     test('authoritatively acknowledges items when online sync succeeds', async () => {
+      await enqueueOfflineMutation({
+        type: 'acknowledgment',
+        payload: { section: 'Sec 1' },
+        summaryTitle: 'Offline ack',
+        summaryMeta: 'ready',
+        idempotencyKey: `idemp-offline-sync-${Date.now()}`,
+      });
       const mockExecutor = async () => ({ success: true });
       const res = await syncOfflineQueueSafe(true, mockExecutor);
 
       expect(res.syncedCount).toBeGreaterThan(0);
       expect(res.failedCount).toBe(0);
+    });
+
+    test('offline queue never invents hardcoded demo mutations', async () => {
+      const queue = await getOfflineQueue();
+      expect(queue.find((i) => i.id === 'off-mut-4092')).toBeUndefined();
+      expect(queue.find((i) => i.id === 'off-mut-4093')).toBeUndefined();
+      expect(
+        queue.find((i) => i.idempotencyKey === 'idemp-chk-4092-1710408494')
+      ).toBeUndefined();
     });
 
     test('generates deterministic offline gate backup PIN and high integrity token', () => {

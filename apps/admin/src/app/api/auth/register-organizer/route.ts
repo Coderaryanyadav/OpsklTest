@@ -5,12 +5,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.EXPO_PUB
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(req: NextRequest) {
-  // Production safety guard: block unverified direct user creation shortcuts in production
-  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DIRECT_ORGANIZER_REGISTRATION !== 'true') {
+  // Fail closed: privileged service-role account minting requires explicit opt-in in every environment.
+  if (process.env.ALLOW_DIRECT_ORGANIZER_REGISTRATION !== 'true') {
     return NextResponse.json(
       {
         success: false,
-        error: 'Direct unverified account creation is disabled in production. Please use standard registration with email/phone verification.',
+        error:
+          'Direct unverified organizer registration is disabled. Set ALLOW_DIRECT_ORGANIZER_REGISTRATION=true only for controlled non-production setup, or use standard verified registration.',
       },
       { status: 403 }
     );

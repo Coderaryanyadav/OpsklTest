@@ -267,10 +267,15 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
           <button
             type="button"
             className="admin-btn admin-btn-secondary admin-btn-sm"
-            onClick={() => alert('Regional floor setting: Bandra-Kurla Complex (₹200/hr floor), Goregaon NESCO (₹180/hr floor).')}
+            onClick={() =>
+              alert(
+                'Regional wage floor editing is not wired. Current review uses the fixed MMR benchmark of ₹200/hr in this build.'
+              )
+            }
+            title="Not wired — floors are not persisted from this control"
           >
             <SlidersHorizontal size={13} />
-            <span>Adjust Regional Floors</span>
+            <span>Regional floors (read-only)</span>
           </button>
         </div>
       </div>

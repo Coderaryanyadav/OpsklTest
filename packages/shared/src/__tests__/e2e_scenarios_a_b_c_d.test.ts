@@ -10,6 +10,8 @@ import {
   applyForJobSafe,
   confirmWorkerBookingSafe,
   selectWorkerOfferSafe,
+  workerConfirmSelectionSafe,
+  workerDeclineSelectionSafe,
   updateApplicationStatusSafe,
   updateJobStatus,
   createJobSafe,
@@ -331,6 +333,49 @@ describe("E2E Lifecycle: Scenarios A, B, C, & D", () => {
         p_worker_id: workerId,
         p_notes: null,
       });
+    });
+
+    test("1c. Worker accept/decline use SECURITY DEFINER RPCs (not client table writes)", async () => {
+      __mockRpc.mockResolvedValueOnce({
+        data: {
+          success: true,
+          booking_id: "booking-offer-001",
+          status: "confirmed",
+          check_in_code: "OP-ACCEPT01",
+        },
+        error: null,
+      });
+      __mockFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({
+          data: {
+            id: "booking-offer-001",
+            job_id: jobId,
+            worker_id: workerId,
+            organizer_id: organizerId,
+            status: "confirmed",
+            agreed_hourly_rate: 200,
+            agreed_total_pay: 1800,
+            check_in_code: "OP-ACCEPT01",
+          },
+          error: null,
+        }),
+      });
+
+      const accepted = await workerConfirmSelectionSafe("booking-offer-001", workerId);
+      expect(accepted.success).toBe(true);
+      expect(__mockRpc).toHaveBeenCalledWith("worker_confirm_selection_safe", {
+        p_booking_or_job_id: "booking-offer-001",
+      });
+
+      __mockRpc.mockResolvedValueOnce({
+        data: { success: false, error_code: "BOOKING_NOT_FOUND", message: "missing" },
+        error: null,
+      });
+      const declinedFail = await workerDeclineSelectionSafe("booking-missing", workerId);
+      expect(declinedFail.success).toBe(false);
+      expect(declinedFail.error).toMatch(/missing|BOOKING_NOT_FOUND/i);
     });
 
     test("2. Organizer confirms candidate into booking with capacity decrement and secure check-in code", async () => {
