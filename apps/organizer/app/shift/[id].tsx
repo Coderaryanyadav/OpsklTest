@@ -6,6 +6,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   Modal,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -48,7 +50,7 @@ import {
   subscribeToShiftApplications,
   subscribeToShiftRoster,
 } from '@opskil/shared';
-import { CheckCircle2, Users, Clock, UserCheck, Radio } from 'lucide-react-native';
+import { CheckCircle2, Users, Clock, UserCheck, Radio, PhoneCall } from 'lucide-react-native';
 
 export default function OrganizerShiftDetailScreen() {
   const router = useRouter();
@@ -278,6 +280,38 @@ export default function OrganizerShiftDetailScreen() {
     // Do not pre-fill the expected code — supervisor must enter what the worker shows.
     setManualCode('');
     setCheckInError(null);
+  };
+
+  /**
+   * Operational Tap-To-Call: Gated strictly to confirmed crew on this shift
+   */
+  const handleCallWorker = (phone?: string, name?: string) => {
+    if (!phone) {
+      Alert.alert(
+        'No Phone on File',
+        'This confirmed worker does not have a direct contact phone listed. Please send an announcement via Shift Broadcast.',
+        [
+          { text: 'Send Broadcast', onPress: () => handleOpenTeamChat() },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+    Alert.alert(
+      `Call ${name || 'Worker'}`,
+      `Dial ${phone}? This will open your native device dialer. Opskl does not auto-place calls without user confirmation.`,
+      [
+        {
+          text: 'Call Now',
+          onPress: () => {
+            Linking.openURL(`tel:${phone}`).catch(() => {
+              Alert.alert('Dialer Error', 'Could not open device phone dialer.');
+            });
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const submitManualCheckIn = async () => {
@@ -643,10 +677,33 @@ export default function OrganizerShiftDetailScreen() {
                         <StatusIndicator label="Verified" tone="success" size="sm" />
                       ) : null}
                     </View>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                      {profile?.phone || 'Contact on file'} • Rating:{' '}
-                      {worker?.rating && worker.rating > 0 ? worker.rating.toFixed(1) : 'New / unrated'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                        {profile?.phone || 'Contact on file'} • Rating:{' '}
+                        {worker?.rating && worker.rating > 0 ? worker.rating.toFixed(1) : 'New / unrated'}
+                      </Text>
+                      {profile?.phone ? (
+                        <TouchableOpacity
+                          onPress={() => handleCallWorker(profile?.phone, profile?.fullName)}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: radii.sm,
+                            backgroundColor: colors.surfaceMuted,
+                            borderWidth: 1,
+                            borderColor: colors.borderMuted,
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Call ${profile?.fullName || 'worker'}`}
+                        >
+                          <PhoneCall size={11} color={colors.primary} />
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>Call</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
                     <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
                       Pass code issued to worker app
                       {member.checkInCode ? ' (verify by entry below)' : ' — not provisioned yet'}

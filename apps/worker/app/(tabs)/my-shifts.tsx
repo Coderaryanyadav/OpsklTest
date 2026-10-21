@@ -28,6 +28,7 @@ import {
 } from '@opskil/design-system';
 import {
   Booking,
+  Job,
   JobApplication,
   formatINR,
   formatISTDate,
@@ -45,6 +46,7 @@ import {
   fetchShiftMessages,
   sendShiftMessage,
   ShiftMessage,
+  universalStorage,
 } from '@opskil/shared';
 
 // Supported Geofenced Attendance Status Codes handled via checkInWorkerSafe:
@@ -260,7 +262,11 @@ export default function WorkerMyShiftsScreen() {
               onPress: () => Linking.openURL('tel:112'),
             },
             {
-              text: 'Call On-Site Supervisor',
+              text: 'File Incident Report',
+              onPress: () => router.push(`/incident/report?shiftId=${booking.jobId}&venue=${encodeURIComponent(booking.job?.venueName || '')}` as any),
+            },
+            {
+              text: 'Call Supervisor',
               onPress: () => {
                 if (booking.job?.supervisorPhone) {
                   Linking.openURL(`tel:${booking.job.supervisorPhone}`);
@@ -326,6 +332,96 @@ export default function WorkerMyShiftsScreen() {
       loadData();
     } else {
       Alert.alert('Error', res.error || 'Failed to record delay.');
+    }
+  };
+
+  /**
+   * Operational Tap-To-Call: Gated strictly to confirmed bookings on this shift
+   */
+  const handleCallCoordinator = (booking: Booking) => {
+    const phone = booking.job?.supervisorPhone;
+    const name = booking.job?.supervisorName || 'On-Site Coordinator';
+    if (!phone) {
+      Alert.alert(
+        'No Phone Listed',
+        'The shift coordinator has not listed a direct contact number. Please use Shift Chat to communicate with them directly.',
+        [
+          { text: 'Open Chat', onPress: () => handleOpenChat(booking) },
+          { text: 'Close', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+    Alert.alert(
+      `Call ${name}`,
+      `Dial coordinator at ${phone}? This will open your native phone dialer. Opskl does not place calls automatically.`,
+      [
+        {
+          text: 'Call Now',
+          onPress: () => {
+            Linking.openURL(`tel:${phone}`).catch(() => {
+              Alert.alert('Dialer Error', 'Could not open device phone dialer.');
+            });
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  /**
+   * Calendar Sync: Generates localized IST shift event with duplicate prevention
+   */
+  const handleAddToCalendar = async (booking: Booking) => {
+    const job = booking.job;
+    if (!job) return;
+
+    try {
+      const syncedShiftsRaw = await universalStorage.getItem('@opskil_synced_calendar_shifts');
+      const syncedShifts: string[] = syncedShiftsRaw ? JSON.parse(syncedShiftsRaw) : [];
+      if (syncedShifts.includes(booking.id)) {
+        Alert.alert(
+          'Already Synced',
+          'This shift was previously added to your calendar. Would you like to view/sync it again?',
+          [
+            {
+              text: 'Open Link',
+              onPress: () => openCalendarUrl(job),
+            },
+            { text: 'Dismiss', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
+      await openCalendarUrl(job);
+      const updated = [...syncedShifts, booking.id];
+      await universalStorage.setItem('@opskil_synced_calendar_shifts', JSON.stringify(updated));
+    } catch {
+      openCalendarUrl(job);
+    }
+  };
+
+  const openCalendarUrl = async (job: Job) => {
+    const dateStr = job.date;
+    const startStr = job.startTime ? `${dateStr}T${job.startTime}:00+05:30` : `${dateStr}T09:00:00+05:30`;
+    const endStr = job.endTime ? `${dateStr}T${job.endTime}:00+05:30` : `${dateStr}T18:00:00+05:30`;
+
+    const startDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    const formatCalTime = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Opskl Shift: ${job.title}`)}&dates=${formatCalTime(startDate)}/${formatCalTime(endDate)}&details=${encodeURIComponent(`Venue: ${job.venueName}\nReporting: ${job.reportingInstructions || 'Arrive 15 mins prior'}\nSupervisor: ${job.supervisorName || 'Organizer'}`)}&location=${encodeURIComponent(`${job.venueName}, ${job.venueAddress}`)}`;
+
+    try {
+      const supported = await Linking.canOpenURL(gCalUrl);
+      if (supported) {
+        await Linking.openURL(gCalUrl);
+      } else {
+        Alert.alert('Shift Scheduled', `${job.title} on ${formatISTDate(job.date)} from ${job.startTime} to ${job.endTime} at ${job.venueName}.`);
+      }
+    } catch {
+      Alert.alert('Notice', 'Unable to launch device calendar application.');
     }
   };
 
@@ -1124,12 +1220,30 @@ export default function WorkerMyShiftsScreen() {
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <View style={{ flex: 1 }}>
                         <Button
+                          title="Call Lead"
+                          variant="outline"
+                          size="sm"
+                          onPress={() => handleCallCoordinator(booking)}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button
+                          title="Add Calendar"
+                          variant="outline"
+                          size="sm"
+                          onPress={() => handleAddToCalendar(booking)}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Button
                           title="Report Delay"
                           variant="outline"
                           size="sm"
                           onPress={() => setDelayBooking(booking)}
                         />
                       </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
                       <View style={{ flex: 1 }}>
                         <Button
                           title="Shift Chat"

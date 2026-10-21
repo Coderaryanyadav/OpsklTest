@@ -47,9 +47,12 @@ import {
   Info,
   Sparkles,
   Train,
+  BookmarkPlus,
+  Bookmark,
 } from 'lucide-react-native';
 
 const DRAFT_KEY = '@opskil_organizer_shift_draft';
+const TEMPLATES_KEY = '@opskil_organizer_shift_templates';
 
 const CATEGORIES: { label: string; value: ShiftCategory }[] = [
   { label: 'Conference', value: 'conference' },
@@ -262,6 +265,77 @@ export default function OrganizerCreateShiftScreen() {
     }
     restoreDraft();
   }, []);
+
+  const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadTemplates() {
+      try {
+        const raw = await universalStorage.getItem(TEMPLATES_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setSavedTemplates(parsed);
+        }
+      } catch {
+        // Ignored
+      }
+    }
+    loadTemplates();
+  }, []);
+
+  const handleSaveAsTemplate = async () => {
+    if (!title.trim()) {
+      OpsklAlert.alert('Role Title Required', 'Please enter a role title before saving this setup as a template.');
+      return;
+    }
+    const templateItem = {
+      id: `tpl-${Date.now()}`,
+      name: title.trim(),
+      title: title.trim(),
+      category,
+      slotsTotal,
+      durationHours,
+      shiftRate,
+      hourlyRate,
+      duties,
+      requiredSkills,
+      dressCode,
+      eligibilityCriteria,
+      mealProvided,
+      transportProvided: cabAllowanceProvided,
+      reportingInstructions,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const updated = [templateItem, ...savedTemplates.filter((t) => t.name !== templateItem.name)];
+      setSavedTemplates(updated);
+      await universalStorage.setItem(TEMPLATES_KEY, JSON.stringify(updated));
+      OpsklAlert.alert(
+        '✓ Shift Template Saved',
+        `"${templateItem.name}" is now saved in your reusable templates. You can load this blueprint anytime for future events without copying old dates or bookings.`
+      );
+    } catch {
+      OpsklAlert.alert('Error', 'Failed to save shift template to storage.');
+    }
+  };
+
+  const handleApplyCustomTemplate = (tpl: any) => {
+    if (tpl.title) setTitle(tpl.title);
+    if (tpl.category) setCategory(tpl.category);
+    if (tpl.slotsTotal) setSlotsTotal(String(tpl.slotsTotal));
+    if (tpl.durationHours) setDurationHours(String(tpl.durationHours));
+    if (tpl.shiftRate) setShiftRate(String(tpl.shiftRate));
+    if (tpl.hourlyRate) setHourlyRate(String(tpl.hourlyRate));
+    if (tpl.duties) setDuties(tpl.duties);
+    if (tpl.requiredSkills) setRequiredSkills(tpl.requiredSkills);
+    if (tpl.dressCode) setDressCode(tpl.dressCode);
+    if (tpl.eligibilityCriteria) setEligibilityCriteria(tpl.eligibilityCriteria);
+    if (tpl.mealProvided !== undefined) setMealProvided(tpl.mealProvided);
+    if (tpl.transportProvided !== undefined) setCabAllowanceProvided(tpl.transportProvided);
+    if (tpl.reportingInstructions) setReportingInstructions(tpl.reportingInstructions);
+    OpsklAlert.alert('Template Loaded', `Blueprint "${tpl.name}" applied. Dates, schedule, and applicant slots are clean.`);
+  };
 
   const persistDraft = useCallback(async () => {
     try {
@@ -650,6 +724,44 @@ export default function OrganizerCreateShiftScreen() {
               </View>
             </View>
 
+            {/* Organization Custom Saved Templates */}
+            {savedTemplates.length > 0 && (
+              <View style={{ gap: 6, marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Bookmark size={14} color={colors.primary} />
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    Your Saved Organization Templates
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {savedTemplates.map((tpl) => (
+                    <TouchableOpacity
+                      key={tpl.id}
+                      onPress={() => handleApplyCustomTemplate(tpl)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                        borderRadius: radii.md,
+                        backgroundColor: title === tpl.title ? colors.primary : colors.surfaceMuted,
+                        borderWidth: 1,
+                        borderColor: title === tpl.title ? colors.primary : colors.borderMuted,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '700',
+                          color: title === tpl.title ? colors.textInverse : colors.textPrimary,
+                        }}
+                      >
+                        🔖 {tpl.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <Input
               label="Shift Title"
               value={title}
@@ -718,6 +830,31 @@ export default function OrganizerCreateShiftScreen() {
               onChangeText={setEligibilityCriteria}
               placeholder="Must be 18+ years old. Physical stamina required."
             />
+
+            {/* Save as Reusable Template Trigger */}
+            <TouchableOpacity
+              onPress={handleSaveAsTemplate}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: radii.md,
+                backgroundColor: colors.surfaceMuted,
+                borderWidth: 1,
+                borderColor: colors.borderMuted,
+                marginTop: 4,
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Save as reusable shift template"
+            >
+              <BookmarkPlus size={15} color={colors.primary} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+                Save Current Setup as Reusable Template
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
