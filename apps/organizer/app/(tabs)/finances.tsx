@@ -473,29 +473,29 @@ export default function OrganizerFinancesScreen() {
             >
               {sampleFinancials ? (
                 <>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                       Base Crew Wage ({sampleFinancials.headcount} × {formatINR(sampleFinancials.wagePerWorker)})
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flexShrink: 0 }}>
                       {formatINR(sampleFinancials.totalWorkerWages)}
                     </Text>
                   </View>
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                       Opskl Platform Fee ({sampleFinancials.platformFeePercent}%)
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flexShrink: 0 }}>
                       {formatINR(sampleFinancials.platformFeeAmount)}
                     </Text>
                   </View>
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                       GST on Platform Fee ({sampleFinancials.gstRatePercent}% on {formatINR(sampleFinancials.platformFeeAmount)})
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flexShrink: 0 }}>
                       {formatINR(sampleFinancials.gstAmount)}
                     </Text>
                   </View>
@@ -509,17 +509,18 @@ export default function OrganizerFinancesScreen() {
                       flexDirection: 'row',
                       justifyContent: 'space-between',
                       alignItems: 'center',
+                      gap: 8,
                     }}
                   >
-                    <View>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                    <View style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
                         Total Organizer Obligation
                       </Text>
-                      <Text style={{ fontSize: 10, color: colors.textSecondary }}>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary }} numberOfLines={1}>
                         Estimate from shift ledger — not a bank escrow hold
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 17, fontWeight: '800', color: colors.primary }}>
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: colors.primary, flexShrink: 0 }}>
                       {formatINR(sampleFinancials.totalPayableByOrganizer)}
                     </Text>
                   </View>

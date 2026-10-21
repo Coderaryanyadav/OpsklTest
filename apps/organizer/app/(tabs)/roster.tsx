@@ -167,19 +167,19 @@ export default function OrganizerShiftsRosterScreen() {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: spacing.lg,
+          paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,
           borderBottomColor: colors.borderMuted,
         }}
       >
-        <View>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+        <View style={{ flex: 1, paddingRight: 8, minWidth: 0 }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }} numberOfLines={1}>
             OPSKL MUMBAI
           </Text>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 }}>
-            Organizer Shifts Management Roster
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.3 }} numberOfLines={1}>
+            Organizer Shifts Roster
           </Text>
         </View>
 
@@ -192,6 +192,7 @@ export default function OrganizerShiftsRosterScreen() {
             backgroundColor: colors.surfaceMuted,
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
           }}
           accessibilityLabel="Refresh roster"
         >
@@ -200,7 +201,7 @@ export default function OrganizerShiftsRosterScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.md, paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
@@ -346,12 +347,12 @@ export default function OrganizerShiftsRosterScreen() {
                     backgroundColor: active ? colors.primary : colors.surfaceMuted,
                   }}
                 >
-                  <MapPin size={12} color={active ? '#FFFFFF' : colors.textSecondary} />
+                  <MapPin size={12} color={active ? colors.textInverse : colors.textSecondary} />
                   <Text
                     style={{
                       fontSize: 11,
                       fontWeight: '600',
-                      color: active ? '#FFFFFF' : colors.textSecondary,
+                      color: active ? colors.textInverse : colors.textSecondary,
                     }}
                   >
                     {chip}

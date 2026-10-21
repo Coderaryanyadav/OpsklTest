@@ -173,7 +173,7 @@ export default function WorkerProfileScreen() {
         <Text style={[typography.h2, { color: colors.textPrimary }]}>Worker Profile</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.md, paddingBottom: 120 }}>
         {loading ? (
           <View style={{ padding: spacing.xl, alignItems: 'center' }}>
             <ActivityIndicator size="small" color={colors.primary} />

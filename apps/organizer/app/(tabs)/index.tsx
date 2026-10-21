@@ -170,13 +170,13 @@ export default function OrganizerDashboardScreen() {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.borderMuted,
-            paddingHorizontal: spacing.lg,
+            paddingHorizontal: spacing.md,
             paddingVertical: spacing.md,
           },
         ]}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: spacing.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: spacing.sm, minWidth: 0 }}>
             <View
               style={{
                 width: 34,
@@ -185,12 +185,13 @@ export default function OrganizerDashboardScreen() {
                 backgroundColor: colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <Building2 size={18} color={isDark ? '#000000' : '#FFFFFF'} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }} numberOfLines={1}>
                 OPSKL MUMBAI
               </Text>
               <Text
@@ -203,7 +204,7 @@ export default function OrganizerDashboardScreen() {
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <TouchableOpacity
               onPress={() => requireAuthOrNavigate('/notifications')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -241,7 +242,7 @@ export default function OrganizerDashboardScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.md, paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >

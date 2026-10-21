@@ -387,14 +387,14 @@ export default function OrganizerCreateShiftScreen() {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: spacing.lg,
+          paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
           backgroundColor: colors.surface,
           borderBottomWidth: 1,
           borderBottomColor: colors.borderMuted,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8, minWidth: 0 }}>
           <TouchableOpacity
             onPress={handleBack}
             style={{
@@ -404,6 +404,7 @@ export default function OrganizerCreateShiftScreen() {
               backgroundColor: colors.surfaceMuted,
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
             accessibilityLabel="Go back"
           >
@@ -413,7 +414,7 @@ export default function OrganizerCreateShiftScreen() {
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
               Create Shift Listing
             </Text>
-            <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }} numberOfLines={1}>
               Step {step} of 4 • {WIZARD_STEPS[step - 1].label}
             </Text>
           </View>
@@ -427,6 +428,7 @@ export default function OrganizerCreateShiftScreen() {
             paddingVertical: 6,
             borderRadius: radii.sm,
             backgroundColor: colors.surfaceMuted,
+            flexShrink: 0,
           }}
         >
           <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
@@ -439,18 +441,22 @@ export default function OrganizerCreateShiftScreen() {
       <View
         style={{
           backgroundColor: colors.surface,
-          paddingHorizontal: spacing.lg,
+          paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
           borderBottomWidth: 1,
           borderBottomColor: colors.borderMuted,
           gap: 6,
         }}
       >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={{ flex: 1, fontSize: 11, fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.5 }}
+          >
             {STEP_META[step - 1].subtitle}
           </Text>
-          <Text style={{ fontSize: 10, color: colors.textSecondary }}>
+          <Text style={{ fontSize: 10, color: colors.textSecondary, flexShrink: 0 }}>
             {step < 4 ? `Next: ${WIZARD_STEPS[step].label}` : 'Final Step'}
           </Text>
         </View>
@@ -485,7 +491,7 @@ export default function OrganizerCreateShiftScreen() {
         </View>
       </View>
 
-      <KeyboardAwareContainer contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 110 }}>
+      <KeyboardAwareContainer contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.md, paddingBottom: 120 }}>
         {draftRestored && (
           <InlineBanner
             variant="info"
@@ -587,8 +593,8 @@ export default function OrganizerCreateShiftScreen() {
               onChangeText={setDate}
             />
 
-            <View style={{ flexDirection: 'row', gap: spacing.md }}>
-              <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <TimeInput
                   label="Start Call Time (IST)"
                   value={startTime}
@@ -596,7 +602,7 @@ export default function OrganizerCreateShiftScreen() {
                   placeholder="10:00"
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <TimeInput
                   label="End Time (IST)"
                   value={endTime}
@@ -670,7 +676,7 @@ export default function OrganizerCreateShiftScreen() {
                       style={{
                         fontSize: 11,
                         fontWeight: '700',
-                        color: venueName === v.name ? '#FFFFFF' : colors.textPrimary,
+                        color: venueName === v.name ? colors.textInverse : colors.textPrimary,
                       }}
                     >
                       {v.tag}
@@ -716,7 +722,7 @@ export default function OrganizerCreateShiftScreen() {
                       style={{
                         fontSize: 11,
                         fontWeight: '700',
-                        color: zone === z ? '#FFFFFF' : colors.textSecondary,
+                        color: zone === z ? colors.textInverse : colors.textSecondary,
                       }}
                     >
                       {z}
@@ -726,8 +732,8 @@ export default function OrganizerCreateShiftScreen() {
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: spacing.md }}>
-              <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Input
                   label="On-Site Lead Name"
                   value={supervisorName}
@@ -735,7 +741,7 @@ export default function OrganizerCreateShiftScreen() {
                   placeholder="On-site supervisor name"
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Input
                   label="Lead Phone"
                   value={supervisorPhone}
@@ -762,8 +768,8 @@ export default function OrganizerCreateShiftScreen() {
                 gap: 10,
               }}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <View style={{ flex: 1, paddingRight: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <View style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -781,11 +787,11 @@ export default function OrganizerCreateShiftScreen() {
                       Live Draft
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
-                    {title}
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }} numberOfLines={1}>
+                    {title || 'Untitled Shift'}
                   </Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
+                <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: colors.primary }}>
                     {parsedSlots} Staff
                   </Text>
@@ -798,18 +804,18 @@ export default function OrganizerCreateShiftScreen() {
               <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 10, gap: 6 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <MapPin size={14} color={colors.primary} />
-                  <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600' }} numberOfLines={1}>
-                    {venueName}
+                  <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+                    {venueName || 'Venue TBD'}
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
                     <Clock size={14} color={colors.textSecondary} />
-                    <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
                       {formatISTDate(date)} • {startTime} – {endTime} IST
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary, backgroundColor: colors.surface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.sm }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary, backgroundColor: colors.surface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.sm, flexShrink: 0 }}>
                     {parsedHours} hrs
                   </Text>
                 </View>
@@ -911,14 +917,14 @@ export default function OrganizerCreateShiftScreen() {
                 />
               )}
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingHorizontal: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
                   <Calculator size={14} color={colors.primary} />
                   <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                     Effective rate: <Text style={{ fontWeight: '700', color: colors.textPrimary }}>₹{effectiveHourly} / hour</Text>
                   </Text>
                 </View>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600', flexShrink: 0 }}>
                   {parsedHours} Hours Total
                 </Text>
               </View>
@@ -1162,29 +1168,29 @@ export default function OrganizerCreateShiftScreen() {
               </View>
 
               <View style={{ gap: 8, marginTop: 4 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                     Base Crew Wage ({parsedSlots} Workers × {formatINR(computedShiftPay)})
                   </Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, flexShrink: 0 }}>
                     {formatINR(totalCrewBudget)}
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                     Opskl Coordination Fee (10%)
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flexShrink: 0 }}>
                     {formatINR(platformFee)}
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }} numberOfLines={1}>
                     GST on Platform Fee (18%)
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flexShrink: 0 }}>
                     {formatINR(gstFee)}
                   </Text>
                 </View>
@@ -1198,10 +1204,12 @@ export default function OrganizerCreateShiftScreen() {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 8,
                     marginTop: 4,
                   }}
                 >
-                  <View>
+                  <View style={{ minWidth: 120 }}>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
                       Estimated Organizer Total
                     </Text>
@@ -1209,7 +1217,7 @@ export default function OrganizerCreateShiftScreen() {
                       {formatINR(totalEscrowRequired)}
                     </WageText>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                     <Lock size={14} color={colors.primary} />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
                       Fee estimate
@@ -1280,21 +1288,21 @@ export default function OrganizerCreateShiftScreen() {
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
                   Escrow Summary
                 </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Crew Wage Pool</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }}>Crew Wage Pool</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, flexShrink: 0 }}>
                     {formatINR(totalCrewBudget)}
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Platform & Statutory GST</Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }}>Platform & Statutory GST</Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, flexShrink: 0 }}>
                     {formatINR(platformFee + gstFee)}
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.borderMuted, paddingTop: 6 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>Total Required</Text>
-                  <WageText style={{ fontSize: 16, fontWeight: '800' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.borderMuted, paddingTop: 6, gap: 8 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, flex: 1 }}>Total Required</Text>
+                  <WageText style={{ fontSize: 16, fontWeight: '800', flexShrink: 0 }}>
                     {formatINR(totalEscrowRequired)}
                   </WageText>
                 </View>

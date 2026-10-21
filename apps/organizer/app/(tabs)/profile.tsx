@@ -358,7 +358,7 @@ export default function OrganizerProfileScreen() {
         <LoadingView message="Loading organization…" />
       ) : (
         <ScrollView
-          contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}
+          contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.md, paddingBottom: 120 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
