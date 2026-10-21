@@ -90,87 +90,8 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
   const [signingOff, setSigningOff] = useState(false);
   const [isSignedOff, setIsSignedOff] = useState(false);
 
-  // Workers Attendance Roll
-  const [workers, setWorkers] = useState<AttendanceWorker[]>([
-    {
-      id: 'w-1',
-      bookingId: 'book-aarav-1',
-      name: 'Aarav Kulkarni',
-      badgeId: '#IN-8821',
-      roleTag: 'Lead Usher',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      phoneRaw: '+919820111222',
-      phoneMasked: '+91 98201 •••••',
-      status: 'on_duty',
-      checkInTime: '09:28 AM IST',
-      qrPrecision: 'Gate 4 QR (±4m)',
-    },
-    {
-      id: 'w-2',
-      bookingId: 'book-priya-2',
-      name: 'Priya Sharma',
-      badgeId: '#IN-8824',
-      roleTag: 'VIP Host',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      phoneRaw: '+919820133444',
-      phoneMasked: '+91 98201 •••••',
-      status: 'on_duty',
-      checkInTime: '09:32 AM IST',
-      qrPrecision: 'Gate 4 QR (±2m)',
-    },
-    {
-      id: 'w-3',
-      bookingId: 'book-rohan-3',
-      name: 'Rohan Deshmukh',
-      badgeId: '#IN-8829',
-      roleTag: 'Delegate Desk',
-      avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
-      phoneRaw: '+919820155666',
-      phoneMasked: '+91 98201 •••••',
-      status: 'on_duty',
-      checkInTime: '09:35 AM IST',
-      qrPrecision: 'Gate 4 QR (±5m)',
-    },
-    {
-      id: 'w-4',
-      bookingId: 'book-sneha-4',
-      name: 'Sneha Patel',
-      badgeId: '#IN-8833',
-      roleTag: 'Hall Access Mgr',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-      phoneRaw: '+919820177888',
-      phoneMasked: '+91 98201 •••••',
-      status: 'on_duty',
-      checkInTime: '09:40 AM IST',
-      qrPrecision: 'Gate 4 QR (±3m)',
-    },
-    {
-      id: 'w-5',
-      bookingId: 'book-ananya-5',
-      name: 'Ananya Rao',
-      badgeId: '#IN-8839',
-      roleTag: 'Speaker Lounge',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      phoneRaw: '+919820122333',
-      phoneMasked: '+91 98201 •••••',
-      status: 'on_duty',
-      checkInTime: '09:44 AM IST',
-      qrPrecision: 'Gate 4 QR (±4m)',
-    },
-    {
-      id: 'w-6',
-      bookingId: 'book-vikram-6',
-      name: 'Vikram Joshi',
-      badgeId: '#IN-8842',
-      roleTag: 'Usher',
-      avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-      phoneRaw: '+919820199000',
-      phoneMasked: '+91 98201 •••••',
-      status: 'approaching', // In bounds, within geofence 120m
-      distanceMeters: 120,
-      etaMinutes: 2,
-    },
-  ]);
+  // Attendance roll — start empty; no fabricated Aarav/Priya demo workers
+  const [workers, setWorkers] = useState<AttendanceWorker[]>([]);
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
@@ -364,7 +285,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
               ATTENDANCE CONSOLE
             </Text>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
-              {shift?.title || 'India FinTech Conclave 2025'}
+              {shift?.title || 'Shift attendance'}
             </Text>
           </View>
         </View>
@@ -442,7 +363,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
           </View>
 
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-            {shift?.title || 'India FinTech Conclave 2025'}
+            {shift?.title || 'Shift attendance'}
           </Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

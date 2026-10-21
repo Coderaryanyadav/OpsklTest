@@ -126,7 +126,9 @@ export default function OrganizerDashboardScreen() {
   }, [shifts]);
 
   const activeShiftsCount = useMemo(() => {
-    return shifts.length > 0 ? shifts.filter((s) => s.status !== 'paused').length : metrics.activeJobs || 4;
+    return shifts.length > 0
+      ? shifts.filter((s) => s.status !== 'paused').length
+      : metrics.activeJobs || 0;
   }, [shifts, metrics.activeJobs]);
 
   const isVerified = organizerProfile?.verificationStatus === 'verified';
@@ -532,12 +534,12 @@ export default function OrganizerDashboardScreen() {
               }}
             >
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
-                100% On-Site
+                {todayShift ? 'TODAY' : 'NO SHIFT TODAY'}
               </Text>
             </View>
           </View>
 
-          {/* Event Tile */}
+          {/* Event Tile — live shift only; no FinTech demo fallback */}
           <View
             style={{
               backgroundColor: colors.surfaceMuted,
@@ -548,16 +550,17 @@ export default function OrganizerDashboardScreen() {
           >
             <View>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>
-                {todayShift?.title || 'India FinTech Conclave 2025'}
+                {todayShift?.title || nextUpcomingShift?.title || 'No shift scheduled'}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 }}>
                 <MapPin size={13} color={colors.primary} />
                 <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                  {todayShift?.venueName || 'Jio World Convention Centre • Hall 2, Gate 4'}
+                  {todayShift?.venueName || nextUpcomingShift?.venueName || 'Post a shift to see venue snapshot'}
                 </Text>
               </View>
             </View>
 
+            {(todayShift || nextUpcomingShift) ? (
             <View
               style={{
                 flexDirection: 'row',
@@ -574,23 +577,26 @@ export default function OrganizerDashboardScreen() {
                   Shift Timeline
                 </Text>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, marginTop: 1 }}>
-                  10:00 AM – 07:00 PM IST
+                  {(todayShift || nextUpcomingShift)?.startTime || '—'} – {(todayShift || nextUpcomingShift)?.endTime || '—'} IST
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>
-                  Roster Geofence
+                  Slots
                 </Text>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary, marginTop: 1 }}>
-                  6 / 6 Checked In
+                  {(todayShift || nextUpcomingShift)?.slotsFilled ?? 0} / {(todayShift || nextUpcomingShift)?.slotsTotal ?? 0} filled
                 </Text>
               </View>
             </View>
+            ) : null}
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Users size={14} color={colors.textSecondary} />
               <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                On-site Lead: Rohit Mehta (+91 98204 88201)
+                {(todayShift || nextUpcomingShift)?.supervisorName
+                  ? `On-site lead: ${(todayShift || nextUpcomingShift)?.supervisorName}`
+                  : 'Supervisor contact appears when set on the shift'}
               </Text>
             </View>
 

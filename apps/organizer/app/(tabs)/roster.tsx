@@ -634,7 +634,7 @@ export default function OrganizerShiftsRosterScreen() {
                   </View>
                 </View>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-                  Aarav K. and Priya S. must accept before offer rolls over to reserve candidates in queue.
+                  Selected candidates must accept before offers can roll to reserve applicants.
                 </Text>
               </View>
 

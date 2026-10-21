@@ -372,9 +372,11 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
 
     // On-Site Command
     expect(content).toContain('On-Site Command');
-    expect(content).toContain('Active on-site at Gate 4');
-    expect(content).toContain('Opskl Bridge Call');
+    expect(content).toContain('Phone on file');
+    expect(content).toContain('Call Supervisor');
     expect(content).toContain('Emergency Desk');
+    expect(content).not.toContain('Opskl Bridge Call');
+    expect(content).not.toContain('Rohit Mehta');
 
     // Cancellation Policy & Bottom Action Bar
     expect(content).toContain('Cancellation Terms & Reliability Policy');

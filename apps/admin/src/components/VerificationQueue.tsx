@@ -542,7 +542,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                        {activeCase.applicantProfile?.fullName || 'Aarav Ramesh Kulkarni'}
+                        {activeCase.applicantProfile?.fullName || 'Name on case record'}
                       </h2>
                       <span
                         style={{

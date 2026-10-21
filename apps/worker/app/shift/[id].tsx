@@ -776,21 +776,21 @@ export default function WorkerShiftDetailScreen() {
                 }}
               >
                 <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textInverse }}>
-                  {(shift.supervisorName || 'RM').substring(0, 2).toUpperCase()}
+                  {(shift.supervisorName || 'SV').substring(0, 2).toUpperCase()}
                 </Text>
               </View>
 
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  {shift.supervisorName || 'Rohit Mehta'}
+                  {shift.supervisorName || 'Supervisor not listed'}
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                  Head of Hospitality Ops • {shift.organizer?.businessName || 'Apex Live'}
+                  {shift.organizer?.businessName || 'Organizer'}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
                   <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, textTransform: 'uppercase' }}>
-                    Active on-site at Gate 4
+                    {shift.supervisorPhone ? 'Phone on file' : 'No phone on file'}
                   </Text>
                 </View>
               </View>
@@ -799,19 +799,21 @@ export default function WorkerShiftDetailScreen() {
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}>
                 <Button
-                  title="Opskl Bridge Call"
+                  title="Call Supervisor"
                   variant="outline"
                   size="sm"
                   onPress={() => {
+                    if (!shift.supervisorPhone) {
+                      Alert.alert('No phone on file', 'This shift has no supervisor phone number.');
+                      return;
+                    }
                     Alert.alert(
-                      'Connecting Masked Call',
-                      `Opskl Secure Bridge is routing your call to Coordinator ${shift.supervisorName || 'Rohit Mehta'}. Your personal phone number remains fully confidential.`,
+                      'Call Supervisor',
+                      `This dials ${shift.supervisorName || 'the supervisor'} directly. Masked number bridging is not wired in this build.`,
                       [
                         {
                           text: 'Call Now',
-                          onPress: () => {
-                            if (shift.supervisorPhone) Linking.openURL(`tel:${shift.supervisorPhone}`);
-                          },
+                          onPress: () => Linking.openURL(`tel:${shift.supervisorPhone}`),
                         },
                         { text: 'Cancel', style: 'cancel' },
                       ]
@@ -854,7 +856,7 @@ export default function WorkerShiftDetailScreen() {
                 Cancellation Terms & Reliability Policy
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 }}>
-                Free cancellation permitted up to 18 hours prior. Late cancellation or no-show impairs your reliability index and temporarily suspends BKC high-surge dispatch invitations.
+                Free cancellation permitted up to 18 hours prior. Late cancellation or no-show may affect future shift eligibility.
               </Text>
             </View>
           </View>
@@ -881,16 +883,18 @@ export default function WorkerShiftDetailScreen() {
             onPress={() => {
               Alert.alert(
                 'Coordinator Support',
-                `On-site coordinator ${shift.supervisorName || 'Rohit Mehta'} is available for check-in questions at Gate 4.`,
-                [
-                  {
-                    text: 'Call Bridge',
-                    onPress: () => {
-                      if (shift.supervisorPhone) Linking.openURL(`tel:${shift.supervisorPhone}`);
-                    },
-                  },
-                  { text: 'Close', style: 'cancel' },
-                ]
+                shift.supervisorPhone
+                  ? `Call ${shift.supervisorName || 'your supervisor'} for check-in questions. No masked bridge desk is wired.`
+                  : 'No supervisor phone is on file for this shift.',
+                shift.supervisorPhone
+                  ? [
+                      {
+                        text: 'Call',
+                        onPress: () => Linking.openURL(`tel:${shift.supervisorPhone}`),
+                      },
+                      { text: 'Close', style: 'cancel' },
+                    ]
+                  : [{ text: 'Close', style: 'cancel' }]
               );
             }}
             style={{ alignItems: 'center', marginTop: 8 }}

@@ -83,115 +83,8 @@ export default function OrganizerApplicantScreeningScreen() {
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
 
-  // Candidates list (hybrid: backed by actual applications + domain mock data for rich UX)
-  const [candidates, setCandidates] = useState<CandidateProfile[]>([
-    {
-      id: 'cand-1',
-      applicationId: 'app-aarav-1',
-      workerId: 'worker-aarav',
-      name: 'Aarav Kulkarni',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      rating: 4.9,
-      eventsCount: 18,
-      verificationBadge: 'UIDAI Verified',
-      languages: ['English', 'Hindi', 'Marathi'],
-      distance: 'BKC Local (2.4 km)',
-      attire: 'Western Formal Ready',
-      protocolBadge: 'Protocol & Escort L3',
-      dailyStipend: 3400,
-      appliedAtFormatted: 'Applied 3h ago',
-      status: 'shortlisted',
-    },
-    {
-      id: 'cand-2',
-      applicationId: 'app-priya-2',
-      workerId: 'worker-priya',
-      name: 'Priya Sharma',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      rating: 4.8,
-      eventsCount: 12,
-      verificationBadge: 'ID Hash Verified',
-      languages: ['English', 'Hindi'],
-      distance: 'Santacruz East (3.8 km)',
-      attire: 'Formal Sari / Blazer',
-      protocolBadge: 'Guest Concierge L2',
-      dailyStipend: 3200,
-      appliedAtFormatted: 'Applied 5h ago',
-      status: 'selected', // Selected - awaiting worker confirmation
-      heldUntilTime: '06:00 PM IST',
-      timeLeftMinutes: 105,
-    },
-    {
-      id: 'cand-3',
-      applicationId: 'app-karan-3',
-      workerId: 'worker-karan',
-      name: 'Karan Mehta',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-      rating: 4.7,
-      eventsCount: 5,
-      verificationBadge: 'UIDAI Verified',
-      languages: ['English Fluent', 'Hindi'],
-      distance: 'Andheri West (6.2 km)',
-      attire: 'Tuxedo & Black Tie Ready',
-      protocolBadge: 'Certified Event Host',
-      dailyStipend: 3200,
-      appliedAtFormatted: 'Applied 12m ago',
-      status: 'applied',
-    },
-    {
-      id: 'cand-4',
-      applicationId: 'app-sneha-4',
-      workerId: 'worker-sneha',
-      name: 'Sneha Patel',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-      rating: 4.95,
-      eventsCount: 24,
-      verificationBadge: 'UIDAI Verified',
-      languages: ['English', 'Gujarati', 'Hindi'],
-      distance: 'Bandra West (1.8 km)',
-      attire: 'Executive Blazer Ready',
-      protocolBadge: 'VIP Usher Lead L4',
-      dailyStipend: 3600,
-      appliedAtFormatted: 'Applied 1d ago',
-      status: 'confirmed', // Confirmed by worker
-    },
-    {
-      id: 'cand-5',
-      applicationId: 'app-rohan-5',
-      workerId: 'worker-rohan',
-      name: 'Rohan Deshmukh',
-      avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
-      rating: 4.85,
-      eventsCount: 15,
-      verificationBadge: 'ID Hash Verified',
-      languages: ['English', 'Marathi'],
-      distance: 'Kurla West (3.1 km)',
-      attire: 'Dark Suit Ready',
-      protocolBadge: 'Dignitary Escort L3',
-      dailyStipend: 3400,
-      appliedAtFormatted: 'Applied 2d ago',
-      status: 'confirmed',
-    },
-    {
-      id: 'cand-6',
-      applicationId: 'app-vikram-6',
-      workerId: 'worker-vikram',
-      name: 'Vikram Joshi',
-      avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-      rating: 4.65,
-      eventsCount: 8,
-      verificationBadge: 'UIDAI Verified',
-      languages: ['English', 'Hindi'],
-      distance: 'Dadar (5.5 km)',
-      attire: 'Formal Black Suit',
-      protocolBadge: 'Speaker Green Room Host',
-      dailyStipend: 3000,
-      appliedAtFormatted: 'Applied 4h ago',
-      status: 'selected',
-      heldUntilTime: '06:15 PM IST',
-      timeLeftMinutes: 120,
-    },
-  ]);
+  // Candidates — live applications only (no Aarav/Priya demo merge)
+  const [candidates, setCandidates] = useState<CandidateProfile[]>([]);
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
@@ -212,34 +105,30 @@ export default function OrganizerApplicantScreeningScreen() {
         setShift(foundJob);
       }
 
-      // If actual backend applications exist, merge them
       if (appsData && appsData.length > 0) {
         const liveApplications = appsData
           .filter((a) => !jobId || a.jobId === jobId)
-          .map((a, idx) => ({
+          .map((a) => ({
             id: a.id,
             applicationId: a.id,
             workerId: a.workerId,
-            name: (a as any).workerName || `Worker #${a.workerId.slice(-4)}`,
-            rating: 4.8,
-            eventsCount: 10 + (idx % 8),
-            verificationBadge: 'UIDAI Verified',
-            languages: ['English', 'Hindi'],
-            distance: 'Mumbai MMR (3.2 km)',
-            attire: 'Formal Ready',
-            protocolBadge: 'Protocol Verified L2',
-            dailyStipend: foundJob?.totalPay || 3400,
-            appliedAtFormatted: 'Recently Applied',
+            name: (a as any).workerName || `Worker ···${a.workerId.slice(-4)}`,
+            rating: typeof (a as any).rating === 'number' ? (a as any).rating : 0,
+            eventsCount: typeof (a as any).eventsCount === 'number' ? (a as any).eventsCount : 0,
+            verificationBadge: 'KYC status on profile',
+            languages: Array.isArray((a as any).languages) ? (a as any).languages : [],
+            distance: (a as any).distance || 'Distance not available',
+            attire: (a as any).attire || 'Not specified',
+            protocolBadge: 'Application on file',
+            dailyStipend: foundJob?.totalPay || 0,
+            appliedAtFormatted: a.appliedAt
+              ? `Applied ${new Date(a.appliedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+              : 'Applied',
             status: (a.status as any) || 'applied',
           }));
-
-        if (liveApplications.length > 0) {
-          setCandidates((prev) => {
-            const existingIds = new Set(liveApplications.map((l) => l.applicationId));
-            const retainedMocks = prev.filter((p) => !existingIds.has(p.applicationId));
-            return [...liveApplications, ...retainedMocks];
-          });
-        }
+        setCandidates(liveApplications);
+      } else {
+        setCandidates([]);
       }
     } catch (err: any) {
       setError(err?.message || 'Could not load shift candidates.');
@@ -265,7 +154,7 @@ export default function OrganizerApplicantScreeningScreen() {
   };
 
   // Quota computations
-  const totalSlots = shift?.slotsTotal || 6;
+  const totalSlots = shift?.slotsTotal || 0;
   const confirmedCount = candidates.filter((c) => c.status === 'confirmed').length;
   const selectedCount = candidates.filter((c) => c.status === 'selected').length;
   const openCount = Math.max(0, totalSlots - confirmedCount - selectedCount);

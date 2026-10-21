@@ -39,6 +39,10 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Instant Mumbai Escrow CTA | organizer `index.tsx` | Fake escrow | **Fixed** (follow-up 3) |
 | Disputes Aarav/JWCC/BLE telemetry demo dossier | `DisputesQueue.tsx` | Fabricated case narrative | **Fixed** (follow-up 3) — live dispute fields |
 | Verification invented SLA wait timers | `VerificationQueue.tsx` | Fake ops urgency | **Fixed** (follow-up 3) — real `createdAt` |
+| Demo Aarav/Priya crew, attendance, screening rosters | organizer shift screens | Always-on fake people | **Fixed** (follow-up 4) — empty until live rows |
+| Empty finances showing INV-2025 demo GST/UTR cards | `finances.tsx` | Fake invoices | **Fixed** (follow-up 4) — honest empty state |
+| Dashboard FinTech / 6·6 / Rohit phone / `\|\| 4` metrics | organizer `index.tsx` | Fake live venue | **Fixed** (follow-up 4) |
+| Masked “Opskl Bridge Call” / Rohit Mehta defaults | worker `shift/[id].tsx` | Fake telephony | **Fixed** (follow-up 4) |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

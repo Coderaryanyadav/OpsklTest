@@ -31,8 +31,6 @@ import {
   Shield,
   FileCheck,
   Eye,
-  FileDown,
-  CheckCircle2,
 } from 'lucide-react-native';
 import {
   formatINR,
@@ -421,10 +419,12 @@ export default function OrganizerFinancesScreen() {
                   </Text>
                 </View>
                 <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
-                  {organizerJobs[0]?.title || 'India FinTech Conclave'}
+                  {organizerJobs[0]?.title || 'No active shift'}
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                  Role: VIP Hospitality Concierge ({organizerJobs[0]?.venueName || 'Jio World Centre'})
+                  {organizerJobs[0]?.venueName
+                    ? `Venue: ${organizerJobs[0].venueName}`
+                    : 'Venue appears when a shift is on the ledger'}
                 </Text>
               </View>
 
@@ -613,179 +613,13 @@ export default function OrganizerFinancesScreen() {
               </View>
 
               {(finances?.invoices || []).length === 0 ? (
-                <View style={{ gap: 12 }}>
-                  {/* Card 1: Due / Pending Sign-Off */}
-                  <View
-                    style={{
-                      borderWidth: 1,
-                      borderColor: colors.borderMuted,
-                      borderRadius: radii.xl,
-                      padding: spacing.md,
-                      backgroundColor: colors.surface,
-                      gap: 10,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>
-                            #INV-2025-0582
-                          </Text>
-                          <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.xs, backgroundColor: colors.surfaceMuted }}>
-                            <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>
-                              GST Tax Invoice
-                            </Text>
-                          </View>
-                        </View>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                          India FinTech Conclave • Escrow Settlement
-                        </Text>
-                      </View>
-
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}>
-                          ₹16,099.20
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
-                          SAC 998519
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View
-                      style={{
-                        backgroundColor: colors.surfaceMuted,
-                        borderRadius: radii.md,
-                        padding: 10,
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#D97706' }} />
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textPrimary }}>
-                          Settlement Pending Attendance Sign-off
-                        </Text>
-                      </View>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                        Due Today, 23:59 IST
-                      </Text>
-                    </View>
-
-                    <TouchableOpacity
-                      onPress={() => OpsklAlert.alert('Download Invoice', 'Downloading official GST tax invoice PDF (#INV-2025-0582)...')}
-                      style={{
-                        width: '100%',
-                        paddingVertical: 10,
-                        borderRadius: radii.md,
-                        backgroundColor: colors.surfaceMuted,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'row',
-                        gap: 6,
-                      }}
-                    >
-                      <FileDown size={14} color={colors.textPrimary} />
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                        Download GST Invoice (PDF)
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Card 2: Settled & Reconciled */}
-                  <View
-                    style={{
-                      borderWidth: 1,
-                      borderColor: colors.borderMuted,
-                      borderRadius: radii.xl,
-                      padding: spacing.md,
-                      backgroundColor: colors.surface,
-                      gap: 10,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>
-                            #INV-2025-0544
-                          </Text>
-                          <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.xs, backgroundColor: '#ECFDF5' }}>
-                            <Text style={{ fontSize: 10, fontWeight: '800', color: '#059669' }}>
-                              Settled
-                            </Text>
-                          </View>
-                        </View>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                          TechSparks Mumbai • Main Stage Crew
-                        </Text>
-                      </View>
-
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textPrimary }}>
-                          ₹21,465.60
-                        </Text>
-                        <Text style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
-                          14 Oct 2025
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View
-                      style={{
-                        backgroundColor: colors.surfaceMuted,
-                        borderRadius: radii.md,
-                        padding: 10,
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <CheckCircle2 size={13} color="#059669" />
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#065F46' }}>
-                          Reconciled & Closed
-                        </Text>
-                      </View>
-                      <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
-                        UTR: 51428892104
-                      </Text>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <TouchableOpacity
-                        onPress={() => OpsklAlert.alert('Tax Slip', 'Opening Section 206C TDS / GST tax slip...')}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 9,
-                          borderRadius: radii.md,
-                          backgroundColor: colors.surfaceMuted,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
-                          Tax Slip
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => OpsklAlert.alert('UTR Advice', 'Bank payment advice for UTR 51428892104 downloaded.')}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 9,
-                          borderRadius: radii.md,
-                          backgroundColor: colors.surfaceMuted,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textPrimary }}>
-                          UTR Advice
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                <View style={{ padding: spacing.xl, alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' }}>
+                    No invoices on the ledger yet
+                  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
+                    Generate an invoice from live shift funding records. Demo GST invoices and UTR advice are not shown when the ledger is empty.
+                  </Text>
                 </View>
               ) : (
                 (finances?.invoices || []).map((inv) => (

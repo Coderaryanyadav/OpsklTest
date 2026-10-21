@@ -84,88 +84,11 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
   const replacementReason = 'Reported medical or travel delay';
   const [processingReplacement, setProcessingReplacement] = useState(false);
 
-  // Deployed Crew Members (readiness verified)
-  const [crew, setCrew] = useState<DeployedCrewMember[]>([
-    {
-      id: 'crew-1',
-      name: 'Aarav Kulkarni',
-      roleTag: 'Team Lead - VIP Lounge',
-      isTeamLead: true,
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820111222',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-    {
-      id: 'crew-2',
-      name: 'Priya Sharma',
-      roleTag: 'Keynote Registration Concourse',
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820133444',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-    {
-      id: 'crew-3',
-      name: 'Rohan Deshmukh',
-      roleTag: 'Dignitary Escort',
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820155666',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-    {
-      id: 'crew-4',
-      name: 'Sneha Patel',
-      roleTag: 'Badge Accreditation Desk',
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820177888',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-    {
-      id: 'crew-5',
-      name: 'Vikram Joshi',
-      roleTag: 'Speaker Green Room Host',
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820199000',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-    {
-      id: 'crew-6',
-      name: 'Ananya Rao',
-      roleTag: 'Main Foyer Concierge',
-      phoneMasked: '+91 98201 •••••',
-      phoneRaw: '+919820122333',
-      attireReady: true,
-      biometricKycReady: true,
-      geofencePassReady: true,
-    },
-  ]);
+  // Deployed crew — start empty; no fabricated Aarav/Priya demo roster
+  const [crew, setCrew] = useState<DeployedCrewMember[]>([]);
 
-  // Standby contingency workers
-  const [standbyCrew, setStandbyCrew] = useState<StandbyWorker[]>([
-    {
-      id: 'standby-1',
-      name: 'Tanvi Merchant',
-      location: 'Bandra West',
-      distance: '2.8 km',
-      ready: true,
-    },
-    {
-      id: 'standby-2',
-      name: 'Karan Chawla',
-      location: 'Kurla West',
-      distance: '1.9 km',
-      ready: true,
-    },
-  ]);
+  // Standby feed not wired — keep empty (no fabricated nearby workers)
+  const [standbyCrew, setStandbyCrew] = useState<StandbyWorker[]>([]);
 
   const loadData = useCallback(async () => {
     if (!organizerId) {
@@ -210,15 +133,17 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
       if (shift?.id) {
         await sendShiftMessage(
           shift.id,
-          'Broadcast Briefing v1.2: Security gate QR pass & venue layout active. Report sharp at Gate 4 concourse.',
+          'Briefing: Please review shift venue, dress code, and reporting time in the worker app.',
           undefined,
           true
         );
       }
       setBriefingDispatched(true);
       OpsklAlert.alert(
-        '✓ Digital Briefing Dispatched',
-        'Real-time security gate QR passes, dress code directives, and floor layout sent to all 6 confirmed crew members via in-app & WhatsApp channels.'
+        'Briefing sent',
+        crew.length > 0
+          ? `Shift message queued for ${crew.length} rostered worker(s). WhatsApp broadcast and QR pass generation are not wired in this build.`
+          : 'No confirmed crew on this roster yet. Message was not delivered to a fabricated list.'
       );
     } catch {
       OpsklAlert.alert('Dispatch Error', 'Could not broadcast briefing to crew.');
