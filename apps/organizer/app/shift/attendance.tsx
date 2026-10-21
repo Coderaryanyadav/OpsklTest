@@ -501,7 +501,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
                 Designated Check-In Portal
               </Text>
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 2 }}>
-                Turnstile Bank 4B (North Concourse)
+                Staff check-in point
               </Text>
             </View>
             <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>

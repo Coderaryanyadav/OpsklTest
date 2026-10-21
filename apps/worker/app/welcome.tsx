@@ -80,7 +80,7 @@ export default function WorkerWelcomeScreen() {
             </View>
             <View style={[styles.liveOpsBadge, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textInverse, letterSpacing: 0.5 }}>
-                LIVE OPS
+                MUMBAI HUBS
               </Text>
             </View>
           </View>
@@ -96,14 +96,14 @@ export default function WorkerWelcomeScreen() {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                  Guaranteed Transparent Pay
+                  Transparent Shift Pay
                 </Text>
                 <View style={[styles.tagPill, { backgroundColor: colors.surfaceMuted }]}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>₹ upfront</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.accent }}>₹ shown</Text>
                 </View>
               </View>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, lineHeight: 18 }]}>
-                Clear ₹/hour and ₹/shift wage shown prior to slot acceptance. Zero deductions, prompt direct disbursements.
+                Clear ₹/hour and ₹/shift wage shown before you apply. Attendance approved does not mean paid until ledger settlement.
               </Text>
             </View>
           </View>

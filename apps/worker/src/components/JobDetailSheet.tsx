@@ -120,13 +120,13 @@ export function JobDetailSheet({
                   {formatINR(job.hourlyRate)}/hr × {job.durationHours} hours
                 </Text>
               </View>
-              <Badge label="UPI on verified checkout" variant="success" />
+              <Badge label="Paid after attendance approval" variant="success" />
             </View>
 
             <View style={[styles.escrowNotice, { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10 }]}>
               <Zap size={15} color={colors.primary} strokeWidth={2.2} />
               <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18, flex: 1 }}>
-                Shift wages are calculated from verified attendance hours. Once supervisor reviews attendance and approves hours, payout processing begins through bank rails to your verified UPI handle.
+                Wages follow verified attendance hours. Attendance approved does not mean paid — payout starts only after ledger settlement (live bank rails are not auto-wired in this build).
               </Text>
             </View>
           </View>

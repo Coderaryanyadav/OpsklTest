@@ -125,7 +125,7 @@ export default function OrganizerCreateShiftScreen() {
   const [rfidBadgeProvided, setRfidBadgeProvided] = useState(true);
   const [cabAllowanceProvided, setCabAllowanceProvided] = useState(false);
   const [dressCode, setDressCode] = useState('Formal Western Black Suit (Tailored jacket, formal trousers, crisp white collared shirt, black oxfords) OR Formal Black Plain Sari. Neat grooming mandatory.');
-  const [reportingInstructions, setReportingInstructions] = useState('Report exactly 30 minutes prior (09:30 AM IST sharp) at Gate 4 security concourse for biometric badge allocation & supervisor floor assignment.');
+  const [reportingInstructions, setReportingInstructions] = useState('Report 30 minutes prior at the venue staff entrance. Check in with your supervisor for floor assignment. Pass-code check-in is used in-app (no biometric badge system wired).');
   const [cancellationPolicy] = useState('Free cancellation up to 18 hours prior to shift. Unannounced no-shows impact eligibility for premium shifts.');
 
   // Calculations

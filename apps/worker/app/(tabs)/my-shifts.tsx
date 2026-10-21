@@ -1270,32 +1270,29 @@ export default function WorkerMyShiftsScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                Opskl Crew Guidelines & Mumbai Desk
+                Opskl Crew Guidelines
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                Direct line for check-in delays or badge reissues
+                Check-in help via supervisor or email support
               </Text>
             </View>
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase' }}>
-              BKC Operations Hub: +91 22 4910 8800
+              Support: workforce@opskil.com
             </Text>
             <Pressable
               onPress={() => {
                 Alert.alert(
-                  'Mumbai Operations Desk',
-                  'BKC Operations Hub Hotline: +91 22 4910 8800\n\nFor on-site venue access delays, biometric badge issues, or supervisor contact, our 24/7 team is stationed at BKC Concourse.',
-                  [
-                    { text: 'Call Operations Hub', onPress: () => Linking.openURL('tel:+912249108800') },
-                    { text: 'Close', style: 'cancel' },
-                  ]
+                  'Shift Support',
+                  'For check-in delays or venue access issues, contact your on-site supervisor or email workforce@opskil.com. No staffed 24/7 BKC hotline is wired in this build.',
+                  [{ text: 'Close', style: 'cancel' }]
                 );
               }}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
               accessibilityRole="button"
-              accessibilityLabel="Get help from Mumbai operations desk"
+              accessibilityLabel="Get shift support guidance"
             >
               <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
                 Get Help

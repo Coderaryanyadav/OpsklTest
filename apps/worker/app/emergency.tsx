@@ -429,72 +429,48 @@ export default function EmergencyLockdownBroadcastScreen() {
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textPrimary }}>
-                Venue Emergency Command Desks
+                Emergency Contacts
               </Text>
               <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '700' }}>
-                MONITORED DISPATCH
+                PUBLIC SERVICES
               </Text>
             </View>
 
             <TouchableOpacity
-              onPress={() => handleCall('+912249108800')}
-              style={styles.contactRow}
+              onPress={() => handleCall('112')}
+              style={[styles.contactRow, { backgroundColor: '#fef2f2' }]}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <View style={styles.contactIconBox}>
-                  <Building size={16} color={colors.textPrimary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                    Jio World Convention Centre
-                  </Text>
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                    Emergency Command Desk
-                  </Text>
-                </View>
-              </View>
-              <PhoneCall size={16} color={colors.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => handleCall('+912249108800')}
-              style={styles.contactRow}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <View style={styles.contactIconBox}>
-                  <Building size={16} color={colors.textPrimary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                    NESCO Exhibition Disaster Cell
-                  </Text>
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                    Goregaon Central Command
-                  </Text>
-                </View>
-              </View>
-              <PhoneCall size={16} color={colors.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => handleCall('+912249108800')}
-              style={[styles.contactRow, { backgroundColor: '#eff6ff' }]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <View style={[styles.contactIconBox, { backgroundColor: colors.primary }]}>
+                <View style={[styles.contactIconBox, { backgroundColor: '#dc2626' }]}>
                   <PhoneCall size={16} color="#ffffff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: colors.primary }}>
-                    Mumbai Opskl Ground Support
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#dc2626' }}>
+                    Police / Medical / Fire
                   </Text>
-                  <Text style={{ fontSize: 11, color: colors.primary, fontWeight: '600' }}>
-                    +91 22 4910 8800
+                  <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                    Emergency 112
                   </Text>
                 </View>
               </View>
-              <PhoneCall size={16} color={colors.primary} />
+              <PhoneCall size={16} color="#dc2626" />
             </TouchableOpacity>
+
+            <View style={styles.contactRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <View style={styles.contactIconBox}>
+                  <Building size={16} color={colors.textPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
+                    Opskl support (non-emergency)
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                    workforce@opskil.com · no staffed phone desk in this build
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
 
           {/* Action Center (CTAs) */}
@@ -520,7 +496,7 @@ export default function EmergencyLockdownBroadcastScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handleCall('+912249108800')}
+              onPress={() => handleCall('112')}
               style={{
                 minHeight: 44,
                 borderRadius: radii.lg,
@@ -535,7 +511,7 @@ export default function EmergencyLockdownBroadcastScreen() {
             >
               <PhoneCall size={16} color="#dc2626" />
               <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                Call Emergency Support Desk
+                Call 112 Emergency
               </Text>
             </TouchableOpacity>
 

@@ -276,7 +276,7 @@ export default function WorkerShiftDetailScreen() {
       ? `Ref: #${confirmedBooking.checkInCode}`
       : `Ref: #SHF-BOM-${shift.id.substring(0, 4).toUpperCase()}`;
 
-    const upiDestination = workerProfile?.upiId || 'aaravkulkarni@okhdfcbank';
+    const upiDestination = workerProfile?.upiId || 'UPI handle not set';
 
     return (
       <Screen edges={['top', 'bottom']}>
@@ -467,7 +467,7 @@ export default function WorkerShiftDetailScreen() {
                     Compensation Summary
                   </Text>
                   <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Direct UPI Auto-Disbursement
+                    After attendance approval
                   </Text>
                 </View>
               </View>
@@ -481,7 +481,7 @@ export default function WorkerShiftDetailScreen() {
                 }}
               >
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
-                  100% Guaranteed
+                  Ledger tracked
                 </Text>
               </View>
             </View>
@@ -582,7 +582,7 @@ export default function WorkerShiftDetailScreen() {
 
             <View style={{ backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12 }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                {shift.venueName} • Hall 2 Staff Turnstiles
+                {shift.venueName}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
                 {shift.venueAddress || 'Bandra Kurla Complex, Mumbai, Maharashtra 400051'}
@@ -826,8 +826,8 @@ export default function WorkerShiftDetailScreen() {
                   size="sm"
                   onPress={() => {
                     Alert.alert(
-                      'Dispatch Desk Notified',
-                      'On-site dispatch assistant is notified. For critical transit delays or dress compliance queries, your supervisor window is monitored 24/7.'
+                      'Contact Supervisor',
+                      'Use your on-site supervisor contact from the shift briefing. No 24/7 dispatch desk is wired in this build.'
                     );
                   }}
                 />

@@ -299,7 +299,7 @@ export default function OrganizerDashboardScreen() {
                 }}
               />
               <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 }}>
-                LIVE OPS
+                LIVE DATA
               </Text>
             </View>
           </View>
@@ -718,7 +718,7 @@ export default function OrganizerDashboardScreen() {
               onPress={() => {
                 OpsklAlert.alert(
                   'Sign-off Sheets',
-                  'Attendance and biometric accreditation records are compiled in real-time. Download official sign-off PDFs from the Roster desk.'
+                  'Attendance records follow the confirmed booking ledger. Sign-off PDF export is not auto-generated in this build — use Roster for live crew status.'
                 );
               }}
               style={{

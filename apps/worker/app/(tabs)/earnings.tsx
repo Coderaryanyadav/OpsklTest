@@ -7,7 +7,6 @@ import {
   Modal,
   RefreshControl,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -192,7 +191,7 @@ export default function WorkerEarningsScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary }} />
           <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-            IMPS / UPI Automated Gateway
+            Settlement ledger · UPI rails not auto-wired
           </Text>
         </View>
       </View>
@@ -294,8 +293,8 @@ export default function WorkerEarningsScreen() {
             <Pressable
               onPress={() => {
                 Alert.alert(
-                  'Active Beneficiary Account',
-                  `Beneficiary Name: ${session?.user?.user_metadata?.full_name || 'Verified Worker'}\nReceiving Institution: HDFC Bank Ltd • BKC Branch\nUPI VPA: ${summary?.defaultUpiId || 'aaravkulkarni@okhdfcbank'}\nStatus: Verified for instant IMPS settlements`,
+                  'Payout Destination',
+                  `Name: ${session?.user?.user_metadata?.full_name || 'Worker'}\nUPI VPA: ${summary?.defaultUpiId || 'Not set'}\n\nBank account / IMPS verification is not integrated. Update your UPI handle for ledger display only.`,
                   [
                     { text: 'Update Handle', onPress: () => setShowUpiModal(true) },
                     { text: 'Close', style: 'cancel' },
@@ -333,12 +332,14 @@ export default function WorkerEarningsScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                      HDFC Bank (••• 4018)
+                      {summary?.defaultUpiId ? 'UPI handle on file' : 'No UPI handle set'}
                     </Text>
-                    <CheckCircle2 size={14} color={colors.primary} strokeWidth={2.4} />
+                    {summary?.defaultUpiId ? (
+                      <CheckCircle2 size={14} color={colors.primary} strokeWidth={2.4} />
+                    ) : null}
                   </View>
                   <Text style={{ fontSize: 12, color: colors.textSecondary, fontFamily: 'monospace', marginTop: 1 }}>
-                    {summary?.defaultUpiId || 'aaravkulkarni@okhdfcbank'}
+                    {summary?.defaultUpiId || 'Add a UPI ID'}
                   </Text>
                 </View>
               </View>
@@ -351,11 +352,11 @@ export default function WorkerEarningsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <ShieldCheck size={15} color={colors.primary} />
                 <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                  Opskl Instant Settlement Enabled
+                  Ledger only · not live bank settlement
                 </Text>
               </View>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary, textTransform: 'uppercase' }}>
-                Zero Fees
+              <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
+                Pending rails
               </Text>
             </View>
           </View>
@@ -783,12 +784,9 @@ export default function WorkerEarningsScreen() {
             <Pressable
               onPress={() => {
                 Alert.alert(
-                  'Mumbai Operations Settlement Desk',
-                  'BKC Dispute Line: +91 22 4910 8800\n\nIf your approved hours have not cleared within the 11:00 PM IST batch, our finance reconciliation desk will audit transaction logs.',
-                  [
-                    { text: 'Call Desk', onPress: () => Linking.openURL('tel:+912249108800') },
-                    { text: 'Close', style: 'cancel' },
-                  ]
+                  'Settlement Support',
+                  'Approved hours appear on this ledger only. Live bank batch payout and a staffed finance desk are not wired in this build. Email workforce@opskil.com for settlement questions.',
+                  [{ text: 'Close', style: 'cancel' }]
                 );
               }}
               style={{
@@ -802,7 +800,7 @@ export default function WorkerEarningsScreen() {
                 borderColor: colors.borderMuted,
               }}
               accessibilityRole="button"
-              accessibilityLabel="Contact payment dispute desk"
+              accessibilityLabel="Settlement support guidance"
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Headphones size={18} color={colors.danger} />
@@ -819,7 +817,7 @@ export default function WorkerEarningsScreen() {
                 }}
               >
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.danger }}>
-                  Mumbai Ops
+                  Email support
                 </Text>
               </View>
             </Pressable>

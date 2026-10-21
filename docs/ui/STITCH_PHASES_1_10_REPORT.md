@@ -29,6 +29,12 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Organizer dashboard `98.4%` / `\|\| 38` metrics | `index.tsx` | Fake KPIs | **Fixed** (follow-up) — live metrics |
 | Verification desk OCR / penny-drop / K. Sharma | `VerificationQueue.tsx` | Fake ops tooling | **Fixed** (follow-up) |
 | Disputes turnstile 98.4% telemetry | `DisputesQueue.tsx` | Fake sensors | **Fixed** (follow-up) |
+| Fake BKC/venue phone desks (`+91 22 4910 8800`, 24/7) | incident / emergency / my-shifts / earnings / onboarding | Fake ops hotline | **Fixed** (follow-up 2) — 112 + email only |
+| Earnings IMPS gateway + HDFC •••4018 demo | `earnings.tsx` | Fake bank product | **Fixed** (follow-up 2) — ledger / UPI on file |
+| Discover OCR 80% + Instant UPI + fake KYC ref | `index.tsx` | Fake KYC/OCR | **Fixed** (follow-up 2) |
+| Verification desk OCR 100% / NPCI / fabricated DOB table | `VerificationQueue.tsx` | Fake tooling | **Fixed** (follow-up 2) — manual checklist |
+| Biometric / turnstile / auto-disbursement copy | crew / attendance / shift detail / welcome | Overclaim | **Fixed** (follow-up 2) |
+| Fair-wage “Engine v3.1” badge | `JobModerationTable.tsx` | Fake statutory engine | **Fixed** (follow-up 2) — heuristics label |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 

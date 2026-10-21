@@ -27,7 +27,6 @@ import {
   User as UserIcon,
   Shield,
   Building,
-  PhoneCall,
   AlertOctagon,
   AlertTriangle,
   Scale,
@@ -301,35 +300,13 @@ export default function IncidentReportScreen() {
               Your report is strictly confidential.
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 }}>
-              Opskl Ground Command (Bandra Kurla Hub) and on-site supervisor are notified immediately. For immediate physical danger, call <Text style={{ color: '#dc2626', fontWeight: '800' }}>112</Text> directly.
+              Your report is stored for review. For immediate physical danger, call <Text style={{ color: '#dc2626', fontWeight: '800' }}>112</Text> directly. There is no staffed Opskl phone desk in this build.
             </Text>
           </View>
         </View>
 
-        {/* Quick Call Hotline Strip */}
+        {/* Emergency dial — real public emergency only */}
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <TouchableOpacity
-            onPress={() => handleCall('+912249108800')}
-            style={{
-              flex: 1,
-              padding: spacing.sm + 2,
-              borderRadius: radii.lg,
-              backgroundColor: colors.surfaceMuted,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <PhoneCall size={14} color={colors.primary} />
-              <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary }}>
-                OPSKL RESPONSE
-              </Text>
-            </View>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
-              +91 22 4910 8800
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => handleCall('112')}
             style={{

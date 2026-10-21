@@ -387,7 +387,7 @@ export default function OfflineSyncHubScreen() {
               </View>
               <View>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#bfdbfe', letterSpacing: 0.5 }}>
-                  BLE MESH
+                  PEER SYNC
                 </Text>
                 <Text style={{ fontSize: 14, fontWeight: '800', color: '#ffffff' }}>
                   Peer sync not available

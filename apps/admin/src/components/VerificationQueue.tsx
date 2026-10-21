@@ -54,7 +54,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
   );
   const [selectedReasonFlag, setSelectedReasonFlag] = useState('');
   const [auditNotes, setAuditNotes] = useState(
-    'Document scans verified against UIDAI standards. Bank penny drop confirms identity. Ready for concierge bidding.'
+    'Manual document review only. OCR, UIDAI AUA, and bank penny-drop are not connected in this build.'
   );
   const [modalError, setModalError] = useState('');
   const [resolving, setResolving] = useState(false);
@@ -486,8 +486,8 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                           Role: {c.documentType === 'gstin' ? 'Organizer Entity' : 'Event Specialist'}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-secondary)', marginTop: 4 }}>
-                          <span>Bandra East (BKC)</span>
-                          <span style={{ fontWeight: 700, color: '#059669' }}>OCR Match: 100%</span>
+                          <span>Case #{c.id.slice(-6)}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Manual review</span>
                         </div>
                       </div>
                     </div>
@@ -760,8 +760,8 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                         <User size={18} color="var(--text-secondary)" />
                       </div>
                       <div style={{ fontSize: 10 }}>
-                        <div style={{ fontWeight: 800 }}>{activeCase.applicantProfile?.fullName || 'Aarav Ramesh Kulkarni'}</div>
-                        <div style={{ color: 'var(--text-secondary)', marginTop: 2 }}>DOB: 14/08/1998 • Male</div>
+                        <div style={{ fontWeight: 800 }}>{activeCase.applicantProfile?.fullName || 'Name on case record'}</div>
+                        <div style={{ color: 'var(--text-secondary)', marginTop: 2 }}>Review uploaded scan · DOB not auto-extracted</div>
                       </div>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', color: '#0F172A', textAlign: 'center' }}>
@@ -803,73 +803,63 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                     }}
                   >
-                    <div style={{ fontSize: 9, fontWeight: 800, color: '#1E293B' }}>ADDRESS & BARCODE CONDUIT</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: '#1E293B' }}>UPLOADED DOCUMENT PREVIEW</div>
                     <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>
-                      Flat 402, Shiv Sadan, Kalanagar, Bandra East, Mumbai 400051
+                      Address and barcode fields are not auto-extracted. Review the uploaded scan manually.
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 8, fontFamily: 'monospace', color: '#64748B' }}>[||||||||||||||||||||||||]</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: '#1D4ED8' }}>QR READABLE</span>
+                      <span style={{ fontSize: 8, fontFamily: 'monospace', color: '#64748B' }}>[scan preview]</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-secondary)' }}>NO AUTO QR READ</span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#059669', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700 }}>
                     <CheckCircle2 size={12} />
-                    <span>QR Cryptographic Stamp Readable</span>
+                    <span>OCR / UIDAI QR verify not connected</span>
                   </div>
                 </div>
               </div>
 
-              {/* Automated OCR vs Self-Declaration Audit Table */}
+              {/* Manual field checklist — no OCR engine */}
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-main)' }}>
-                    Automated OCR vs. Worker Self-Declaration Audit
+                    Manual Review Checklist (OCR not connected)
                   </span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#D1FAE5', padding: '1px 6px', borderRadius: 3 }}>
-                    CONFIDENCE SCORE: 99.4%
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface-muted)', padding: '1px 6px', borderRadius: 3 }}>
+                    HUMAN REVIEW ONLY
                   </span>
                 </div>
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
                     <tr style={{ background: 'var(--surface-muted)', borderBottom: '1px solid var(--border-color)' }}>
-                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>TARGET FIELD</th>
-                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>EXTRACTED (OCR)</th>
-                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>DECLARED PROFILE</th>
-                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>COMPLIANCE STATE</th>
+                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>FIELD</th>
+                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>ON PROFILE</th>
+                      <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>REVIEW ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '8px 12px', fontWeight: 700 }}>Full Legal Name</td>
-                      <td style={{ padding: '8px 12px' }}>{activeCase.applicantProfile?.fullName || 'Aarav Ramesh Kulkarni'}</td>
-                      <td style={{ padding: '8px 12px' }}>{activeCase.applicantProfile?.fullName || 'Aarav Ramesh Kulkarni'}</td>
-                      <td style={{ padding: '8px 12px', color: '#059669', fontWeight: 700 }}>✓ 100% MATCH</td>
+                      <td style={{ padding: '8px 12px' }}>{activeCase.applicantProfile?.fullName || '—'}</td>
+                      <td style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>Compare to scan</td>
                     </tr>
                     <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 700 }}>Aadhaar UID Format</td>
-                      <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>•••• •••• {activeCase.documentMaskedId ? activeCase.documentMaskedId.slice(-4) : '8291'}</td>
-                      <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>•••• •••• {activeCase.documentMaskedId ? activeCase.documentMaskedId.slice(-4) : '8291'}</td>
-                      <td style={{ padding: '8px 12px', color: '#059669', fontWeight: 700 }}>✓ MASKED UIDAI COMPLIANT</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '8px 12px', fontWeight: 700 }}>Year of Birth (DOB)</td>
-                      <td style={{ padding: '8px 12px' }}>14/08/1998</td>
-                      <td style={{ padding: '8px 12px' }}>14/08/1998</td>
-                      <td style={{ padding: '8px 12px', color: '#059669', fontWeight: 700 }}>✓ AGE: 26 YRS (&gt;18 STATUTORY)</td>
+                      <td style={{ padding: '8px 12px', fontWeight: 700 }}>Masked document ID</td>
+                      <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>•••• •••• {activeCase.documentMaskedId ? activeCase.documentMaskedId.slice(-4) : '—'}</td>
+                      <td style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>Confirm last-4 only</td>
                     </tr>
                     <tr>
-                      <td style={{ padding: '8px 12px', fontWeight: 700 }}>Address & Pincode</td>
-                      <td style={{ padding: '8px 12px' }}>Flat 402, Shiv Sadan, Bandra E, 400051</td>
-                      <td style={{ padding: '8px 12px' }}>Bandra East / BKC Cluster, 400051</td>
-                      <td style={{ padding: '8px 12px', color: '#059669', fontWeight: 700 }}>✓ VALID ZONE MATCH (BKC HUB)</td>
+                      <td style={{ padding: '8px 12px', fontWeight: 700 }}>Document type</td>
+                      <td style={{ padding: '8px 12px' }}>{activeCase.documentType || '—'}</td>
+                      <td style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 700 }}>Visual authenticity check</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Document 2: Bank & UPI Escrow Settlement Pre-Check */}
+            {/* Document 2: Bank / UPI evidence (no live NPCI) */}
             <div
               style={{
                 background: 'var(--surface-color)',
@@ -885,11 +875,11 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CreditCard size={16} color="#059669" />
                   <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-main)' }}>
-                    Document 2: Bank & UPI Escrow Settlement Pre-Check
+                    Document 2: Bank / UPI Evidence (manual)
                   </span>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#ECFDF5', padding: '2px 8px', borderRadius: 4 }}>
-                  NPCI REAL-TIME ACTIVE
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface-muted)', padding: '2px 8px', borderRadius: 4 }}>
+                  NPCI NOT CONNECTED
                 </span>
               </div>
 
@@ -904,12 +894,12 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>TARGET UPI VPA</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>UPI / BANK ON FILE</div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
-                    aaravkulkarni@okhdfcbank
+                    Review uploaded evidence only
                   </div>
-                  <div style={{ fontSize: 10, color: '#059669', fontWeight: 700, marginTop: 2 }}>
-                    ✓ Virtual Address Active
+                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 700, marginTop: 2 }}>
+                    No live VPA lookup
                   </div>
                 </div>
 

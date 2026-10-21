@@ -135,7 +135,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     const content = fs.readFileSync(welcomePath, 'utf8');
     expect(content).toContain('Single-Day & Event Staffing in Mumbai');
     expect(content).toContain('Active Hubs: BKC • NESCO • South Mumbai');
-    expect(content).toContain('Guaranteed Transparent Pay');
+    expect(content).toContain('Transparent Shift Pay');
     expect(content).toContain('Verified Event Venues');
     expect(content).toContain('Structured Check-In');
     expect(content).toContain('1,400+ Shifts Disbursed');
@@ -191,8 +191,8 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     const content = fs.readFileSync(indexPath, 'utf8');
     expect(content).toContain('Search by venue, role or organizer...');
     expect(content).toContain('KYC UNDER REVIEW');
-    expect(content).toContain('Ref #KYC-BOM-9102');
-    expect(content).toContain('Verification Stage: Document OCR Complete');
+    expect(content).toContain('Case ···');
+    expect(content).toContain('Verification status: pending admin review (no OCR engine connected)');
     expect(content).toContain('All Venues');
     expect(content).toContain('₹2,000+ / shift');
     expect(content).toContain('BKC (Jio World)');
@@ -201,7 +201,9 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('displayedCards.length} LIVE');
     expect(content).toContain('OPEN •');
     expect(content).toContain('SLOTS LEFT');
-    expect(content).toContain('Instant UPI');
+    expect(content).toContain('Wage shown');
+    expect(content).not.toContain('Instant UPI');
+    expect(content).not.toContain('KYC-BOM-9102');
     expect(content).toContain('APPLICATION SUBMITTED • UNDER REVIEW');
     expect(content).toContain('No Shifts Match Current Filters');
     expect(content).toContain('Clear Restrictive Filters');
@@ -319,10 +321,11 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Organizer reviewing profiles for roster selection');
     expect(content).toContain('Unconfirmed');
 
-    // Roster Guidelines & Mumbai Support Hub
-    expect(content).toContain('Opskl Crew Guidelines & Mumbai Desk');
-    expect(content).toContain('BKC Operations Hub: +91 22 4910 8800');
+    // Roster Guidelines & support (no fake BKC hotline)
+    expect(content).toContain('Opskl Crew Guidelines');
+    expect(content).toContain('Support: workforce@opskil.com');
     expect(content).toContain('Get Help');
+    expect(content).not.toContain('+91 22 4910 8800');
     expect(content).toContain('GeofencedCheckInModal');
   });
 
@@ -340,13 +343,14 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Reporting Time: 09:30 AM IST Sharp');
     expect(content).toContain('calculateStartsIn');
 
-    // Compensation & Zero Deductions
+    // Compensation (honest — attendance ≠ paid; no fake UPI rails)
     expect(content).toContain('Compensation Summary');
-    expect(content).toContain('Direct UPI Auto-Disbursement');
-    expect(content).toContain('100% Guaranteed');
+    expect(content).toContain('After attendance approval');
+    expect(content).toContain('Ledger tracked');
     expect(content).toContain('Zero Deductions');
     expect(content).toContain('Single-shift cycle');
     expect(content).toContain('Disbursing to:');
+    expect(content).not.toContain('aaravkulkarni@okhdfcbank');
 
     // Venue & Entry Protocol
     expect(content).toContain('Venue & Entry Protocol');
@@ -427,15 +431,16 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     // Header & Cycle
     expect(content).toContain('Mumbai Region');
     expect(content).toContain('Worker Earnings & Settlement Ledger');
-    expect(content).toContain('IMPS / UPI Automated Gateway');
+    expect(content).toContain('Settlement ledger · UPI rails not auto-wired');
     expect(content).toContain('Cycle:');
 
-    // Primary Balance Card & Destination Tile
+    // Primary Balance Card & Destination Tile (no fake HDFC / IMPS gateway)
     expect(content).toContain('Total Disbursed');
-    expect(content).toContain('HDFC Bank (••• 4018)');
-    expect(content).toContain('Active Beneficiary Account');
-    expect(content).toContain('Opskl Instant Settlement Enabled');
-    expect(content).toContain('Zero Fees');
+    expect(content).toContain('Payout Destination');
+    expect(content).toContain('Ledger only · not live bank settlement');
+    expect(content).toContain('Pending rails');
+    expect(content).not.toContain('HDFC Bank (••• 4018)');
+    expect(content).not.toContain('IMPS / UPI Automated Gateway');
 
     // 4-Tier Transparent Architecture Grid
     expect(content).toContain('Settlement Pipeline');

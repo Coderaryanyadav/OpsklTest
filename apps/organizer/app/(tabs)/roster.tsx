@@ -836,7 +836,7 @@ export default function OrganizerShiftsRosterScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    OpsklAlert.alert('Gate 4 Roster', 'Pass codes and biometric attendance list ready for security checkpost.');
+                    OpsklAlert.alert('Roster Export', 'Pass codes and confirmed crew list are available from the roster. Biometric checkpost systems are not wired in this build.');
                   }}
                   style={{
                     paddingHorizontal: 14,

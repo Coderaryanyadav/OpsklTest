@@ -447,7 +447,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
 
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-main)', margin: '0 0 4px' }}>
-                  Gate 4 Check-In Turnstile Dispute & Overtime Claim
+                  Check-in / overtime dispute
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
                   <MapPin size={13} color="#1D4ED8" />

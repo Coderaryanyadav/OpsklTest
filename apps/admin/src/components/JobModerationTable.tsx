@@ -185,7 +185,7 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
               border: '1px solid #BFDBFE',
             }}
           >
-            MMR Wage Enforcement Engine v3.1
+            MMR wage floor heuristics
           </span>
           <span
             style={{
@@ -197,7 +197,7 @@ export const JobModerationTable: React.FC<JobModerationTableProps> = ({ jobs, on
               color: 'var(--text-secondary)',
             }}
           >
-            SYNC: LIVE (IST +05:30)
+            Rule check · not a live wage API
           </span>
         </div>
       </div>

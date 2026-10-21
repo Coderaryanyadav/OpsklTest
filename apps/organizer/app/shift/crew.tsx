@@ -716,7 +716,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <CheckCircle2 size={12} color={colors.primary} />
                   <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textPrimary }}>
-                    Biometric KYC
+                    KYC on file
                   </Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

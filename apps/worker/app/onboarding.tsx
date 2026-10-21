@@ -934,8 +934,8 @@ export default function WorkerOnboardingScreen() {
               <Pressable
                 onPress={() => {
                   OpsklAlert.alert(
-                    'Opskl Mumbai Support Desk',
-                    'Our verified workforce operations team is available 24/7 for shift queries and KYC documentation support. Email: workforce@opskil.com or call +91 22 6123 4567.'
+                    'Opskl Support',
+                    'For KYC or onboarding help, email workforce@opskil.com. There is no staffed 24/7 phone desk in this build.'
                   );
                 }}
                 style={styles.supportButton}

@@ -249,11 +249,11 @@ export default function WorkerDiscoverScreen() {
                     variant={workerProfile.verificationStatus === 'pending' ? 'neutral' : 'warning'}
                     size="sm"
                   />
-                  {workerProfile.verificationStatus === 'pending' && (
+                  {workerProfile.verificationStatus === 'pending' && workerProfile.id ? (
                     <Text style={{ fontSize: 11, fontFamily: 'monospace', color: colors.textSecondary }}>
-                      Ref #KYC-BOM-9102
+                      Case ···{String(workerProfile.id).slice(-4)}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary, marginTop: 4 }}>
                   {workerProfile.verificationStatus === 'pending'
@@ -262,8 +262,8 @@ export default function WorkerDiscoverScreen() {
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>
                   {workerProfile.verificationStatus === 'pending'
-                    ? 'Direct 1-tap application unlocks automatically in ~2h once Aadhaar and bank details are validated.'
-                    : 'Submit government identity documents under Profile to unlock instant shift applications.'}
+                    ? 'Applications unlock after an admin approves your documents. No OCR or bank penny-drop is connected.'
+                    : 'Submit government identity documents under Profile to apply for shifts.'}
                 </Text>
               </View>
               <Pressable
@@ -281,13 +281,9 @@ export default function WorkerDiscoverScreen() {
 
             {workerProfile.verificationStatus === 'pending' && (
               <View style={{ marginTop: 10, paddingTop: 4 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>Verification Stage: Document OCR Complete</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>80%</Text>
-                </View>
-                <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden' }}>
-                  <View style={{ width: '80%', height: '100%', backgroundColor: colors.primary, borderRadius: 2 }} />
-                </View>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  Verification status: pending admin review (no OCR engine connected)
+                </Text>
               </View>
             )}
           </View>
@@ -767,7 +763,7 @@ export default function WorkerDiscoverScreen() {
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceMuted, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full }}>
                     <Zap size={11} color={colors.primary} />
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>Instant UPI</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textPrimary }}>Wage shown</Text>
                   </View>
                 </View>
 
