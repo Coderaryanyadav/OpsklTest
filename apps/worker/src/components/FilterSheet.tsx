@@ -193,7 +193,7 @@ export function FilterSheet({
                   Wage Basis & Minimum Pay
                 </Text>
               </View>
-              <Badge label="Guaranteed Base" variant="primary" size="sm" />
+              <Badge label="Listed wage floor" variant="primary" size="sm" />
             </View>
 
             {/* Wage Basis Toggle */}
@@ -579,7 +579,7 @@ export function FilterSheet({
                     marginTop: 6,
                   }}
                 >
-                  Instant Payout
+                  Ledger payout track
                 </Text>
                 <Text
                   style={{
@@ -588,7 +588,7 @@ export function FilterSheet({
                     opacity: instantPayoutOnly ? 0.9 : 0.8,
                   }}
                 >
-                  UPI within 24h
+                  Not a live UPI rail
                 </Text>
               </Pressable>
             </View>
@@ -605,7 +605,7 @@ export function FilterSheet({
               </Text>
             </View>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-              Mumbai • Guaranteed base payouts
+              Mumbai • listed wages · payout after attendance
             </Text>
           </View>
 

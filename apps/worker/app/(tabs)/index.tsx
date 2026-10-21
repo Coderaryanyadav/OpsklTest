@@ -728,7 +728,7 @@ export default function WorkerDiscoverScreen() {
               {displayedCards.length} shifts open in {activeZone.label}
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
-              UPI on verified checkout
+              Pay after attendance approval
             </Text>
           </View>
 

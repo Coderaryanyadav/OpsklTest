@@ -400,7 +400,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               PRIORITIZED INTAKE ROSTER ({filteredCases.length})
             </span>
             <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>
-              Sorted by SLA Wait
+              Sorted by status
             </span>
           </div>
 
@@ -410,7 +410,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                 No verification cases match query.
               </div>
             ) : (
-              filteredCases.map((c, idx) => {
+              filteredCases.map((c) => {
                 const isSelected = activeCase?.id === c.id;
                 const initials = (c.applicantProfile?.fullName || 'Worker')
                   .split(' ')
@@ -419,8 +419,11 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
                   .slice(0, 2)
                   .toUpperCase();
 
-                const isWarning = idx === 0 || c.status === 'pending';
-                const slaText = idx === 0 ? 'SLA WARNING: 3H 40M' : `SUBMITTED ${2 + (idx % 2)}H AGO`;
+                const isWarning = c.status === 'pending';
+                const submittedLabel = c.createdAt
+                  ? `SUBMITTED ${new Date(c.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                  : 'SUBMITTED · time unknown';
+                const slaText = isWarning ? `PENDING · ${submittedLabel}` : submittedLabel;
 
                 return (
                   <div

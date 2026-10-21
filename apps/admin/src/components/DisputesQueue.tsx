@@ -6,7 +6,6 @@ import {
   Clock,
   Search,
   User,
-  Building2,
   MapPin,
   ShieldCheck,
 } from 'lucide-react';
@@ -53,7 +52,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
   // Adjudication form state
   const [selectedRuling, setSelectedRuling] = useState<'worker_favor' | 'base_only' | 'split' | 'dismiss'>('worker_favor');
   const [mediationNotes, setMediationNotes] = useState(
-    'GPS and Bluetooth telemetry corroborates Aarav Kulkarni\'s presence in JWCC Hall 2 from 09:26 to 19:34 IST. Scanner hardware latency at Gate 4 accepted as mitigating infrastructure fault.'
+    'Manual review of dispute reason and party statements. No live GPS/Bluetooth/turnstile telemetry is available in this build.'
   );
   const [notifyParties, setNotifyParties] = useState(true);
   const [resolving, setResolving] = useState(false);
@@ -99,17 +98,19 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
     try {
       const status = selectedRuling === 'dismiss' ? 'dismissed' : 'resolved';
       let adjustedPayout: number | undefined;
-      const baseClaim = (activeDispute as any).claimAmount || 2400;
-      if (selectedRuling === 'worker_favor') {
-        adjustedPayout = baseClaim + 175;
-      } else if (selectedRuling === 'base_only') {
-        adjustedPayout = baseClaim;
-      } else if (selectedRuling === 'split') {
-        adjustedPayout = baseClaim + 87.5;
+      const baseClaim = (activeDispute as any).claimAmount as number | undefined;
+      if (typeof baseClaim === 'number' && Number.isFinite(baseClaim)) {
+        if (selectedRuling === 'worker_favor') {
+          adjustedPayout = baseClaim;
+        } else if (selectedRuling === 'base_only') {
+          adjustedPayout = baseClaim;
+        } else if (selectedRuling === 'split') {
+          adjustedPayout = Math.round(baseClaim / 2);
+        }
       }
       await onResolveDispute(activeDispute.id, status, mediationNotes, adjustedPayout);
     } catch (err: any) {
-      setActionError(err?.message || 'Failed to authorize escrow release');
+      setActionError(err?.message || 'Failed to resolve dispute on ledger');
     } finally {
       setResolving(false);
     }
@@ -117,7 +118,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
 
   const handleEscalateOmbudsman = () => {
     setOmbudsmanNotice(
-      'Senior Ombudsman Escalation: Case flagged for tier-2 legal arbitration. Shift payout frozen until hearing.'
+      'Escalation noted on this case for senior admin review. No separate ombudsman court or auto payout freeze is wired in this build.'
     );
   };
 
@@ -408,7 +409,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-main)' }}>
-                    CASE REF #DIS-MUM-4109
+                    CASE ···{activeDispute.id.slice(-6).toUpperCase()}
                   </span>
                   <span
                     style={{
@@ -416,14 +417,24 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                       fontWeight: 800,
                       padding: '2px 8px',
                       borderRadius: 4,
-                      background: '#FEE2E2',
-                      color: '#B91C1C',
+                      background: activeDispute.status === 'open' || activeDispute.status === 'under_review' ? '#FEF3C7' : '#F1F5F9',
+                      color: activeDispute.status === 'open' || activeDispute.status === 'under_review' ? '#B45309' : '#475569',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    SEVERITY: HIGH
+                    {activeDispute.status.replace('_', ' ')}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                    LOGGED: 19:42 IST • 22 FEB 2025
+                    LOGGED:{' '}
+                    {activeDispute.createdAt
+                      ? new Date(activeDispute.createdAt).toLocaleString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '—'}
                   </span>
                 </div>
 
@@ -434,24 +445,24 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                     gap: 6,
                     fontSize: 11,
                     fontWeight: 700,
-                    color: '#B91C1C',
-                    background: '#FEF2F2',
+                    color: 'var(--text-secondary)',
+                    background: 'var(--surface-muted)',
                     padding: '3px 8px',
                     borderRadius: 4,
                   }}
                 >
                   <Clock size={12} />
-                  <span>PRIORITY SLA: 12m Remaining</span>
+                  <span>No SLA timer · queue only</span>
                 </div>
               </div>
 
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-main)', margin: '0 0 4px' }}>
-                  Check-in / overtime dispute
+                  {activeDispute.reason || 'Dispute'}
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
                   <MapPin size={13} color="#1D4ED8" />
-                  <span>India FinTech Conclave 2025 • Jio World Convention Centre, Hall 2, BKC, Mumbai</span>
+                  <span>Booking ···{activeDispute.bookingId.slice(-6).toUpperCase()}</span>
                 </div>
               </div>
 
@@ -483,25 +494,24 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                       flexShrink: 0,
                     }}
                   >
-                    AK
+                    {activeDispute.raisedBy.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Aarav Kulkarni</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>
+                        Raised by ···{activeDispute.raisedBy.slice(-6)}
+                      </span>
                       <span style={{ fontSize: 9, fontWeight: 800, background: '#DBEAFE', color: '#1D4ED8', padding: '1px 5px', borderRadius: 3 }}>
-                        WORKER
+                        RAISER
                       </span>
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
-                      Lead VIP Concierge • ID: WRK-MUM-8821
-                    </div>
-                    <div style={{ fontSize: 10, color: '#059669', fontWeight: 700, marginTop: 2 }}>
-                      ★ 4.92 (38 Shifts) • KYC AADHAAR VERIFIED
+                      Profile id on dispute record (no fabricated worker bio)
                     </div>
                   </div>
                 </div>
 
-                {/* Organizer Card */}
+                {/* Respondent Card */}
                 <div
                   style={{
                     padding: 12,
@@ -527,182 +537,71 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                       flexShrink: 0,
                     }}
                   >
-                    RM
+                    {activeDispute.respondentId.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Rohit Mehta</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>
+                        Respondent ···{activeDispute.respondentId.slice(-6)}
+                      </span>
                       <span style={{ fontSize: 9, fontWeight: 800, background: '#E2E8F0', color: '#334155', padding: '1px 5px', borderRadius: 3 }}>
-                        ORGANIZER
+                        PARTY
                       </span>
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
-                      Head of Production, Apex Live Experiences
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                      GSTIN: 27AABCA1234F1Z9 • Escrow Tier A
+                      Counterparty id on dispute record
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Dual Dossier Positions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {/* Worker Statement */}
-              <div
-                style={{
-                  background: 'var(--surface-color)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  padding: 16,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <User size={15} color="#1D4ED8" />
-                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Worker Statement</span>
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', padding: '2px 6px', borderRadius: 3 }}>
-                    AFFIRMATION LOGGED
-                  </span>
+            {/* Dispute record (live fields only — no fabricated telemetry dossier) */}
+            <div
+              style={{
+                background: 'var(--surface-color)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color)',
+                padding: 16,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <User size={15} color="#1D4ED8" />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Dispute details on file</span>
                 </div>
-
-                <div
-                  style={{
-                    padding: 12,
-                    background: '#F8FAFC',
-                    borderRadius: 6,
-                    borderLeft: '3px solid #1D4ED8',
-                    fontSize: 12,
-                    lineHeight: 1.5,
-                    fontStyle: 'italic',
-                    color: 'var(--text-main)',
-                  }}
-                >
-                  &quot;Arrived at Gate 4 at 09:24 AM IST. Supervisor scanner was lagging due to poor network inside turnstile concourse. Supervisor marked me absent at 10:05 AM even though I was physically present in Hall 2 doing VIP seating till 19:30 PM (30m overtime).&quot;
-                </div>
-
-                {/* Automated Telemetry Audit */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-secondary)' }}>
-                      AUTOMATED TELEMETRY AUDIT
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#059669' }}>3 of 3 Captured</span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
-                    <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 700 }}>Geofence Ping (Arrival)</span>
-                        <span style={{ color: '#059669', fontWeight: 700 }}>VALIDATED</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        09:26:14 AM IST inside JWCC radius (19.0645° N, 72.8679° E, ±3.1m)
-                      </div>
-                    </div>
-
-                    <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 700 }}>Offline Backup Token PIN</span>
-                        <span style={{ color: '#059669', fontWeight: 700 }}>RECORDED</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        PIN #884-219 generated on local device at 09:32 AM IST
-                      </div>
-                    </div>
-
-                    <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 700 }}>Concourse BLE Beacon</span>
-                        <span style={{ color: '#059669', fontWeight: 700 }}>VALIDATED</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        Beacon #B-BKC-JWCC-CON2 logged terminal exit at 19:34:02 PM IST (-67 dBm)
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface-muted)', padding: '2px 6px', borderRadius: 3 }}>
+                  LEDGER RECORD
+                </span>
               </div>
 
-              {/* Organizer Position */}
               <div
                 style={{
-                  background: 'var(--surface-color)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-color)',
-                  padding: 16,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
+                  padding: 12,
+                  background: '#F8FAFC',
+                  borderRadius: 6,
+                  borderLeft: '3px solid #1D4ED8',
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  color: 'var(--text-main)',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Building2 size={15} color="var(--text-main)" />
-                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Organizer Position</span>
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#475569', background: '#F1F5F9', padding: '2px 6px', borderRadius: 3 }}>
-                    FIELD REBUTTAL
+                {activeDispute.details?.trim() || activeDispute.reason || 'No additional details supplied with this dispute.'}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
+                <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4, display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700 }}>GPS / BLE / turnstile telemetry</span>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>Not wired</span>
+                </div>
+                <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4, display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700 }}>Resolution notes</span>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>
+                    {activeDispute.resolutionNotes?.trim() || 'Pending admin adjudication'}
                   </span>
-                </div>
-
-                <div
-                  style={{
-                    padding: 12,
-                    background: '#F8FAFC',
-                    borderRadius: 6,
-                    borderLeft: '3px solid #64748B',
-                    fontSize: 12,
-                    lineHeight: 1.5,
-                    fontStyle: 'italic',
-                    color: 'var(--text-main)',
-                  }}
-                >
-                  &quot;Initial muster call at 09:30 AM missed. Aarav reported directly to Hall 2 without scanning Gate 4 turnstile. Acknowledged worked full shift but dispute overtime because closing was scheduled for 19:00 PM.&quot;
-                </div>
-
-                {/* Supervisor Roster Logs */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-secondary)' }}>
-                      SUPERVISOR ROSTER LOGS
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>2 Entries</span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
-                    <div style={{ padding: 8, background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 700 }}>Shift Lead Reconciliation</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>14:00 IST</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        Worker spotted at 11:15 AM managing VIP Lounge. Approved base 8h manually, pending overtime.
-                      </div>
-                    </div>
-
-                    <div style={{ padding: 8, background: '#FEF2F2', borderRadius: 4, border: '1px solid #FECACA' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 700, color: '#B91C1C' }}>Infrastructure Note</span>
-                        <span style={{ color: '#B91C1C', fontWeight: 700 }}>INCIDENT CONFIRMED</span>
-                      </div>
-                      <div style={{ fontSize: 10, color: '#7F1D1D', marginTop: 2 }}>
-                        #INC-GW-092 reported 22-min packet loss on BKC fiber turnstiles between 09:15 - 09:37 AM IST.
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: 'var(--surface-muted)', borderRadius: 4 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700 }}>Sensor telemetry:</span>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-secondary)' }}>
-                        Not wired in this build
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -873,7 +772,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   <div style={{ fontSize: 11 }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Rule in Worker Favor</div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: 10, marginTop: 1 }}>
-                      Full wage ₹2,400 + Overtime ₹175 to Worker from Escrow (100% telemetry match)
+                      Favor raiser · adjusted payout only if claim amount exists on record
                     </div>
                   </div>
                 </label>

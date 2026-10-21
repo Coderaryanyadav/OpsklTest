@@ -216,7 +216,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Wage Basis & Minimum Pay');
     expect(content).toContain('Per Shift (₹)');
     expect(content).toContain('Per Hour (₹/hr)');
-    expect(content).toContain('Guaranteed Base');
+    expect(content).toContain('Listed wage floor');
     expect(content).toContain('Target Minimum Wage');
     expect(content).toContain('Mumbai Locality / Cluster');
     expect(content).toContain('BKC Complex');
@@ -228,7 +228,10 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Target Day');
     expect(content).toContain('Time Slot');
     expect(content).toContain('F&B Provided');
-    expect(content).toContain('Instant Payout');
+    expect(content).toContain('Ledger payout track');
+    expect(content).toContain('Not a live UPI rail');
+    expect(content).not.toContain('Instant Payout');
+    expect(content).not.toContain('Guaranteed Base');
     expect(content).toContain('Apply Filters');
     expect(content).toContain('Reset All');
   });
@@ -238,7 +241,8 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     const content = fs.readFileSync(shiftDetailPath, 'utf8');
     expect(content).toContain('Slots Open • Verified Roster');
     expect(content).toContain('Net Shift Compensation');
-    expect(content).toContain('Direct UPI / NEFT');
+    expect(content).toContain('Ledger settlement');
+    expect(content).not.toContain('Direct UPI / NEFT');
     expect(content).toContain('Zero Deductions');
     expect(content).toContain('Schedule & Reporting');
     expect(content).toContain('IST Timings');
@@ -413,6 +417,8 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(modalContent).toContain('Supervisor pass-code verification');
     expect(modalContent).toContain('Shift Active:');
     expect(modalContent).toContain('Geofenced Check-Out & Hours Sign-off');
+    expect(modalContent).toContain('Hours recorded for supervisor review · not auto-paid');
+    expect(modalContent).not.toContain('Instant disbursement validation upon close');
 
     // Fallbacks
     expect(modalContent).toContain('Scanner or Network Latency?');

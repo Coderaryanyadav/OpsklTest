@@ -832,7 +832,7 @@ export function GeofencedCheckInModal({
                     Geofenced Check-Out & Hours Sign-off
                   </Text>
                   <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                    Instant disbursement validation upon close
+                    Hours recorded for supervisor review · not auto-paid
                   </Text>
                 </View>
               </View>

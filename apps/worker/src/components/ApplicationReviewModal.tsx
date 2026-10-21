@@ -147,7 +147,7 @@ export function ApplicationReviewModal({
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: 6, marginTop: 2 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <IndianRupee size={14} color={colors.primary} />
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Guaranteed Net Shift Pay</Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Listed shift pay</Text>
                 </View>
                 <Text style={{ fontSize: 15, fontWeight: '800', color: colors.primary }}>
                   {formatINR(totalPay)}

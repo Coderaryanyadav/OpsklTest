@@ -656,7 +656,7 @@ export default function OrganizerDashboardScreen() {
                   Post New Shift
                 </Text>
                 <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>
-                  Instant Mumbai Escrow
+                  Funding estimate · ledger only
                 </Text>
               </View>
             </TouchableOpacity>

@@ -817,7 +817,7 @@ export default function OrganizerCreateShiftScreen() {
               {/* Base Pay Input Field */}
               {payBasis === 'shift' ? (
                 <WageInput
-                  label="Guaranteed Base Net Pay Per Worker"
+                  label="Base Net Pay Per Worker"
                   value={shiftRate}
                   onChangeText={(val) => {
                     setShiftRate(val);
@@ -829,7 +829,7 @@ export default function OrganizerCreateShiftScreen() {
                 />
               ) : (
                 <WageInput
-                  label="Guaranteed Base Hourly Wage"
+                  label="Base Hourly Wage"
                   value={hourlyRate}
                   onChangeText={(val) => {
                     setHourlyRate(val);
@@ -914,7 +914,7 @@ export default function OrganizerCreateShiftScreen() {
                   On-Site Logistics & Welfare
                 </Text>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                  Guaranteed to Staff
+                  Offered to staff
                 </Text>
               </View>
 

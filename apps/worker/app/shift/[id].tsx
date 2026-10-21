@@ -1017,10 +1017,10 @@ export default function WorkerShiftDetailScreen() {
               <Zap size={16} color={colors.primary} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                  Direct UPI / NEFT
+                  Ledger settlement
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                  Within 24h of sign-off
+                  After attendance approval · rails not auto-wired
                 </Text>
               </View>
             </View>

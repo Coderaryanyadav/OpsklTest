@@ -954,11 +954,11 @@ export default function WorkerOnboardingScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <ShieldCheck size={14} color={colors.textMuted} />
                 <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: '600' }}>
-                  Documents stored with 256-bit encryption
+                  Documents stored for manual KYC review
                 </Text>
               </View>
               <Text style={{ fontSize: 10, color: colors.textMuted, textAlign: 'center', lineHeight: 14 }}>
-                Compliant with Indian identity safeguards & Aadhaar Act regulations. Data is retained solely for event workforce compliance and direct bank settlements.
+                Submit masked identity evidence for admin review. This build does not claim a live UIDAI AUA connection or automated bank settlement.
               </Text>
             </View>
           </View>

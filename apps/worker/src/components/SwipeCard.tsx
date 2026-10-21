@@ -275,7 +275,7 @@ export function SwipeCard({
             <View style={[styles.upiGuaranteePill, { backgroundColor: colors.surfaceTertiary, borderColor: colors.border, borderWidth: 1 }]}>
               <Zap size={12} color={colors.primary} strokeWidth={2.2} style={{ marginRight: 4 }} />
               <Text style={[styles.upiGuaranteeText, { color: colors.textSecondary }]}>
-                UPI on verified checkout
+                Pay after attendance approval
               </Text>
             </View>
           </View>

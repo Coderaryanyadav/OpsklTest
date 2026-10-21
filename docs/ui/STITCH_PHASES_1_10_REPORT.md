@@ -35,6 +35,10 @@ This report supersedes overclaims in `docs/FEATURE_PARITY_AUDIT.md` / `FEATURE_P
 | Verification desk OCR 100% / NPCI / fabricated DOB table | `VerificationQueue.tsx` | Fake tooling | **Fixed** (follow-up 2) — manual checklist |
 | Biometric / turnstile / auto-disbursement copy | crew / attendance / shift detail / welcome | Overclaim | **Fixed** (follow-up 2) |
 | Fair-wage “Engine v3.1” badge | `JobModerationTable.tsx` | Fake statutory engine | **Fixed** (follow-up 2) — heuristics label |
+| Instant UPI / Guaranteed / 24h payout marketing | discover, SwipeCard, FilterSheet, check-in, shift detail | Fake settlement product | **Fixed** (follow-up 3) |
+| Instant Mumbai Escrow CTA | organizer `index.tsx` | Fake escrow | **Fixed** (follow-up 3) |
+| Disputes Aarav/JWCC/BLE telemetry demo dossier | `DisputesQueue.tsx` | Fabricated case narrative | **Fixed** (follow-up 3) — live dispute fields |
+| Verification invented SLA wait timers | `VerificationQueue.tsx` | Fake ops urgency | **Fixed** (follow-up 3) — real `createdAt` |
 
 ### P1 — Visual / IA parity (routes exist; Stitch density differs)
 
