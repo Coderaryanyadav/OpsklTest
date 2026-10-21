@@ -260,7 +260,10 @@ export default function OrganizerLoginScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const redirectUrl = Linking.createURL('/auth/login');
+      const redirectUrl =
+        Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}/auth/login`
+          : Linking.createURL('/auth/login');
       const res = await signInWithGoogle('organizer', redirectUrl);
       if (res?.url) {
         if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
@@ -284,7 +287,10 @@ export default function OrganizerLoginScreen() {
     }
     setResetLoading(true);
     try {
-      const redirectUrl = Linking.createURL('/auth/login');
+      const redirectUrl =
+        Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin
+          ? `${window.location.origin}/auth/login`
+          : Linking.createURL('/auth/login');
       await sendPasswordReset(trimmed, redirectUrl);
       OpsklAlert.alert('Reset Instructions Sent', `Password reset link has been dispatched to ${trimmed}.`);
       setShowForgotModal(false);

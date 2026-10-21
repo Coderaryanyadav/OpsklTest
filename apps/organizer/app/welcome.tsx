@@ -15,6 +15,7 @@ import {
   FileText,
 } from 'lucide-react-native';
 import { universalStorage } from '@opskil/shared';
+import { setGuestBrowsingActive } from './_layout';
 
 export default function OrganizerWelcomeScreen() {
   const router = useRouter();
@@ -25,6 +26,9 @@ export default function OrganizerWelcomeScreen() {
       await universalStorage.setItem('@opskil_organizer_welcome_seen', 'true');
     } catch {
       // Non-critical
+    }
+    if (target.includes('(tabs)')) {
+      setGuestBrowsingActive(true);
     }
     if (replace) {
       router.replace(target as any);

@@ -683,7 +683,10 @@ export default function WorkerLoginScreen() {
               onPress={async () => {
                 setLoading(true);
                 try {
-                  const redirectUrl = Linking.createURL('/auth/login');
+                  const redirectUrl =
+                    Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin
+                      ? `${window.location.origin}/auth/login`
+                      : Linking.createURL('/auth/login');
                   const res = await signInWithGoogle('worker', redirectUrl);
                   if (res?.url) {
                     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {

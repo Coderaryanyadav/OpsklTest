@@ -137,6 +137,14 @@ export default function OrganizerDashboardScreen() {
 
   const isVerified = organizerProfile?.verificationStatus === 'verified';
 
+  const requireAuthOrNavigate = (targetPath: string) => {
+    if (!session?.user) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(targetPath)}` as any);
+      return;
+    }
+    router.push(targetPath as any);
+  };
+
   return (
     <Screen edges={['top']}>
       {/* Top Header Bar */}
@@ -181,7 +189,7 @@ export default function OrganizerDashboardScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
-              onPress={() => router.push('/notifications')}
+              onPress={() => requireAuthOrNavigate('/notifications')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
                 width: touchTarget.min,
@@ -198,7 +206,7 @@ export default function OrganizerDashboardScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/profile')}
+              onPress={() => requireAuthOrNavigate('/(tabs)/profile')}
               style={{
                 width: 34,
                 height: 34,
@@ -221,13 +229,23 @@ export default function OrganizerDashboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {!isVerified && (
+        {Boolean(session && !isVerified) && (
           <InlineBanner
             variant="warning"
             title="Verification Required"
             message="Your enterprise credentials must be verified before shifts can be published to the public marketplace."
             actionLabel="Complete Verification"
-            onAction={() => router.push('/verification' as any)}
+            onAction={() => requireAuthOrNavigate('/verification')}
+          />
+        )}
+
+        {!session && (
+          <InlineBanner
+            variant="info"
+            title="Guest Exploration Console"
+            message="You are previewing the Opskl Organizer Console. Sign in or register to publish shifts, review crew, and manage live attendance."
+            actionLabel="Sign In Now"
+            onAction={() => router.push('/auth/login')}
           />
         )}
 
@@ -273,16 +291,18 @@ export default function OrganizerDashboardScreen() {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textPrimary }} numberOfLines={1}>
-                    {organizerProfile?.businessName || 'Organizer account'}
+                    {session ? (organizerProfile?.businessName || 'Organizer account') : 'Guest Preview (Mumbai Console)'}
                   </Text>
-                  {isVerified && <CheckCircle2 size={16} color={colors.primary} strokeWidth={2.4} />}
+                  {Boolean(session && isVerified) && <CheckCircle2 size={16} color={colors.primary} strokeWidth={2.4} />}
                 </View>
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 1 }}>
-                  {isVerified
-                    ? `GST Verified Enterprise • ${organizerProfile?.gstin || 'Registered'}`
-                    : organizerProfile?.verificationStatus === 'pending'
-                      ? 'Verification Under Review (4–6 hrs)'
-                      : 'Unverified Enterprise • Verification Required'}
+                  {session
+                    ? (isVerified
+                        ? `GST Verified Enterprise • ${organizerProfile?.gstin || 'Registered'}`
+                        : organizerProfile?.verificationStatus === 'pending'
+                          ? 'Verification Under Review (4–6 hrs)'
+                          : 'Unverified Enterprise • Verification Required')
+                    : 'Sign in to access corporate credentials & shifts'}
                 </Text>
               </View>
             </View>
@@ -316,7 +336,7 @@ export default function OrganizerDashboardScreen() {
 
           {/* Active Venue Switcher Pill */}
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/roster')}
+            onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -377,7 +397,7 @@ export default function OrganizerDashboardScreen() {
               </Text>
               <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
                 <TouchableOpacity
-                  onPress={() => router.push('/(tabs)/roster')}
+                  onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -440,7 +460,9 @@ export default function OrganizerDashboardScreen() {
         {/* High Velocity Operational Metrics Bento (3-Column Grid) */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {/* Active Shifts */}
-          <View
+          <TouchableOpacity
+            onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
+            activeOpacity={0.8}
             style={{
               flex: 1,
               backgroundColor: colors.surface,
@@ -465,10 +487,12 @@ export default function OrganizerDashboardScreen() {
                 {liveTodayCount > 0 ? `${liveTodayCount} live today` : activeShiftsCount > 0 ? `${activeShiftsCount} scheduled` : 'None active'}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Applicants */}
-          <View
+          <TouchableOpacity
+            onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
+            activeOpacity={0.8}
             style={{
               flex: 1,
               backgroundColor: colors.surface,
@@ -493,10 +517,12 @@ export default function OrganizerDashboardScreen() {
                 {metrics.shortlistedApplicants ?? 0} shortlisted
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Confirmed crew (real metric — no fabricated on-time %) */}
-          <View
+          <TouchableOpacity
+            onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
+            activeOpacity={0.8}
             style={{
               flex: 1,
               backgroundColor: colors.surface,
@@ -521,7 +547,7 @@ export default function OrganizerDashboardScreen() {
                 Booked crew
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Today's Live Venue Snapshot */}
@@ -619,11 +645,7 @@ export default function OrganizerDashboardScreen() {
 
             <TouchableOpacity
               onPress={() => {
-                if (todayShift?.id) {
-                  router.push(`/shift/${todayShift.id}`);
-                } else {
-                  router.push('/(tabs)/roster');
-                }
+                requireAuthOrNavigate(todayShift?.id ? `/shift/${todayShift.id}` : '/(tabs)/roster');
               }}
               style={{
                 backgroundColor: colors.primary,
@@ -652,7 +674,7 @@ export default function OrganizerDashboardScreen() {
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {/* Post New Shift (High Contrast Card) */}
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/create')}
+              onPress={() => requireAuthOrNavigate('/(tabs)/create')}
               style={{
                 flex: 1,
                 backgroundColor: colors.primary,
@@ -686,7 +708,7 @@ export default function OrganizerDashboardScreen() {
 
             {/* Review Crew Card */}
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/roster')}
+              onPress={() => requireAuthOrNavigate('/(tabs)/roster')}
               style={{
                 flex: 1,
                 backgroundColor: colors.surface,
@@ -741,6 +763,10 @@ export default function OrganizerDashboardScreen() {
             {/* Sign-off Sheets */}
             <TouchableOpacity
               onPress={() => {
+                if (!session?.user) {
+                  requireAuthOrNavigate('/(tabs)/roster');
+                  return;
+                }
                 OpsklAlert.alert(
                   'Sign-off Sheets',
                   'Attendance records follow the confirmed booking ledger. Sign-off PDF export is not auto-generated in this build — use Roster for live crew status.'
@@ -781,7 +807,7 @@ export default function OrganizerDashboardScreen() {
 
             {/* Escrow Ledger */}
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/finances')}
+              onPress={() => requireAuthOrNavigate('/(tabs)/finances')}
               style={{
                 flex: 1,
                 backgroundColor: colors.surface,
@@ -826,7 +852,7 @@ export default function OrganizerDashboardScreen() {
               Active Shifts Overview
             </Text>
             {shifts.length > 0 && (
-              <TouchableOpacity onPress={() => router.push('/(tabs)/roster')}>
+              <TouchableOpacity onPress={() => requireAuthOrNavigate('/(tabs)/roster')}>
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
                   VIEW ALL ({shifts.length})
                 </Text>
@@ -846,8 +872,10 @@ export default function OrganizerDashboardScreen() {
                     : colors.primary;
 
               return (
-                <View
+                <TouchableOpacity
                   key={shift.id}
+                  activeOpacity={0.9}
+                  onPress={() => requireAuthOrNavigate(`/shift/${shift.id}`)}
                   style={{
                     backgroundColor: colors.surface,
                     borderRadius: radii.xl,
@@ -933,7 +961,7 @@ export default function OrganizerDashboardScreen() {
                       )}
                     </View>
                     <TouchableOpacity
-                      onPress={() => router.push(`/shift/${shift.id}` as any)}
+                      onPress={() => requireAuthOrNavigate(`/shift/${shift.id}`)}
                       style={{
                         paddingHorizontal: 12,
                         paddingVertical: 6,
@@ -946,7 +974,7 @@ export default function OrganizerDashboardScreen() {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })
           ) : (
@@ -983,7 +1011,7 @@ export default function OrganizerDashboardScreen() {
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={() => router.push('/(tabs)/create')}
+                onPress={() => requireAuthOrNavigate('/(tabs)/create')}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',

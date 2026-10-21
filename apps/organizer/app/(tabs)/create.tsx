@@ -94,12 +94,12 @@ export default function OrganizerCreateShiftScreen() {
   const [draftRestored, setDraftRestored] = useState(false);
 
   // Step 1: Role
-  const [title, setTitle] = useState('Lead Guest Relations & VIP Concierge');
+  const [title, setTitle] = useState('');
   const [category, setCategory] = useState<ShiftCategory>('conference');
-  const [slotsTotal, setSlotsTotal] = useState('6');
-  const [duties, setDuties] = useState('VIP reception, delegate badge distribution, lounge concierge, coordination with event protocol lead');
-  const [requiredSkills, setRequiredSkills] = useState('Guest Relations, Fluent English, Professional Presentation');
-  const [eligibilityCriteria, setEligibilityCriteria] = useState('Must be 18+ years old. Experience in high-profile luxury summits preferred.');
+  const [slotsTotal, setSlotsTotal] = useState('');
+  const [duties, setDuties] = useState('');
+  const [requiredSkills, setRequiredSkills] = useState('');
+  const [eligibilityCriteria, setEligibilityCriteria] = useState('');
 
   // Step 2: Roster & Venue
   const todayStr = getTodayDateIST();
@@ -107,34 +107,34 @@ export default function OrganizerCreateShiftScreen() {
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('19:00');
   const [durationHours, setDurationHours] = useState('9');
-  const [venueName, setVenueName] = useState('Jio World Convention Centre, Gate 4');
-  const [venueAddress, setVenueAddress] = useState('G Block BKC, Bandra East, Mumbai 400098');
-  const [landmark, setLandmark] = useState('Gate 4 Security Concourse');
+  const [venueName, setVenueName] = useState('');
+  const [venueAddress, setVenueAddress] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [zone, setZone] = useState('Bandra Kurla Complex (BKC)');
   const [supervisorName, setSupervisorName] = useState('');
   const [supervisorPhone, setSupervisorPhone] = useState('');
 
   // Step 3: Wages & Escrow (Stitch Screen 16 Focal)
   const [payBasis, setPayBasis] = useState<'shift' | 'hourly'>('shift');
-  const [shiftRate, setShiftRate] = useState('2400');
-  const [hourlyRate, setHourlyRate] = useState('266.67');
+  const [shiftRate, setShiftRate] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
   const [overtimeRate] = useState('350');
   const [breaksMinutes] = useState('45');
   const [mealProvided, setMealProvided] = useState(true);
   const [acLoungeProvided, setAcLoungeProvided] = useState(true);
   const [rfidBadgeProvided, setRfidBadgeProvided] = useState(true);
   const [cabAllowanceProvided, setCabAllowanceProvided] = useState(false);
-  const [dressCode, setDressCode] = useState('Formal Western Black Suit (Tailored jacket, formal trousers, crisp white collared shirt, black oxfords) OR Formal Black Plain Sari. Neat grooming mandatory.');
-  const [reportingInstructions, setReportingInstructions] = useState('Report 30 minutes prior at the venue staff entrance. Check in with your supervisor for floor assignment. Pass-code check-in is used in-app (no biometric badge system wired).');
+  const [dressCode, setDressCode] = useState('');
+  const [reportingInstructions, setReportingInstructions] = useState('');
   const [cancellationPolicy] = useState('Free cancellation up to 18 hours prior to shift. Unannounced no-shows impact eligibility for premium shifts.');
 
   // Calculations
-  const parsedHours = parseFloat(durationHours) || 9;
-  const parsedSlots = parseInt(slotsTotal, 10) || 6;
+  const parsedHours = parseFloat(durationHours) || 8;
+  const parsedSlots = parseInt(slotsTotal, 10) || 0;
   const computedShiftPay = payBasis === 'shift'
-    ? (parseFloat(shiftRate) || 2400)
-    : (parseFloat(hourlyRate) || 266.67) * parsedHours;
-  const effectiveHourly = (computedShiftPay / (parsedHours || 1)).toFixed(2);
+    ? (parseFloat(shiftRate) || 0)
+    : (parseFloat(hourlyRate) || 0) * parsedHours;
+  const effectiveHourly = parsedHours > 0 ? (computedShiftPay / parsedHours).toFixed(2) : '0.00';
 
   const financials = calculateJobFinancials(parsedSlots, computedShiftPay);
   const totalCrewBudget = financials.totalWorkerWages;
@@ -276,7 +276,11 @@ export default function OrganizerCreateShiftScreen() {
     if (step > 1) {
       setStep((s) => s - 1);
     } else {
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)' as any);
+      }
     }
   };
 
@@ -1109,7 +1113,7 @@ export default function OrganizerCreateShiftScreen() {
                   Dress Code Standard
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-                  {dressCode}
+                  {dressCode || 'Formal Western Plain Black Attire or Formal Saree. Neat grooming mandatory.'}
                 </Text>
               </View>
 
@@ -1118,7 +1122,7 @@ export default function OrganizerCreateShiftScreen() {
                   Reporting & Muster Time
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-                  {reportingInstructions}
+                  {reportingInstructions || 'Report 30 minutes prior to call time at venue security check post. Digital check-in via pass code.'}
                 </Text>
               </View>
             </View>

@@ -15,12 +15,20 @@ import {
   Screen,
   Button,
 } from '@opskil/design-system';
-import { universalStorage, supabase } from '@opskil/shared';
+import { supabase } from '@opskil/shared';
 import { Building2, Trash2 } from 'lucide-react-native';
 
 export { OpsklErrorBoundary as ErrorBoundary } from '@opskil/design-system';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+let guestBrowsingActive = false;
+export function setGuestBrowsingActive(val: boolean) {
+  guestBrowsingActive = val;
+}
+export function isGuestBrowsingActive(): boolean {
+  return guestBrowsingActive;
+}
 
 function RootNavigator() {
   const router = useRouter();
@@ -55,8 +63,9 @@ function RootNavigator() {
             return;
           }
 
-          const welcomeSeen = await universalStorage.getItem('@opskil_organizer_welcome_seen');
-          if (!welcomeSeen && topSegment !== 'welcome' && topSegment !== 'auth') {
+          // Unauthenticated visitors must see Welcome screen (Image 1) first.
+          // Only if they explicitly chose "Explore as guest" does the Dashboard (Image 2) appear.
+          if (!guestBrowsingActive && topSegment !== 'welcome' && topSegment !== 'auth') {
             router.replace('/welcome' as any);
             return;
           }

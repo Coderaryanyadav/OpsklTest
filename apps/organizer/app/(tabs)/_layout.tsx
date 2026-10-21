@@ -1,11 +1,22 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOpsklTheme, Calendar, Plus, Users, IndianRupee, Briefcase } from '@opskil/design-system';
+import { useOpsklTheme, useAuth, Calendar, Plus, Users, IndianRupee, Briefcase } from '@opskil/design-system';
 
 export default function OrganizerTabsLayout() {
+  const router = useRouter();
+  const { session } = useAuth();
   const { colors, navigation, typography, fontWeights } = useOpsklTheme();
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
+
+  const createAuthTabListener = (tabPath: string) => ({
+    tabPress: (e: any) => {
+      if (!session?.user) {
+        e.preventDefault();
+        router.push(`/auth/login?redirect=${encodeURIComponent(tabPath)}` as any);
+      }
+    },
+  });
 
   return (
     <Tabs
@@ -42,6 +53,7 @@ export default function OrganizerTabsLayout() {
       />
       <Tabs.Screen
         name="create"
+        listeners={createAuthTabListener('/(tabs)/create')}
         options={{
           title: 'Post',
           tabBarLabel: 'Post',
@@ -53,6 +65,7 @@ export default function OrganizerTabsLayout() {
       />
       <Tabs.Screen
         name="roster"
+        listeners={createAuthTabListener('/(tabs)/roster')}
         options={{
           title: 'Roster',
           tabBarLabel: 'Roster',
@@ -64,6 +77,7 @@ export default function OrganizerTabsLayout() {
       />
       <Tabs.Screen
         name="finances"
+        listeners={createAuthTabListener('/(tabs)/finances')}
         options={{
           title: 'Finances',
           tabBarLabel: 'Finances',
@@ -75,6 +89,7 @@ export default function OrganizerTabsLayout() {
       />
       <Tabs.Screen
         name="profile"
+        listeners={createAuthTabListener('/(tabs)/profile')}
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
