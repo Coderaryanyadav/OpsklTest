@@ -9,4 +9,5 @@ export * from './payments';
 export * from './notifications';
 export * from './services/pilot_metrics_service';
 export * from './services/system_killswitch_service';
-
+export * from './services/offline_queue_service';
+export * from './services/safety_incident_service';

@@ -25,6 +25,7 @@ import {
   getSystemOperationalStatus,
   syncKillswitchFromDatabase,
   SystemOperationalStatus,
+  EmergencyBroadcastDetails,
   adminSetUserStatusSafe,
 } from '@opskil/shared';
 import { adminSupabase } from '../lib/supabase';
@@ -286,7 +287,10 @@ function AdminDashboardInner() {
     }
   };
 
-  const handleToggleBookingPause = async (reason?: string) => {
+  const handleToggleBookingPause = async (
+    reason?: string,
+    broadcast?: EmergencyBroadcastDetails
+  ) => {
     const nextPaused = !systemStatus.isBookingPaused;
     const pauseReason = reason || 'Administrative precaution';
     const res = await setBookingPauseStatusSafe(
@@ -295,7 +299,8 @@ function AdminDashboardInner() {
       undefined,
       nextPaused
         ? `Notice: New shift bookings are temporarily paused due to: ${pauseReason}`
-        : undefined
+        : undefined,
+      broadcast
     );
 
     if (res.success) {

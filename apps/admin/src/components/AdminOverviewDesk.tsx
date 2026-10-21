@@ -23,9 +23,11 @@ import {
   Dispute,
   Job,
   SystemOperationalStatus,
+  EmergencyBroadcastDetails,
   formatINR,
 } from '@opskil/shared';
 import { AdminModule } from './AdminSidebar';
+import { EmergencyLockdownModal } from './EmergencyLockdownModal';
 
 interface AdminOverviewDeskProps {
   metrics: AdminOverviewMetrics | null;
@@ -34,7 +36,7 @@ interface AdminOverviewDeskProps {
   jobs: Job[];
   systemStatus: SystemOperationalStatus;
   onSelectModule: (module: AdminModule) => void;
-  onToggleBookingPause: (reason?: string) => void | Promise<void>;
+  onToggleBookingPause: (reason?: string, broadcast?: EmergencyBroadcastDetails) => void | Promise<void>;
   onRefreshData?: () => void;
 }
 
@@ -50,6 +52,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
 }) => {
   const [activeQueueTab, setActiveQueueTab] = useState<'all' | 'kyc' | 'moderation' | 'disputes'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
   // Derived real counts
   const pendingKYC = useMemo(() => verifications.filter((v) => v.status === 'pending'), [verifications]);
@@ -235,7 +238,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
 
           <button
             type="button"
-            onClick={() => onToggleBookingPause()}
+            onClick={() => setIsEmergencyModalOpen(true)}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -1189,6 +1192,13 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           </div>
         </div>
       </div>
+
+      <EmergencyLockdownModal
+        isOpen={isEmergencyModalOpen}
+        onClose={() => setIsEmergencyModalOpen(false)}
+        systemStatus={systemStatus}
+        onToggleBookingPause={onToggleBookingPause}
+      />
     </div>
   );
 };

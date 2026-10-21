@@ -574,6 +574,16 @@ export interface PilotMetricsSummary {
   averageNetMarginPct: number;
 }
 
+export interface EmergencyBroadcastDetails {
+  broadcastReference?: string;
+  alertLevel?: 'red' | 'orange' | 'yellow';
+  declaredTrigger?: string;
+  affectedRadius?: string;
+  effectiveFrom?: string;
+  wageProtectionSecured?: boolean;
+  operationalScope?: string;
+}
+
 export interface SystemOperationalStatus {
   isOperational: boolean;
   isBookingPaused: boolean;
@@ -584,6 +594,7 @@ export interface SystemOperationalStatus {
   apiSuccessRatePct: number;
   p95DatabaseLatencyMs: number;
   reconciliationDiscrepancyCount: number;
+  emergencyBroadcast?: EmergencyBroadcastDetails;
 }
 
 export interface ShiftMessage {
