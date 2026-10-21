@@ -56,114 +56,6 @@ interface ExtendedOperationalNotification extends Notification {
   secondaryActionLabel?: string;
 }
 
-const DEFAULT_OPERATIONAL_STREAM: ExtendedOperationalNotification[] = [
-  {
-    id: 'notif-escrow-8821',
-    userId: 'current-user',
-    type: 'escrow_batch',
-    title: 'Attendance Approved: Scheduled for 23:00 IST Batch',
-    body: 'Organizer signed off shift verification for Jio World Convention Centre (Shift #JK-8821). Payout of ₹2,400 allocated to the nightly IMPS escrow release batch.',
-    read: false,
-    createdAt: new Date().toISOString(),
-    actionUrl: '/(tabs)/earnings',
-    dateGroup: 'today',
-    tagBadge: 'ESCROW LEDGER',
-    contextPill: '₹2,400.00 Held in Escrow',
-    primaryActionLabel: 'View Ledger Entry',
-    primaryActionRoute: '/(tabs)/earnings',
-  },
-  {
-    id: 'notif-roster-apex',
-    userId: 'current-user',
-    type: 'roster_shortlist',
-    title: 'Shortlisted by Apex Live: 1h 45m left to accept',
-    body: 'Position: Front of House Lead at Mahalaxmi Racecourse. This slot is not reserved until contract terms and IST call-time are explicitly acknowledged.',
-    read: false,
-    createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    actionUrl: '/(tabs)/my-shifts',
-    dateGroup: 'today',
-    tagBadge: 'ROSTER OFFER',
-    contextPill: 'Expires today at 19:00 IST',
-    secondaryMeta: 'TIER-1 CREW',
-    primaryActionLabel: 'Review & Accept Shift',
-    primaryActionRoute: '/(tabs)/my-shifts',
-    secondaryActionLabel: 'Decline',
-  },
-  {
-    id: 'notif-geo-gate4',
-    userId: 'current-user',
-    type: 'geofence_update',
-    title: 'Geofence Calibration Updated for JWCC Gate 4',
-    body: 'GPS perimeter shifted +35m south due to backstage perimeter re-routing at BKC. Check-in timestamps will now register exclusively between Gate 4 and Service Bay B.',
-    read: false,
-    createdAt: new Date(Date.now() - 150 * 60 * 1000).toISOString(),
-    actionUrl: '/shift/checkin',
-    dateGroup: 'today',
-    tagBadge: 'GEOFENCE BOUNDARY',
-    contextPill: 'Accuracy tolerance: 8m',
-    primaryActionLabel: 'Calibrate Sensor',
-    primaryActionRoute: '/shift/checkin',
-  },
-  {
-    id: 'notif-roster-standby',
-    userId: 'current-user',
-    type: 'roster_change',
-    title: 'Standby Worker Assigned to Gate C Scanner Pod',
-    body: 'Roster replacement finalized. Opskl ID #OP-4902 is verified for biometric handover at 13:00 IST sharp.',
-    read: true,
-    createdAt: new Date(Date.now() - 300 * 60 * 1000).toISOString(),
-    actionUrl: '/(tabs)/my-shifts',
-    dateGroup: 'today',
-    tagBadge: 'ROSTER CHANGE',
-    primaryActionLabel: 'Open Pod Roster',
-    primaryActionRoute: '/(tabs)/my-shifts',
-  },
-  {
-    id: 'notif-escrow-axis',
-    userId: 'current-user',
-    type: 'payout_disbursement',
-    title: 'Escrow Disbursed: UTR #AXIS99381023',
-    body: '₹3,200.00 transferred via IMPS bank pipeline for NESCO Exhibition Centre night rigging shift. Bank acknowledgement registered.',
-    read: true,
-    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    actionUrl: '/(tabs)/earnings',
-    dateGroup: 'yesterday',
-    tagBadge: 'DISBURSEMENT COMPLETE',
-    contextPill: 'Bank RRN Verified',
-    primaryActionLabel: 'Download Slip (PDF)',
-    primaryActionRoute: '/(tabs)/earnings',
-  },
-  {
-    id: 'notif-heat-advisory',
-    userId: 'current-user',
-    type: 'heat_index',
-    title: 'Heat Index Advisory Recorded: 38°C Wet Bulb',
-    body: 'Mandatory 15-minute shaded hydration rotation enforced for all outdoor marshaling crew at BKC MMRDA Grounds. Logged in central safety ledger.',
-    read: true,
-    createdAt: new Date(Date.now() - 28 * 3600 * 1000).toISOString(),
-    actionUrl: '/emergency',
-    dateGroup: 'yesterday',
-    tagBadge: 'COMPLIANCE LOG',
-    primaryActionLabel: 'View Safety Protocol',
-    primaryActionRoute: '/emergency',
-  },
-  {
-    id: 'notif-timecard-checkout',
-    userId: 'current-user',
-    type: 'checkout_recorded',
-    title: 'Checkout Timestamp Recorded: 8h 12m On-Site',
-    body: 'Nesco Hall 4 hospitality breakdown shift closed with QR exit punch. Shift duration logged for overtime delta audit.',
-    read: true,
-    createdAt: new Date(Date.now() - 32 * 3600 * 1000).toISOString(),
-    actionUrl: '/(tabs)/earnings',
-    dateGroup: 'yesterday',
-    tagBadge: 'SHIFT COMPLETED',
-    contextPill: 'Standard Rate + 12m OT',
-    primaryActionLabel: 'Timecard Details',
-    primaryActionRoute: '/(tabs)/earnings',
-  },
-];
-
 function categorizeItem(item: Notification): 'escrow' | 'lifecycle' | 'safety' {
   const text = `${item.type} ${item.title} ${item.body}`.toLowerCase();
   if (
@@ -220,7 +112,7 @@ export default function WorkerNotificationsScreen() {
             const cat = categorizeItem(n);
             const tag =
               cat === 'escrow'
-                ? 'ESCROW LEDGER'
+                ? 'PAYOUT UPDATE'
                 : cat === 'safety'
                 ? 'SAFETY ADVISORY'
                 : 'ROSTER UPDATE';
@@ -239,11 +131,11 @@ export default function WorkerNotificationsScreen() {
           return;
         }
       }
-      // If offline or empty live records, show default operational stream
-      setNotifications(DEFAULT_OPERATIONAL_STREAM);
+      // Empty live feed → honest empty state (never fabricate operational alerts)
+      setNotifications([]);
     } catch (err: any) {
       setLoadError(err?.message || 'Failed to load notifications stream');
-      setNotifications(DEFAULT_OPERATIONAL_STREAM);
+      setNotifications([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -261,7 +153,7 @@ export default function WorkerNotificationsScreen() {
         dateGroup: 'today',
         tagBadge:
           cat === 'escrow'
-            ? 'ESCROW LEDGER'
+            ? 'PAYOUT UPDATE'
             : cat === 'safety'
             ? 'SAFETY ADVISORY'
             : 'ROSTER UPDATE',

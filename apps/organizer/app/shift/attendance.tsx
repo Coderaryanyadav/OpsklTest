@@ -303,7 +303,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
       setIsSignedOff(true);
       OpsklAlert.alert(
         '✓ Attendance Approved & Timesheets Queued',
-        'Timesheets validated for 6 crew members.\n\nEscrow Lifecycle: Attendance approval locks billable shift hours. The automated escrow wage batch release is scheduled for 11:00 PM IST tonight.'
+        'Timesheets validated.\n\nAttendance approval locks billable hours for payroll review. Payout remains a separate step — it is not completed by this approval alone.'
       );
     } catch (err: any) {
       OpsklAlert.alert('Sign-Off Error', err?.message || 'Could not validate timesheet.');
@@ -856,7 +856,7 @@ export default function LiveEventCheckInAttendanceConsoleScreen() {
             </Text>
           </View>
           <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16 }}>
-            Approving attendance locks and validates billable shift hours. The automated escrow wage batch release is scheduled for 11:00 PM IST tonight following supervisor sign-off.
+            Approving attendance locks billable shift hours for payroll review. Payout initiation and settlement are separate steps and are not completed by this approval alone.
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
             <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase' }}>

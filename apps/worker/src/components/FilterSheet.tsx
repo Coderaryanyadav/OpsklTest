@@ -295,7 +295,7 @@ export function FilterSheet({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceMuted, padding: 8, borderRadius: radii.sm }}>
               <ShieldCheck size={14} color={colors.primary} />
               <Text style={{ fontSize: 11, color: colors.textSecondary, flex: 1 }}>
-                All displayed rates are guaranteed base pay before event surge & overtime multipliers.
+                All displayed rates are organizer-listed base pay. Overtime and surge are only paid if the shift terms include them.
               </Text>
             </View>
           </View>

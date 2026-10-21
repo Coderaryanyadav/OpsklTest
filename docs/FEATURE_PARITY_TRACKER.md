@@ -1,5 +1,7 @@
 # OPSKL — FEATURE PARITY TRACKER
 
+> **Superseded for honesty:** Prefer `docs/ui/STITCH_PHASES_1_10_REPORT.md` (2026-10-21). Rows below historically marked screens **Verified** including ICICI VAN / HMAC QR / UIDAI claims that are **not** live integrations. Treat this file as historical mapping only.
+
 This tracker tracks the implementation, backend dependencies, automated tests, verification evidence, and external boundaries for all 28 production screens designed in the Stitch specification (`Design/`).
 
 ---

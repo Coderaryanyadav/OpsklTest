@@ -506,11 +506,11 @@ export function GeofencedCheckInModal({
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Shield size={14} color={colors.primary} />
                 <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Dynamic IST Token
+                  Venue Pass Code
                 </Text>
               </View>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: colors.danger, letterSpacing: 0.2 }}>
-                Screenshots Invalid
+              <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textSecondary, letterSpacing: 0.2 }}>
+                Show to supervisor
               </Text>
             </View>
 
@@ -657,7 +657,7 @@ export function GeofencedCheckInModal({
             </View>
 
             <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', lineHeight: 17, maxWidth: 320 }}>
-              Present this QR token to event roster supervisor (
+              Present this pass code (visual badge below is illustrative — not a scannable protocol QR) to event roster supervisor (
               <Text style={{ fontWeight: '700', color: colors.textPrimary }}>
                 {job?.supervisorName || 'Supervisor'}
               </Text>
@@ -775,7 +775,7 @@ export function GeofencedCheckInModal({
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: isCheckedIn ? colors.textPrimary : colors.primary }}>
-                      Supervisor QR Scan & Sign-in
+                      Supervisor pass-code verification
                     </Text>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: isCheckedIn ? colors.primary : colors.warning, textTransform: 'uppercase' }}>
                       {isCheckedIn ? 'COMPLETED' : 'PENDING SCAN'}

@@ -814,7 +814,7 @@ export const DisputesQueue: React.FC<DisputesQueueProps> = ({
                   <span style={{ fontWeight: 700, color: '#059669' }}>RESERVE HEALTHY</span>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 12 }}>₹16,099.20 Locked Apex Balance</div>
-                <div style={{ color: 'var(--text-secondary)' }}>ICICI Nodal Escrow #OPSKLAPEX04018</div>
+                <div style={{ color: 'var(--text-secondary)' }}>Ledger payout hold · no live bank VAN linked</div>
               </div>
 
               <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>

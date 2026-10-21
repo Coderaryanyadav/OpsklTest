@@ -266,7 +266,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
 
       OpsklAlert.alert(
         'Roster Contingency Executed',
-        `Confirmed worker ${crewToReplace.name} has been replaced by standby specialist ${selectedStandbyForReplacement.name}.\n\nReason: ${replacementReason}.\nDispatched venue gate passes & nodal escrow allocation updated without disruption.`
+        `Confirmed worker ${crewToReplace.name} has been replaced by standby specialist ${selectedStandbyForReplacement.name}.\n\nReason: ${replacementReason}.\nRoster slot reassigned. Wage obligations follow the confirmed booking ledger (no live bank escrow rail).`
       );
 
       setSelectedStandbyForReplacement(null);
@@ -830,7 +830,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
               Daily Wage Allocation: {formatINR(18000)} Total
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
-              ₹3,000/specialist • Auto-escrow locked via ICICI Bank rails
+              Standby pool · wage terms follow confirmed booking ledger
             </Text>
           </View>
           <View
@@ -953,7 +953,7 @@ export default function ConfirmedCrewRosterBriefingConsoleScreen() {
               }}
             >
               <Text style={{ fontSize: 11, color: '#92400E', lineHeight: 16 }}>
-                <Text style={{ fontWeight: '700' }}>Roster Governance Policy:</Text> Replacing a confirmed crew member releases their locked shift slot and reallocates the pre-funded escrow wage to the standby replacement.
+                <Text style={{ fontWeight: '700' }}>Roster Governance Policy:</Text> Replacing a confirmed crew member releases their locked shift slot. Wage obligation moves with the newly confirmed booking in the Opskl ledger.
               </Text>
             </View>
 

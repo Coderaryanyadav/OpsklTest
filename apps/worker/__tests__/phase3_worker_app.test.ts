@@ -376,7 +376,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('GeofencedCheckInModal');
   });
 
-  test('3.23 Geofenced Check-In & Attendance QR Token (Screen 12) enforces on-demand GPS verification and rotating IST token', () => {
+  test('3.23 Geofenced Check-In enforces GPS verification and honest pass-code presentation (not fake scanner QR)', () => {
     const checkInModalPath = path.join(workerAppDir, 'src/components/GeofencedCheckInModal.tsx');
     const checkInRoutePath = path.join(workerAppDir, 'app/shift/checkin.tsx');
     const modalContent = fs.readFileSync(checkInModalPath, 'utf8');
@@ -395,17 +395,18 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(modalContent).toContain('Location access is strictly required only at check-in');
     expect(modalContent).toContain('No background tracking is performed');
 
-    // Dynamic QR Token & SVG Matrix
-    expect(modalContent).toContain('Dynamic IST Token');
-    expect(modalContent).toContain('Screenshots Invalid');
-    expect(modalContent).toContain('Token refreshes in');
-    expect(modalContent).toContain('tokenSecondsLeft');
+    // Honest pass-code presentation (decorative SVG is not a scannable protocol)
+    expect(modalContent).toContain('Venue Pass Code');
+    expect(modalContent).toContain('Show to supervisor');
+    expect(modalContent).toContain('not a scannable protocol QR');
     expect(modalContent).toContain('displayToken');
+    expect(modalContent).not.toContain('Dynamic IST Token');
+    expect(modalContent).not.toContain('Screenshots Invalid');
 
     // 4 Checkpoints Milestone Tracker
     expect(modalContent).toContain('Operational Checkpoints');
     expect(modalContent).toContain('Geofence Perimeter Reached');
-    expect(modalContent).toContain('Supervisor QR Scan & Sign-in');
+    expect(modalContent).toContain('Supervisor pass-code verification');
     expect(modalContent).toContain('Shift Active:');
     expect(modalContent).toContain('Geofenced Check-Out & Hours Sign-off');
 

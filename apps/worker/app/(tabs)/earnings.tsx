@@ -828,7 +828,7 @@ export default function WorkerEarningsScreen() {
           {/* Trust Seal / Footer Info */}
           <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, alignItems: 'center' }}>
             <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', lineHeight: 16 }}>
-              Settlements processed via RBI-authorized payment aggregator rails. Immediate query resolution via Opskl Ground Command, Bandra Kurla Complex.
+              Payout statuses reflect the Opskl ledger only. Live bank aggregator rails are not linked in this build. Contact support for settlement questions.
             </Text>
           </View>
         </ScrollView>

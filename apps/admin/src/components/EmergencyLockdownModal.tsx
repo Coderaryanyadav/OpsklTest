@@ -223,7 +223,7 @@ export function EmergencyLockdownModal({
             <div style={{ fontSize: 12, color: '#334155', lineHeight: 1.5 }}>
               <strong>100% Wage Protection Guarantee:</strong> Enforcing suspension immediately
               safeguards workers currently deployed at venues. Active worker wages remain pre-funded
-              and protected in the ICICI nodal escrow account without transit absence penalties.
+              and remain tracked in the Opskl wage ledger without transit absence penalties. Live bank escrow rails are not linked in this build.
             </div>
           </div>
 

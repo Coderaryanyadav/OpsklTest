@@ -237,15 +237,15 @@ export default function OrganizerFinancesScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={{ width: 8, height: 8, borderRadius: radii.full, backgroundColor: colors.accent }} />
                 <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                  Nodal Escrow Pool
+                  Funding &amp; Payment Status
                 </Text>
               </View>
-              <Badge label="RBI SUPERVISED" variant="info" size="sm" />
+              <Badge label="LEDGER ONLY" variant="info" size="sm" />
             </View>
 
             <View>
               <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Total Escrow Deployed
+                Settled Disbursements (Ledger)
               </Text>
               <Text style={[typography.h1, { color: colors.textPrimary, marginTop: 2, fontSize: 32 }]}>
                 {formatINR(settledAmount)}
@@ -368,54 +368,30 @@ export default function OrganizerFinancesScreen() {
             }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
+              <View style={{ flex: 1, paddingRight: spacing.sm }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  ICICI Bank Enterprise Escrow Rails
+                  Payment rails not linked
                 </Text>
-                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                  Real-Time Instant UPI & NEFT Inflow
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 }}>
+                  ICICI VAN / live bank escrow is not integrated. Figures above are internal ledger estimates from Opskl payment records only.
                 </Text>
               </View>
-              <View style={{ width: 6, height: 6, borderRadius: radii.full, backgroundColor: colors.accent }} />
             </View>
             <View
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: radii.md,
                 padding: spacing.sm + 2,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
                 borderWidth: 1,
                 borderColor: colors.border,
               }}
             >
-              <View>
-                <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '600' }}>
-                  Virtual Escrow Account (VAN)
-                </Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, letterSpacing: 1, marginTop: 2 }}>
-                  {organizerId ? `OPSKL${organizerId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}` : 'PENDING AUTH'}
-                </Text>
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={async () => {
-                  if (!organizerId) return;
-                  await Clipboard.setStringAsync(`OPSKL${organizerId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}`);
-                  OpsklAlert.alert('VAN Copied', 'Virtual Escrow Account copied to clipboard.');
-                }}
-                style={{
-                  backgroundColor: colors.surfaceMuted,
-                  borderRadius: radii.md,
-                  paddingHorizontal: spacing.sm + 4,
-                  paddingVertical: 6,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }}>Copy</Text>
-              </TouchableOpacity>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '600' }}>
+                Organizer reference
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textPrimary, letterSpacing: 1, marginTop: 2 }}>
+                {organizerId ? `ORG-${organizerId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}` : 'PENDING AUTH'}
+              </Text>
             </View>
           </View>
 
@@ -855,7 +831,7 @@ export default function OrganizerFinancesScreen() {
                           </Text>
                           <StatusIndicator
                             label={
-                              inv.status === 'escrow_funded' ? 'Funded in escrow' : inv.status.replace('_', ' ')
+                              inv.status === 'escrow_funded' ? 'Marked funded (ledger)' : inv.status.replace('_', ' ')
                             }
                             tone={inv.status === 'escrow_funded' ? 'success' : 'warning'}
                             size="sm"
@@ -1096,62 +1072,11 @@ export default function OrganizerFinancesScreen() {
                     }}
                   >
                     <Text style={[typography.subtitle, { color: colors.textPrimary }]}>
-                      Opskl Nodal Escrow Bank Account
+                      Funding reference (ledger)
                     </Text>
-                    <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                      Transfer exact invoice amount via NEFT, RTGS, IMPS, or UPI, then submit your transaction UTR below:
+                    <Text style={{ fontSize: 12, color: colors.textMuted, lineHeight: 18 }}>
+                      Live nodal bank account / UPI VPA details are not provisioned in this build. You can still register a payment reference for admin review against the invoice ledger — this does not move bank funds automatically.
                     </Text>
-
-                    <View style={{ gap: spacing.xs, marginTop: spacing.xs }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Beneficiary:</Text>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textPrimary }}>
-                          Opskl Technologies Pvt Ltd (Escrow)
-                        </Text>
-                      </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Account Number:</Text>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            await Clipboard.setStringAsync('000405012345');
-                            OpsklAlert.alert('Copied', 'Account number copied to clipboard.');
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                            000405012345 📋
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>IFSC Code:</Text>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            await Clipboard.setStringAsync('HDFC0000004');
-                            OpsklAlert.alert('Copied', 'IFSC code copied to clipboard.');
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                            HDFC0000004 📋
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>UPI VPA:</Text>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            await Clipboard.setStringAsync('opskl.escrow@hdfcbank');
-                            OpsklAlert.alert('Copied', 'UPI VPA copied to clipboard.');
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textPrimary }}>
-                            opskl.escrow@hdfcbank 📋
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
 
                     <Divider style={{ marginVertical: spacing.xs }} />
 
@@ -1160,7 +1085,7 @@ export default function OrganizerFinancesScreen() {
                       value={paymentRef}
                       onChangeText={setPaymentRef}
                       placeholder="e.g. 429302194821 or UPI Ref ID"
-                      helperText="Enter the 12-digit UTR from your bank or UPI transfer receipt."
+                      helperText="Optional bank UTR if you funded offline. Admin verifies manually."
                       autoCapitalize="characters"
                     />
 
@@ -1184,8 +1109,8 @@ export default function OrganizerFinancesScreen() {
                         setSubmittingPaymentRef(false);
                         if (res.success) {
                           OpsklAlert.alert(
-                            'Payment Slip Submitted',
-                            'Your transfer reference has been registered. Opskl Admin will verify receipt with the nodal bank and mark escrow funded.'
+                            'Payment Reference Submitted',
+                            'Your reference was registered on the invoice ledger for admin review. This is not confirmation of bank receipt or escrow funding.'
                           );
                           setSelectedInvoice(null);
                           setPaymentRef('');

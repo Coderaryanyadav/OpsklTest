@@ -78,7 +78,7 @@ const WIZARD_STEPS = [
 const STEP_META = [
   { title: 'Role & Responsibilities', subtitle: 'Step 1 of 4 • Define role title, category and headcount' },
   { title: 'Schedule & Venue Roster', subtitle: 'Step 2 of 4 • Date, timings, venue location and lead' },
-  { title: 'Wage & Escrow Allocation', subtitle: 'Step 3 of 4 • Worker pay, welfare, amenities and escrow' },
+  { title: 'Wage & Fee Estimate', subtitle: 'Step 3 of 4 • Worker pay, welfare, amenities and fee breakdown' },
   { title: 'Briefing & Final Publish', subtitle: 'Step 4 of 4 • Verification review and live dispatch' },
 ];
 
@@ -345,7 +345,7 @@ export default function OrganizerCreateShiftScreen() {
         await universalStorage.removeItem(DRAFT_KEY).catch(() => null);
         OpsklAlert.alert(
           '✓ Shift Created & Published',
-          `Shift "${title}" is now active on the Opskl Mumbai crew marketplace. Nodal escrow allocation of ${formatINR(totalEscrowRequired)} has been scheduled.`,
+          `Shift "${title}" is now active on the Opskl Mumbai crew marketplace. Estimated organizer obligation: ${formatINR(totalEscrowRequired)} (wages + fees; not a live bank escrow hold).`,
           [
             {
               text: 'View in Roster',
@@ -1086,7 +1086,7 @@ export default function OrganizerCreateShiftScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary }}>
-                    RBI Protected
+                    Estimate
                   </Text>
                 </View>
               </View>
@@ -1119,7 +1119,7 @@ export default function OrganizerCreateShiftScreen() {
                   </Text>
                 </View>
 
-                {/* Total Escrow Obligation */}
+                {/* Total funding estimate — not a live bank escrow hold */}
                 <View
                   style={{
                     backgroundColor: colors.surfaceMuted,
@@ -1133,7 +1133,7 @@ export default function OrganizerCreateShiftScreen() {
                 >
                   <View>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase' }}>
-                      Total Escrow Required
+                      Estimated Organizer Total
                     </Text>
                     <WageText style={{ fontSize: 22, fontWeight: '800', color: colors.primary, marginTop: 2 }}>
                       {formatINR(totalEscrowRequired)}
@@ -1142,13 +1142,12 @@ export default function OrganizerCreateShiftScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <Lock size={14} color={colors.primary} />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-                      Nodal Escrow
+                      Fee estimate
                     </Text>
                   </View>
                 </View>
               </View>
 
-              {/* Zero-Cut Guarantee Note */}
               <View
                 style={{
                   backgroundColor: colors.surfaceMuted,
@@ -1162,8 +1161,8 @@ export default function OrganizerCreateShiftScreen() {
               >
                 <Gavel size={15} color={colors.primary} style={{ marginTop: 2 }} />
                 <Text style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 16, flex: 1 }}>
-                  <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Zero-Cut Guarantee: </Text>
-                  100% of the {formatINR(totalCrewBudget)} crew wage pool is held in an RBI-supervised nodal escrow account and transferred directly to workers upon digital attendance approval. Platform fees are strictly billed to the enterprise.
+                  <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Worker wage transparency: </Text>
+                  The {formatINR(totalCrewBudget)} crew wage pool is not deducted for platform fees. Fees ({formatINR(platformFee)} + {formatINR(gstFee)} GST) are billed to the organizer. Live nodal bank escrow is not integrated in this build — totals are estimates only.
                 </Text>
               </View>
             </View>

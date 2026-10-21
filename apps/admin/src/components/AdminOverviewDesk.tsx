@@ -211,7 +211,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               }}
             >
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D4ED8' }} />
-              ICICI ESCROW & GEOFENCE GPS SYNCED
+              LEDGER METRICS · LIVE QUEUES
             </span>
           </div>
         </div>
@@ -430,12 +430,12 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-main)' }}>
-                {activeJobs.length || 18}
+                {activeJobs.length}
               </span>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#059669' }}>Shifts Active</span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-              6 BKC • 7 NESCO • 5 S. Mumbai
+              From live jobs query · open &amp; in progress
             </div>
           </div>
           <div
@@ -447,9 +447,9 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               fontSize: 11,
             }}
           >
-            <span style={{ color: 'var(--text-secondary)' }}>ESCROW LOCKED</span>
+            <span style={{ color: 'var(--text-secondary)' }}>PENDING PAYOUTS (LEDGER)</span>
             <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-              {formatINR(metrics?.totalEscrowHeld || 412000)}
+              {formatINR(metrics?.totalEscrowHeld ?? 0)}
             </span>
           </div>
         </div>
@@ -475,12 +475,15 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-main)' }}>142</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>/ 148 expected</span>
+              <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-main)' }}>
+                {metrics?.verifiedWorkersCount ?? 0}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                verified workers
+              </span>
             </div>
-            {/* Visual Progress bar */}
-            <div style={{ width: '100%', height: 6, background: 'var(--surface-muted)', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
-              <div style={{ width: '95.9%', height: '100%', background: '#1D4ED8' }} />
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 8 }}>
+              Live attendance rates require per-shift roster queries — not simulated here.
             </div>
           </div>
           <div
@@ -492,8 +495,10 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               fontSize: 11,
             }}
           >
-            <span style={{ color: 'var(--text-secondary)' }}>PUNCTUALITY RATE</span>
-            <span style={{ fontWeight: 700, color: '#1D4ED8' }}>95.9% (±10m)</span>
+            <span style={{ color: 'var(--text-secondary)' }}>ACTIVE ORGANIZERS</span>
+            <span style={{ fontWeight: 700, color: '#1D4ED8' }}>
+              {metrics?.activeOrganizersCount ?? 0}
+            </span>
           </div>
         </div>
 
@@ -519,7 +524,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-main)' }}>
-                {pendingKYC.length || 18}
+                {pendingKYC.length}
               </span>
               <span
                 style={{
@@ -535,7 +540,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               </span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-              14 Aadhaar Workers • 4 Entity GSTIN
+              Live verification_cases queue · no fabricated split
             </div>
           </div>
           <div
@@ -928,7 +933,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
                   border: '1px solid #BFDBFE',
                 }}
               >
-                GOVT UIDAI CONNECTED
+                MASKED KYC REVIEW ONLY
               </span>
             </div>
 
@@ -958,7 +963,7 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
 
         {/* Right Column: Dispatch Radar, Escrow Health, Audit Governance */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Dispatch Radar */}
+          {/* Live action snapshot — real queue counts only */}
           <div
             style={{
               background: 'var(--surface-color)',
@@ -973,12 +978,11 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Radio size={16} color="#1D4ED8" />
-                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Dispatch Radar</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>Live Action Snapshot</span>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>3 MAJOR VENUES</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>DB COUNTS</span>
             </div>
 
-            {/* Venue 1: JWCC */}
             <div
               style={{
                 padding: '10px 12px',
@@ -986,87 +990,35 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
                 background: 'var(--surface-muted)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 4,
+                gap: 6,
+                fontSize: 12,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-main)' }}>
-                  Jio World Convention (JWCC)
-                </span>
-                <span style={{ fontSize: 9, fontWeight: 800, color: '#1D4ED8', background: '#DBEAFE', padding: '1px 5px', borderRadius: 3 }}>
-                  BKC GRID
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Pending KYC</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{pendingKYC.length}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)' }}>
-                <span>6 shifts active • 74 crew</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>₹1,85,000 in escrow</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Active disputes</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{activeDisputes.length}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#B91C1C', fontWeight: 700, marginTop: 2 }}>
-                <AlertTriangle size={12} />
-                <span>Turnstile Gate 4 sensor alert active</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Wage-floor flags</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{flaggedJobs.length}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Critical safety open</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                  {metrics?.criticalSafetyReportsCount ?? 0}
+                </span>
               </div>
             </div>
-
-            {/* Venue 2: NESCO */}
-            <div
-              style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--surface-muted)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-main)' }}>
-                  NESCO Exhibition Centre
-                </span>
-                <span style={{ fontSize: 9, fontWeight: 800, color: '#059669', background: '#D1FAE5', padding: '1px 5px', borderRadius: 3 }}>
-                  GOREGAON E
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)' }}>
-                <span>7 shifts active • 52 crew</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>₹1,42,000 in escrow</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#059669', fontWeight: 700, marginTop: 2 }}>
-                <CheckCircle2 size={12} />
-                <span>All geofences 100% compliant (&lt; 6m variance)</span>
-              </div>
-            </div>
-
-            {/* Venue 3: Dome SVP */}
-            <div
-              style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--surface-muted)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-main)' }}>
-                  Dome SVP Stadium
-                </span>
-                <span style={{ fontSize: 9, fontWeight: 800, color: '#7C3AED', background: '#EDE9FE', padding: '1px 5px', borderRadius: 3 }}>
-                  WORLI
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)' }}>
-                <span>5 shifts active • 16 crew</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>₹85,000 in escrow</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#1D4ED8', fontWeight: 600, marginTop: 2 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1D4ED8' }} />
-                <span>Evening concert pre-rig underway</span>
-              </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              Venue radar and per-gate sensor feeds are not wired. This panel only shows live database queue counts.
             </div>
           </div>
 
-          {/* ICICI Escrow Health */}
+          {/* Funding & payment status — no fabricated bank balance */}
           <div
             style={{
               background: 'var(--surface-color)',
@@ -1081,9 +1033,10 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Building2 size={16} color="#1D4ED8" />
-                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>ICICI Escrow Health</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)' }}>
+                  Funding &amp; Payment Status
+                </span>
               </div>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
             </div>
 
             <div
@@ -1098,27 +1051,41 @@ export const AdminOverviewDesk: React.FC<AdminOverviewDeskProps> = ({
               }}
             >
               <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.04em' }}>
-                TOTAL POOL BALANCE (NODAL ACCOUNT)
+                PENDING PAYOUT OBLIGATIONS (LEDGER)
               </div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF' }}>₹18,44,250.00</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#CBD5E1', paddingTop: 6, borderTop: '1px solid #1E293B' }}>
-                <span>Zero-Commission Cut Rule: Verified</span>
-                <span style={{ color: '#38BDF8', fontWeight: 700 }}>RBI Escrow Compliance</span>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#FFFFFF' }}>
+                {formatINR(metrics?.totalEscrowHeld ?? 0)}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 10,
+                  color: '#CBD5E1',
+                  paddingTop: 6,
+                  borderTop: '1px solid #1E293B',
+                }}
+              >
+                <span>From payment_records · not a live bank balance</span>
+                <span style={{ color: '#38BDF8', fontWeight: 700 }}>No ICICI VAN linked</span>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Scheduled Batch 23:00 IST:</span>
-                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>₹1,84,500 (6 shifts)</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Settled payouts (ledger):</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                  {formatINR(metrics?.settledPayoutsTotal ?? 0)}
+                </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Instant Worker UPI Route:</span>
-                <span style={{ fontWeight: 700, color: '#059669' }}>IMPS 2.0 Nominal</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Platform fees collected:</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                  {formatINR(metrics?.platformFeesCollected ?? 0)}
+                </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Withholding / Holdbacks:</span>
-                <span style={{ fontWeight: 700, color: '#B91C1C' }}>₹24,500 (2 disputes)</span>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                Nodal bank escrow / IMPS rails are not integrated in this build. Treat figures as internal ledger status only.
               </div>
             </div>
           </div>

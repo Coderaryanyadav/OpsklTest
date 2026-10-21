@@ -1067,7 +1067,7 @@ export const VerificationQueue: React.FC<VerificationQueueProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                 <Shield size={14} color="#1D4ED8" style={{ flexShrink: 0 }} />
                 <span>
-                  <strong>UIDAI Aadhaar Data Vault & RBI PSS Compliant:</strong> Full 12-digit Aadhaar UID numbers are strictly prohibited and never stored in raw plaintext across Opskl servers. All cached documents purge permanently within 72 hours of verification sign-off.
+                  <strong>Masked KYC review:</strong> Full 12-digit Aadhaar UID numbers must not be shown or logged in plaintext. Review uses masked identifiers and restricted document access only. This desk does not claim a live UIDAI AUA connection.
                 </span>
               </div>
               <div style={{ flexShrink: 0, fontWeight: 700, color: 'var(--text-main)', marginLeft: 16 }}>

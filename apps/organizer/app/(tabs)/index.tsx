@@ -1097,10 +1097,10 @@ export default function OrganizerDashboardScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-              Opskl Escrow Guarantee
+              Funding &amp; payment status
             </Text>
             <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 17 }}>
-              Wage obligations are pre-funded into escrow upon shift publishing. Direct disbursements release within 2 hours of attendance approval.
+              Worker wages and platform fees are tracked in the Opskl ledger. Attendance approval is separate from payout completion. Live bank escrow rails are not linked in this build.
             </Text>
           </View>
         </View>
