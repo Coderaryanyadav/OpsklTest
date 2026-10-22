@@ -549,7 +549,7 @@ export default function OrganizerFinancesScreen() {
                   Zero Worker Deduction Guarantee
                 </Text>
                 <Text style={{ fontSize: 10, color: '#047857', marginTop: 1, lineHeight: 15 }}>
-                  100% of ₹14,400 crew wage pool transfers direct to workers without platform cuts. Platform fees billed strictly to enterprise.
+                  100% of approved crew wages transfer direct to workers without platform deductions. Platform fees are billed strictly to the enterprise.
                 </Text>
               </View>
             </View>
@@ -579,7 +579,7 @@ export default function OrganizerFinancesScreen() {
                 onPress={() => {
                   OpsklAlert.alert(
                     'Sign-Off & Wage Release',
-                    'Attendance approval locks verified timesheet hours. Automated disbursement to crew UPI accounts releases following final sign-off.'
+                    'Attendance approval locks verified timesheet hours. Payouts are recorded against crew UPI destinations and reconciled manually by operations after final sign-off.'
                   );
                 }}
                 style={{
@@ -614,7 +614,7 @@ export default function OrganizerFinancesScreen() {
           <InlineBanner
             variant="info"
             title="Pilot settlement notice"
-            message="Invoices are generated on-demand from confirmed crew (wages + 10% platform fee + 18% GST). Payouts settle to verified UPI after supervisor sign-off."
+            message="Invoices are generated on-demand from confirmed crew (wages + 10% platform fee + 18% GST). Payout settlement is recorded manually after supervisor sign-off."
           />
 
           {activeView === 'invoices' ? (

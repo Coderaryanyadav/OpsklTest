@@ -82,11 +82,16 @@ describe('Cross-Product Operational Integrity: Phase 8 Requirements', () => {
       ).toBeUndefined();
     });
 
-    test('generates deterministic offline gate backup PIN and high integrity token', () => {
+    test('generates a random offline gate display code per session', () => {
       const key = generateOfflineGateKey('WKR-9021', 'NESCO Center');
-      expect(key.backupPin).toBe('884 - 219');
-      expect(key.tokenHash).toBe('7f83b1657ff1fc53b92dc');
+      expect(key.backupPin).toMatch(/^\d{3} - \d{3}$/);
+      expect(key.backupPin).not.toBe('884 - 219');
+      expect(key.tokenHash).toMatch(/^[0-9a-f]{20}$/);
+      expect(key.tokenHash).not.toBe('7f83b1657ff1fc53b92dc');
       expect(key.validForSeconds).toBeGreaterThan(0);
+
+      const second = generateOfflineGateKey('WKR-9021', 'NESCO Center');
+      expect(second.tokenHash).not.toBe(key.tokenHash);
     });
   });
 

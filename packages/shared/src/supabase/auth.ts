@@ -411,48 +411,6 @@ export async function signUpWithEmailPassword({
   logger.info('Initiating Sign-up', { email, role });
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Try universal registration endpoint if available to bypass SMTP confirmation email failure
-  const apiBase =
-    (typeof process !== 'undefined' && (process.env.EXPO_PUBLIC_ADMIN_URL || process.env.NEXT_PUBLIC_ADMIN_URL)) ||
-    (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://192.168.1.193:3000');
-
-  if (apiBase) {
-    try {
-      const resp = await fetch(`${apiBase}/api/auth/register-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          password,
-          role,
-          fullName,
-          phone,
-        }),
-      });
-
-      if (resp.ok) {
-        const body = await resp.json();
-        if (body.success) {
-          // Immediately sign in so user gets active session
-          const signInRes = await supabase.auth.signInWithPassword({
-            email: normalizedEmail,
-            password,
-          });
-          if (signInRes.data?.session) {
-            return signInRes.data;
-          }
-        } else if (body.error && body.error.includes('already exists')) {
-          throw new Error(body.error);
-        }
-      }
-    } catch (e: any) {
-      if (e?.message && e.message.includes('already exists')) {
-        throw e;
-      }
-      logger.warn('Direct registration endpoint unavailable, falling back to standard auth', { error: String(e) });
-    }
-  }
-
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,

@@ -218,6 +218,17 @@ async function run() {
         );
       },
     },
+    {
+      name: '3.8 P1-SHARED-LIMIT: check_rate_limit_atomic function and rate_limit_buckets table defined',
+      test: () => {
+        const rateLimitSql = allMigrationsMap.get('20261022000003_shared_rate_limiting.sql') || '';
+        return (
+          rateLimitSql.includes('CREATE TABLE IF NOT EXISTS public.rate_limit_buckets') &&
+          rateLimitSql.includes('CREATE OR REPLACE FUNCTION public.check_rate_limit_atomic') &&
+          rateLimitSql.includes('ON CONFLICT (key) DO UPDATE')
+        );
+      },
+    },
   ];
 
   let passed = 0;
@@ -265,6 +276,7 @@ async function run() {
         'is_current_admin',
         'admin_moderate_job_safe',
         'admin_resolve_safety_report_safe',
+        'check_rate_limit_atomic',
       ];
 
       const { rows: funcRows } = await client.query(`

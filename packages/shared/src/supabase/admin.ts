@@ -276,7 +276,7 @@ export async function resolveDisputeSafe(
   status: 'resolved' | 'dismissed',
   resolutionNotes: string,
   adjustedPayout?: number,
-  adminId?: string
+  bookingOutcome: 'completed' | 'cancelled' | 'no_show' = 'completed'
 ): Promise<{ success: boolean; error?: string }> {
   logger.info('Resolving dispute', { disputeId, status, adjustedPayout });
 
@@ -289,8 +289,8 @@ export async function resolveDisputeSafe(
       p_dispute_id: disputeId,
       p_status: status,
       p_resolution_notes: resolutionNotes,
+      p_booking_outcome: status === 'resolved' ? bookingOutcome : null,
       p_adjusted_payout: adjustedPayout ?? null,
-      p_admin_id: adminId ?? null,
     });
 
     if (error) {

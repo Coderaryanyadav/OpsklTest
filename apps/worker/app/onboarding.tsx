@@ -319,13 +319,12 @@ export default function WorkerOnboardingScreen() {
 
     setSubmitting(true);
     try {
-      // 1. Update UPI ID on worker profile
-      if (upiId.trim()) {
-        await updateWorkerProfile(userId, {
-          upiId: upiId.trim(),
-          profileCompletionStatus: 'completed',
-        });
-      }
+      // 1. Mark profile complete. UPI is optional at onboarding; payouts remain
+      // blocked server-side until a valid destination is supplied.
+      await updateWorkerProfile(userId, {
+        ...(upiId.trim() ? { upiId: upiId.trim() } : {}),
+        profileCompletionStatus: 'completed',
+      });
 
       // 2. Upload and register KYC verification case if new or re-submitting
       if (!existingCase || existingCase.status === 'rejected') {

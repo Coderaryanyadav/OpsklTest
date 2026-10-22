@@ -25,7 +25,8 @@
     "screenshots": "node scripts/capture_all_screenshots.mjs",
     "notifications:dispatch": "node scripts/dispatch_push_notifications.mjs",
     "check:all": "node scripts/check_all_features.mjs",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "test:db": "node scripts/test_lifecycle_db.mjs"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",

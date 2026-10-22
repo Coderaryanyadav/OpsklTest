@@ -228,7 +228,7 @@ export default function OrganizerApplicantScreeningScreen() {
     setActionInProgress(candidate.id);
     try {
       const res = await updateApplicationStatusSafe(candidate.applicationId, 'shortlisted', organizerId);
-      if (res.success || true) {
+      if (res.success) {
         setCandidates((prev) =>
           prev.map((c) => (c.id === candidate.id ? { ...c, status: 'shortlisted' } : c))
         );
@@ -236,6 +236,8 @@ export default function OrganizerApplicantScreeningScreen() {
       } else {
         OpsklAlert.alert('Action Failed', res.error || 'Could not shortlist candidate.');
       }
+    } catch (err: any) {
+      OpsklAlert.alert('Action Failed', err?.message || 'Could not shortlist candidate.');
     } finally {
       setActionInProgress(null);
     }
@@ -246,12 +248,16 @@ export default function OrganizerApplicantScreeningScreen() {
     setActionInProgress(candidate.id);
     try {
       const res = await updateApplicationStatusSafe(candidate.applicationId, 'rejected', organizerId);
-      if (res.success || true) {
+      if (res.success) {
         setCandidates((prev) =>
           prev.map((c) => (c.id === candidate.id ? { ...c, status: 'rejected' } : c))
         );
         OpsklAlert.alert('Application Declined', `${candidate.name} has been archived.`);
+      } else {
+        OpsklAlert.alert('Action Failed', res.error || 'Could not decline candidate.');
       }
+    } catch (err: any) {
+      OpsklAlert.alert('Action Failed', err?.message || 'Could not decline candidate.');
     } finally {
       setActionInProgress(null);
     }

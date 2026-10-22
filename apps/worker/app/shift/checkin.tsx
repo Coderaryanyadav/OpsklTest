@@ -27,11 +27,9 @@ export default function ShiftCheckInScreen() {
         const found = bookings.find(
           (b) => b.id === targetId || b.jobId === targetId || b.job?.id === targetId
         );
-        if (found) {
-          setBooking(found);
-        } else if (bookings.length > 0) {
-          setBooking(bookings[0]);
-        }
+        // Never fall back to an unrelated booking: checking in against the wrong
+        // shift is worse than showing an explicit empty state.
+        setBooking(found ?? null);
       } catch (err) {
         console.error('Failed to load booking for check-in', err);
       } finally {

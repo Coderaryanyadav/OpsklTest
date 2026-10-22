@@ -469,7 +469,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
 
     // Shift Ledger List & Truthful Settlement UTR
     expect(content).toContain('Shift Ledger');
-    expect(content).toContain('DISBURSED VIA UPI');
+    expect(content).toContain('SETTLED — MANUAL RECONCILIATION');
     expect(content).toContain('APPROVED • DISBURSAL SCHEDULED');
     expect(content).toContain('UNDER ATTENDANCE REVIEW');
     expect(content).toContain('Settlement ID:');
@@ -483,7 +483,7 @@ describe('Phase 3 Worker App Invariants & Launch Fixes', () => {
     expect(content).toContain('Zero worker charges');
     expect(content).toContain('TDS / Statutory Withholding');
     expect(content).toContain('Net Disbursed (1:1)');
-    expect(content).toContain('Download Monthly Pay Statement (PDF)');
+    expect(content).toContain('Pay Statement Export (Unavailable)');
     expect(content).toContain('Update Payout Bank / UPI ID');
     expect(content).toContain('Payment Dispute or Missing Settlement?');
   });

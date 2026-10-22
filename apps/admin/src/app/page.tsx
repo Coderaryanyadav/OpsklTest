@@ -410,7 +410,13 @@ function AdminDashboardInner() {
     notes: string,
     adjustedPayout?: number
   ) => {
-    const res = await resolveDisputeSafe(disputeId, status, notes, adjustedPayout, undefined);
+    const res = await resolveDisputeSafe(
+      disputeId,
+      status,
+      notes,
+      adjustedPayout,
+      status === 'resolved' ? 'completed' : undefined
+    );
     if (res.success) {
       setDisputes((prev) => prev.map((d) => (d.id === disputeId ? { ...d, status } : d)));
       setActionSuccessMessage('Attendance dispute successfully adjudicated.');

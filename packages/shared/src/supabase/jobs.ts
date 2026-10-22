@@ -1177,7 +1177,7 @@ function mapBookingRow(row: any): Booking {
     status: row.status,
     agreedHourlyRate: Number(row.agreed_hourly_rate),
     agreedTotalPay: Number(row.agreed_total_pay),
-    checkInCode: row.check_in_code || `OP-${row.id.slice(0, 4).toUpperCase()}`,
+    checkInCode: row.check_in_code || '',
     checkInTime: row.check_in_time,
     checkOutTime: row.check_out_time,
     cancellationReason: row.cancellation_reason,

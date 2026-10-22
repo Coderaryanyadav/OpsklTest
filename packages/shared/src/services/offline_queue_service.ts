@@ -190,13 +190,32 @@ export async function syncOfflineQueueSafe(
 }
 
 /**
- * Generate a deterministic offline gate key & backup PIN
+ * Generate a per-session offline gate key & display code.
+ *
+ * The code is generated locally for operator reference only; it is not a
+ * server-verified credential and must not be treated as one. It is therefore
+ * random per call instead of a shared static PIN.
  */
-export function generateOfflineGateKey(workerId: string = 'WKR-9021', venueName: string = 'NESCO Center'): OfflineGateKey {
-  // Deterministic 6-digit PIN format "884 - 219"
+export function generateOfflineGateKey(workerId: string = 'LOCAL-WORKER', venueName: string = 'Current Venue'): OfflineGateKey {
+  const randomBytes = (length: number): Uint8Array => {
+    const bytes = new Uint8Array(length);
+    const webCrypto = (globalThis as any)?.crypto;
+    if (webCrypto?.getRandomValues) {
+      webCrypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < length; i += 1) {
+        bytes[i] = Math.floor(Math.random() * 256);
+      }
+    }
+    return bytes;
+  };
+
+  const digits = Array.from(randomBytes(6), (b) => String(b % 10)).join('');
+  const tokenHash = Array.from(randomBytes(10), (b) => b.toString(16).padStart(2, '0')).join('');
+
   return {
-    backupPin: '884 - 219',
-    tokenHash: '7f83b1657ff1fc53b92dc',
+    backupPin: `${digits.slice(0, 3)} - ${digits.slice(3, 6)}`,
+    tokenHash,
     expiresAt: new Date(Date.now() + 42 * 60 * 1000).toISOString(),
     validForSeconds: 42 * 60 - 12,
     venueName,

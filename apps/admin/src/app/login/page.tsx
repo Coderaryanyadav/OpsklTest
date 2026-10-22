@@ -68,7 +68,14 @@ export default function AdminLoginPage() {
         }
 
         const params = new URLSearchParams(window.location.search);
-        const redirectUrl = params.get('redirect') || '/';
+        const rawRedirect = params.get('redirect') || '/';
+        // Only allow same-origin absolute paths; never protocol-relative or external URLs.
+        const redirectUrl =
+          rawRedirect.startsWith('/') &&
+          !rawRedirect.startsWith('//') &&
+          !rawRedirect.includes('\\')
+            ? rawRedirect
+            : '/';
         window.location.href = redirectUrl;
       } else {
         setErrorMsg('Authentication succeeded but no active session was returned.');

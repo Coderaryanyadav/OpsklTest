@@ -165,7 +165,7 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
         'resolved',
         'Verified 2 hours overtime via supervisor logs',
         1850,
-        'admin-1'
+        'completed'
       );
 
       expect(res.success).toBe(true);
@@ -173,8 +173,8 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
         p_dispute_id: 'disp-1',
         p_status: 'resolved',
         p_resolution_notes: 'Verified 2 hours overtime via supervisor logs',
+        p_booking_outcome: 'completed',
         p_adjusted_payout: 1850,
-        p_admin_id: 'admin-1',
       });
     });
   });
@@ -471,7 +471,7 @@ describe('Phase 8 — Opskl Admin, Trust & Safety Operations', () => {
       });
 
       test('requires documented mediation findings before authorizing escrow release', async () => {
-        const res = await resolveDisputeSafe('disp-1', 'resolved', '', 2575, undefined);
+        const res = await resolveDisputeSafe('disp-1', 'resolved', '', 2575, 'completed');
         expect(res.success).toBe(false);
         expect(res.error).toContain('Documented case notes and investigation rationale are required');
       });

@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Rect, Circle } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 import * as Clipboard from 'expo-clipboard';
 import * as Location from 'expo-location';
 import {
@@ -89,7 +89,6 @@ export function GeofencedCheckInModal({
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [sensorLockTime, setSensorLockTime] = useState<string>('');
 
-  const [tokenSecondsLeft, setTokenSecondsLeft] = useState<number>(60);
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedPin, setCopiedPin] = useState(false);
   const [submittingCheckIn, setSubmittingCheckIn] = useState(false);
@@ -99,25 +98,16 @@ export function GeofencedCheckInModal({
   const isCheckedIn = booking?.status === 'checked_in';
   const isCompleted = booking?.status === 'completed' || booking?.status === 'completed_awaiting_review';
 
-  // Format token string: e.g. OPS-8842-JW
-  const rawCode = booking?.checkInCode || (booking?.id ? booking.id.substring(0, 6).toUpperCase() : '8842JW');
-  const displayToken = rawCode.startsWith('OP-') ? rawCode : `OPS-${rawCode}`;
-  
-  // Format manual numeric PIN: e.g. 884 - 219
-  const pinDigits = (rawCode.replace(/[^0-9]/g, '') + '884219').substring(0, 6);
-  const manualPin = `${pinDigits.substring(0, 3)} - ${pinDigits.substring(3, 6)}`;
-
-  // 60-Second Rotating Token Timer
-  useEffect(() => {
-    if (!visible) return;
-    const interval = setInterval(() => {
-      setTokenSecondsLeft((prev) => {
-        if (prev <= 1) return 60;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [visible]);
+  // The server issues the only valid credential. Never synthesize a fallback
+  // code: that would present a pass that can never be accepted.
+  const rawCode = booking?.checkInCode || '';
+  const displayToken = rawCode
+    ? (rawCode.startsWith('OP-') ? rawCode : `OPS-${rawCode}`)
+    : 'Not provisioned';
+  const pinDigits = rawCode.replace(/[^0-9]/g, '').substring(0, 6);
+  const manualPin = pinDigits.length === 6
+    ? `${pinDigits.substring(0, 3)} - ${pinDigits.substring(3, 6)}`
+    : null;
 
   // GPS Verification Routine
   const runGeofenceCheck = useCallback(async () => {
@@ -276,9 +266,6 @@ export function GeofencedCheckInModal({
   };
 
   if (!booking) return null;
-
-  const circumference = 88;
-  const strokeDashoffset = circumference - (tokenSecondsLeft / 60) * circumference;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -645,30 +632,9 @@ export function GeofencedCheckInModal({
               )}
             </Pressable>
 
-            {/* Rotating Security Timer Countdown */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Svg width={20} height={20} viewBox="0 0 36 36">
-                <Circle cx="18" cy="18" r="14" stroke={colors.borderMuted} strokeWidth="3" fill="none" />
-                <Circle
-                  cx="18"
-                  cy="18"
-                  r="14"
-                  stroke={colors.primary}
-                  strokeWidth="3"
-                  fill="none"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  transform="rotate(-90 18 18)"
-                />
-              </Svg>
-              <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                Token refreshes in{' '}
-                <Text style={{ fontWeight: '800', color: colors.textPrimary, fontFamily: 'monospace' }}>
-                  {tokenSecondsLeft}s
-                </Text>
-              </Text>
-            </View>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>
+              This credential is fixed for this booking and does not rotate.
+            </Text>
 
             <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center', lineHeight: 17, maxWidth: 320 }}>
               Present this pass code (visual badge below is illustrative — not a scannable protocol QR) to event roster supervisor (
@@ -872,8 +838,11 @@ export function GeofencedCheckInModal({
             </View>
 
             <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 17 }}>
-              If supervisor camera cannot read the dynamic screen code, verbally provide your single-use manual passcode:
+              If a numeric PIN was issued for this booking, provide it verbally:
             </Text>
+
+            {manualPin && (
+
 
             <Pressable
               onPress={handleCopyPin}
@@ -910,6 +879,9 @@ export function GeofencedCheckInModal({
                 )}
               </View>
             </Pressable>
+
+
+            )}
 
             {job?.supervisorPhone ? (
               <Pressable

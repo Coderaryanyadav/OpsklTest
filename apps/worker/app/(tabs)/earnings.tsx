@@ -604,7 +604,7 @@ export default function WorkerEarningsScreen() {
                             }}
                           >
                             {isSettled
-                              ? '✓ DISBURSED VIA UPI'
+                              ? '✓ SETTLED — MANUAL RECONCILIATION'
                               : isApproved
                               ? '● APPROVED • DISBURSAL SCHEDULED'
                               : isPending
@@ -727,12 +727,9 @@ export default function WorkerEarningsScreen() {
             <Pressable
               onPress={() => {
                 Alert.alert(
-                  'Statement Export',
-                  'Your verified pay statement for Mumbai operational cycle has been generated as a PDF summary.',
-                  [
-                    { text: 'Download PDF', onPress: () => {} },
-                    { text: 'Close', style: 'cancel' },
-                  ]
+                  'Statement Export Not Available',
+                  'PDF statement export is not implemented in this build. Your settlement ledger is shown above and is the authoritative record.',
+                  [{ text: 'Close', style: 'cancel' }]
                 );
               }}
               style={{
@@ -746,12 +743,12 @@ export default function WorkerEarningsScreen() {
                 borderColor: colors.borderMuted,
               }}
               accessibilityRole="button"
-              accessibilityLabel="Download monthly pay statement PDF"
+              accessibilityLabel="Pay statement export unavailable in this build"
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Download size={18} color={colors.primary} />
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textPrimary }}>
-                  Download Monthly Pay Statement (PDF)
+                  Pay Statement Export (Unavailable)
                 </Text>
               </View>
               <ArrowRight size={15} color={colors.textSecondary} />
@@ -846,7 +843,7 @@ export default function WorkerEarningsScreen() {
             </View>
 
             <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 17 }}>
-              Settlements are disbursed directly to your Indian UPI VPA upon supervisor attendance sign-off.
+              Settlements are recorded against your UPI VPA on the ledger after supervisor sign-off and reconciled manually by operations. No automatic bank transfer is performed in this build.
             </Text>
 
             <View style={{ marginVertical: spacing.md }}>
