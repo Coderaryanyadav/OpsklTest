@@ -5,7 +5,7 @@
 **Branch:** `feat/stitch-design-to-code-phases`  
 **Preserved user work (do not discard):**
 - Modified: admin Playwright, worker incident report, shared safety_incident_service + tests
-- Untracked: `docs/verification/**`, `supabase/migrations/20261021000000_incident_evidence_storage.sql`
+- Untracked: `docs/verification/**`, `supabase/migrations/20261022000006_incident_evidence_storage.sql`
 
 ## Architecture discovered (from files)
 

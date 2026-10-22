@@ -440,6 +440,16 @@ async function main() {
     check('anon cannot execute payout', privs.anon_payout === false, JSON.stringify(privs));
     check('account-takeover registration RPC is gone', privs.legacy_register === null, JSON.stringify(privs));
 
+    const fnGrants = (await client.query(`
+      SELECT
+        has_function_privilege('authenticated','public.generate_invoice_number()','EXECUTE') AS gen_auth,
+        has_function_privilege('anon','public.generate_invoice_number()','EXECUTE') AS gen_anon,
+        has_function_privilege('anon','public.submit_invoice_payment_reference_safe(uuid,text,text)','EXECUTE') AS utr_anon,
+        has_function_privilege('authenticated','public.submit_invoice_payment_reference_safe(uuid,text,text)','EXECUTE') AS utr_auth
+    `)).rows[0];
+    check('invoice allocator is not client-executable', fnGrants.gen_auth === false && fnGrants.gen_anon === false, JSON.stringify(fnGrants));
+    check('invoice UTR submission is authenticated-only', fnGrants.utr_anon === false && fnGrants.utr_auth === true, JSON.stringify(fnGrants));
+
     console.log(`\nRESULT: ${passed} passed, ${failed} failed`);
     if (failed > 0) {
       throw new Error(`${failed} lifecycle regression check(s) failed`);

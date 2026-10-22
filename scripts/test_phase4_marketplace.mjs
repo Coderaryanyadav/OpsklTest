@@ -66,9 +66,11 @@ async function run() {
   }
 
   const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === 'true';
+  const dbHost = new URL(dbUrl).hostname;
+  const localDatabase = ['127.0.0.1', 'localhost', 'opskl-test-db'].includes(dbHost);
   const pg = new PgClient({
     connectionString: dbUrl,
-    ssl: { rejectUnauthorized },
+    ssl: localDatabase ? false : { rejectUnauthorized },
   });
   await pg.connect();
   console.log(`${colors.green}✓ Connected to PostgreSQL Pooler${colors.reset}`);
@@ -148,7 +150,7 @@ async function run() {
         ('${w2Id}', 'worker', '+919902${testSuffix}', 'Worker Two', 'Mumbai', true),
         ('${orgId}', 'organizer', '+919903${testSuffix}', 'Apex Events', 'Mumbai', true),
         ('${adminId}', 'admin', '+919904${testSuffix}', 'Platform Admin', 'Mumbai', true)
-      ON CONFLICT (id) DO UPDATE SET is_active = true;
+      ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role, is_active = true;
 
       INSERT INTO worker_profiles (id, preferred_locality, skills, experience_years, verification_status, profile_completion_status)
       VALUES 

@@ -114,7 +114,7 @@ Backend SQL live suite, platform `check_all` 11/11, and **admin web E2E** are no
 1. Maestro / Expo simulator: worker login → discover → apply.  
 2. Organizer confirm → worker confirmed shift.  
 3. Live OTP sandbox capture.  
-4. Optional: apply `20261021000000_incident_evidence_storage.sql` and point uploads at dedicated bucket.  
+4. Optional: apply `20261022000006_incident_evidence_storage.sql` and point uploads at dedicated bucket.  
 5. Cross-tenant RLS probe script.
 
 **Artifacts:** `BASELINE.md`, matrices, `PHASE_RESULTS.md`, `DEFECT_LOG.md`, `REMEDIATION_SESSION.md`, `evidence/*`.

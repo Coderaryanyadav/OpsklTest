@@ -1,0 +1,112 @@
+name: opskl-test
+
+# The backend is the disposable Supabase CLI stack. The preflight script attaches
+# supabase_db_OPSKIL and supabase_kong_OPSKIL to this network with the stable
+# aliases opskl-test-db and opskl-test-api. Nothing in this file points at a
+# production Supabase project.
+networks:
+  default:
+    name: opskl-test-net
+    external: true
+
+services:
+  admin:
+    build:
+      context: ../..
+      dockerfile: docker/admin.Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
+        NEXT_PUBLIC_APP_ENV: test
+        NEXT_PUBLIC_DEFAULT_CITY: Mumbai
+        NEXT_PUBLIC_TIMEZONE: Asia/Kolkata
+    image: opskl-admin:test
+    environment:
+      NODE_ENV: production
+      # Server-side SSR/middleware use the service alias. Browser code was baked
+      # with 127.0.0.1:54321 and reaches the test-runner proxy during UI tests.
+      NEXT_PUBLIC_SUPABASE_URL: http://opskl-test-api:8000
+      EXPO_PUBLIC_SUPABASE_URL: http://opskl-test-api:8000
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3001
+      NEXT_PUBLIC_APP_ENV: test
+    ports:
+      - "127.0.0.1:3001:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: docker/worker.Dockerfile
+      args:
+        EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+        EXPO_PUBLIC_APP_ENV: test
+        EXPO_PUBLIC_DEFAULT_CITY: Mumbai
+        EXPO_PUBLIC_DEFAULT_TIMEZONE: Asia/Kolkata
+    image: opskl-worker:test
+    ports:
+      - "127.0.0.1:3002:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 6
+
+  organizer:
+    build:
+      context: ../..
+      dockerfile: docker/organizer.Dockerfile
+      args:
+        EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+        EXPO_PUBLIC_APP_ENV: test
+        EXPO_PUBLIC_DEFAULT_CITY: Mumbai
+        EXPO_PUBLIC_DEFAULT_TIMEZONE: Asia/Kolkata
+    image: opskl-organizer:test
+    ports:
+      - "127.0.0.1:3003:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 6
+
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: docker/test-runner.Dockerfile
+    image: opskl-test-runner:test
+    env_file:
+      - ../../.env.docker.test
+    environment:
+      SUPABASE_URL: http://opskl-test-api:8000
+      SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      DATABASE_URL: postgresql://postgres:postgres@opskl-test-db:5432/postgres
+      APP_ADMIN_URL: http://admin:3000
+      APP_WORKER_URL: http://worker:8080
+      APP_ORGANIZER_URL: http://organizer:8080
+      BROWSER_SUPABASE_URL: http://127.0.0.1:54321
+      BROWSER_PROXY_TARGET: http://opskl-test-api:8000
+      REPORT_DIR: /reports
+      CI: "1"
+    depends_on:
+      admin:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+      organizer:
+        condition: service_healthy
+    volumes:
+      - ../../test-artifacts/docker:/reports
+    shm_size: "1gb"

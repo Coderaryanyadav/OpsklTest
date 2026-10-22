@@ -67,6 +67,17 @@ describe('Lifecycle Contract Regression Guards', () => {
       expect(confirmation).not.toContain("'cancelled', 'closed'");
       expect(confirmation).toContain("IN ('cancelled', 'completed')");
     });
+
+    it('allows worker/organizer switching only through the trusted RPC window', () => {
+      const switchMigration = read(
+        'supabase/migrations/20261022000005_fix_role_switch_guard.sql'
+      );
+      expect(switchMigration).toContain("current_setting('opskl.role_switch', true) = '1'");
+      expect(switchMigration).toContain("PERFORM set_config('opskl.role_switch', '1', true)");
+      expect(switchMigration).toContain("PERFORM set_config('opskl.role_switch', '0', true)");
+      expect(switchMigration).toContain('CREATE OR REPLACE FUNCTION public.switch_user_role_safe');
+      expect(switchMigration).toContain('CREATE OR REPLACE FUNCTION public.ensure_user_profile_provisioned_safe');
+    });
   });
 
   describe('Client workflow guards', () => {

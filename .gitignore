@@ -13,6 +13,8 @@ playwright-report/
 .expo/
 dist/
 web-build/
+apps/worker/dist-web/
+apps/organizer/dist-web/
 
 # Accidental TypeScript emit beside Expo Router sources
 apps/worker/app/**/*.js
@@ -40,6 +42,7 @@ build/
 .env.*
 .env*.local
 !.env.example
+!.env.docker.test.example
 !.env.production.template
 
 # OS / Editor
@@ -60,3 +63,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Docker test evidence artifacts (keep machine-readable reports in docs instead)
+test-artifacts/

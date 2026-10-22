@@ -1,0 +1,36 @@
+# Dependencies and build output
+node_modules/
+**/node_modules/
+apps/admin/.next/
+apps/worker/dist-web/
+apps/organizer/dist-web/
+coverage/
+test-results/
+playwright-report/
+.expo/
+dist/
+build/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.docker.test.example
+!.env.example
+!.env.production.template
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git, editor, OS, local data
+.git/
+.gitignore
+.vercel/
+.DS_Store
+.vscode/
+screenshots/
+*.pem
+*.key
+*.p12
+*.mobileprovision
+*.tsbuildinfo
+next-env.d.ts

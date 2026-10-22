@@ -68,14 +68,14 @@ This document catalogs all code improvements, security hardening, workflow fixes
 ```bash
 $ npm test
 Test Suites: 26 passed, 26 total
-Tests:       313 passed, 313 total
+Tests:       314 passed, 314 total
 Snapshots:   0 total
 Time:        0.965 s
 ```
 - Workspace `@opskil/validation`: 1 test suite, 7 tests passed.
 - Workspace `@opskil/worker`: 3 test suites, 38 tests passed.
 - Workspace `@opskil/organizer`: 2 test suites, 31 tests passed.
-- **Combined Total:** 32 test suites passed, 389 tests passed, 0 failed.
+- **Combined Total:** 32 test suites passed, 390 tests passed, 0 failed.
 
 ### 3.2 Monorepo Typecheck (`npm run typecheck`)
 ```bash

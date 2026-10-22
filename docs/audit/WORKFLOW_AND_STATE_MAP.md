@@ -196,7 +196,7 @@ Intended: `disputed` booking → admin reviews evidence → outcome (release/ref
 - Incident report screen collects category, description, location, and (optionally) photos.
 - No audio recording is captured, yet the payload sets `hasAudioMemo: true` (`apps/worker/app/incident/report.tsx`).
 - SLA badges (“30m RESPONSE”, “INSTANT GROUND DISPATCH”) are static copy, not derived from any SLA record.
-- Evidence storage migration `20261021000000_incident_evidence_storage.sql` exists; upload path is implemented in the screen, but failure handling is inconsistent.
+- Evidence storage migration `20261022000006_incident_evidence_storage.sql` exists; upload path is implemented in the screen, but failure handling is inconsistent.
 - `apps/worker/app/emergency.tsx` shows a stale “24 May 2025” lockdown notice and is not linked from navigation.
 
 **Gap I1 — P1: false safety assurances.** Claiming an audio memo exists when it does not, and displaying response-time SLAs that no system tracks, is a user-safety and legal risk.
