@@ -88,18 +88,12 @@ export default function WorkerOnboardingScreen() {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 1: Profile & Skills Fields
+  // Step 1: Profile & Skills Fields — Neutral Unseeded Initial Defaults
   const [legalName, setLegalName] = useState('');
-  const [selectedLocality, setSelectedLocality] = useState('bkc');
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([
-    'Guest Relations / Hospitality',
-    'Registration & Badge Desk',
-  ]);
-  const [weekendSurgeEnabled, setWeekendSurgeEnabled] = useState(true);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([
-    'English (Professional)',
-    'Hindi (Fluent)',
-  ]);
+  const [selectedLocality, setSelectedLocality] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [weekendSurgeEnabled, setWeekendSurgeEnabled] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
 
   // Step 2: KYC & Compliance Fields
@@ -247,6 +241,9 @@ export default function WorkerOnboardingScreen() {
     const errors: Record<string, string> = {};
     if (legalName.trim().length < 3) {
       errors.legalName = 'Full legal name (at least 3 characters) matching your government ID is required.';
+    }
+    if (!selectedLocality) {
+      errors.locality = 'Please select your primary preferred event locality.';
     }
     if (selectedRoles.length < 2) {
       errors.roles = 'Please select at least 2 event roles to enable shift dispatch matching.';
@@ -521,13 +518,22 @@ export default function WorkerOnboardingScreen() {
                 </View>
               </View>
 
+              {step1Errors.locality ? (
+                <Text style={{ fontSize: 11, color: colors.danger, marginBottom: 8, fontWeight: '600' }}>
+                  {step1Errors.locality}
+                </Text>
+              ) : null}
+
               <View style={{ gap: 8 }}>
                 {LOCALITY_OPTIONS.map((loc) => {
                   const isSelected = selectedLocality === loc.id;
                   return (
                     <Pressable
                       key={loc.id}
-                      onPress={() => setSelectedLocality(loc.id)}
+                      onPress={() => {
+                        setSelectedLocality(loc.id);
+                        if (step1Errors.locality) setStep1Errors((prev) => ({ ...prev, locality: '' }));
+                      }}
                       style={[
                         styles.localityCard,
                         {

@@ -407,6 +407,14 @@ BEGIN
     );
   END IF;
 
+  -- Derived reputation counter. The trusted flag is scoped to this statement
+  -- pair and cleared immediately so it cannot leak into later statements.
+  PERFORM set_config('opskl.trusted', '1', true);
+  UPDATE worker_profiles
+  SET shifts_completed = COALESCE(shifts_completed, 0) + 1, updated_at = now()
+  WHERE id = v_booking.worker_id;
+  PERFORM set_config('opskl.trusted', '0', true);
+
   INSERT INTO audit_logs (
     actor_id, action, entity_type, entity_id, old_state, new_state
   ) VALUES (

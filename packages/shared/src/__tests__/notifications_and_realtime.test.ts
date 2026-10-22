@@ -88,7 +88,8 @@ describe('Phase 7 — Opskl Notifications & Real-Time Engine', () => {
       const selNotif = buildWorkerSelectedNotification('worker-1', 'Auto Expo Usher', 'book-200');
       expect(selNotif.type).toBe('worker_selected');
       expect(selNotif.priority).toBe('urgent');
-      expect(selNotif.body).toContain('Confirm your shift within 30 minutes');
+      expect(selNotif.body).toContain('Confirm your shift within 3 hours');
+      expect(selNotif.actionUrl).toBe('/(tabs)/my-shifts');
     });
 
     test('builds shift confirmation and T-2h reminder notifications', () => {
@@ -187,7 +188,7 @@ describe('Phase 7 — Opskl Notifications & Real-Time Engine', () => {
       expect(message.to).toBe('ExpoPushToken[valid_token_123]');
       expect(message.priority).toBe('high');
       expect(message.sound).toBe('default');
-      expect(message.data?.actionUrl).toBe('/shift/book-1');
+      expect(message.data?.actionUrl).toBe('/(tabs)/my-shifts');
     });
   });
 

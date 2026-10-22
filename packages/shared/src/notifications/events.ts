@@ -79,17 +79,18 @@ export function buildShortlistedNotification(
 export function buildWorkerSelectedNotification(
   userId: string,
   jobTitle: string,
-  bookingId: string
+  bookingId: string,
+  jobId?: string
 ): NotificationPayload {
   return {
     userId,
     title: 'Action Required: You are Selected! ⭐',
-    body: `You have been selected for "${jobTitle}". Confirm your shift within 30 minutes to lock your spot.`,
+    body: `You have been selected for "${jobTitle}". Confirm your shift within 3 hours to lock your spot.`,
     type: 'worker_selected',
     priority: 'urgent',
     idempotencyKey: buildNotificationIdempotencyKey('worker_selected', bookingId),
-    actionUrl: `/shift/${bookingId}`,
-    metadata: { bookingId },
+    actionUrl: '/(tabs)/my-shifts',
+    metadata: { bookingId, jobId },
   };
 }
 
@@ -155,7 +156,8 @@ export function buildAttendanceUpdateNotification(
   workerName: string,
   shiftTitle: string,
   type: 'check_in' | 'check_out',
-  bookingId: string
+  bookingId: string,
+  jobId?: string
 ): NotificationPayload {
   const isCheckIn = type === 'check_in';
   return {
@@ -165,8 +167,8 @@ export function buildAttendanceUpdateNotification(
     type: isCheckIn ? 'check_in' : 'check_out',
     priority: 'normal',
     idempotencyKey: buildNotificationIdempotencyKey(type, bookingId),
-    actionUrl: `/shift/${bookingId}`,
-    metadata: { bookingId, workerName },
+    actionUrl: jobId ? `/shift/attendance?id=${jobId}` : '/(tabs)/roster',
+    metadata: { bookingId, jobId, workerName },
   };
 }
 

@@ -29,10 +29,13 @@ const ids = {
   jobGeo: 'd0000000-0000-4000-8000-000000000002',
   jobConflict: 'd0000000-0000-4000-8000-000000000003',
   jobApply: 'd0000000-0000-4000-8000-000000000004',
+  jobNoShow: 'd0000000-0000-4000-8000-000000000005',
   booking: 'e0000000-0000-4000-8000-000000000001',
   bookingGeo: 'e0000000-0000-4000-8000-000000000002',
   bookingConflict: 'e0000000-0000-4000-8000-000000000003',
   bookingApply: 'e0000000-0000-4000-8000-000000000004',
+  bookingNoShow: 'e0000000-0000-4000-8000-000000000005',
+  bookingCancel: 'e0000000-0000-4000-8000-000000000006',
   dispute: 'f0000000-0000-4000-8000-000000000001',
 };
 
@@ -54,6 +57,29 @@ const client = new Client({ connectionString: DATABASE_URL });
 async function asUser(userId, fn) {
   await client.query(`SET LOCAL request.jwt.claim.sub = '${userId}'`);
   return fn();
+}
+
+async function asRole(role, userId, fn) {
+  await client.query(`SET LOCAL ROLE ${role}`);
+  await client.query(`SET LOCAL request.jwt.claim.sub = '${userId}'`);
+  try {
+    return await fn();
+  } finally {
+    await client.query('RESET ROLE');
+  }
+}
+
+async function expectSqlError(name, sql, params, expected) {
+  await client.query('SAVEPOINT expect_err');
+  try {
+    await client.query(sql, params);
+    check(name, false, 'statement unexpectedly succeeded');
+  } catch (err) {
+    check(name, String(err.message).includes(expected), err.message);
+  } finally {
+    await client.query('ROLLBACK TO SAVEPOINT expect_err');
+    await client.query('RELEASE SAVEPOINT expect_err');
+  }
 }
 
 async function rpc(fn, args = []) {
@@ -98,7 +124,7 @@ async function main() {
     for (const id of [ids.worker, ids.worker2]) {
       await client.query(
         `INSERT INTO public.worker_profiles (id, verification_status, upi_id)
-         VALUES ($1, 'verified', 'worker@upi') ON CONFLICT (id) DO UPDATE SET verification_status = 'verified', upi_id = 'worker@upi'`,
+         VALUES ($1, 'verified', 'worker@upi') ON CONFLICT (id) DO UPDATE SET verification_status = 'verified', upi_id = 'worker@upi', profile_completion_status = 'completed'`,
         [id]
       );
     }
@@ -136,6 +162,17 @@ async function main() {
        FROM public.jobs WHERE id = $5`,
       [ids.jobApply, ids.orgA, null, null, ids.job]
     );
+    await client.query(
+      `INSERT INTO public.jobs
+        (id, organizer_id, title, category, venue_name, venue_address, zone,
+         date, start_time, end_time, duration_hours, hourly_rate, total_pay,
+         slots_total, supervisor_name, supervisor_phone, status, latitude, longitude)
+       SELECT $1, $2, 'No Show Test', 'hospitality', 'Venue', 'Address', 'BKC',
+         date, start_time, end_time, 8, 500, 4000, 2, 'Supervisor', '9000000000', 'open', $3, $4
+       FROM public.jobs WHERE id = $5`,
+      [ids.jobNoShow, ids.orgA, null, null, ids.job]
+    );
+
 
     const bookingInsert = `
       INSERT INTO public.bookings
@@ -144,6 +181,8 @@ async function main() {
       VALUES ($1, $2, $3, $4, $5, 500, 4000, 'CODE123')`;
     await client.query(bookingInsert, [ids.booking, ids.job, ids.worker, ids.orgA, 'selected_awaiting_confirmation']);
     await client.query(bookingInsert, [ids.bookingGeo, ids.jobGeo, ids.worker2, ids.orgA, 'confirmed']);
+    await client.query(bookingInsert, [ids.bookingNoShow, ids.jobNoShow, ids.worker2, ids.orgA, 'confirmed']);
+    await client.query(bookingInsert, [ids.bookingCancel, ids.jobApply, ids.worker2, ids.orgA, 'confirmed']);
 
     // ------------------------------------------------- 1. confirm selection
     console.log('\n[1] Worker confirms a selected offer');
@@ -231,7 +270,7 @@ async function main() {
     console.log('\n[7b] Apply, shortlist, confirm and check out');
     const applied = await asUser(ids.worker, () => rpc('apply_for_job_safe', [ids.jobApply, 'Available']));
     check('worker can apply', applied.success === true, JSON.stringify(applied));
-    const applicationId = applied.application?.id;
+    const applicationId = applied.application_id || applied.application?.id;
     const appliedAgain = await asUser(ids.worker, () => rpc('apply_for_job_safe', [ids.jobApply, 'Available']));
     check('duplicate application is rejected', appliedAgain.success === false, JSON.stringify(appliedAgain));
 
@@ -250,10 +289,27 @@ async function main() {
     const applyCheckIn = await asUser(ids.worker, () => rpc('check_in_worker_safe', [newBooking.id, newBooking.check_in_code, null, null]));
     check('confirmed worker can check in', applyCheckIn.success === true, JSON.stringify(applyCheckIn));
 
+    const earlyCheckout = await asUser(ids.worker, () => rpc('check_out_worker_safe', [newBooking.id, 'Done']));
+    check('checkout before 15 minutes is rejected', earlyCheckout.success === false && earlyCheckout.error_code === 'MINIMUM_SHIFT_DURATION', JSON.stringify(earlyCheckout));
+
+    await client.query(`UPDATE bookings SET check_in_time = now() - interval '1 hour' WHERE id=$1`, [newBooking.id]);
+    await client.query(`UPDATE attendance_records SET check_in_time = now() - interval '1 hour' WHERE booking_id=$1`, [newBooking.id]);
     const checkedOut = await asUser(ids.worker, () => rpc('check_out_worker_safe', [newBooking.id, 'Done']));
-    check('worker can check out', checkedOut.success === true, JSON.stringify(checkedOut));
+    check('worker can check out after minimum duration', checkedOut.success === true, JSON.stringify(checkedOut));
     const checkoutRow = (await client.query('SELECT status, check_out_time FROM bookings WHERE id=$1', [newBooking.id])).rows[0];
     check('checkout persisted', checkoutRow.status === 'checked_out' && checkoutRow.check_out_time !== null, JSON.stringify(checkoutRow));
+
+    // ------------------------------------------------- 7c. no-show and cancellation
+    console.log('\n[7c] No-show and cancellation transitions');
+    const noShow = await asUser(ids.orgA, () => rpc('record_no_show_safe', [ids.bookingNoShow, 'Did not arrive']));
+    check('organizer can record no-show', noShow.success === true, JSON.stringify(noShow));
+    const noShowRow = (await client.query('SELECT status FROM bookings WHERE id=$1', [ids.bookingNoShow])).rows[0];
+    check('no-show persisted', noShowRow.status === 'no_show', JSON.stringify(noShowRow));
+
+    const cancelled = await asUser(ids.worker2, () => rpc('cancel_booking_safe', [ids.bookingCancel, 'Personal emergency']));
+    check('worker can cancel confirmed booking', cancelled.success === true, JSON.stringify(cancelled));
+    const cancelRow = (await client.query('SELECT status FROM bookings WHERE id=$1', [ids.bookingCancel])).rows[0];
+    check('cancellation persisted', cancelRow.status === 'cancelled', JSON.stringify(cancelRow));
 
     // ------------------------------------------------- 8. payout authorization
     console.log('\n[8] Payout initiation is authorized and uses approved pay');
@@ -274,7 +330,101 @@ async function main() {
     const payoutAgain = await asUser(ids.orgA, () => rpc('initiate_worker_payout_safe', [ids.booking, 'worker@upi', 'idem-1']));
     check('repeat payout is idempotent', payoutAgain.payment_id === payout.payment_id, JSON.stringify(payoutAgain));
 
-    // ------------------------------------------------- 9. fiscal sequence
+    const settleDenied = await asUser(ids.worker2, () => rpc('admin_mark_payout_settled', [payout.payment_id, 'UTRABC123456']));
+    check('worker cannot settle payout', settleDenied.success === false, JSON.stringify(settleDenied));
+
+    const settle = await asUser(ids.admin, () => rpc('admin_mark_payout_settled', [payout.payment_id, 'UTRABC123456']));
+    check('admin can settle escrow-locked payout', settle.success === true && settle.status === 'settled', JSON.stringify(settle));
+
+    const settleSame = await asUser(ids.admin, () => rpc('admin_mark_payout_settled', [payout.payment_id, 'UTRABC123456']));
+    check('same-UTR settlement is idempotent', settleSame.success === true && settleSame.already_settled === true, JSON.stringify(settleSame));
+
+    const settleDifferent = await asUser(ids.admin, () => rpc('admin_mark_payout_settled', [payout.payment_id, 'UTROTHER9999']));
+    check('different-UTR settlement is rejected', settleDifferent.success === false, JSON.stringify(settleDifferent));
+
+    // ------------------------------------------------- 9b. RLS isolation & admin revocation
+    console.log('\n[9b] Tenant isolation and admin deactivation');
+    const foreignBooking = await asRole('authenticated', ids.worker, async () =>
+      (await client.query('SELECT id FROM bookings WHERE id=$1', [ids.bookingNoShow])).rows.length
+    );
+    check('worker cannot read another worker booking', foreignBooking === 0, `rows=${foreignBooking}`);
+
+    const ownBooking = await asRole('authenticated', ids.worker2, async () =>
+      (await client.query('SELECT id FROM bookings WHERE id=$1', [ids.bookingNoShow])).rows.length
+    );
+    check('worker can read own booking', ownBooking === 1, `rows=${ownBooking}`);
+
+    const activeAdmin = await asUser(ids.admin, () => rpc('is_current_admin'));
+    check('active admin is recognized', activeAdmin === true, JSON.stringify(activeAdmin));
+
+    await client.query(`UPDATE profiles SET is_active=false WHERE id=$1`, [ids.admin]);
+    const revokedAdmin = await asUser(ids.admin, () => rpc('is_current_admin'));
+    check('deactivated admin loses privilege immediately', revokedAdmin === false, JSON.stringify(revokedAdmin));
+    await client.query(`UPDATE profiles SET is_active=true WHERE id=$1`, [ids.admin]);
+
+    // ------------------------------------------------- 9c. direct-table privilege escalation
+    console.log('\\n[9c] Direct table writes cannot escalate privileges');
+    // Simulate a fresh API request: no transaction-local trusted flag from an
+    // earlier RPC in this test transaction.
+    await client.query(`SELECT set_config('opskl.trusted','0',true)`);
+    await client.query('SAVEPOINT rls_probe');
+    await client.query('SET LOCAL SESSION AUTHORIZATION opskil_api');
+    await client.query('SET LOCAL ROLE authenticated');
+    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
+    await client.query(`SET LOCAL request.jwt.claim.role = 'authenticated'`);
+    const who = (await client.query(`SELECT session_user AS su, current_user AS cu, current_setting('opskl.trusted', true) AS trusted, auth.uid() AS uid, is_current_admin() AS admin`)).rows[0];
+    console.log('  DEBUG identity:', JSON.stringify(who));
+
+    await expectSqlError(
+      'worker cannot self-verify KYC',
+      `UPDATE worker_profiles SET verification_status = CASE WHEN verification_status='verified' THEN 'rejected' ELSE 'verified' END WHERE id=$1`,
+      [ids.worker],
+      'Administrative and verification fields cannot be modified'
+    );
+    await expectSqlError(
+      'worker cannot promote themselves to admin',
+      `UPDATE profiles SET role='admin' WHERE id=$1`,
+      [ids.worker],
+      'Users cannot change their assigned role'
+    );
+    await expectSqlError(
+      'worker cannot reactivate or deactivate accounts',
+      `UPDATE profiles SET is_active=false WHERE id=$1`,
+      [ids.worker],
+      'Account activation status cannot be modified'
+    );
+    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.orgA}'`);
+    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.orgA}'`);
+    await expectSqlError(
+      'organizer cannot self-verify business KYC',
+      `UPDATE organizer_profiles SET verification_status = CASE WHEN verification_status='verified' THEN 'rejected' ELSE 'verified' END WHERE id=$1`,
+      [ids.orgA],
+      'Administrative and verification fields cannot be modified'
+    );
+    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
+
+    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
+    const bookingTamper = await client.query(`UPDATE bookings SET approved_total_pay=999999 WHERE worker_id=$1`, [ids.worker]);
+    check('worker cannot edit approved pay directly', bookingTamper.rowCount === 0, `rows=${bookingTamper.rowCount}`);
+    const invoiceTamper = await client.query(`UPDATE organizer_invoices SET status='escrow_funded' WHERE organizer_id=$1`, [ids.orgA]);
+    check('organizer cannot fund invoices directly', invoiceTamper.rowCount === 0, `rows=${invoiceTamper.rowCount}`);
+    const payoutTamper = await client.query(`UPDATE payment_records SET status='settled' WHERE worker_id=$1`, [ids.worker]);
+    check('worker cannot mark payouts settled directly', payoutTamper.rowCount === 0, `rows=${payoutTamper.rowCount}`);
+
+    await expectSqlError(
+      'user cannot forge a notification for another user',
+      `INSERT INTO notifications (user_id, title, body) VALUES ($1, 'Fake', 'Fake')`,
+      [ids.worker2],
+      'row-level security'
+    );
+
+    const upiUpdate = await client.query(`UPDATE worker_profiles SET upi_id='self@upi' WHERE id=$1`, [ids.worker]);
+    check('worker can still update their own UPI handle', upiUpdate.rowCount === 1, `rows=${upiUpdate.rowCount}`);
+
+    await client.query('ROLLBACK TO SAVEPOINT rls_probe');
+    await client.query('RELEASE SAVEPOINT rls_probe');
+
+    // ------------------------------------------------- 10. fiscal sequence
     console.log('\n[9] Fiscal sequence is not client-writable');
     const rls = (await client.query(`SELECT relrowsecurity FROM pg_class WHERE oid='public.invoice_fiscal_sequences'::regclass`)).rows[0];
     check('RLS enabled on invoice_fiscal_sequences', rls.relrowsecurity === true, JSON.stringify(rls));
@@ -284,6 +434,18 @@ async function main() {
     )).rows[0];
     check('authenticated cannot UPDATE sequence', grants.can_update === false, JSON.stringify(grants));
     check('anon cannot SELECT sequence', grants.anon_select === false, JSON.stringify(grants));
+
+    const privs = (await client.query(`
+      SELECT
+        has_function_privilege('anon','public.check_in_worker_safe(uuid,text,numeric,numeric)','EXECUTE') AS anon_checkin,
+        has_function_privilege('anon','public.complete_shift_and_approve_attendance(uuid,numeric,boolean,text)','EXECUTE') AS anon_complete,
+        has_function_privilege('anon','public.initiate_worker_payout_safe(uuid,text,text)','EXECUTE') AS anon_payout,
+        to_regprocedure('public.register_organizer_direct_safe(text,text,text,text)') AS legacy_register
+    `)).rows[0];
+    check('anon cannot execute check-in', privs.anon_checkin === false, JSON.stringify(privs));
+    check('anon cannot execute completion', privs.anon_complete === false, JSON.stringify(privs));
+    check('anon cannot execute payout', privs.anon_payout === false, JSON.stringify(privs));
+    check('account-takeover registration RPC is gone', privs.legacy_register === null, JSON.stringify(privs));
 
     console.log(`\nRESULT: ${passed} passed, ${failed} failed`);
     if (failed > 0) {
@@ -296,6 +458,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('\nLIFECYCLE TEST ERROR:', err.message);
+  console.error('\nLIFECYCLE TEST ERROR:', err.stack || err.message);
   process.exit(1);
 });
