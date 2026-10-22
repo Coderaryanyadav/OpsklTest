@@ -13,8 +13,11 @@ mkdir -p "$REPORT_DIR"
 
 "$ROOT/docker/scripts/preflight.sh"
 
-echo '[e2e] building and starting app containers'
-docker compose -p opskl-test --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build admin worker organizer
+echo '[e2e] building app and test-runner images from the current worktree'
+docker compose -p opskl-test --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build admin worker organizer test-runner
+
+echo '[e2e] starting app containers'
+docker compose -p opskl-test --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d admin worker organizer
 
 "$ROOT/docker/scripts/wait-for-health.sh" "http://127.0.0.1:3001/api/health" 180
 "$ROOT/docker/scripts/wait-for-health.sh" "http://127.0.0.1:3002/healthz" 60

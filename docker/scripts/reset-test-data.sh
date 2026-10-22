@@ -25,6 +25,11 @@ case "${NEXT_PUBLIC_SUPABASE_URL:-}" in
   *) fail "refusing reset: NEXT_PUBLIC_SUPABASE_URL is not the local test endpoint" ;;
 esac
 
+if ! docker inspect supabase_db_OPSKIL >/dev/null 2>&1; then
+  log "local Supabase is not running; starting it before reset"
+  npx --yes supabase start
+fi
+
 log "stopping and removing only compose project '$PROJECT' and its volumes"
 docker compose -p "$PROJECT" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down -v --remove-orphans || true
 

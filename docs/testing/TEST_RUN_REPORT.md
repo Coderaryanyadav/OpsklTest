@@ -35,8 +35,8 @@ The container run summary:
 
 ```json
 {
-  "startedAt": "2026-10-22T08:33:03.625Z",
-  "finishedAt": "2026-10-22T08:33:09.276Z",
+  "startedAt": "2026-10-22T08:38:15.036Z",
+  "finishedAt": "2026-10-22T08:38:20.883Z",
   "node": "v24.21.0",
   "platform": "linux/arm64",
   "results": [

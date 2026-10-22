@@ -6,6 +6,7 @@ apps/worker/dist-web/
 apps/organizer/dist-web/
 coverage/
 test-results/
+test-artifacts/
 playwright-report/
 .expo/
 dist/
