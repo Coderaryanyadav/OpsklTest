@@ -50,6 +50,16 @@ describe('Lifecycle Contract Regression Guards', () => {
       );
     });
 
+    it('does not let SECURITY DEFINER trigger ownership bypass verification guards', () => {
+      const escalation = read(
+        'supabase/migrations/20261022000004_fix_privilege_escalation_triggers.sql'
+      );
+      expect(escalation).not.toContain("current_user IN ('postgres'");
+      expect(escalation).toContain("session_user IN ('postgres', 'supabase_admin')");
+      expect(escalation).toContain('{2,255}');
+      expect(escalation).toContain("status NOT IN ('escrow_locked', 'processing')");
+    });
+
     it('never compares shift_status to the non-existent closed literal', () => {
       const confirmation = read(
         'supabase/migrations/20261022000002_fix_offer_confirmation_enum_guard.sql'

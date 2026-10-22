@@ -368,13 +368,9 @@ async function main() {
     // earlier RPC in this test transaction.
     await client.query(`SELECT set_config('opskl.trusted','0',true)`);
     await client.query('SAVEPOINT rls_probe');
-    await client.query('SET LOCAL SESSION AUTHORIZATION opskil_api');
     await client.query('SET LOCAL ROLE authenticated');
     await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
     await client.query(`SET LOCAL request.jwt.claim.role = 'authenticated'`);
-    const who = (await client.query(`SELECT session_user AS su, current_user AS cu, current_setting('opskl.trusted', true) AS trusted, auth.uid() AS uid, is_current_admin() AS admin`)).rows[0];
-    console.log('  DEBUG identity:', JSON.stringify(who));
-
     await expectSqlError(
       'worker cannot self-verify KYC',
       `UPDATE worker_profiles SET verification_status = CASE WHEN verification_status='verified' THEN 'rejected' ELSE 'verified' END WHERE id=$1`,
@@ -394,15 +390,12 @@ async function main() {
       'Account activation status cannot be modified'
     );
     await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.orgA}'`);
-    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.orgA}'`);
     await expectSqlError(
       'organizer cannot self-verify business KYC',
       `UPDATE organizer_profiles SET verification_status = CASE WHEN verification_status='verified' THEN 'rejected' ELSE 'verified' END WHERE id=$1`,
       [ids.orgA],
       'Administrative and verification fields cannot be modified'
     );
-    await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
-
     await client.query(`SET LOCAL request.jwt.claim.sub = '${ids.worker}'`);
     const bookingTamper = await client.query(`UPDATE bookings SET approved_total_pay=999999 WHERE worker_id=$1`, [ids.worker]);
     check('worker cannot edit approved pay directly', bookingTamper.rowCount === 0, `rows=${bookingTamper.rowCount}`);

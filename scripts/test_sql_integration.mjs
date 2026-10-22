@@ -370,6 +370,13 @@ async function run() {
 
       // Provision test organizer profile for live RPC test suite
       const testOrgId = '6ad9b1d3-cd34-49ba-aa96-37d903451db4';
+      // profiles.id references auth.users.id in Supabase. Provision the auth row
+      // for this synthetic test organizer so the fixture satisfies the real FK.
+      await client.query(`
+        INSERT INTO auth.users (id, email)
+        VALUES ($1, 'verification-enterprise@example.test')
+        ON CONFLICT (id) DO NOTHING;
+      `, [testOrgId]);
       await client.query(`
         INSERT INTO profiles (id, role, full_name, is_active)
         VALUES ($1, 'organizer', 'Verification Enterprise Corp', true)

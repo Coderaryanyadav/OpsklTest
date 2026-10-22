@@ -6,10 +6,9 @@
 --   following direct PostgREST table updates SUCCEEDED:
 --     UPDATE worker_profiles SET verification_status='verified'  -> verified
 --     UPDATE profiles        SET role='admin'                    -> admin
---   Root cause: the protection triggers are SECURITY DEFINER, so current_user
---   is always the function owner (postgres). The bypass branch
---   `current_user IN ('postgres', ...)` therefore treated every caller as an
---   administrator. Verification and role fields must be derived from the
+--   Root cause: the protection triggers are SECURITY DEFINER, so the function owner
+--   was postgres. The bypass branch previously checked postgres ownership and
+--   therefore treated every caller as an administrator.
 --   verified JWT/role, never from the execution role of the definer.
 --
 -- Also hardens manual payout settlement:
